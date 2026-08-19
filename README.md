@@ -6,6 +6,8 @@ It loads as a `dinput8.dll` proxy and draws a Dear ImGui overlay inside the game
 renderer. Inspired by, and architecturally indebted to,
 [BBCF-Improvement-Mod](https://github.com/libreofficecalc/BBCF-Improvement-Mod).
 
+Donwload the .dll from the [Release](https://github.com/Zanaylo/UNI2-Improvement-Mod/releases)
+
 **[English](#english) · [Português](#português) · [日本語](#日本語)**
 
 ---
