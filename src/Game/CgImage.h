@@ -8,9 +8,6 @@
 // ordered list of layers; a layer is either a .cg sprite or a group of effect parts out of the
 // .pat, and carries the offset that places it. Vatista's cut-in is two sprites, `999_033` under
 // `999_017`, and Izumi's idle is `000_000` under `000_016` - that is read here, not guessed.
-// The effect-part layers are listed but not drawn yet; docs/CUSTOMIZE.md 7c says why.
-//
-// One character is kept at a time; they are megabytes each.
 
 #pragma once
 
@@ -20,9 +17,6 @@
 
 namespace CgImage
 {
-	// An effect group placed into the pose. `behind` is true when the .ha6 lists it before the
-	// first sprite layer, which is where nearly all of them are - that is what hides the far half
-	// of Vatista's fan behind her.
 	struct PartLayer
 	{
 		const PatParts::Quad* quads;

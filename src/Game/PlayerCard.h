@@ -4,7 +4,6 @@
 // Two rules cost something to learn and everything here depends on them. Nothing is written to disk
 // unless the game's own save-needed byte is set, and the sanitiser that runs inside the save builder
 // clears the title only when the preset title id is non-zero - so a free-text title survives exactly
-// as long as that id stays 0. docs/CUSTOMIZE.md has the rest.
 
 #pragma once
 

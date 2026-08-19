@@ -103,7 +103,6 @@ void MainWindow::DrawCustomSection()
 	}
 
 	// The first palette system is kept for its machinery but no longer named anywhere in the
-	// interface; the tab that replaces it is not built yet. docs/PALETTES.md has the plan.
 	if (g_modVals.showLegacyPalettes && ImGui::BeginTabItem("Palette (legacy)"))
 	{
 		DrawPalettesTab();

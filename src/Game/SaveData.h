@@ -4,7 +4,6 @@
 // which is itself gated on saving being switched on, and it only tells the game to write when the
 // game was going to write anyway. The request byte is what the pump at 0x2210A0 acts on - but the
 // pump is skipped entirely while the save task's mode is idle, so a request can sit unanswered.
-// That is exactly what the debug panel is for. docs/CUSTOMIZE.md 2 has the whole chain.
 
 #pragma once
 

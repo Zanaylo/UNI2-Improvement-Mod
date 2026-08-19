@@ -264,9 +264,6 @@ void BlitImage(const Header& image, Pose& pose, int originX, int originY)
 	}
 }
 
-// One character space holds both kinds of layer: a sprite's cropped top-left sits at
-// `AFOF + bounds - (128,224)` and a parts group's origin at `AFOF`. docs/CUSTOMIZE.md 7c derives
-// the displacement; it is the only thing that separates the two.
 bool BuildPose(const std::vector<Layer>& layers, const std::vector<Header>& images, Pose& out)
 {
 	if (layers.empty())
@@ -300,9 +297,6 @@ bool BuildPose(const std::vector<Layer>& layers, const std::vector<Header>& imag
 	if (!anySprite)
 		return false;
 
-	// Effects run far past the character - Akatsuki's discharge is several times his height - and
-	// letting them set the canvas shrinks him to a speck. Give them room and no more, the way the
-	// game's own viewport does.
 	const float marginX = (x2 - x1) * kEffectMargin;
 	const float marginY = (y2 - y1) * kEffectMargin;
 
@@ -386,9 +380,6 @@ bool BuildPose(const std::vector<Layer>& layers, const std::vector<Header>& imag
 	return true;
 }
 
-// A targeted scan of the .ha6 rather than a parser for it: PSTR opens a sequence, AFGX opens a
-// layer with its kind and id, AFOF places it. Every other chunk is skipped a byte at a time, which
-// is slow and completely safe - the tags are four-byte ASCII and this runs once per character.
 std::vector<std::vector<Layer>> ReadSequences(const std::vector<bool>& usable)
 {
 	std::vector<std::vector<Layer>> out;

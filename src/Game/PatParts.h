@@ -4,7 +4,6 @@
 // then scaled, rotated about all three axes and dropped through a perspective frustum. The atlas
 // carries only shape and shading - the colour is one entry of the character's own palette, named
 // per cut-out - which is what makes Vatista's wings follow the customiser.
-// docs/CUSTOMIZE.md 7c has the whole derivation.
 
 #pragma once
 

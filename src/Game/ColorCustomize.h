@@ -5,7 +5,6 @@
 // opponent's player-slot record and the opponent's game composes the colours out of its own files,
 // so a slot written here is seen by every player, modded or not. What it cannot do is name an
 // arbitrary colour: an entry is an index into the character's own stock palettes and nothing else.
-// docs/CUSTOMIZE.md 7b has the layout and how it was settled.
 
 #pragma once
 
