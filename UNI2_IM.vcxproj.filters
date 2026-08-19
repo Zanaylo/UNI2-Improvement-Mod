@@ -1,0 +1,698 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{6c3411e0-96a8-594d-8d14-ed9e82ea715f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="D3D9">
+      <UniqueIdentifier>{555ad0b6-d9e4-56a9-86d1-d78540cc8637}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencies">
+      <UniqueIdentifier>{db7b8e17-8595-5a47-bce1-f417291f2c41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencies\ImGui">
+      <UniqueIdentifier>{85521ad0-c55b-5b06-8a2c-a8bda882fe4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencies\ImGui\backends">
+      <UniqueIdentifier>{f5257411-0d9a-5cb0-9f4e-3306281b8aa9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencies\MinHook">
+      <UniqueIdentifier>{5c7ab9e7-9e51-51be-8450-dbb114907c6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencies\MinHook\hde">
+      <UniqueIdentifier>{bfbdabfc-65a9-598a-a7bc-41a6ecd172b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game">
+      <UniqueIdentifier>{fa75ccce-68f3-5a60-938e-873191302e12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hooks">
+      <UniqueIdentifier>{099de8f9-c3c8-5458-8528-dfdfee9ce506}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Network">
+      <UniqueIdentifier>{426781b3-34d9-58e0-a624-04f8b0de0fba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay">
+      <UniqueIdentifier>{468c75e3-4649-501a-afd8-0b82d53f3104}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay\Window">
+      <UniqueIdentifier>{624e3f33-dcf2-5c64-9ddd-ab755d063ce3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay\WindowContainer">
+      <UniqueIdentifier>{959154fa-3859-5c3b-b954-afe8c08cae36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Palette">
+      <UniqueIdentifier>{9063b56b-91a8-5c43-b9cb-564120b34cb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{9e5d43ff-8ea3-5dae-ae45-3ef6fc8b1847}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Training">
+      <UniqueIdentifier>{bbdc2753-4115-5e67-a788-75f2f4b9142d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Core\dllmain.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Settings.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Profiler.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ProcessTuning.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\PresentTuning.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\D3DX9Hooks.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\RenderScale.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PotatoMode.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PumpWait.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\PerformanceWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\logger.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\crashdump.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\utils.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\TextEncoding.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\KeyboardCapture.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\keycodes.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\interfaces.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hooks\HookManager.cpp">
+      <Filter>Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hooks\hooks_input.cpp">
+      <Filter>Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hooks\InputProbe.cpp">
+      <Filter>Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\D3D9Wrapper.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\DeviceHooks.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\FrozenFrame.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\WindowManager.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\NotificationBar.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\PlatePreview.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\ComboNav.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\CharaPreview.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\IWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\MainWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\PlayerCardPanel.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\ColorCustomizePanel.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\PaletteWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\DebugWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\MemoryMap.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\CharaTracker.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\HitboxData.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Camera.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\GameState.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PlayerCard.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PlateCatalog.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ColorCustomize.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ColorOverride.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\LivePalette.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\CgImage.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PatParts.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SaveData.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ColorPartTable.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StockPalettes.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OnlineState.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\MemoryScanner.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SteamNetwork.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\PaletteShare.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteBinder.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteDrawProbe.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteOwnerProbe.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteSeat.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteControl.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteChoice.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\EffectOwner.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PlayerSides.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\EffectPaint.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PalettePaint.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteIdentity.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteMemory.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteTexture.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteFile.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteManager.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteReport.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteTrace.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\CharaTables.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PartColourTable.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\EffectTable.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\FrameDataTable.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\GameTables.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PlayerState.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ReplayState.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\FrameStepper.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\StopTime.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\StageColor.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\DummyScript.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\StateRecorder.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\DummyRecorder.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\FrameMeter.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\FrameMeterHud.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\DdsTexture.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\QuadRenderer.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\GameFont.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\FrameMeterLegendWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\DummyScriptGuideWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\HitboxLegendWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\PlayerControlWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\PlayerControl.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\InputLagMeter.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\PaletteEditorWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\HitboxOverlay.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\WindowContainer\WindowContainer.cpp">
+      <Filter>Overlay\WindowContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\imgui\imgui.cpp">
+      <Filter>Dependencies\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\imgui\imgui_draw.cpp">
+      <Filter>Dependencies\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\imgui\imgui_tables.cpp">
+      <Filter>Dependencies\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\imgui\imgui_widgets.cpp">
+      <Filter>Dependencies\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\imgui\imgui_demo.cpp">
+      <Filter>Dependencies\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\imgui\backends\imgui_impl_dx9.cpp">
+      <Filter>Dependencies\ImGui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\imgui\backends\imgui_impl_win32.cpp">
+      <Filter>Dependencies\ImGui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\minhook\src\hook.c">
+      <Filter>Dependencies\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\minhook\src\buffer.c">
+      <Filter>Dependencies\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\minhook\src\trampoline.c">
+      <Filter>Dependencies\MinHook</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\minhook\src\hde\hde32.c">
+      <Filter>Dependencies\MinHook\hde</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\minhook\src\hde\hde64.c">
+      <Filter>Dependencies\MinHook\hde</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Core\Settings.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\settings.def">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Profiler.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\default_ini.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ProcessTuning.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\PresentTuning.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\D3DX9Hooks.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\RenderScale.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PotatoMode.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PumpWait.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\PerformanceWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\logger.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\crashdump.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\utils.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\TextEncoding.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\KeyboardCapture.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\keycodes.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\interfaces.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\info.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks\HookManager.h">
+      <Filter>Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks\hooks_input.h">
+      <Filter>Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks\InputProbe.h">
+      <Filter>Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\D3D9Wrapper.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\DeviceHooks.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\FrozenFrame.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\WindowManager.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\NotificationBar.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\PlatePreview.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\ComboNav.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\CharaPreview.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\IWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\MainWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\PlayerCardPanel.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\ColorCustomizePanel.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\PaletteWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\DebugWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\MemoryMap.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\CharaTracker.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\HitboxData.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Camera.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GameState.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PlayerCard.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PlateCatalog.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ColorCustomize.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ColorOverride.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\LivePalette.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\CgImage.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PatParts.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SaveData.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ColorPartTable.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StockPalettes.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OnlineState.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\MemoryScanner.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SteamNetwork.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\PaletteShare.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteBinder.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteDrawProbe.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteOwnerProbe.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteSeat.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteControl.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteChoice.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\EffectOwner.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PlayerSides.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\EffectPaint.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PalettePaint.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteIdentity.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteMemory.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteTexture.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteFile.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteManager.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteReport.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteTrace.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\CharaTables.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PartColourTable.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\EffectTable.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\FrameDataTable.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GameTables.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PlayerState.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ReplayState.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\FrameStepper.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\StopTime.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\StageColor.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\DummyScript.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\StateRecorder.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\DummyRecorder.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\FrameMeter.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\FrameMeterHud.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\DdsTexture.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\QuadRenderer.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\GameFont.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\FrameMeterLegendWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\DummyScriptGuideWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\HitboxLegendWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\PlayerControlWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\PlayerControl.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\InputFrame.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\InputLagMeter.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\PaletteEditorWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\HitboxOverlay.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GameOffsets.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\WindowContainer\WindowContainer.h">
+      <Filter>Overlay\WindowContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\WindowContainer\WindowType.h">
+      <Filter>Overlay\WindowContainer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resource\dinput8.def">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="resource\UNI2_IM.ini">
+      <Filter>Resources</Filter>
+    </None>
+  </ItemGroup>
+</Project>

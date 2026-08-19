@@ -1,0 +1,370 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{8F3C1A42-5D9B-4E67-9A21-7C4E0B5D8E13}</ProjectGuid>
+    <RootNamespace>UNI2_IM</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <!-- v145 is Visual Studio 2026. Pass /p:PlatformToolset=v143 to build with the 2022 toolset. -->
+  <PropertyGroup Label="Toolset">
+    <PlatformToolset Condition="'$(PlatformToolset)'==''">v145</PlatformToolset>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <TargetName>dinput8</TargetName>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)\</IntDir>
+    <IncludePath>$(ProjectDir)src;$(ProjectDir)depends\imgui;$(ProjectDir)depends\imgui\backends;$(ProjectDir)depends\minhook\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+
+  <!-- F5 launches the game with the freshly built proxy beside it, so breakpoints bind on load.
+       Override GameDir on the command line, or set DeployToGame=false to stop the copy. -->
+  <PropertyGroup Label="Debugging">
+    <GameDir Condition="'$(GameDir)'==''">D:\Jogos\steam\steamapps\common\UNDER NIGHT IN-BIRTH II Sys Celes\</GameDir>
+    <SteamAppId Condition="'$(SteamAppId)'==''">2076010</SteamAppId>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommand>$(GameDir)uni2.exe</LocalDebuggerCommand>
+    <LocalDebuggerWorkingDirectory>$(GameDir)</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerDebuggerType>NativeOnly</LocalDebuggerDebuggerType>
+    <LocalDebuggerAttach>false</LocalDebuggerAttach>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_USRDLL;_CRT_SECURE_NO_WARNINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <ModuleDefinitionFile>resource\dinput8.def</ModuleDefinitionFile>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>d3d9.lib;dbghelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(EnableLogging)'=='true'">
+    <ClCompile>
+      <PreprocessorDefinitions>FORCE_LOGGING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClCompile Include="src\Core\dllmain.cpp" />
+    <ClCompile Include="src\Core\Settings.cpp" />
+    <ClCompile Include="src\Core\logger.cpp" />
+    <ClCompile Include="src\Core\crashdump.cpp" />
+    <ClCompile Include="src\Core\utils.cpp" />
+    <ClCompile Include="src\Core\TextEncoding.cpp" />
+    <ClCompile Include="src\Core\KeyboardCapture.cpp" />
+    <ClCompile Include="src\Core\keycodes.cpp" />
+    <ClCompile Include="src\Core\interfaces.cpp" />
+    <ClCompile Include="src\Hooks\HookManager.cpp" />
+    <ClCompile Include="src\Hooks\hooks_input.cpp" />
+    <ClCompile Include="src\Hooks\InputProbe.cpp" />
+    <ClCompile Include="src\D3D9\D3D9Wrapper.cpp" />
+    <ClCompile Include="src\D3D9\DeviceHooks.cpp" />
+    <ClCompile Include="src\D3D9\FrozenFrame.cpp" />
+    <ClCompile Include="src\Overlay\WindowManager.cpp" />
+    <ClCompile Include="src\Overlay\NotificationBar.cpp" />
+    <ClCompile Include="src\Overlay\PlatePreview.cpp" />
+    <ClCompile Include="src\Overlay\ComboNav.cpp" />
+    <ClCompile Include="src\Overlay\CharaPreview.cpp" />
+    <ClCompile Include="src\Overlay\Window\IWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\MainWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\PlayerCardPanel.cpp" />
+    <ClCompile Include="src\Overlay\Window\ColorCustomizePanel.cpp" />
+    <ClCompile Include="src\Overlay\Window\PaletteWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\DebugWindow.cpp" />
+    <ClCompile Include="src\Game\MemoryMap.cpp" />
+    <ClCompile Include="src\Game\CharaTracker.cpp" />
+    <ClCompile Include="src\Game\HitboxData.cpp" />
+    <ClCompile Include="src\Game\Camera.cpp" />
+    <ClCompile Include="src\Game\GameState.cpp" />
+    <ClCompile Include="src\Game\OnlineState.cpp" />
+    <ClCompile Include="src\Game\MemoryScanner.cpp" />
+    <ClCompile Include="src\Network\SteamNetwork.cpp" />
+    <ClCompile Include="src\Network\PaletteShare.cpp" />
+    <ClCompile Include="src\Palette\PaletteBinder.cpp" />
+    <ClCompile Include="src\Palette\PaletteDrawProbe.cpp" />
+    <ClCompile Include="src\Palette\PaletteOwnerProbe.cpp" />
+    <ClCompile Include="src\Palette\PaletteSeat.cpp" />
+    <ClCompile Include="src\Palette\PaletteControl.cpp" />
+    <ClCompile Include="src\Palette\PaletteChoice.cpp" />
+    <ClCompile Include="src\Palette\EffectOwner.cpp" />
+    <ClCompile Include="src\Palette\PlayerSides.cpp" />
+    <ClCompile Include="src\Palette\EffectPaint.cpp" />
+    <ClCompile Include="src\Palette\PalettePaint.cpp" />
+    <ClCompile Include="src\Palette\PaletteIdentity.cpp" />
+    <ClCompile Include="src\Palette\PaletteMemory.cpp" />
+    <ClCompile Include="src\Palette\PaletteTexture.cpp" />
+    <ClCompile Include="src\Palette\PaletteFile.cpp" />
+    <ClCompile Include="src\Palette\PaletteManager.cpp" />
+    <ClCompile Include="src\Palette\PaletteReport.cpp" />
+    <ClCompile Include="src\Palette\PaletteTrace.cpp" />
+    <ClCompile Include="src\Game\CharaTables.cpp" />
+    <ClCompile Include="src\Game\PartColourTable.cpp" />
+    <ClCompile Include="src\Game\EffectTable.cpp" />
+    <ClCompile Include="src\Game\PartName.cpp" />
+    <ClCompile Include="src\Game\PlayerCard.cpp" />
+    <ClCompile Include="src\Game\PlateCatalog.cpp" />
+    <ClCompile Include="src\Game\ColorCustomize.cpp" />
+    <ClCompile Include="src\Game\ColorOverride.cpp" />
+    <ClCompile Include="src\Game\LivePalette.cpp" />
+    <ClCompile Include="src\Game\CgImage.cpp" />
+    <ClCompile Include="src\Game\PatParts.cpp" />
+    <ClCompile Include="src\Game\SaveData.cpp" />
+    <ClCompile Include="src\Game\ColorPartTable.cpp" />
+    <ClCompile Include="src\Game\StockPalettes.cpp" />
+    <ClCompile Include="src\Game\FrameDataTable.cpp" />
+    <ClCompile Include="src\Game\GameTables.cpp" />
+    <ClCompile Include="src\Game\PlayerState.cpp" />
+    <ClCompile Include="src\Game\ReplayState.cpp" />
+    <ClCompile Include="src\Training\FrameStepper.cpp" />
+    <ClCompile Include="src\Training\StopTime.cpp" />
+    <ClCompile Include="src\Training\StageColor.cpp" />
+    <ClCompile Include="src\Training\DummyScript.cpp" />
+    <ClCompile Include="src\Training\StateRecorder.cpp" />
+    <ClCompile Include="src\Training\DummyRecorder.cpp" />
+    <ClCompile Include="src\Training\FrameMeter.cpp" />
+    <ClCompile Include="src\Overlay\FrameMeterHud.cpp" />
+    <ClCompile Include="src\D3D9\DdsTexture.cpp" />
+    <ClCompile Include="src\D3D9\QuadRenderer.cpp" />
+    <ClCompile Include="src\D3D9\GameFont.cpp" />
+    <ClCompile Include="src\Overlay\Window\FrameMeterLegendWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\DummyScriptGuideWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\HitboxLegendWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\PlayerControlWindow.cpp" />
+    <ClCompile Include="src\Training\PlayerControl.cpp" />
+    <ClCompile Include="src\Training\InputLagMeter.cpp" />
+    <ClCompile Include="src\Overlay\Window\PaletteEditorWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\HitboxOverlay.cpp" />
+    <ClCompile Include="src\Overlay\WindowContainer\WindowContainer.cpp" />
+    <ClCompile Include="src\Core\Profiler.cpp" />
+    <ClCompile Include="src\Core\ProcessTuning.cpp" />
+    <ClCompile Include="src\D3D9\D3DX9Hooks.cpp" />
+    <ClCompile Include="src\D3D9\PresentTuning.cpp" />
+    <ClCompile Include="src\D3D9\RenderScale.cpp" />
+    <ClCompile Include="src\Game\PotatoMode.cpp" />
+    <ClCompile Include="src\Game\PumpWait.cpp" />
+    <ClCompile Include="src\Game\DataArchive.cpp" />
+    <ClCompile Include="src\Game\UiAssets.cpp" />
+    <ClCompile Include="src\Overlay\Window\PerformanceWindow.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="src\Core\Settings.h" />
+    <ClInclude Include="src\Core\settings.def" />
+    <ClInclude Include="src\Core\logger.h" />
+    <ClInclude Include="src\Core\crashdump.h" />
+    <ClInclude Include="src\Core\utils.h" />
+    <ClInclude Include="src\Core\TextEncoding.h" />
+    <ClInclude Include="src\Core\KeyboardCapture.h" />
+    <ClInclude Include="src\Core\keycodes.h" />
+    <ClInclude Include="src\Core\interfaces.h" />
+    <ClInclude Include="src\Core\info.h" />
+    <ClInclude Include="src\Hooks\HookManager.h" />
+    <ClInclude Include="src\Hooks\hooks_input.h" />
+    <ClInclude Include="src\Hooks\InputProbe.h" />
+    <ClInclude Include="src\D3D9\D3D9Wrapper.h" />
+    <ClInclude Include="src\D3D9\DeviceHooks.h" />
+    <ClInclude Include="src\D3D9\FrozenFrame.h" />
+    <ClInclude Include="src\Overlay\WindowManager.h" />
+    <ClInclude Include="src\Overlay\NotificationBar.h" />
+    <ClInclude Include="src\Overlay\PlatePreview.h" />
+    <ClInclude Include="src\Overlay\ComboNav.h" />
+    <ClInclude Include="src\Overlay\CharaPreview.h" />
+    <ClInclude Include="src\Overlay\Window\IWindow.h" />
+    <ClInclude Include="src\Overlay\Window\MainWindow.h" />
+    <ClInclude Include="src\Overlay\Window\PlayerCardPanel.h" />
+    <ClInclude Include="src\Overlay\Window\ColorCustomizePanel.h" />
+    <ClInclude Include="src\Overlay\Window\PaletteWindow.h" />
+    <ClInclude Include="src\Game\PlayerCard.h" />
+    <ClInclude Include="src\Game\PlateCatalog.h" />
+    <ClInclude Include="src\Game\ColorCustomize.h" />
+    <ClInclude Include="src\Game\ColorOverride.h" />
+    <ClInclude Include="src\Game\LivePalette.h" />
+    <ClInclude Include="src\Game\CgImage.h" />
+    <ClInclude Include="src\Game\PatParts.h" />
+    <ClInclude Include="src\Game\SaveData.h" />
+    <ClInclude Include="src\Game\ColorPartTable.h" />
+    <ClInclude Include="src\Game\StockPalettes.h" />
+    <ClInclude Include="src\Overlay\Window\DebugWindow.h" />
+    <ClInclude Include="src\Game\MemoryMap.h" />
+    <ClInclude Include="src\Game\CharaTracker.h" />
+    <ClInclude Include="src\Game\HitboxData.h" />
+    <ClInclude Include="src\Game\Camera.h" />
+    <ClInclude Include="src\Game\GameState.h" />
+    <ClInclude Include="src\Game\OnlineState.h" />
+    <ClInclude Include="src\Game\MemoryScanner.h" />
+    <ClInclude Include="src\Network\SteamNetwork.h" />
+    <ClInclude Include="src\Network\PaletteShare.h" />
+    <ClInclude Include="src\Palette\PaletteBinder.h" />
+    <ClInclude Include="src\Palette\PaletteDrawProbe.h" />
+    <ClInclude Include="src\Palette\PaletteOwnerProbe.h" />
+    <ClInclude Include="src\Palette\PaletteSeat.h" />
+    <ClInclude Include="src\Palette\PaletteControl.h" />
+    <ClInclude Include="src\Palette\PaletteChoice.h" />
+    <ClInclude Include="src\Palette\EffectOwner.h" />
+    <ClInclude Include="src\Palette\PlayerSides.h" />
+    <ClInclude Include="src\Palette\EffectPaint.h" />
+    <ClInclude Include="src\Palette\PalettePaint.h" />
+    <ClInclude Include="src\Palette\PaletteIdentity.h" />
+    <ClInclude Include="src\Palette\PaletteMemory.h" />
+    <ClInclude Include="src\Palette\PaletteTexture.h" />
+    <ClInclude Include="src\Palette\PaletteFile.h" />
+    <ClInclude Include="src\Palette\PaletteManager.h" />
+    <ClInclude Include="src\Palette\PaletteReport.h" />
+    <ClInclude Include="src\Palette\PaletteTrace.h" />
+    <ClInclude Include="src\Game\CharaTables.h" />
+    <ClInclude Include="src\Game\PartColourTable.h" />
+    <ClInclude Include="src\Game\EffectTable.h" />
+    <ClInclude Include="src\Game\PartName.h" />
+    <ClInclude Include="src\Game\FrameDataTable.h" />
+    <ClInclude Include="src\Game\GameTables.h" />
+    <ClInclude Include="src\Game\PlayerState.h" />
+    <ClInclude Include="src\Game\ReplayState.h" />
+    <ClInclude Include="src\Training\FrameStepper.h" />
+    <ClInclude Include="src\Training\StopTime.h" />
+    <ClInclude Include="src\Training\StageColor.h" />
+    <ClInclude Include="src\Training\DummyScript.h" />
+    <ClInclude Include="src\Training\StateRecorder.h" />
+    <ClInclude Include="src\Training\DummyRecorder.h" />
+    <ClInclude Include="src\Training\FrameMeter.h" />
+    <ClInclude Include="src\Overlay\FrameMeterHud.h" />
+    <ClInclude Include="src\D3D9\DdsTexture.h" />
+    <ClInclude Include="src\D3D9\QuadRenderer.h" />
+    <ClInclude Include="src\D3D9\GameFont.h" />
+    <ClInclude Include="src\Overlay\Window\FrameMeterLegendWindow.h" />
+    <ClInclude Include="src\Overlay\Window\DummyScriptGuideWindow.h" />
+    <ClInclude Include="src\Overlay\Window\HitboxLegendWindow.h" />
+    <ClInclude Include="src\Overlay\Window\PlayerControlWindow.h" />
+    <ClInclude Include="src\Training\PlayerControl.h" />
+    <ClInclude Include="src\Training\InputFrame.h" />
+    <ClInclude Include="src\Training\InputLagMeter.h" />
+    <ClInclude Include="src\Overlay\Window\PaletteEditorWindow.h" />
+    <ClInclude Include="src\Overlay\Window\HitboxOverlay.h" />
+    <ClInclude Include="src\Core\Profiler.h" />
+    <ClInclude Include="src\Core\default_ini.h" />
+    <ClInclude Include="src\Core\ProcessTuning.h" />
+    <ClInclude Include="src\D3D9\D3DX9Hooks.h" />
+    <ClInclude Include="src\D3D9\PresentTuning.h" />
+    <ClInclude Include="src\D3D9\RenderScale.h" />
+    <ClInclude Include="src\Game\PotatoMode.h" />
+    <ClInclude Include="src\Game\PumpWait.h" />
+    <ClInclude Include="src\Game\DataArchive.h" />
+    <ClInclude Include="src\Game\UiAssets.h" />
+    <ClInclude Include="src\Overlay\Window\PerformanceWindow.h" />
+    <ClInclude Include="src\Game\GameOffsets.h" />
+    <ClInclude Include="src\Overlay\WindowContainer\WindowContainer.h" />
+    <ClInclude Include="src\Overlay\WindowContainer\WindowType.h" />
+  </ItemGroup>
+
+  <ItemGroup Label="Dependencies">
+    <ClCompile Include="depends\imgui\imgui.cpp" />
+    <ClCompile Include="depends\imgui\imgui_draw.cpp" />
+    <ClCompile Include="depends\imgui\imgui_tables.cpp" />
+    <ClCompile Include="depends\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="depends\imgui\imgui_demo.cpp" />
+    <ClCompile Include="depends\imgui\backends\imgui_impl_dx9.cpp" />
+    <ClCompile Include="depends\imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="depends\minhook\src\hook.c" />
+    <ClCompile Include="depends\minhook\src\buffer.c" />
+    <ClCompile Include="depends\minhook\src\trampoline.c" />
+    <ClCompile Include="depends\minhook\src\hde\hde32.c" />
+    <ClCompile Include="depends\minhook\src\hde\hde64.c" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="resource\dinput8.def" />
+    <None Include="resource\UNI2_IM.ini" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+
+  <Target Name="CopyResources" AfterTargets="Build">
+    <Copy SourceFiles="$(ProjectDir)resource\UNI2_IM.ini" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="!Exists('$(OutDir)UNI2_IM.ini')" />
+  </Target>
+
+  <!-- The .pdb has to sit beside the .dll in the game folder or the debugger cannot bind a
+       breakpoint. ContinueOnError because the game locks the DLL while it is running. -->
+  <Target Name="DeployToGame" AfterTargets="Build"
+          Condition="'$(DeployToGame)'!='false' And Exists('$(GameDir)uni2.exe')">
+    <Copy SourceFiles="$(OutDir)$(TargetName).dll;$(OutDir)$(TargetName).pdb"
+          DestinationFolder="$(GameDir)" ContinueOnError="true" />
+    <Copy SourceFiles="$(ProjectDir)resource\UNI2_IM.ini" DestinationFolder="$(GameDir)"
+          Condition="!Exists('$(GameDir)UNI2_IM.ini')" ContinueOnError="true" />
+
+    <!-- Without this the Steam API cannot tell which app it is, so uni2.exe relaunches itself
+         through Steam and exits - taking the debugger with it. A dev-only file: it is deliberately
+         written to the game folder and never to a release. -->
+    <WriteLinesToFile File="$(GameDir)steam_appid.txt" Lines="$(SteamAppId)" Overwrite="true"
+                      Condition="!Exists('$(GameDir)steam_appid.txt')" ContinueOnError="true" />
+  </Target>
+</Project>

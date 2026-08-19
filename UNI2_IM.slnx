@@ -1,0 +1,6 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Win32" />
+  </Configurations>
+  <Project Path="UNI2_IM.vcxproj" />
+</Solution>

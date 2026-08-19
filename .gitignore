@@ -1,0 +1,11 @@
+bin/
+build/
+export/
+.vs/
+*.user
+*.aps
+*.log
+bindings.json
+__pycache__/
+tools/
+docs/

@@ -1,0 +1,246 @@
+SETTING_STRING(dinputDllWrapper,    "Mod",      "DinputDllWrapper",     "")
+
+SETTING_STRING(toggleOverlayKey,    "Keybinds", "ToggleOverlay",        "F1")
+SETTING_STRING(toggleHitboxKey,     "Keybinds", "ToggleHitboxOverlay",  "F2")
+SETTING_STRING(toggleFrameMeterKey, "Keybinds", "ToggleFrameMeter",     "F3")
+SETTING_STRING(freezeFrameKey,      "Keybinds", "FreezeFrame",          "F5")
+SETTING_STRING(stepForwardKey,      "Keybinds", "StepForward",          "F6")
+
+// 0 = Tick stop, 1 = Hitstun Stop. See src/Training/FrameStepper.h for the trade-off between them.
+SETTING_INT(freezeMode,             "Training", "FreezeMode",           0)
+
+// Bit field: 1 watch P1, 2 watch P2, 4 stop on attacks, 8 stop on armoured moves. A file written
+// before the triggers existed carries only the player bits and is read as "stop on attacks".
+SETTING_INT(autoPauseMode,          "Training", "AutoPauseOnAttack",  0)
+
+// Up to four hit counts to stop at, comma separated - "3,20" stops on the third hit and again on
+// the twentieth. Zero or empty entries are ignored.
+SETTING_STRING(autoPauseComboStops, "Training", "AutoPauseComboStops",  "3")
+
+SETTING_STRING(autoPauseBlockStops, "Training", "AutoPauseBlockStops",  "3")
+
+SETTING_INT(resumeDelayFrames,      "Training", "ResumeDelayFrames",    60)
+
+// Holding the next-frame key keeps stepping. How long it has to be held before it starts, and how
+// long between steps after that, both in milliseconds - not in frames, because the game is frozen
+// while this matters and a frame has no length then.
+SETTING_INT(stepRepeatDelayMs,      "Training", "StepRepeatDelayMs",    250)
+SETTING_INT(stepRepeatIntervalMs,   "Training", "StepRepeatIntervalMs", 90)
+
+// RVA of the recorder's frame counter, zeroed when the recording lead-in ends so the countdown
+// frames stop counting against the take. 0 disables it. Left off by default because writing the
+// wrong field of the recorder object breaks the game's own playback - find it with the training
+// globals diff in the Memory debug window before setting it.
+SETTING_INT(recordFrameCounterRva,  "Training", "RecordFrameCounterRva", 0)
+
+
+// PlaceAutomatically keeps the meter centred near the bottom of whatever resolution the game runs
+// at and ignores the position below. Off, the position is the top-left corner in pixels - and -1 on
+// either axis means it has never been placed, so the meter takes the automatic spot once, writes it
+// here, and is draggable from there.
+
+SETTING_INT(frameMeterAuto,         "FrameMeter", "PlaceAutomatically",  0)
+SETTING_INT(frameMeterX,            "FrameMeter", "PositionX",          -1)
+SETTING_INT(frameMeterY,            "FrameMeter", "PositionY",          -1)
+SETTING_FLOAT(frameMeterScale,      "FrameMeter", "Scale",              1.5f)
+
+// The length of every finished band, printed inside the bar the way SF6 does it. A band too short to
+// hold its own number is left blank rather than drawn over its neighbour.
+SETTING_INT(frameMeterCounts,       "FrameMeter", "BandCounts",         1)
+
+// The exchange totalled - blockstun, hitstun and the gap - on its own line above P1's readout and
+// below P2's, so each side's numbers sit together.
+SETTING_INT(frameMeterTotals,       "FrameMeter", "LineTotals",         1)
+
+// The thin row under each bar naming every invincibility in force on that frame. Off makes the meter
+// as short as it used to be; the invincibility is then not drawn at all, since the row is the only
+// place it goes.
+SETTING_INT(frameMeterAttributes,   "FrameMeter", "AttributeRow",       1)
+
+// How solid the meter is drawn, as a percentage, bars and numbers alike.
+SETTING_INT(frameMeterOpacity,      "FrameMeter", "Opacity",            100)
+
+// Whether a click that lands on the meter drags it. Off by default: the meter is drawn onto the back
+// buffer and has none of ImGui's hit testing, so with this on it moves whenever it is clicked through.
+SETTING_INT(frameMeterDrag,         "FrameMeter", "MouseDrag",          1)
+
+// Characters whose companion is drawn before the fighters are, by the number the game gives them -
+// Chaos is 15. Such a character binds its own palette texture first and reverses the order the two
+// sides are named by, so the palette editor has to read them the other way round when one of these is
+// on P1 and the other side is not. Comma separated; add a number here when a new character with a pet
+// ships rather than waiting for a build.
+//
+// The order is the game's own: Hyde 0, Linne 1, Waldstein 2, Carmine 3, Orie 4, Gordeau 5, Merkava 6,
+// Vatista 7, Seth 8, Yuzuriha 9, Hilda 10, Eltnum 11, Nanase 12, Byakuya 13, Akatsuki 14, Chaos 15,
+// Wagner 16, Enkidu 17, Londrekia 18, Tsurugi 19, Uzuki 20, Mika 21, Kaguya 22, Kuon 23, Phonon 24,
+// Ogre 25, Izumi 26.
+SETTING_STRING(paletteCompanions,   "Palette",  "CompanionCharacters",  "15")
+
+// The other player's side, in one decision: on, their palette is read as it arrives and worn, so
+// you see the colours they chose; off, their packets are dropped on landing and their side is left
+// alone, so it looks the way the game gives it.
+//
+// There is deliberately no third state where their side is painted with a choice made here - that
+// looked like seeing them without the mod and was not.
+//
+// Yours is sent either way. It costs nothing on their machine if they are not running the mod, and
+// refusing to read theirs is not a reason to hide yours.
+SETTING_INT(showOnlinePalettes,     "Palette",  "ShowOnlinePalettes",   1)
+
+// Texture owners taken from the renderer's own draw calls instead of the bind-order guess. 0 runs
+// the binder passively - it only logs where it disagrees with the guess - and 1 lets it name the
+// sides whenever it has seen a character draw, falling back to the guess when it has not.
+//
+// **A mirror match needs this on.** Mika against Mika is one texture read from two rows, and the
+// guess names one texture per side, so it cannot describe that at all: one side ends up with no
+// palette and the editor pulls somebody else's row. The draws say which row belongs to which side
+// and one texture can answer for both.
+SETTING_INT(paletteOwnersFromDraws, "Palette",  "OwnersFromDraws",      1)
+
+// Whether the colour comparison is allowed to *name* a side, or only to say what it thinks.
+//
+// **Off, and off for a measured reason.** Naming a texture by the colours it holds has now been
+// tried three times and come out backwards every time: it reversed a working Mika-against-Gordeau
+// match on 2026-08-14, and the two earlier attempts are recorded in the comment this feature
+// replaced. It also cannot survive a character whose companion carries the same palettes - a Chaos
+// mirror produced five textures all matching Chaos, each claim evicting the last, for ever.
+//
+// The comparison still runs and still logs, because what it says is the evidence for settling the
+// direction; it simply may not act. 1 lets it name sides again, for that experiment.
+SETTING_INT(paletteIdentifyByColours, "Palette", "IdentifyByColours",    0)
+
+// The chosen palettes painted outside a match as well - the character select portrait and the
+// lobby avatar wearing the character's remembered choice.
+//
+// **Off, and off by default on purpose.** It worked, but it is not wanted yet: palettes belong to
+// the match for now and the screens are a later version's problem. Everything behind it is still
+// here - the screens' textures are still tracked and still given owners - so turning this on is
+// all it takes to have it back. The key is deliberately not the one an earlier build wrote, so an
+// ini carrying the old switch does not quietly keep it on.
+SETTING_INT(paletteOutOfMatch,      "Palette",  "PaintOutOfMatch",      0)
+
+// Reserved, and it no longer does anything.
+//
+// It used to gate writing a palette's saved effect block into a row of the effect *texture*. That
+// approach is in EFFECTS.md's refuted list - effects do not sample that texture, so it painted
+// nothing - and the block is now applied where the colour is really decided, one entry at a time
+// into the table the draw is answered from. The switch is left so an ini carrying it still loads.
+SETTING_INT(paletteEffectRows,      "Palette",  "PaintEffectRows",      1)
+
+// The first palette system is still compiled in and still works, but nothing in the interface
+// names it any more: the tab it lived in is hidden unless this is turned on. It is kept because
+// the replacement is not built yet and because the native tab exports into its folder. Turning
+// this on brings the tab back exactly as it was.
+SETTING_INT(showlegacypalettes,     "Palette",  "ShowLegacyTab",        0)
+
+// The editor's two view options. They live beside the button that opens it rather than inside
+// it, because they are about how you work rather than about a particular character.
+SETTING_INT(paletteGroupByPart,     "Palette",  "GroupByPart",          1)
+SETTING_INT(paletteFlashEntry,      "Palette",  "FlashEntry",           1)
+
+// Hide the entries that are not really colours: the pure black padding, the pure green the unused
+// slots are filled with, and any entry that repeats one already above it. On by default, because a
+// character's palette is mostly those and none of them is editable in any useful sense.
+SETTING_INT(paletteFilterJunk,      "Palette",  "FilterJunk",           1)
+
+// The stage replaced by a flat colour, for keying a capture. The colour is 0xRRGGBB; the default is
+// the green the game already clears to, shifted to a full green because a dark one keys badly.
+SETTING_INT(stageFlatColour,        "Video",    "FlatStage",            0)
+SETTING_INT(stageFlatColourValue,   "Video",    "FlatStageColour",      0x00ff00)
+
+// Hold 1 ms timer resolution and reassert it when the window regains focus. The game asks once at
+// startup and never again, and Windows takes the request back while the process sits in the
+// background - which is what an alt-tab leaves behind.
+SETTING_INT(timerResolution,        "Video",    "TimerResolution",      1)
+
+// Opt the process out of EcoQoS and of the background clamp on timer resolution.
+SETTING_INT(powerThrottlingOptOut,  "Video",    "PowerThrottlingOptOut", 1)
+
+// Rewrite the display parameters below before the game builds its device. Off leaves whatever the
+// game asked for.
+SETTING_INT(displayTuning,          "Video",    "DisplayTuning",        1)
+
+// Fullscreen refresh rate. 0 leaves the desktop's own mode alone, which is what you want with the
+// game's vsync off - the engine paces itself and the rate only decides how long a frame takes to
+// scan out. With vsync on and a rate that is not a whole multiple of 60, frames land unevenly, and
+// 0 then picks the highest listed multiple of 60 at or below the desktop rate. A number here forces
+// that rate. Exclusive fullscreen only; Direct3D requires 0 windowed.
+SETTING_INT(fullscreenRefreshHz,    "Video",    "FullscreenRefreshHz",  0)
+
+// A second back buffer. The game asks for one. A second only ever helps in exclusive fullscreen
+// with the game's vsync on, where a frame that misses the vblank has somewhere to wait instead of
+// costing a whole refresh - and it costs up to a frame of input latency to get. It is ignored
+// windowed and with vsync off, because there it buys nothing and costs the same.
+//
+// This is a new key. An older UNI2_IM.ini carrying BackBufferCount = 2 no longer does anything:
+// that default was wrong for everyone whose vsync is off, which is most people.
+SETTING_INT(extraBackBuffer,        "Video",    "ExtraBackBuffer",      0)
+
+// The game's two threads hand off once a frame through a SendMessage that only the message thread
+// can answer, and that thread is inside a Sleep(1) - fifteen milliseconds of one after an alt-tab
+// has clamped the timer. This waits on the handshake instead of on the clock. No CPU cost, no
+// engine code patched.
+SETTING_INT(pumpWait,               "Video",    "PumpWait",             0)
+
+// Wake that wait on every message rather than only on the handshake. Drains the pump instead of
+// taking one message per pass, which shortens overlay and window message latency, and costs CPU in
+// proportion to how much the mouse moves.
+SETTING_INT(pumpWaitAllInput,       "Video",    "PumpWaitAllInput",     0)
+
+// ---------------------------------------------------------------------------------------------
+// Graphics
+//
+// For a machine that cannot hold 60. Nothing here is an image improvement - the game already looks
+// better than anything the mod can do to it.
+//
+// **Held back from the beta.** These keys are still read, so writing one into UNI2_IM.ini by hand
+// works, but the shipped ini does not carry them and the overlay tab that drives them is hidden
+// behind kShowPotatoTab in PerformanceWindow.cpp. The reason is that the internal resolution has
+// never been verified in game and a wrong answer there draws the scene into a corner.
+// ---------------------------------------------------------------------------------------------
+
+// The game renders every frame into five 1280x720 targets and only then scales the result to the
+// display. This is that 1280x720, as a percentage: 50 is a quarter of the pixels through all five
+// passes and is the largest single win on a weak machine. The targets are built once, so a change
+// takes effect the next time the game builds its display.
+SETTING_INT(internalResolutionPercent, "Graphics", "InternalResolutionPercent", 100)
+
+// How much video memory the resolution above may ask for, in megabytes. The game is a 32 bit
+// process, so this is an address space limit rather than a card limit.
+SETTING_INT(internalResolutionBudgetMb, "Graphics", "InternalResolutionBudgetMB", 192)
+
+// Ask Direct3D for a back buffer with no multisampling. A Direct3D 9 texture cannot be
+// multisampled, so the scene is never antialiased anyway and the samples are spent on the one quad
+// the finished frame is drawn with.
+SETTING_INT(disableBackBufferAa,    "Graphics", "DisableBackBufferAA",  0)
+
+// Draw the empty stage instead of the built one. Characters and gameplay effects are untouched.
+SETTING_INT(simpleStage,            "Graphics", "SimpleStage",          0)
+
+// Half resolution and no back buffer multisampling. The stage still draws.
+SETTING_INT(potatoMode,             "Graphics", "PotatoMode",           0)
+
+SETTING_INT(blockGameMouse,         "Overlay",  "BlockGameMouse",       0)
+SETTING_FLOAT(uiScale,              "Overlay",  "UiScale",              1.0f)
+
+// The line that slides across the top of the screen when the mod loads, naming the version and the
+// key that opens it. 0 silences it and anything else the mod would announce.
+SETTING_INT(notifications,          "Overlay",  "Notifications",        1)
+
+// File-only: no in-game control writes this. 1 loads the Memory debug window at all, opened with
+// Ctrl+F1. Off by default so the reads it does every frame cost nothing when nobody asked for it.
+SETTING_INT(memoryDebugEnabled,     "Debug",    "MemoryDebug",          0)
+
+// Per-section timing of the Present path and the game tick, plus a frame interval histogram, shown
+// in the Performance window. A disabled section scope costs one branch, so this is the switch to
+// turn on before changing anything for performance and off again after.
+SETTING_INT(profilerEnabled,        "Debug",    "Profiler",             0)
+
+// The frame meter's per-frame diagnostic capture, and the CSV it writes at the end of every
+// exchange.
+//
+// **Off, and off for a measured reason.** The write was happening inline on the game tick thread -
+// one fopen and up to twelve hundred fprintf calls in the middle of a match - which is exactly the
+// shape of the judder 4.C was chasing. With this on the capture still runs, but the CSV is handed to
+// a writer thread instead of stalling the tick.
+SETTING_INT(meterTrace,             "Debug",    "MeterTrace",           0)
