@@ -87,6 +87,40 @@ bool PaletteChoice::Apply(int player, int chara, const char* file)
 	return true;
 }
 
+bool PaletteChoice::Wear(int player, const char* file)
+{
+	if (player < 0 || player >= kPlayers)
+		return false;
+
+	const int chara = PaletteMemory::GetCharaNumber(player);
+
+	if (!Apply(player, chara, file))
+		return false;
+
+	Remember(chara, file);
+
+	g_players[player].chara = chara;
+	g_players[player].tried = true;
+	++g_players[player].generation;
+
+	return true;
+}
+
+void PaletteChoice::Bare(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return;
+
+	PalettePaint::Clear(player);
+	EffectPaint::Clear(player);
+
+	Forget(PaletteMemory::GetCharaNumber(player));
+	NoteBare(player);
+
+	g_players[player].tried = true;
+	++g_players[player].generation;
+}
+
 const char* PaletteChoice::WornFile(int player)
 {
 	return player >= 0 && player < kPlayers ? g_players[player].worn : "";

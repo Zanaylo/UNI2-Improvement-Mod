@@ -252,6 +252,9 @@
     <ClCompile Include="src\Palette\PaletteFile.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
+    <ClCompile Include="src\Palette\PaletteLibrary.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
     <ClCompile Include="src\Palette\PaletteManager.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
@@ -585,6 +588,9 @@
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\PaletteFile.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteLibrary.h">
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\PaletteManager.h">

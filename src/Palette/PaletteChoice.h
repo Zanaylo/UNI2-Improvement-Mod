@@ -14,6 +14,9 @@ namespace PaletteChoice
 
 	bool Apply(int player, int chara, const char* file);
 
+	bool Wear(int player, const char* file);
+	void Bare(int player);
+
 	const char* WornFile(int player);
 	void NoteWorn(int player, const char* file);
 	void NoteBare(int player);

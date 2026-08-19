@@ -34,6 +34,8 @@ private:
 	void DrawCustomSection();
 	void DrawPalettesTab();
 	void DrawPaletteOptions();
+	void DrawPaletteChoosers();
+	void DrawPaletteChooser(int player);
 	void StepPalette(int player, int applied, int count, int steps);
 
 	ColorCustomizePanel m_colorCustomize;

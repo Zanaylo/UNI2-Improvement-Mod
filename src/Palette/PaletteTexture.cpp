@@ -38,7 +38,11 @@ bool g_volatilePool[kMaxSeen] = {};
 bool g_bornInMatch[kMaxSeen] = {};
 int g_frameSerial = 0;
 
-constexpr int kStaleFrames = 600;
+constexpr int kInUseFrames = 8;
+
+constexpr int kMatchSettleFrames = 30;
+bool g_matchOn = false;
+int g_matchSettling = 0;
 
 constexpr int kMaxEvicted = kMaxSeen;
 uintptr_t g_evicted[kMaxEvicted] = {};
@@ -177,6 +181,72 @@ bool IsPaletteShaped(IDirect3DTexture9* texture, bool& outVolatile)
 	return false;
 }
 
+IDirect3DTexture9* Live(int index)
+{
+	if (index < 0 || index >= g_seenCount)
+		return nullptr;
+
+	return g_seen[index];
+}
+
+int FreeSlot()
+{
+	for (int i = 0; i < g_seenCount; ++i)
+	{
+		if (g_seen[i] == nullptr)
+			return i;
+	}
+
+	return g_seenCount < kMaxSeen ? g_seenCount++ : -1;
+}
+
+void MakeRoom()
+{
+	for (int i = g_seenCount - 1; i >= 0; --i)
+	{
+		if (g_seen[i] == nullptr || g_frameSerial - g_lastBound[i] <= kInUseFrames)
+			continue;
+
+		PaletteTexture::RestoreAll(i);
+		RemoveAt(i, "the list was full");
+	}
+}
+
+void WatchMatch(bool inMatch)
+{
+	if (inMatch == g_matchOn)
+	{
+		g_matchSettling = 0;
+		return;
+	}
+
+	if (++g_matchSettling < kMatchSettleFrames)
+		return;
+
+	g_matchSettling = 0;
+	g_matchOn = inMatch;
+
+	if (inMatch)
+	{
+		PaletteTexture::ResetMatchEvidence();
+		return;
+	}
+
+	PaletteTexture::ForgetMatchTextures();
+}
+
+int TakeSlot()
+{
+	const int free = FreeSlot();
+
+	if (free >= 0)
+		return free;
+
+	MakeRoom();
+
+	return FreeSlot();
+}
+
 void Remember(IDirect3DTexture9* texture, bool volatilePool)
 {
 	for (int i = 0; i < g_seenCount; ++i)
@@ -203,30 +273,33 @@ void Remember(IDirect3DTexture9* texture, bool volatilePool)
 			return;
 	}
 
-	if (g_seenCount >= kMaxSeen)
+	const int slot = TakeSlot();
+
+	if (slot < 0)
 		return;
 
-	g_ownerOf[g_seenCount] = {};
-	g_claim[g_seenCount] = PaletteTexture::Claim::Guess;
-	g_ownerByHand[g_seenCount] = false;
-	g_firstSeen[g_seenCount] = 0;
-	g_secondSeen[g_seenCount] = 0;
-	g_binds[g_seenCount] = 1;
-	g_lastBound[g_seenCount] = g_frameSerial;
-	g_firstSeenAt[g_seenCount] = g_frameSerial;
-	g_volatilePool[g_seenCount] = volatilePool;
-	g_bornInMatch[g_seenCount] = GameState::IsInMatch();
-	g_boundInMatch[g_seenCount] = g_bornInMatch[g_seenCount];
-	memset(g_backup[g_seenCount], 0, sizeof(g_backup[g_seenCount]));
+	g_ownerOf[slot] = {};
+	g_claim[slot] = PaletteTexture::Claim::Guess;
+	g_ownerByHand[slot] = false;
+	g_firstSeen[slot] = 0;
+	g_secondSeen[slot] = 0;
+	g_framesBound[slot] = 0;
+	g_binds[slot] = 1;
+	g_lastBound[slot] = g_frameSerial;
+	g_firstSeenAt[slot] = g_frameSerial;
+	g_volatilePool[slot] = volatilePool;
+	g_bornInMatch[slot] = GameState::IsInMatch();
+	g_boundInMatch[slot] = g_bornInMatch[slot];
+	memset(g_backup[slot], 0, sizeof(g_backup[slot]));
 
 	texture->AddRef();
 
 	if (g_frameCount < kMaxSeen)
-		g_frameOrder[g_frameCount++] = g_seenCount;
+		g_frameOrder[g_frameCount++] = slot;
 
-	g_seen[g_seenCount++] = texture;
+	g_seen[slot] = texture;
 
-	LOG("palette texture: 0x%p bound (%d in the list, %s)", texture, g_seenCount,
+	LOG("palette texture: 0x%p bound (slot %d of %d, %s)", texture, slot, g_seenCount,
 		volatilePool ? "lost on a device reset" : "survives a device reset");
 }
 
@@ -429,14 +502,7 @@ void PaletteTexture::OnFrame()
 
 	g_frameCount = 0;
 
-	for (int i = g_seenCount - 1; i >= 0; --i)
-	{
-		if (g_boundInMatch[i] || g_ownerOf[i].kind == OwnerKind::Player)
-			continue;
-
-		if (g_frameSerial - g_lastBound[i] > kStaleFrames)
-			RemoveAt(i, "stale");
-	}
+	WatchMatch(inMatch);
 
 	if (g_heuristicEnabled)
 		RefreshOwners();
@@ -489,6 +555,9 @@ bool PaletteTexture::IsHeuristicEnabled()
 
 int PaletteTexture::FindByPointer(uintptr_t texture)
 {
+	if (texture == 0)
+		return -1;
+
 	for (int i = 0; i < g_seenCount; ++i)
 	{
 		if (reinterpret_cast<uintptr_t>(g_seen[i]) == texture)
@@ -617,6 +686,9 @@ void PaletteTexture::Dump()
 
 	for (int i = 0; i < g_seenCount; ++i)
 	{
+		if (g_seen[i] == nullptr)
+			continue;
+
 		LOG_RAW("texture %d: 0x%p  %d binds  owner %s players 0x%x chara %d%s  age %d%s  first %d/%d  second %d/%d",
 			i, g_seen[i], g_binds[i], OwnerKindName(g_ownerOf[i].kind), g_ownerOf[i].players,
 			g_ownerOf[i].chara, g_ownerByHand[i] ? " (by hand)" : "",
@@ -715,10 +787,7 @@ uintptr_t PaletteTexture::GetSeen(int index)
 
 bool PaletteTexture::HasPristineRow(int index, unsigned row)
 {
-	if (index < 0 || index >= g_seenCount || row >= kRows)
-		return false;
-
-	return g_backup[index][row].taken;
+	return HasBackup(index, row);
 }
 
 int PaletteTexture::GetBindCount(int index)
@@ -766,42 +835,20 @@ void RemoveAt(int index, const char* why)
 	if (g_seen[index] != nullptr)
 		g_seen[index]->Release();
 
-	const int last = g_seenCount - 1;
-
-	for (int i = index; i < last; ++i)
-	{
-		g_seen[i] = g_seen[i + 1];
-		g_ownerOf[i] = g_ownerOf[i + 1];
-		g_claim[i] = g_claim[i + 1];
-		g_ownerByHand[i] = g_ownerByHand[i + 1];
-		g_binds[i] = g_binds[i + 1];
-		g_firstSeen[i] = g_firstSeen[i + 1];
-		g_secondSeen[i] = g_secondSeen[i + 1];
-		g_framesBound[i] = g_framesBound[i + 1];
-		g_lastBound[i] = g_lastBound[i + 1];
-		g_firstSeenAt[i] = g_firstSeenAt[i + 1];
-		g_volatilePool[i] = g_volatilePool[i + 1];
-		g_bornInMatch[i] = g_bornInMatch[i + 1];
-		g_boundInMatch[i] = g_boundInMatch[i + 1];
-		memcpy(g_backup[i], g_backup[i + 1], sizeof(g_backup[i]));
-	}
-
-	g_seen[last] = nullptr;
-	g_ownerOf[last] = {};
-	g_claim[last] = PaletteTexture::Claim::Guess;
-	g_ownerByHand[last] = false;
-	g_binds[last] = 0;
-	g_firstSeen[last] = 0;
-	g_secondSeen[last] = 0;
-	g_framesBound[last] = 0;
-	g_lastBound[last] = 0;
-	g_firstSeenAt[last] = 0;
-	g_volatilePool[last] = false;
-	g_bornInMatch[last] = false;
-	g_boundInMatch[last] = false;
-	memset(g_backup[last], 0, sizeof(g_backup[last]));
-
-	--g_seenCount;
+	g_seen[index] = nullptr;
+	g_ownerOf[index] = {};
+	g_claim[index] = PaletteTexture::Claim::Guess;
+	g_ownerByHand[index] = false;
+	g_binds[index] = 0;
+	g_firstSeen[index] = 0;
+	g_secondSeen[index] = 0;
+	g_framesBound[index] = 0;
+	g_lastBound[index] = 0;
+	g_firstSeenAt[index] = 0;
+	g_volatilePool[index] = false;
+	g_bornInMatch[index] = false;
+	g_boundInMatch[index] = false;
+	memset(g_backup[index], 0, sizeof(g_backup[index]));
 
 	int kept = 0;
 	for (int k = 0; k < g_frameCount; ++k)
@@ -809,9 +856,12 @@ void RemoveAt(int index, const char* why)
 		if (g_frameOrder[k] == index)
 			continue;
 
-		g_frameOrder[kept++] = g_frameOrder[k] > index ? g_frameOrder[k] - 1 : g_frameOrder[k];
+		g_frameOrder[kept++] = g_frameOrder[k];
 	}
 	g_frameCount = kept;
+
+	while (g_seenCount > 0 && g_seen[g_seenCount - 1] == nullptr)
+		--g_seenCount;
 
 	++g_generation;
 }
@@ -870,9 +920,6 @@ void PaletteTexture::AssignOwner(int index, TextureOwner owner, Claim claim)
 			}
 
 			EvictAt(i);
-
-			if (i < index)
-				--index;
 		}
 	}
 	else if (IsCharacterOwner(owner))
@@ -883,9 +930,6 @@ void PaletteTexture::AssignOwner(int index, TextureOwner owner, Claim claim)
 				continue;
 
 			EvictAt(i);
-
-			if (i < index)
-				--index;
 		}
 	}
 
@@ -910,11 +954,22 @@ int PaletteTexture::FindOwned(TextureOwner owner)
 {
 	for (int i = 0; i < g_seenCount; ++i)
 	{
+		if (g_seen[i] == nullptr)
+			continue;
+
 		if (SameOwner(g_ownerOf[i], owner))
 			return i;
 	}
 
 	return -1;
+}
+
+void PaletteTexture::NoteInUse(int index)
+{
+	if (Live(index) == nullptr)
+		return;
+
+	g_lastBound[index] = g_frameSerial;
 }
 
 int PaletteTexture::GetLastBoundAge(int index)
@@ -1015,21 +1070,25 @@ bool PaletteTexture::GetShape(int index, unsigned& width, unsigned& height, unsi
 
 bool PaletteTexture::ReadRow(int index, unsigned row, uint8_t* out)
 {
-	if (index < 0 || index >= g_seenCount || row >= kRows || out == nullptr)
+	IDirect3DTexture9* const texture = Live(index);
+
+	if (texture == nullptr || row >= kRows || out == nullptr)
 		return false;
 
 	D3DLOCKED_RECT locked = {};
-	if (FAILED(g_seen[index]->LockRect(0, &locked, nullptr, D3DLOCK_READONLY)))
+	if (FAILED(texture->LockRect(0, &locked, nullptr, D3DLOCK_READONLY)))
 		return false;
 
 	memcpy(out, static_cast<const uint8_t*>(locked.pBits) + row * locked.Pitch, kRowBytes);
-	g_seen[index]->UnlockRect(0);
+	texture->UnlockRect(0);
 	return true;
 }
 
 bool PaletteTexture::WriteRow(int index, unsigned row, const uint8_t* colors)
 {
-	if (index < 0 || index >= g_seenCount || row >= kRows || colors == nullptr)
+	IDirect3DTexture9* const texture = Live(index);
+
+	if (texture == nullptr || row >= kRows || colors == nullptr)
 		return false;
 
 	if (!g_backup[index][row].taken)
@@ -1039,11 +1098,11 @@ bool PaletteTexture::WriteRow(int index, unsigned row, const uint8_t* colors)
 	}
 
 	D3DLOCKED_RECT locked = {};
-	if (FAILED(g_seen[index]->LockRect(0, &locked, nullptr, 0)))
+	if (FAILED(texture->LockRect(0, &locked, nullptr, 0)))
 		return false;
 
 	memcpy(static_cast<uint8_t*>(locked.pBits) + row * locked.Pitch, colors, kRowBytes);
-	g_seen[index]->UnlockRect(0);
+	texture->UnlockRect(0);
 	return true;
 }
 
@@ -1076,7 +1135,7 @@ bool PaletteTexture::ReadRowAsRgba(int index, unsigned row, uint8_t* out)
 
 bool PaletteTexture::ReadPristineRowAsRgba(int index, unsigned row, uint8_t* out)
 {
-	if (index < 0 || index >= g_seenCount || row >= kRows || out == nullptr)
+	if (Live(index) == nullptr || row >= kRows || out == nullptr)
 		return false;
 
 	if (!g_backup[index][row].taken)
@@ -1115,7 +1174,7 @@ bool PaletteTexture::WriteRowKeepingAlpha(int index, unsigned row, const uint8_t
 
 bool PaletteTexture::HasBackup(int index, unsigned row)
 {
-	if (index < 0 || index >= g_seenCount || row >= kRows)
+	if (Live(index) == nullptr || row >= kRows)
 		return false;
 
 	return g_backup[index][row].taken;
@@ -1126,13 +1185,15 @@ bool PaletteTexture::Restore(int index, unsigned row)
 	if (!HasBackup(index, row))
 		return false;
 
+	IDirect3DTexture9* const texture = g_seen[index];
+
 	D3DLOCKED_RECT locked = {};
-	if (FAILED(g_seen[index]->LockRect(0, &locked, nullptr, 0)))
+	if (FAILED(texture->LockRect(0, &locked, nullptr, 0)))
 		return false;
 
 	memcpy(static_cast<uint8_t*>(locked.pBits) + row * locked.Pitch,
 		g_backup[index][row].colors, kRowBytes);
-	g_seen[index]->UnlockRect(0);
+	texture->UnlockRect(0);
 	return true;
 }
 

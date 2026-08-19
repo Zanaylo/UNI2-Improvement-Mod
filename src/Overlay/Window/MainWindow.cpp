@@ -15,7 +15,9 @@
 #include "Overlay/NotificationBar.h"
 #include "Overlay/Window/HitboxOverlay.h"
 #include "Overlay/WindowManager.h"
+#include "Palette/PaletteChoice.h"
 #include "Palette/PaletteControl.h"
+#include "Palette/PaletteLibrary.h"
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteReport.h"
 #include "Palette/PaletteMemory.h"
@@ -29,6 +31,8 @@
 #include <Windows.h>
 
 namespace {
+
+constexpr const char* kDefaultPalette = "Default";
 
 int g_bindCapture = -1;
 
@@ -89,6 +93,7 @@ void MainWindow::DrawCustomSection()
 		if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close editor" : "Open editor"))
 			window->Toggle();
 
+		DrawPaletteChoosers();
 		DrawPaletteOptions();
 
 		ImGui::EndTabItem();
@@ -116,6 +121,72 @@ void MainWindow::DrawCustomSection()
 	}
 
 	ImGui::EndTabBar();
+}
+
+void MainWindow::DrawPaletteChoosers()
+{
+	ImGui::SeparatorText("Character Palette");
+
+	for (int player = 0; player < PaletteControl::kPlayers; ++player)
+		DrawPaletteChooser(player);
+}
+
+void MainWindow::DrawPaletteChooser(int player)
+{
+	const int chara = PaletteMemory::GetCharaNumber(player);
+
+	if (chara < 0)
+	{
+		ImGui::TextDisabled("P%d: nobody there yet", player + 1);
+		return;
+	}
+
+	ImGui::PushID(player);
+
+	ImGui::Text("P%d", player + 1);
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", PaletteManager::GetCharaName(chara));
+
+	const char* const worn = PaletteChoice::WornFile(player);
+	const bool bare = worn[0] == '\0';
+
+	ImGui::BeginDisabled(!PaletteControl::CanEdit(player));
+
+	ImGui::SetNextItemWidth(170.0f);
+
+	if (ImGui::BeginCombo("##worn", bare ? kDefaultPalette : worn))
+	{
+		if (ImGui::Selectable(kDefaultPalette, bare))
+			PaletteChoice::Bare(player);
+
+		ComboNav::KeepSelectedInView(bare);
+
+		for (int i = 0; i < PaletteLibrary::GetCount(chara); ++i)
+		{
+			const char* const file = PaletteLibrary::GetName(chara, i);
+			const bool selected = !bare && strcmp(file, worn) == 0;
+
+			ImGui::PushID(i);
+
+			if (ImGui::Selectable(file, selected))
+				PaletteChoice::Wear(player, file);
+
+			ComboNav::KeepSelectedInView(selected);
+
+			ImGui::PopID();
+		}
+
+		ImGui::EndCombo();
+	}
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Rescan"))
+		PaletteLibrary::Rescan(chara);
+
+	ImGui::EndDisabled();
+
+	ImGui::PopID();
 }
 
 // The editor's own switches live here rather than inside it: they are about how you work, not

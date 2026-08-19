@@ -74,6 +74,27 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 	return result;
 }
 
+constexpr DWORD kRtssSettleDelayMs = 500;
+
+bool IsRtssRunning()
+{
+	HANDLE mapping = OpenFileMappingA(FILE_MAP_READ, FALSE, "RTSSSharedMemoryV2");
+	if (mapping == nullptr)
+		return false;
+
+	CloseHandle(mapping);
+	return true;
+}
+
+void WaitForRtssToSettle()
+{
+	if (!IsRtssRunning())
+		return;
+
+	LOG("RTSS detected, waiting for its hooks to settle before installing ours");
+	Sleep(kRtssSettleDelayMs);
+}
+
 IDirect3D9* WINAPI HookedDirect3DCreate9(UINT sdkVersion)
 {
 	IDirect3D9* d3d9 = oDirect3DCreate9(sdkVersion);
@@ -110,6 +131,8 @@ bool D3D9Wrapper::InstallHooks()
 		LOG("d3d9.dll was not loaded in time");
 		return false;
 	}
+
+	WaitForRtssToSettle();
 
 	if (!HookManager::CreateApiHook("d3d9.dll", "Direct3DCreate9", &HookedDirect3DCreate9,
 		reinterpret_cast<void**>(&oDirect3DCreate9)))

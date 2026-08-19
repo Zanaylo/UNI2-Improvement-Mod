@@ -1,5 +1,6 @@
 #include "Core/logger.h"
 
+#include "Core/Settings.h"
 #include "Core/utils.h"
 
 #include <Windows.h>
@@ -17,6 +18,11 @@ constexpr int kMaxSessionLogs = 20;
 FILE* g_logFile = nullptr;
 std::mutex g_logMutex;
 std::string g_sessionStamp;
+
+bool LoggingEnabledInIni()
+{
+	return GetPrivateProfileIntA("Debug", "Logging", 0, Settings::GetIniPath().c_str()) != 0;
+}
 
 std::string MakeSessionStamp()
 {
@@ -66,10 +72,14 @@ const std::string& GetLogSessionStamp()
 
 void OpenLogger()
 {
-#if UNI2_IM_LOGGING
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	if (g_logFile != nullptr)
 		return;
+
+#if !UNI2_IM_FORCE_LOGGING
+	if (!LoggingEnabledInIni())
+		return;
+#endif
 
 	g_sessionStamp = MakeSessionStamp();
 
@@ -87,24 +97,20 @@ void OpenLogger()
 		g_sessionStamp.c_str(),
 		time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond);
 	fflush(g_logFile);
-#endif
 }
 
 void CloseLogger()
 {
-#if UNI2_IM_LOGGING
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	if (g_logFile == nullptr)
 		return;
 
 	fclose(g_logFile);
 	g_logFile = nullptr;
-#endif
 }
 
 void WriteLog(const char* format, ...)
 {
-#if UNI2_IM_LOGGING
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	if (g_logFile == nullptr)
 		return;
@@ -120,14 +126,10 @@ void WriteLog(const char* format, ...)
 
 	fputc('\n', g_logFile);
 	fflush(g_logFile);
-#else
-	(void)format;
-#endif
 }
 
 void WriteLogRaw(const char* format, ...)
 {
-#if UNI2_IM_LOGGING
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	if (g_logFile == nullptr)
 		return;
@@ -141,21 +143,14 @@ void WriteLogRaw(const char* format, ...)
 
 	fputc('\n', g_logFile);
 	fflush(g_logFile);
-#else
-	(void)format;
-#endif
 }
 
 void LogSection(const char* name)
 {
-#if UNI2_IM_LOGGING
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	if (g_logFile == nullptr)
 		return;
 
 	fprintf(g_logFile, "\n----- %s -----\n", name);
 	fflush(g_logFile);
-#else
-	(void)name;
-#endif
 }

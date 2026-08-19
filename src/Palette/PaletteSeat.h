@@ -6,6 +6,7 @@ namespace PaletteSeat
 {
 	constexpr int kSides = 2;
 	constexpr int kMaxSeats = 8;
+	constexpr int kCandidates = 4;
 
 	struct Seat
 	{
@@ -31,6 +32,8 @@ namespace PaletteSeat
 
 	uintptr_t GetOwner(int side);
 	bool GetByOwner(uintptr_t owner, uintptr_t& outTexture, uint32_t& outRows);
+
+	int GetCandidates(uintptr_t owner, uintptr_t* out, int max);
 
 	int GetSideByOwner(uintptr_t owner);
 

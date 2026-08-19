@@ -70,6 +70,8 @@ namespace PaletteTexture
 
 	void Evict(int index);
 
+	void NoteInUse(int index);
+
 	int GetLastBoundAge(int index);
 	bool WasBoundInMatch(int index);
 	int GetFirstSeenFrame(int index);

@@ -18,9 +18,10 @@ struct Candidate
 {
 	uintptr_t texture;
 	int draws;
+	int lastSeenFrame;
 };
 
-Candidate g_candidates[PaletteSeat::kMaxSeats][4] = {};
+Candidate g_candidates[PaletteSeat::kMaxSeats][PaletteSeat::kCandidates] = {};
 
 bool IsLive(const PaletteSeat::Seat& seat)
 {
@@ -69,61 +70,86 @@ int FindSeat(uintptr_t owner)
 	return -1;
 }
 
+bool IsLiveCandidate(const Candidate& candidate)
+{
+	return candidate.texture != 0 && g_frame - candidate.lastSeenFrame <= kLiveFrames;
+}
+
+void Take(Candidate& candidate, uintptr_t texture)
+{
+	candidate.texture = texture;
+	candidate.draws = 1;
+	candidate.lastSeenFrame = g_frame;
+}
+
 void Remember(int seat, uintptr_t texture)
 {
 	Candidate* const row = g_candidates[seat];
 
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < PaletteSeat::kCandidates; ++i)
 	{
-		if (row[i].texture == texture)
-		{
-			++row[i].draws;
-			return;
-		}
+		if (row[i].texture != texture)
+			continue;
+
+		++row[i].draws;
+		row[i].lastSeenFrame = g_frame;
+		return;
 	}
 
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < PaletteSeat::kCandidates; ++i)
 	{
-		if (row[i].texture == 0)
-		{
-			row[i].texture = texture;
-			row[i].draws = 1;
-			return;
-		}
+		if (IsLiveCandidate(row[i]))
+			continue;
+
+		Take(row[i], texture);
+		return;
 	}
 
 	int weakest = 0;
 
-	for (int i = 1; i < 4; ++i)
+	for (int i = 1; i < PaletteSeat::kCandidates; ++i)
 	{
 		if (row[i].draws < row[weakest].draws)
 			weakest = i;
 	}
 
 	if (--row[weakest].draws <= 0)
-	{
-		row[weakest].texture = texture;
-		row[weakest].draws = 1;
-	}
+		Take(row[weakest], texture);
 }
 
-uintptr_t Busiest(int seat)
+bool Beats(const Candidate& candidate, const Candidate& other)
+{
+	const bool live = IsLiveCandidate(candidate);
+
+	if (live != IsLiveCandidate(other))
+		return live;
+
+	return candidate.draws > other.draws;
+}
+
+int BestCandidate(int seat, const bool* taken)
 {
 	const Candidate* const row = g_candidates[seat];
 
-	uintptr_t best = 0;
-	int most = 0;
+	int best = -1;
 
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < PaletteSeat::kCandidates; ++i)
 	{
-		if (row[i].texture != 0 && row[i].draws > most)
-		{
-			most = row[i].draws;
-			best = row[i].texture;
-		}
+		if (row[i].texture == 0 || (taken != nullptr && taken[i]))
+			continue;
+
+		if (best < 0 || Beats(row[i], row[best]))
+			best = i;
 	}
 
 	return best;
+}
+
+uintptr_t ChosenCandidate(int seat)
+{
+	const int best = BestCandidate(seat, nullptr);
+
+	return best >= 0 ? g_candidates[seat][best].texture : 0;
 }
 
 void Drop(int index)
@@ -173,7 +199,7 @@ void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int side)
 	++entry.draws;
 
 	Remember(seat, texture);
-	entry.texture = Busiest(seat);
+	entry.texture = ChosenCandidate(seat);
 }
 
 void PaletteSeat::OnFrame()
@@ -242,6 +268,33 @@ bool PaletteSeat::GetByOwner(uintptr_t owner, uintptr_t& outTexture, uint32_t& o
 	}
 
 	return false;
+}
+
+int PaletteSeat::GetCandidates(uintptr_t owner, uintptr_t* out, int max)
+{
+	if (owner == 0 || out == nullptr || max <= 0)
+		return 0;
+
+	const int seat = FindSeat(owner);
+
+	if (seat < 0 || !IsLive(g_seats[seat]))
+		return 0;
+
+	bool taken[kCandidates] = {};
+	int count = 0;
+
+	while (count < max)
+	{
+		const int best = BestCandidate(seat, taken);
+
+		if (best < 0)
+			break;
+
+		taken[best] = true;
+		out[count++] = g_candidates[seat][best].texture;
+	}
+
+	return count;
 }
 
 int PaletteSeat::GetSideByOwner(uintptr_t owner)

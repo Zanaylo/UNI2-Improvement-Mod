@@ -16,6 +16,7 @@
 #include "Palette/PaletteChoice.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteFile.h"
+#include "Palette/PaletteLibrary.h"
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteMemory.h"
 #include "Palette/PalettePaint.h"
@@ -43,11 +44,6 @@ constexpr const char* kPartNames[LivePalette::kParts] = {
 int Luminance(const uint8_t* rgb)
 {
 	return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-}
-
-std::string FolderFor(int chara)
-{
-	return GetModPalettePath(PaletteManager::GetCharaName(chara));
 }
 
 bool IsUsableName(const char* name)
@@ -940,28 +936,12 @@ void PaletteWindow::RefreshFiles(int player)
 	if (m_chara[player] < 0)
 		return;
 
-	const std::string folder = FolderFor(m_chara[player]);
-	CreateDirectoryA(folder.c_str(), nullptr);
+	PaletteLibrary::Rescan(m_chara[player]);
 
-	WIN32_FIND_DATAA found = {};
-	HANDLE search = FindFirstFileA((folder + "\\*" + PaletteFile::kExtension).c_str(), &found);
+	const int count = PaletteLibrary::GetCount(m_chara[player]);
 
-	if (search == INVALID_HANDLE_VALUE)
-		return;
-
-	do
-	{
-		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-			continue;
-
-		if (m_fileCount[player] >= 64)
-			break;
-
-		m_files[player][m_fileCount[player]++] = found.cFileName;
-	}
-	while (FindNextFileA(search, &found));
-
-	FindClose(search);
+	for (int i = 0; i < count && m_fileCount[player] < 64; ++i)
+		m_files[player][m_fileCount[player]++] = PaletteLibrary::GetName(m_chara[player], i);
 
 	if (!keep.empty())
 		SelectFile(player, keep.c_str());
@@ -1011,7 +991,7 @@ bool PaletteWindow::Save(int player)
 	strncpy_s(info.creator, m_creator[player], _TRUNCATE);
 	strncpy_s(info.description, m_description[player], _TRUNCATE);
 
-	const std::string folder = FolderFor(m_chara[player]);
+	const std::string folder = PaletteLibrary::FolderFor(m_chara[player]);
 	CreateDirectoryA(folder.c_str(), nullptr);
 
 	uint8_t effects[EffectPaint::kBlockBytes] = {};
@@ -1039,7 +1019,7 @@ bool PaletteWindow::Load(int player, const char* name)
 	PaletteFile::Info info = {};
 	bool hasEffects = false;
 
-	if (!PaletteFile::Load(FolderFor(m_chara[player]) + "\\" + name, colours, info, effects,
+	if (!PaletteFile::Load(PaletteLibrary::FolderFor(m_chara[player]) + "\\" + name, colours, info, effects,
 		&hasEffects))
 	{
 		return false;

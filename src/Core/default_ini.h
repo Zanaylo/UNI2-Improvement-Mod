@@ -70,4 +70,5 @@ const char* const kDefaultIniLines[] = {
 	"MemoryDebug = 0",
 	"Profiler = 0",
 	"MeterTrace = 0",
+	"Logging = 0",
 };

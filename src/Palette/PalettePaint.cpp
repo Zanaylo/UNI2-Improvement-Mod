@@ -1,6 +1,7 @@
 #include "Palette/PalettePaint.h"
 
 #include "Core/interfaces.h"
+#include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/GameState.h"
 #include "Palette/EffectPaint.h"
@@ -25,6 +26,7 @@ struct Player
 	bool hasRemote;
 
 	uintptr_t owner;
+	uintptr_t texture;
 
 	int index;
 	uint32_t painted;
@@ -43,41 +45,69 @@ int g_paintedFrame = -1;
 
 int g_innerOffset = -1;
 
+int ResolveAt(uintptr_t named, int offset)
+{
+	uintptr_t inner = 0;
+
+	if (!TryReadMemory(&inner, reinterpret_cast<const void*>(named + offset), sizeof(inner)))
+		return -1;
+
+	return PaletteTexture::FindByPointer(inner);
+}
+
+int LearnInnerOffset(uintptr_t named)
+{
+	int learned = -1;
+	int index = -1;
+
+	for (int offset = 4; offset <= 0x200; offset += 4)
+	{
+		const int at = ResolveAt(named, offset);
+
+		if (at < 0)
+			continue;
+
+		if (learned >= 0)
+			return -1;
+
+		learned = offset;
+		index = at;
+	}
+
+	if (learned < 0)
+		return -1;
+
+	g_innerOffset = learned;
+	return index;
+}
+
 int ResolveNamed(uintptr_t named)
 {
 	if (named == 0)
 		return -1;
 
 	const int direct = PaletteTexture::FindByPointer(named);
+
 	if (direct >= 0)
-	{
-		g_innerOffset = 0;
 		return direct;
-	}
 
-	uintptr_t inner = 0;
+	if (g_innerOffset > 0)
+		return ResolveAt(named, g_innerOffset);
 
-	if (g_innerOffset > 0
-		&& TryReadMemory(&inner, reinterpret_cast<const void*>(named + g_innerOffset),
-			sizeof(inner)))
+	return LearnInnerOffset(named);
+}
+
+int ResolveOwner(uintptr_t owner)
+{
+	uintptr_t candidates[PaletteSeat::kCandidates] = {};
+	const int count = PaletteSeat::GetCandidates(owner, candidates, PaletteSeat::kCandidates);
+
+	for (int i = 0; i < count; ++i)
 	{
-		const int known = PaletteTexture::FindByPointer(inner);
-		if (known >= 0)
-			return known;
-	}
+		const int index = ResolveNamed(candidates[i]);
 
-	for (int offset = 4; offset <= 0x200; offset += 4)
-	{
-		if (!TryReadMemory(&inner, reinterpret_cast<const void*>(named + offset), sizeof(inner))
-			|| inner == 0)
-			continue;
-
-		const int found = PaletteTexture::FindByPointer(inner);
-		if (found < 0)
-			continue;
-
-		g_innerOffset = offset;
-		return found;
+		if (index >= 0)
+			return index;
 	}
 
 	return -1;
@@ -94,6 +124,7 @@ void Release(Player& entry)
 	entry.painted = 0;
 	entry.haveAlpha = 0;
 	entry.index = -1;
+	entry.texture = 0;
 	entry.painting = false;
 }
 
@@ -304,18 +335,25 @@ void PalettePaint::OnFrame()
 			}
 		}
 
-		int index = -1;
+		const int index = ResolveOwner(entry.owner);
 
-		if (entry.owner != 0 && PaletteSeat::GetByOwner(entry.owner, named, rows))
-			index = ResolveNamed(named);
+		PaletteTexture::NoteInUse(index);
 
-		if (entry.index != index)
+		const uintptr_t resolved = PaletteTexture::GetSeen(index);
+
+		if (entry.index != index || entry.texture != resolved)
+		{
+			LOG("palette paint: p%d owner 0x%08x names texture %d, was %d", player,
+				static_cast<unsigned>(entry.owner), index, entry.index);
+
 			Release(entry);
+		}
 
 		if (!entry.staged && !entry.previewing && !entry.hasRemote && entry.painted != 0)
 			Release(entry);
 
 		entry.index = index;
+		entry.texture = resolved;
 		entry.painting = index >= 0 && entry.painted != 0;
 	}
 }
