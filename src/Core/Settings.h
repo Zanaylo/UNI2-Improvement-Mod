@@ -22,9 +22,15 @@ struct ModValues
 	int toggleFrameMeterKey;
 	int freezeFrameKey;
 	int stepForwardKey;
+	int nextPaletteKey;
+	int prevPaletteKey;
+	int functionKey;
+
+	bool checkForUpdates;
 
 	int freezeMode;
 	bool blockGameMouse;
+	bool drawWhilePaused;
 
 	int autoPauseMode;
 	int autoPauseComboStops[4];

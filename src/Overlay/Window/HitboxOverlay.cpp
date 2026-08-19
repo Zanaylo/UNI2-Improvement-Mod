@@ -1,5 +1,6 @@
 #include "Overlay/Window/HitboxOverlay.h"
 
+#include "Core/interfaces.h"
 #include "Game/Camera.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
@@ -255,7 +256,7 @@ void HitboxOverlay::Draw()
 	if (!GameState::IsInMatch() || OnlineState::IsOnline() || !Camera::IsAvailable())
 		return;
 
-	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused())
+	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused() && !g_modVals.drawWhilePaused)
 		return;
 
 	void** entities = nullptr;

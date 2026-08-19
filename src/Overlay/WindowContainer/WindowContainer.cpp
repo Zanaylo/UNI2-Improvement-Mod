@@ -10,6 +10,7 @@
 #include "Overlay/Window/PaletteWindow.h"
 #include "Overlay/Window/PerformanceWindow.h"
 #include "Overlay/Window/PlayerControlWindow.h"
+#include "Overlay/Window/UpdateNotifierWindow.h"
 #include "Overlay/Window/HitboxOverlay.h"
 #include "Overlay/Window/MainWindow.h"
 
@@ -43,6 +44,9 @@ WindowContainer::WindowContainer()
 	m_windows[WindowType_Palette] = std::make_unique<PaletteWindow>("Palette", true);
 
 	m_windows[WindowType_Performance] = std::make_unique<PerformanceWindow>("Performance", true);
+
+	m_windows[WindowType_UpdateNotifier] = std::make_unique<UpdateNotifierWindow>(
+		"Update available", true);
 
 	if (g_modVals.memoryDebugEnabled)
 		m_windows[WindowType_Debug] = std::make_unique<DebugWindow>("Memory debug", true);

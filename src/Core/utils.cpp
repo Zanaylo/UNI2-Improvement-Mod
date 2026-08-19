@@ -339,6 +339,14 @@ bool IsHotkeyPressed(int virtualKey)
 	return isDown && !wasDown;
 }
 
+bool IsHotkeyHeld(int virtualKey)
+{
+	if (virtualKey <= 0 || virtualKey > 255 || KeyboardCapture::OwnsKeyboard())
+		return false;
+
+	return (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+}
+
 bool IsHotkeyRepeating(int virtualKey, unsigned delayMs, unsigned intervalMs)
 {
 	if (virtualKey <= 0 || virtualKey > 255)

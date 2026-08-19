@@ -173,6 +173,7 @@ are not changing, and the whole file can be deleted to start over.
 | Key | Default | What it does |
 |---|---|---|
 | `DinputDllWrapper` | empty | Full path to another `dinput8.dll` to chain-load. Empty uses the system one. |
+| `CheckForUpdates` | `1` | Asks GitHub once, on a thread of its own, whether a newer release exists. Nothing is downloaded or installed. |
 
 ### `[Keybinds]`
 
@@ -183,6 +184,26 @@ are not changing, and the whole file can be deleted to start over.
 | `ToggleFrameMeter` | `F3` | Frame meter. |
 | `FreezeFrame` | `F5` | Pause and resume. |
 | `StepForward` | `F6` | One frame forward; hold to repeat. |
+| `NextPalette` | `F8` | Next palette on the character you are playing; wraps back to the game's own colours. |
+| `PreviousPalette` | `F7` | The same, backwards. |
+| `FunctionKey` | empty | Held with another key, the way a fighting game does shortcuts. A bind asks for it by carrying an `Fn+` prefix - `Fn+F8` - and a bind without the prefix is ignored while it is held, so one key can serve both. |
+
+### `[PadKeybinds]`
+
+Pad binds are always the function button **plus** one other, and they read XInput. Names are
+XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back`, `Guide`,
+`DPad Up`, `DPad Down`, `DPad Left`, `DPad Right`. An empty value is unbound.
+
+| Key | Default | What it does |
+|---|---|---|
+| `FunctionButton` | `Back` | The button every pad bind is held with. |
+| `ToggleOverlay` | empty | Opens and closes the main window. |
+| `ToggleHitboxOverlay` | empty | Hitbox viewer. |
+| `ToggleFrameMeter` | empty | Frame meter. |
+| `FreezeFrame` | empty | Pause and resume. |
+| `StepForward` | empty | One frame forward; hold to repeat. |
+| `NextPalette` | empty | Next palette on the character you are playing. |
+| `PreviousPalette` | empty | The same, backwards. |
 
 ### `[Training]`
 
@@ -247,6 +268,7 @@ are not changing, and the whole file can be deleted to start over.
 | `UiScale` | `1.0` | Overlay scale. 1.0 is native. |
 | `Notifications` | `1` | The line that slides across the top when the mod loads. 0 silences it. |
 | `BlockGameMouse` | `0` | Stop the game seeing the mouse at all, so clicking the overlay cannot disturb it. |
+| `DrawWhileGamePaused` | `0` | Keeps the hitbox viewer and the frame meter up while the game's own pause menu is open. Off, both hide with the battle tick. |
 
 ### `[Debug]`
 

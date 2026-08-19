@@ -592,7 +592,7 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 	if (!GameState::AllowsTrainingTools())
 		return;
 
-	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused())
+	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused() && !g_modVals.drawWhilePaused)
 		return;
 
 	EnsureAssets(device);

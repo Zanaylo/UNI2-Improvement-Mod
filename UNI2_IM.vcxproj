@@ -123,6 +123,8 @@
     <ClCompile Include="src\Core\TextEncoding.cpp" />
     <ClCompile Include="src\Core\KeyboardCapture.cpp" />
     <ClCompile Include="src\Core\keycodes.cpp" />
+    <ClCompile Include="src\Core\Hotkeys.cpp" />
+    <ClCompile Include="src\Core\PadInput.cpp" />
     <ClCompile Include="src\Core\interfaces.cpp" />
     <ClCompile Include="src\Hooks\HookManager.cpp" />
     <ClCompile Include="src\Hooks\hooks_input.cpp" />
@@ -201,6 +203,8 @@
     <ClCompile Include="src\Overlay\Window\DummyScriptGuideWindow.cpp" />
     <ClCompile Include="src\Overlay\Window\HitboxLegendWindow.cpp" />
     <ClCompile Include="src\Overlay\Window\PlayerControlWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\UpdateNotifierWindow.cpp" />
+    <ClCompile Include="src\Web\UpdateCheck.cpp" />
     <ClCompile Include="src\Training\PlayerControl.cpp" />
     <ClCompile Include="src\Training\InputLagMeter.cpp" />
     <ClCompile Include="src\Overlay\Window\PaletteEditorWindow.cpp" />
@@ -227,6 +231,8 @@
     <ClInclude Include="src\Core\TextEncoding.h" />
     <ClInclude Include="src\Core\KeyboardCapture.h" />
     <ClInclude Include="src\Core\keycodes.h" />
+    <ClInclude Include="src\Core\Hotkeys.h" />
+    <ClInclude Include="src\Core\PadInput.h" />
     <ClInclude Include="src\Core\interfaces.h" />
     <ClInclude Include="src\Core\info.h" />
     <ClInclude Include="src\Hooks\HookManager.h" />
@@ -306,6 +312,8 @@
     <ClInclude Include="src\Overlay\Window\DummyScriptGuideWindow.h" />
     <ClInclude Include="src\Overlay\Window\HitboxLegendWindow.h" />
     <ClInclude Include="src\Overlay\Window\PlayerControlWindow.h" />
+    <ClInclude Include="src\Overlay\Window\UpdateNotifierWindow.h" />
+    <ClInclude Include="src\Web\UpdateCheck.h" />
     <ClInclude Include="src\Training\PlayerControl.h" />
     <ClInclude Include="src\Training\InputFrame.h" />
     <ClInclude Include="src\Training\InputLagMeter.h" />

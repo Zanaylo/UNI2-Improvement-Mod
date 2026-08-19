@@ -44,4 +44,6 @@ std::string GetSystemDirectoryPath();
 
 bool IsHotkeyPressed(int virtualKey);
 
+bool IsHotkeyHeld(int virtualKey);
+
 bool IsHotkeyRepeating(int virtualKey, unsigned delayMs, unsigned intervalMs);

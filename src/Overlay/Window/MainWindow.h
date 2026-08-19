@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Hotkeys.h"
 #include "Overlay/Window/ColorCustomizePanel.h"
 #include "Overlay/Window/IWindow.h"
 #include "Overlay/Window/PlayerCardPanel.h"
@@ -33,6 +34,10 @@ private:
 	void DrawKeybindsTab();
 	void DrawCustomSection();
 	void DrawPalettesTab();
+	void CaptureBind();
+	void DrawFunctionBinds();
+	void DrawBindRow(Hotkeys::Action action);
+	void DrawBindConflicts();
 	void DrawPaletteOptions();
 	void DrawPaletteChoosers();
 	void DrawPaletteChooser(int player);

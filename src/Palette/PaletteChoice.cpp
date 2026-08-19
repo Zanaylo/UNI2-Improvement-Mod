@@ -6,6 +6,7 @@
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteFile.h"
+#include "Palette/PaletteLibrary.h"
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteMemory.h"
 #include "Palette/PalettePaint.h"
@@ -34,6 +35,22 @@ Player g_players[PaletteChoice::kPlayers] = {};
 std::string PathFor(int chara, const char* file)
 {
 	return GetModPalettePath(PaletteManager::GetCharaName(chara)) + "\\" + file;
+}
+
+int WornIndex(int player, int chara)
+{
+	const char* const worn = PaletteChoice::WornFile(player);
+
+	if (worn[0] == '\0')
+		return -1;
+
+	for (int i = 0; i < PaletteLibrary::GetCount(chara); ++i)
+	{
+		if (strcmp(PaletteLibrary::GetName(chara, i), worn) == 0)
+			return i;
+	}
+
+	return -1;
 }
 
 }
@@ -119,6 +136,43 @@ void PaletteChoice::Bare(int player)
 
 	g_players[player].tried = true;
 	++g_players[player].generation;
+}
+
+int PaletteChoice::LocalPlayer()
+{
+	const int local = PaletteControl::LocalPlayer();
+
+	return local >= 0 ? local : 0;
+}
+
+bool PaletteChoice::Step(int player, int steps)
+{
+	if (player < 0 || player >= kPlayers || steps == 0 || !PaletteControl::CanEdit(player))
+		return false;
+
+	const int chara = PaletteMemory::GetCharaNumber(player);
+
+	if (chara < 0)
+		return false;
+
+	const int count = PaletteLibrary::GetCount(chara);
+
+	if (count <= 0)
+		return false;
+
+	const int slots = count + 1;
+	int target = (WornIndex(player, chara) + 1 + steps) % slots;
+
+	if (target < 0)
+		target += slots;
+
+	if (target == 0)
+	{
+		Bare(player);
+		return true;
+	}
+
+	return Wear(player, PaletteLibrary::GetName(chara, target - 1));
 }
 
 const char* PaletteChoice::WornFile(int player)

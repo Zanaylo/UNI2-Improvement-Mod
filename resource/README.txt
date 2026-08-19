@@ -1,11 +1,11 @@
-UNI2 Improvement Mod 0.2.0 - online palette test build
-======================================================
+UNI2 Improvement Mod
+====================
 
 Training tools and custom palettes for UNDER NIGHT IN-BIRTH II Sys:Celes
 (Steam, Ver.0.10.0).
 
-This build writes a log, because it is still a test build and the log is what
-says why something did not work. Logs are in UNI2-IM\Logs next to the game; they
+Set [Debug] Logging = 1 in UNI2_IM.ini when something does not work: the log is
+what says why. Logs are in UNI2-IM\Logs next to the game; they
 are plain text and contain nothing personal beyond the Steam ID of whoever you
 played.
 

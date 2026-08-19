@@ -3,7 +3,9 @@
 #include "Core/KeyboardCapture.h"
 #include "Core/ProcessTuning.h"
 #include "Core/info.h"
+#include "Core/Hotkeys.h"
 #include "Core/interfaces.h"
+#include "Core/PadInput.h"
 #include "Core/keycodes.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -12,9 +14,11 @@
 #include "Hooks/InputProbe.h"
 #include "Overlay/FrameMeterHud.h"
 #include "Overlay/NotificationBar.h"
+#include "Palette/PaletteChoice.h"
 #include "Training/FrameMeter.h"
 #include "Training/FrameStepper.h"
 #include "Training/InputLagMeter.h"
+#include "Web/UpdateCheck.h"
 
 #include <backends/imgui_impl_dx9.h>
 #include <backends/imgui_impl_win32.h>
@@ -273,6 +277,19 @@ void WindowManager::ObserveFocus(UINT message, WPARAM wParam)
 		ProcessTuning::Reassert();
 }
 
+void WindowManager::AnnounceUpdate()
+{
+	if (m_updateAnnounced || m_container == nullptr || !UpdateCheck::HasNewer())
+		return;
+
+	m_updateAnnounced = true;
+
+	IWindow* const window = m_container->GetWindow(WindowType_UpdateNotifier);
+
+	if (window != nullptr)
+		window->Open();
+}
+
 void WindowManager::HandleHotkeys()
 {
 	if (m_container == nullptr)
@@ -296,30 +313,36 @@ void WindowManager::HandleHotkeys()
 			debug->Toggle();
 	}
 
-	if (IsHotkeyPressed(g_modVals.toggleOverlayKey))
+	if (Hotkeys::Pressed(Hotkeys::Action_ToggleOverlay))
 	{
 		IWindow* main = m_container->GetWindow(WindowType_Main);
 		if (main != nullptr)
 			main->Toggle();
 	}
 
-	if (IsHotkeyPressed(g_modVals.freezeFrameKey))
+	if (Hotkeys::Pressed(Hotkeys::Action_FreezeFrame))
 		FrameStepper::TogglePaused();
 
-	if (IsHotkeyRepeating(g_modVals.stepForwardKey,
+	if (Hotkeys::Repeating(Hotkeys::Action_StepForward,
 		static_cast<unsigned>(g_modVals.stepRepeatDelayMs),
 		static_cast<unsigned>(g_modVals.stepRepeatIntervalMs)))
 		FrameStepper::RequestStep(FrameStepper::GetStepSize());
 
-	if (IsHotkeyPressed(g_modVals.toggleHitboxKey))
+	if (Hotkeys::Pressed(Hotkeys::Action_ToggleHitbox))
 	{
 		IWindow* hitboxes = m_container->GetWindow(WindowType_HitboxOverlay);
 		if (hitboxes != nullptr)
 			hitboxes->Toggle();
 	}
 
-	if (IsHotkeyPressed(g_modVals.toggleFrameMeterKey))
+	if (Hotkeys::Pressed(Hotkeys::Action_ToggleFrameMeter))
 		FrameMeterHud::Toggle();
+
+	if (Hotkeys::Pressed(Hotkeys::Action_NextPalette))
+		PaletteChoice::Step(PaletteChoice::LocalPlayer(), 1);
+
+	if (Hotkeys::Pressed(Hotkeys::Action_PreviousPalette))
+		PaletteChoice::Step(PaletteChoice::LocalPlayer(), -1);
 }
 
 // The Win32 backend hands ImGui the window size, which is not the surface the overlay is drawn
@@ -353,6 +376,8 @@ void WindowManager::ScaleToBackBuffer()
 
 void WindowManager::Render()
 {
+	PadInput::OnFrame();
+
 	if (!m_initialized || !m_deviceObjectsValid || IsIconic(m_window))
 	{
 		KeyboardCapture::ReleaseAll();
@@ -360,6 +385,7 @@ void WindowManager::Render()
 	}
 
 	HandleHotkeys();
+	AnnounceUpdate();
 
 	m_overlayActive = m_container != nullptr && m_container->AnyWindowOpen();
 

@@ -1,5 +1,7 @@
 #include "Core/ProcessTuning.h"
+#include "Core/Hotkeys.h"
 #include "Core/Settings.h"
+#include "Web/UpdateCheck.h"
 #include "Core/crashdump.h"
 #include "Core/info.h"
 #include "Core/interfaces.h"
@@ -89,10 +91,10 @@ DWORD WINAPI InitThread(LPVOID)
 
 	Settings::LoadSettingsFile();
 	Settings::ApplySettings();
+	Hotkeys::Load();
+	UpdateCheck::Start();
 
-	// Before anything that waits. The game builds its render targets from these immediates during
-	// its own display init, which happens as soon as d3d9 is up - waiting for that module first and
-	// patching afterwards loses the race and the targets come out at the old size.
+
 	RenderScale::Apply();
 
 	UiAssets::Ensure();

@@ -174,9 +174,15 @@ void Settings::ApplySettings()
 	g_modVals.toggleFrameMeterKey = GetVirtualKeyFromName(g_settings.toggleFrameMeterKey);
 	g_modVals.freezeFrameKey = GetVirtualKeyFromName(g_settings.freezeFrameKey);
 	g_modVals.stepForwardKey = GetVirtualKeyFromName(g_settings.stepForwardKey);
+	g_modVals.nextPaletteKey = GetVirtualKeyFromName(g_settings.nextPaletteKey);
+	g_modVals.prevPaletteKey = GetVirtualKeyFromName(g_settings.prevPaletteKey);
+	g_modVals.functionKey = GetVirtualKeyFromName(g_settings.functionKey);
+
+	g_modVals.checkForUpdates = g_settings.checkForUpdates != 0;
 
 	g_modVals.freezeMode = g_settings.freezeMode == 1 ? 1 : 0;
 	g_modVals.blockGameMouse = g_settings.blockGameMouse != 0;
+	g_modVals.drawWhilePaused = g_settings.drawWhilePaused != 0;
 
 	g_modVals.autoPauseMode = g_settings.autoPauseMode;
 	if (g_modVals.autoPauseMode < 0)

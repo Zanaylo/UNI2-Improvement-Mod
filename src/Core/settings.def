@@ -1,10 +1,32 @@
 SETTING_STRING(dinputDllWrapper,    "Mod",      "DinputDllWrapper",     "")
 
+// Asks GitHub once, on a thread of its own, whether a newer release exists. Nothing is downloaded
+// and nothing is installed - a window offers the release page and that is all.
+SETTING_INT(checkForUpdates,        "Mod",      "CheckForUpdates",      1)
+
 SETTING_STRING(toggleOverlayKey,    "Keybinds", "ToggleOverlay",        "F1")
 SETTING_STRING(toggleHitboxKey,     "Keybinds", "ToggleHitboxOverlay",  "F2")
 SETTING_STRING(toggleFrameMeterKey, "Keybinds", "ToggleFrameMeter",     "F3")
 SETTING_STRING(freezeFrameKey,      "Keybinds", "FreezeFrame",          "F5")
 SETTING_STRING(stepForwardKey,      "Keybinds", "StepForward",          "F6")
+SETTING_STRING(nextPaletteKey,      "Keybinds", "NextPalette",          "F8")
+SETTING_STRING(prevPaletteKey,      "Keybinds", "PreviousPalette",      "F7")
+
+// The fighting game shortcut: hold this and press the bound key. A keyboard bind asks for it by
+// carrying an "Fn+" prefix - "Fn+F8" - and a bind without the prefix is ignored while it is held, so
+// one key can serve both. Empty means no function key at all.
+SETTING_STRING(functionKey,         "Keybinds", "FunctionKey",          "")
+
+// Pad binds are always the function button plus one other. Names are XInput's: A, B, X, Y, LB, RB,
+// LT, RT, L3, R3, Start, Back, DPad Up/Down/Left/Right.
+SETTING_STRING(padFunctionButton,   "PadKeybinds", "FunctionButton",    "Back")
+SETTING_STRING(padToggleOverlay,    "PadKeybinds", "ToggleOverlay",     "A")
+SETTING_STRING(padToggleHitbox,     "PadKeybinds", "ToggleHitboxOverlay", "B")
+SETTING_STRING(padToggleFrameMeter, "PadKeybinds", "ToggleFrameMeter",  "LB")
+SETTING_STRING(padFreezeFrame,      "PadKeybinds", "FreezeFrame",       "X")
+SETTING_STRING(padStepForward,      "PadKeybinds", "StepForward",       "Y")
+SETTING_STRING(padNextPalette,      "PadKeybinds", "NextPalette",       "DPad Right")
+SETTING_STRING(padPrevPalette,      "PadKeybinds", "PreviousPalette",   "DPad Left")
 
 // 0 = Tick stop, 1 = Hitstun Stop. See src/Training/FrameStepper.h for the trade-off between them.
 SETTING_INT(freezeMode,             "Training", "FreezeMode",           0)
@@ -226,6 +248,11 @@ SETTING_FLOAT(uiScale,              "Overlay",  "UiScale",              1.0f)
 // The line that slides across the top of the screen when the mod loads, naming the version and the
 // key that opens it. 0 silences it and anything else the mod would announce.
 SETTING_INT(notifications,          "Overlay",  "Notifications",        1)
+
+// The game's own pause menu stops the battle tick, and both overlays hide with it because a tick
+// that has stopped is usually a match that has ended. On, they keep drawing as long as the match is
+// still up - the characters are frozen behind the menu, not gone.
+SETTING_INT(drawWhilePaused,        "Overlay",  "DrawWhileGamePaused",  0)
 
 // File-only: no in-game control writes this. 1 loads the Memory debug window at all, opened with
 // Ctrl+F1. Off by default so the reads it does every frame cost nothing when nobody asked for it.

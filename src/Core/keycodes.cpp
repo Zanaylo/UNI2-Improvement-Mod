@@ -44,7 +44,10 @@ int GetVirtualKeyFromName(const std::string& name)
 		return 0;
 
 	const size_t last = name.find_last_not_of(" \t");
-	const std::string trimmed = name.substr(first, last - first + 1);
+	std::string trimmed = name.substr(first, last - first + 1);
+
+	if (_strnicmp(trimmed.c_str(), "Fn+", 3) == 0)
+		trimmed.erase(0, 3);
 
 	for (const KeyName& key : kKeys)
 	{

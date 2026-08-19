@@ -36,6 +36,7 @@ private:
 	WindowManager& operator=(const WindowManager&) = delete;
 
 	void HandleHotkeys();
+	void AnnounceUpdate();
 	void ScaleToBackBuffer();
 	void ObserveFocus(UINT message, WPARAM wParam);
 	void InstallWindowProc(HWND window);
@@ -45,6 +46,7 @@ private:
 	bool m_deviceObjectsValid = false;
 	bool m_overlayActive = false;
 	bool m_blockGameMouse = false;
+	bool m_updateAnnounced = false;
 	bool m_hasFocus = true;
 	HWND m_window = nullptr;
 	IDirect3DDevice9* m_device = nullptr;

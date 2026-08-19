@@ -49,6 +49,9 @@
     <Filter Include="Training">
       <UniqueIdentifier>{bbdc2753-4115-5e67-a788-75f2f4b9142d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Web">
+      <UniqueIdentifier>{c1a7e2b4-9f31-4d55-8a10-77bd41e0a903}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Core\dllmain.cpp">
@@ -97,6 +100,12 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\keycodes.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Hotkeys.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\PadInput.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\interfaces.cpp">
@@ -381,6 +390,12 @@
     <ClCompile Include="depends\minhook\src\hde\hde64.c">
       <Filter>Dependencies\MinHook\hde</Filter>
     </ClCompile>
+    <ClCompile Include="src\Web\UpdateCheck.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\UpdateNotifierWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Core\Settings.h">
@@ -432,6 +447,12 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\keycodes.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Hotkeys.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\PadInput.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\interfaces.h">
@@ -691,6 +712,12 @@
     </ClInclude>
     <ClInclude Include="src\Overlay\WindowContainer\WindowType.h">
       <Filter>Overlay\WindowContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Web\UpdateCheck.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\UpdateNotifierWindow.h">
+      <Filter>Overlay\Window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

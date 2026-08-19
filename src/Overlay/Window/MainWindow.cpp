@@ -1,9 +1,11 @@
 #include "Overlay/Window/MainWindow.h"
 
+#include "Core/Hotkeys.h"
 #include "Core/info.h"
 #include "Core/interfaces.h"
 #include "Core/KeyboardCapture.h"
 #include "Core/keycodes.h"
+#include "Core/PadInput.h"
 #include "Core/Settings.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
@@ -34,12 +36,16 @@ namespace {
 
 constexpr const char* kDefaultPalette = "Default";
 
-int g_bindCapture = -1;
+constexpr int kFunctionRow = Hotkeys::Action_Count;
 
-void SetBindCapture(int index)
+int g_bindCapture = -1;
+bool g_bindPad = false;
+
+void SetBindCapture(int index, bool pad)
 {
 	g_bindCapture = index;
-	KeyboardCapture::SetKeyCaptureActive(index >= 0);
+	g_bindPad = pad;
+	KeyboardCapture::SetKeyCaptureActive(index >= 0 && !pad);
 }
 
 }
@@ -178,6 +184,11 @@ void MainWindow::DrawPaletteChooser(int player)
 
 		ImGui::EndCombo();
 	}
+
+	const int steps = ComboNav::WheelSteps();
+
+	if (steps != 0)
+		PaletteChoice::Step(player, steps);
 
 	ImGui::SameLine();
 
@@ -1261,7 +1272,7 @@ void MainWindow::DrawConfigSection()
 {
 	if (!ImGui::CollapsingHeader("Config"))
 	{
-		SetBindCapture(-1);
+		SetBindCapture(-1, false);
 		return;
 	}
 
@@ -1281,7 +1292,7 @@ void MainWindow::DrawConfigSection()
 	}
 	else
 	{
-		SetBindCapture(-1);
+		SetBindCapture(-1, false);
 	}
 
 	ImGui::EndTabBar();
@@ -1291,6 +1302,28 @@ void MainWindow::DrawConfigGeneralTab()
 {
 	ImGui::Text("%s %s", UNI2_IM_NAME, UNI2_IM_VERSION);
 	ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+
+	if (ImGui::Checkbox("Check for updates on start", &g_modVals.checkForUpdates))
+		Settings::SaveInt("Mod", "CheckForUpdates", g_modVals.checkForUpdates ? 1 : 0);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Asks GitHub once, on a thread of its own, whether a newer release exists. "
+			"Nothing is downloaded and nothing is installed.");
+	}
+
+	if (ImGui::Checkbox("Keep the hitboxes and the meter up in the game's pause",
+		&g_modVals.drawWhilePaused))
+	{
+		Settings::SaveInt("Overlay", "DrawWhileGamePaused", g_modVals.drawWhilePaused ? 1 : 0);
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("The game's own pause menu stops the battle tick, and both overlays hide "
+			"with it because a stopped tick usually means the match has ended. On, they stay up "
+			"while the match does - the characters are frozen behind the menu, not gone.");
+	}
 
 	bool& blockMouse = WindowManager::GetInstance().GetBlockGameMouse();
 	if (ImGui::Checkbox("Block mouse input to the game", &blockMouse))
@@ -1345,43 +1378,12 @@ void MainWindow::DrawConfigGeneralTab()
 
 void MainWindow::DrawKeybindsTab()
 {
-	struct Bind
-	{
-		int* value;
-		const char* key;
-		const char* label;
-	};
-
-	const Bind binds[] = {
-		{ &g_modVals.toggleOverlayKey, "ToggleOverlay", "Open this window" },
-		{ &g_modVals.toggleHitboxKey, "ToggleHitboxOverlay", "Hitbox viewer" },
-		{ &g_modVals.toggleFrameMeterKey, "ToggleFrameMeter", "Frame meter" },
-		{ &g_modVals.freezeFrameKey, "FreezeFrame", "Pause and resume" },
-		{ &g_modVals.stepForwardKey, "StepForward", "Next frame" },
-	};
-
-	const int count = static_cast<int>(sizeof(binds) / sizeof(binds[0]));
-
 	if (g_bindCapture >= 0)
-	{
-		KeyboardCapture::SetKeyCaptureActive(true);
+		CaptureBind();
 
-		const int pressed = PollPressedKey();
+	DrawFunctionBinds();
 
-		if (pressed == VK_ESCAPE)
-		{
-			SetBindCapture(-1);
-		}
-		else if (pressed != 0 && g_bindCapture < count)
-		{
-			const Bind& bind = binds[g_bindCapture];
-			*bind.value = pressed;
-			Settings::SaveString("Keybinds", bind.key, GetNameFromVirtualKey(pressed));
-			SetBindCapture(-1);
-		}
-	}
-
-	if (!ImGui::BeginTable("##keybinds", 3,
+	if (!ImGui::BeginTable("##keybinds", 4,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp))
 	{
 		return;
@@ -1389,46 +1391,172 @@ void MainWindow::DrawKeybindsTab()
 
 	ImGui::TableSetupColumn("What");
 	ImGui::TableSetupColumn("Key");
+	ImGui::TableSetupColumn("Pad");
 	ImGui::TableSetupColumn("");
 	ImGui::TableHeadersRow();
 
-	for (int i = 0; i < count; ++i)
-	{
-		const Bind& bind = binds[i];
-		const bool capturing = g_bindCapture == i;
-
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(bind.label);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(capturing ? "press a key" : GetNameFromVirtualKey(*bind.value));
-
-		ImGui::TableNextColumn();
-		ImGui::PushID(bind.key);
-
-		if (ImGui::SmallButton(capturing ? "Cancel" : "Change"))
-			SetBindCapture(capturing ? -1 : i);
-
-		ImGui::PopID();
-	}
+	for (int i = 0; i < Hotkeys::Action_Count; ++i)
+		DrawBindRow(static_cast<Hotkeys::Action>(i));
 
 	ImGui::EndTable();
 
 	if (g_bindCapture >= 0)
-		ImGui::TextDisabled("Press the key you want, or Escape to cancel.");
+		ImGui::TextDisabled("%s", g_bindPad ? "Press a pad button, or Escape to cancel."
+			: "Press the key you want, or Escape to cancel.");
 	else
-		ImGui::TextDisabled("Saved to UNI2_IM.ini as soon as a key is bound.");
+		ImGui::TextDisabled("Saved to UNI2_IM.ini as soon as something is bound.");
 
-	for (int i = 0; i < count; ++i)
+	DrawBindConflicts();
+}
+
+void MainWindow::CaptureBind()
+{
+	const Hotkeys::Action action = static_cast<Hotkeys::Action>(g_bindCapture);
+
+	if (!g_bindPad)
+		KeyboardCapture::SetKeyCaptureActive(true);
+
+	const int pressed = PollPressedKey();
+
+	if (pressed == VK_ESCAPE)
 	{
-		for (int k = i + 1; k < count; ++k)
+		SetBindCapture(-1, false);
+		return;
+	}
+
+	if (g_bindPad)
+	{
+		const int button = PadInput::PollPressedButton();
+
+		if (button == PadInput::kNone)
+			return;
+
+		if (g_bindCapture == kFunctionRow)
+			Hotkeys::SetFunctionButton(button);
+		else
+			Hotkeys::SetPadButton(action, button);
+
+		SetBindCapture(-1, false);
+		return;
+	}
+
+	if (pressed == 0)
+		return;
+
+	if (g_bindCapture == kFunctionRow)
+		Hotkeys::SetFunctionKey(pressed);
+	else
+		Hotkeys::SetKey(action, pressed, Hotkeys::GetKeyNeedsFunction(action));
+
+	SetBindCapture(-1, false);
+}
+
+void MainWindow::DrawFunctionBinds()
+{
+	ImGui::TextUnformatted("Function");
+	ImGui::SameLine();
+	ImGui::TextDisabled("held with another key or button, the way a fighting game does shortcuts");
+
+	const bool keyCapturing = g_bindCapture == kFunctionRow && !g_bindPad;
+	const bool padCapturing = g_bindCapture == kFunctionRow && g_bindPad;
+
+	const int key = Hotkeys::GetFunctionKey();
+
+	ImGui::PushID("function");
+
+	if (ImGui::SmallButton(keyCapturing ? "Cancel" : "Change key"))
+		SetBindCapture(keyCapturing ? -1 : kFunctionRow, false);
+
+	ImGui::SameLine();
+	ImGui::TextUnformatted(keyCapturing ? "press a key"
+		: (key != 0 ? GetNameFromVirtualKey(key) : "none"));
+
+	ImGui::SameLine();
+
+	if (ImGui::SmallButton(padCapturing ? "Cancel##pad" : "Change button"))
+		SetBindCapture(padCapturing ? -1 : kFunctionRow, true);
+
+	ImGui::SameLine();
+	ImGui::TextUnformatted(padCapturing ? "press a button"
+		: PadInput::GetButtonName(Hotkeys::GetFunctionButton()));
+
+	ImGui::SameLine();
+	ImGui::TextDisabled(PadInput::IsConnected() ? "(pad found)" : "(no pad)");
+
+	ImGui::PopID();
+
+	if (key == 0)
+		ImGui::TextDisabled("Without a function key, a keyboard bind marked Fn cannot fire.");
+}
+
+void MainWindow::DrawBindRow(Hotkeys::Action action)
+{
+	const bool keyCapturing = g_bindCapture == action && !g_bindPad;
+	const bool padCapturing = g_bindCapture == action && g_bindPad;
+
+	const int key = Hotkeys::GetKey(action);
+
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(Hotkeys::GetLabel(action));
+
+	ImGui::TableNextColumn();
+	ImGui::PushID(Hotkeys::GetSettingKey(action));
+
+	ImGui::TextUnformatted(keyCapturing ? "press a key"
+		: (key != 0 ? GetNameFromVirtualKey(key) : "none"));
+
+	ImGui::SameLine();
+
+	bool needsFunction = Hotkeys::GetKeyNeedsFunction(action);
+
+	if (ImGui::Checkbox("Fn", &needsFunction))
+		Hotkeys::SetKey(action, key, needsFunction);
+
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(padCapturing ? "press a button"
+		: PadInput::GetButtonName(Hotkeys::GetPadButton(action)));
+
+	ImGui::TableNextColumn();
+
+	if (ImGui::SmallButton(keyCapturing ? "Cancel" : "Key"))
+		SetBindCapture(keyCapturing ? -1 : action, false);
+
+	ImGui::SameLine();
+
+	if (ImGui::SmallButton(padCapturing ? "Cancel##pad" : "Pad"))
+		SetBindCapture(padCapturing ? -1 : action, true);
+
+	ImGui::SameLine();
+
+	if (ImGui::SmallButton("Clear"))
+	{
+		Hotkeys::SetKey(action, 0, false);
+		Hotkeys::SetPadButton(action, PadInput::kNone);
+	}
+
+	ImGui::PopID();
+}
+
+void MainWindow::DrawBindConflicts()
+{
+	for (int i = 0; i < Hotkeys::Action_Count; ++i)
+	{
+		const Hotkeys::Action mine = static_cast<Hotkeys::Action>(i);
+
+		for (int k = i + 1; k < Hotkeys::Action_Count; ++k)
 		{
-			if (*binds[i].value == 0 || *binds[i].value != *binds[k].value)
+			const Hotkeys::Action theirs = static_cast<Hotkeys::Action>(k);
+
+			if (Hotkeys::GetKey(mine) == 0 || Hotkeys::GetKey(mine) != Hotkeys::GetKey(theirs))
+				continue;
+
+			if (Hotkeys::GetKeyNeedsFunction(mine) != Hotkeys::GetKeyNeedsFunction(theirs))
 				continue;
 
 			ImGui::TextColored(ImVec4(0.95f, 0.55f, 0.45f, 1.0f), "%s and %s are both %s.",
-				binds[i].label, binds[k].label, GetNameFromVirtualKey(*binds[i].value));
+				Hotkeys::GetLabel(mine), Hotkeys::GetLabel(theirs),
+				GetNameFromVirtualKey(Hotkeys::GetKey(mine)));
 		}
 	}
 }

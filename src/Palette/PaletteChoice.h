@@ -17,6 +17,10 @@ namespace PaletteChoice
 	bool Wear(int player, const char* file);
 	void Bare(int player);
 
+	bool Step(int player, int steps);
+
+	int LocalPlayer();
+
 	const char* WornFile(int player);
 	void NoteWorn(int player, const char* file);
 	void NoteBare(int player);
