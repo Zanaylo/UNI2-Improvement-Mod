@@ -1,3 +1,4 @@
+#include "Core/Compat.h"
 #include "Core/ProcessTuning.h"
 #include "Core/Hotkeys.h"
 #include "Core/Settings.h"
@@ -7,6 +8,7 @@
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "D3D9/D3D9Proxy.h"
 #include "D3D9/D3D9Wrapper.h"
 #include "D3D9/D3DX9Hooks.h"
 #include "D3D9/RenderScale.h"
@@ -34,10 +36,25 @@ namespace {
 
 using DirectInput8Create_t = HRESULT(WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
 
+HANDLE g_instanceMutex = nullptr;
+bool g_secondInstance = false;
+
 HMODULE g_originalDinput = nullptr;
 DirectInput8Create_t g_originalDirectInput8Create = nullptr;
+DirectInput8Create_t g_chainedDirectInput8Create = nullptr;
 std::mutex g_dinputMutex;
 bool g_dinputLoadAttempted = false;
+
+HRESULT WINAPI HookedDirectInput8Create(HINSTANCE hinst, DWORD version, REFIID riid, LPVOID* ppvOut,
+	LPUNKNOWN outer)
+{
+	const HRESULT result = g_chainedDirectInput8Create(hinst, version, riid, ppvOut, outer);
+
+	if (SUCCEEDED(result) && ppvOut != nullptr)
+		InputProbe::OnInterfaceCreated(*ppvOut);
+
+	return result;
+}
 
 std::string ReadWrapperPathFromIni()
 {
@@ -64,7 +81,16 @@ bool EnsureOriginalDinputLoaded()
 	g_originalDinput = LoadLibraryA(path.c_str());
 	if (g_originalDinput == nullptr)
 	{
-		LOG("Failed to load original dinput8 from %s (error %lu)", path.c_str(), GetLastError());
+		LOG("Failed to load original dinput8 from %s (error %lu)", path.c_str(),
+			GetLastError());
+		return false;
+	}
+
+	if (g_originalDinput == GetModModuleHandle())
+	{
+		LOG("%s resolved back to this mod. Refusing to chain into itself - set "
+			"WINEDLLOVERRIDES=\"dinput8=n,b\" or use the d3d9.dll copy instead.", path.c_str());
+		g_originalDinput = nullptr;
 		return false;
 	}
 
@@ -81,27 +107,132 @@ bool EnsureOriginalDinputLoaded()
 	return true;
 }
 
+int LogStageFault(const char* name, DWORD code)
+{
+	LOG("STAGE '%s' faulted (0x%08lx). Continuing without it - everything after this line was still "
+		"installed.", name, static_cast<unsigned long>(code));
+
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
+using StageFn = void (*)();
+
+void RunStage(const char* name, StageFn stage)
+{
+	__try
+	{
+		stage();
+	}
+	__except (LogStageFault(name, GetExceptionCode()))
+	{
+	}
+}
+
+void Stage_Settings()
+{
+	Settings::LoadSettingsFile();
+	Settings::ApplySettings();
+	Hotkeys::Load();
+}
+
+void Stage_UpdateCheck()
+{
+	UpdateCheck::Start();
+}
+
+void Stage_RenderScale()
+{
+	RenderScale::Apply();
+}
+
+void Stage_UiAssets()
+{
+	UiAssets::Ensure();
+}
+
+void Stage_ProcessTuning()
+{
+	ProcessTuning::Initialize();
+}
+
+void Stage_InputEntry()
+{
+	if (!D3D9Proxy::IsActive())
+	{
+		EnsureOriginalDinputLoaded();
+		return;
+	}
+
+	if (!HookManager::WaitForModule("dinput8.dll", 10000))
+	{
+		LOG("dinput8.dll never loaded, pad binds will not see the game's devices");
+		return;
+	}
+
+	HookManager::CreateApiHook("dinput8.dll", "DirectInput8Create", &HookedDirectInput8Create,
+		reinterpret_cast<void**>(&g_chainedDirectInput8Create));
+}
+
+void Stage_D3D9()
+{
+	if (!D3D9Wrapper::InstallHooks())
+		LOG("D3D9 hook installation failed, overlay will not be available");
+}
+
+void Stage_D3DX9()
+{
+	D3DX9Hooks::Install();
+}
+
+void Stage_GameHooks()
+{
+	if (!MemoryMap::Initialize())
+		return;
+
+	CharaTracker::Install();
+	FrameStepper::Initialize();
+	PlayerControl::Initialize();
+	PaletteMemory::Install();
+	PaletteOwnerProbe::Install();
+	EffectPaint::Install();
+	if (g_modVals.showLegacyPalettes)
+		PaletteDrawProbe::Install();
+	PumpWait::Apply();
+}
+
+void Stage_PaletteShare()
+{
+	PaletteShare::Initialize();
+}
+
+void Stage_InputHooks()
+{
+	InputHooks::InstallHooks();
+	InputProbe::InstallApiProbes();
+}
+
 DWORD WINAPI InitThread(LPVOID)
 {
 	CreateModDirectories();
 	OpenLogger();
 	InstallCrashHandler();
 
-	LOG("%s %s starting", UNI2_IM_NAME, UNI2_IM_VERSION);
+	LOG("%s %s starting, loaded as %s", UNI2_IM_NAME, UNI2_IM_VERSION, D3D9Proxy::LoadedAs());
 
-	Settings::LoadSettingsFile();
-	Settings::ApplySettings();
-	Hotkeys::Load();
-	UpdateCheck::Start();
+	Compat::Detect();
 
+	RunStage("settings", Stage_Settings);
 
-	RenderScale::Apply();
+	if (Compat::SafeMode())
+	{
+		LOG("Compatibility safe mode is on: the display, scheduling and frame pacing tuning "
+			"is left alone. Set [Compat] WineSafeMode = 0 to take it back.");
+	}
 
-	UiAssets::Ensure();
-
-	ProcessTuning::Initialize();
-
-	EnsureOriginalDinputLoaded();
+	RunStage("update check", Stage_UpdateCheck);
+	RunStage("render scale", Stage_RenderScale);
+	RunStage("ui assets", Stage_UiAssets);
+	RunStage("process tuning", Stage_ProcessTuning);
 
 	g_gameProc.baseAddress = GetGameBaseAddress();
 	g_gameProc.moduleSize = GetGameModuleSize();
@@ -112,31 +243,16 @@ DWORD WINAPI InitThread(LPVOID)
 		return 0;
 	}
 
-	if (!D3D9Wrapper::InstallHooks())
-		LOG("D3D9 hook installation failed, overlay will not be available");
+	RunStage("input entry point", Stage_InputEntry);
 
-	D3DX9Hooks::Install();
+	RunStage("d3d9 hooks", Stage_D3D9);
+	RunStage("d3dx9 hooks", Stage_D3DX9);
+	RunStage("game hooks", Stage_GameHooks);
+	RunStage("palette share", Stage_PaletteShare);
+	RunStage("input hooks", Stage_InputHooks);
 
-	if (MemoryMap::Initialize())
-	{
-		CharaTracker::Install();
-		FrameStepper::Initialize();
-		PlayerControl::Initialize();
-		PaletteMemory::Install();
-		PaletteOwnerProbe::Install();
-		// Both systems hook the same colour setter and only one of them may have it. The new one
-		// takes it first: it is the one the interface names, and letting an ini key hand the hook
-		// to the legacy probe killed effect recolouring outright and in silence.
-		EffectPaint::Install();
-		if (g_modVals.showLegacyPalettes)
-			PaletteDrawProbe::Install();
-		PumpWait::Apply();
-	}
-
-	PaletteShare::Initialize();
-
-	InputHooks::InstallHooks();
-	InputProbe::InstallApiProbes();
+	HookManager::EnableAllHooks();
+	HookManager::StartIntegrityWatchdog();
 
 	LOG("Initialization finished");
 	return 0;
@@ -152,13 +268,13 @@ extern "C" HRESULT WINAPI DirectInput8Create(HINSTANCE hinst, DWORD dwVersion, R
 
 	const HRESULT result = g_originalDirectInput8Create(hinst, dwVersion, riidltf, ppvOut, punkOuter);
 
-	if (SUCCEEDED(result) && ppvOut != nullptr)
+	if (SUCCEEDED(result) && ppvOut != nullptr && !Compat::StoodDown())
 		InputProbe::OnInterfaceCreated(*ppvOut);
 
 	return result;
 }
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID)
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 {
 	switch (reasonForCall)
 	{
@@ -166,6 +282,23 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID)
 	{
 		SetModModuleHandle(hModule);
 		DisableThreadLibraryCalls(hModule);
+
+		char mutexName[64] = {};
+		sprintf_s(mutexName, "UNI2_IM_instance_%lu", GetCurrentProcessId());
+
+		g_instanceMutex = CreateMutexA(nullptr, TRUE, mutexName);
+		if (g_instanceMutex != nullptr && GetLastError() == ERROR_ALREADY_EXISTS)
+		{
+			g_secondInstance = true;
+			Compat::StandDown();
+
+			CreateModDirectories();
+			OpenLogger();
+			LOG("A copy of this mod is already loaded in this process. Keep either "
+				"dinput8.dll or d3d9.dll in the game folder, not both. This copy is standing down "
+				"and will only pass calls through.");
+			break;
+		}
 
 		HANDLE thread = CreateThread(nullptr, 0, InitThread, nullptr, 0, nullptr);
 		if (thread != nullptr)
@@ -175,6 +308,25 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID)
 	}
 	case DLL_PROCESS_DETACH:
 	{
+		if (reserved != nullptr)
+		{
+			CloseLogger();
+			break;
+		}
+
+		if (g_instanceMutex != nullptr)
+		{
+			ReleaseMutex(g_instanceMutex);
+			CloseHandle(g_instanceMutex);
+			g_instanceMutex = nullptr;
+		}
+
+		if (g_secondInstance)
+		{
+			CloseLogger();
+			break;
+		}
+
 		WindowManager::GetInstance().Shutdown();
 		HookManager::Shutdown();
 

@@ -271,3 +271,5 @@ SETTING_INT(profilerEnabled,        "Debug",    "Profiler",             0)
 // shape of the judder 4.C was chasing. With this on the capture still runs, but the CSV is handed to
 // a writer thread instead of stalling the tick.
 SETTING_INT(meterTrace,             "Debug",    "MeterTrace",           0)
+
+SETTING_INT(wineSafeMode,           "Compat",   "WineSafeMode",         -1)

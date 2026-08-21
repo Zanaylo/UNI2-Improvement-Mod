@@ -1,5 +1,6 @@
 #include "Game/PumpWait.h"
 
+#include "Core/Compat.h"
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -200,10 +201,12 @@ bool PumpWait::Install()
 
 void PumpWait::Apply()
 {
-	if (!g_installed && g_modVals.pumpWait)
+	const bool wanted = g_modVals.pumpWait && !Compat::SafeMode();
+
+	if (!g_installed && wanted)
 		Install();
 
-	InterlockedExchange(&g_enabled, g_modVals.pumpWait ? 1 : 0);
+	InterlockedExchange(&g_enabled, wanted ? 1 : 0);
 }
 
 void PumpWait::Shutdown()

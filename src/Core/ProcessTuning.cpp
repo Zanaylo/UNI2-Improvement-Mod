@@ -1,5 +1,6 @@
 #include "Core/ProcessTuning.h"
 
+#include "Core/Compat.h"
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Game/PumpWait.h"
@@ -129,7 +130,7 @@ void ProcessTuning::Apply()
 	else
 		ReleaseTimerPeriod();
 
-	if (g_modVals.powerThrottlingOptOut)
+	if (g_modVals.powerThrottlingOptOut && !Compat::SafeMode())
 		OptOutOfThrottling();
 	else
 		ReleaseThrottlingOptOut();

@@ -64,6 +64,8 @@ DrawIndexedPrimitive_t oDrawIndexedPrimitive = nullptr;
 DrawPrimitiveUP_t oDrawPrimitiveUP = nullptr;
 DrawIndexedPrimitiveUP_t oDrawIndexedPrimitiveUP = nullptr;
 
+volatile LONG g_presentCount = 0;
+
 IDirect3DDevice9* g_device = nullptr;
 D3DPRESENT_PARAMETERS g_presentParameters = {};
 bool g_installed = false;
@@ -264,6 +266,8 @@ bool FrozenFrameCouldBeReplayed()
 HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* sourceRect,
 	const RECT* destRect, HWND destWindowOverride, const RGNDATA* dirtyRegion)
 {
+	InterlockedIncrement(&g_presentCount);
+
 	MemoryMap::InvalidateEffectSlotCache();
 
 	if (device == g_device)
@@ -426,6 +430,11 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 bool DeviceHooks::IsInstalled()
 {
 	return g_installed;
+}
+
+unsigned long DeviceHooks::PresentCount()
+{
+	return static_cast<unsigned long>(InterlockedCompareExchange(&g_presentCount, 0, 0));
 }
 
 IDirect3DDevice9* DeviceHooks::GetDevice()

@@ -4,10 +4,22 @@ UNI2 Improvement Mod
 Training tools and custom palettes for UNDER NIGHT IN-BIRTH II Sys:Celes
 (Steam, Ver.0.10.0).
 
-Set [Debug] Logging = 1 in UNI2_IM.ini when something does not work: the log is
-what says why. Logs are in UNI2-IM\Logs next to the game; they
-are plain text and contain nothing personal beyond the Steam ID of whoever you
-played.
+When something does not work, set
+
+    [Debug]
+    Logging = 1
+
+in UNI2-IM\UNI2_IM.ini and run the game once. The log lands in UNI2-IM\Logs
+next to the game and says what the mod loaded, what it is running on, every hook
+it installed and where, and anything that faulted. Nothing is written without
+that setting. The logs are plain text and contain nothing personal beyond the
+Steam ID of whoever you played.
+
+That ini is created on first run and completes itself after that: any key or
+section it is missing is added with its default on every launch, and nothing you
+edited is changed. If the mod never loads at all there is no folder to look in -
+you can create UNI2-IM\UNI2_IM.ini with just the two lines above and the mod
+fills in the rest.
 
 
 INSTALL
@@ -22,6 +34,53 @@ INSTALL
 
 To uninstall, delete dinput8.dll. Nothing else is touched and no game file is
 modified.
+
+
+LINUX AND STEAM DECK (PROTON)
+-----------------------------
+
+Install it exactly as on Windows first: dinput8.dll next to uni2.exe, nothing
+else. Proton 9 and newer load a mod's own dinput8.dll by themselves, so on a
+current Proton that is all there is to it.
+
+Older Proton does not. Wine picks which dinput8.dll to load from a prefix
+setting, not from the folder the file is in, so there the DLL is simply never
+loaded. If no UNI2-IM folder appears next to the game after a run, use ONE of
+these - never both at once, or the mod loads twice into one process:
+
+  1. Rename dinput8.dll to d3d9.dll and leave it next to uni2.exe. Nothing else
+     to set: Proton treats d3d9 as native on every version, because that is how
+     DXVK is installed. This file carries both sets of entry points.
+
+  2. Or keep the dinput8.dll name and set the game's Steam launch options to
+
+       WINEDLLOVERRIDES="dinput8=n,b" %command%
+
+     which is the same thing Proton 9 and newer already do for you.
+
+On Linux the mod leaves the host's display and scheduling tuning alone by
+itself. [Compat] WineSafeMode = 0 in the ini takes it back.
+
+Do not use the d3d9.dll name on Windows: RivaTuner refuses to hook a Direct3D
+runtime outside a system folder, so that name and RTSS cannot both work.
+
+
+RIVATUNER, MSI AFTERBURNER AND OTHER OVERLAYS
+---------------------------------------------
+
+Two overlays means two hook engines on the same Direct3D functions. The mod now
+installs itself at the end of whatever chain is already on a function instead of
+writing over it, which is what the RTSS author asks third parties to do, so both
+overlays coexist and load order does not matter.
+
+If the mod's overlay still never appears, or the game closes at startup with
+RTSS running, turn logging on as above and the log names the hook and says what
+happened to it. Either of these fixes it:
+
+  - RTSS, Settings / General / Injection properties: tick
+    "Use Microsoft Detours API hooking".
+  - RTSS, this game's profile: set Application detection level to None. RTSS
+    then leaves the game alone entirely, its own overlay included.
 
 
 KEYS

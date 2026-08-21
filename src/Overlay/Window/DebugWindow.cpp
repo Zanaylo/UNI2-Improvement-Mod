@@ -14,6 +14,8 @@
 #include "Game/Camera.h"
 #include "Game/GameState.h"
 #include "Game/HitboxData.h"
+#include "Core/Compat.h"
+#include "Hooks/HookManager.h"
 #include "Game/MemoryMap.h"
 #include "Game/MemoryScanner.h"
 #include "Game/PlayerState.h"
@@ -195,6 +197,21 @@ void DebugWindow::Draw()
 	ImGui::Text("Module base: 0x%p   version: %s", (void*)GetGameBaseAddress(),
 		hasVersion ? version : "<unreadable>");
 	ImGui::Text("MemoryMap: %s", MemoryMap::GetStatusText());
+	ImGui::Text("Running on: %s%s", Compat::Describe(),
+		Compat::SafeMode() ? "   [compatibility safe mode]" : "");
+
+	if (HookManager::AnyHookBroken())
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.35f, 1.0f), "Hooks: %s",
+			HookManager::IntegrityStatus());
+		ImGui::TextWrapped("Another overlay has taken a hooked function back. With RTSS, turn on "
+			"\"Use Microsoft Detours API hooking\" in Settings / General / Injection properties, "
+			"or set this game's RTSS profile Application detection level to None.");
+	}
+	else
+	{
+		ImGui::Text("Hooks: %s", HookManager::IntegrityStatus());
+	}
 
 	MemoryMap::CharaStackView stackView = {};
 	MemoryMap::ReadCharaStack(stackView);

@@ -12,6 +12,8 @@
 #include <Windows.h>
 #include <cstdio>
 #include <cstdlib>
+#include <cctype>
+#include <cstring>
 
 namespace {
 
@@ -65,6 +67,147 @@ bool WriteShippedIni(const std::string& path)
 
 	fclose(file);
 	return true;
+}
+
+std::string ReadFileText(const std::string& path)
+{
+	FILE* file = nullptr;
+	if (fopen_s(&file, path.c_str(), "rb") != 0 || file == nullptr)
+		return std::string();
+
+	std::string text;
+	char chunk[1024] = {};
+
+	for (size_t read = fread(chunk, 1, sizeof(chunk), file); read > 0;
+		read = fread(chunk, 1, sizeof(chunk), file))
+	{
+		text.append(chunk, read);
+	}
+
+	fclose(file);
+	return text;
+}
+
+std::string TrimmedLine(const std::string& text, size_t begin, size_t end)
+{
+	while (begin < end && isspace(static_cast<unsigned char>(text[begin])))
+		++begin;
+
+	while (end > begin && isspace(static_cast<unsigned char>(text[end - 1])))
+		--end;
+
+	return text.substr(begin, end - begin);
+}
+
+bool HasSectionHeader(const std::string& text, const char* section)
+{
+	const std::string header = "[" + std::string(section) + "]";
+
+	for (size_t begin = 0; begin < text.size();)
+	{
+		size_t end = text.find('\n', begin);
+		if (end == std::string::npos)
+			end = text.size();
+
+		if (_stricmp(TrimmedLine(text, begin, end).c_str(), header.c_str()) == 0)
+			return true;
+
+		begin = end + 1;
+	}
+
+	return false;
+}
+
+int TrailingNewlines(const std::string& text)
+{
+	int count = 0;
+
+	for (size_t i = text.size(); i > 0; --i)
+	{
+		const char character = text[i - 1];
+
+		if (character == '\n')
+		{
+			++count;
+			continue;
+		}
+
+		if (character == '\r')
+			continue;
+
+		break;
+	}
+
+	return count;
+}
+
+void AppendSectionHeader(const char* section, const std::string& path, const std::string& text)
+{
+	FILE* file = nullptr;
+	if (fopen_s(&file, path.c_str(), "ab") != 0 || file == nullptr)
+		return;
+
+	const int wanted = text.empty() ? 0 : 2;
+
+	for (int written = TrailingNewlines(text); written < wanted; ++written)
+		fputs("\r\n", file);
+
+	fprintf(file, "[%s]\r\n", section);
+	fclose(file);
+}
+
+void EnsureSectionHeader(const char* section, const std::string& path)
+{
+	const std::string text = ReadFileText(path);
+	if (HasSectionHeader(text, section))
+		return;
+
+	AppendSectionHeader(section, path, text);
+}
+
+const char* const kMissingMarker = "\x01";
+
+bool KeyExists(const char* section, const char* key, const std::string& path)
+{
+	char buffer[8] = {};
+	GetPrivateProfileStringA(section, key, kMissingMarker, buffer, sizeof(buffer), path.c_str());
+
+	return strcmp(buffer, kMissingMarker) != 0;
+}
+
+bool AddMissingKey(const char* section, const char* key, const char* value, const std::string& path)
+{
+	if (KeyExists(section, key, path))
+		return false;
+
+	EnsureSectionHeader(section, path);
+
+	if (!WritePrivateProfileStringA(section, key, value, path.c_str()))
+	{
+		LOG("Could not add [%s] %s to the ini (error %lu)", section, key, GetLastError());
+		return false;
+	}
+
+	LOG("Added missing key to the ini: [%s] %s = %s", section, key, value);
+	return true;
+}
+
+int CompleteIniFile(const std::string& path)
+{
+	int added = 0;
+
+#define SETTING_STRING(member, section, key, defaultValue) \
+	added += AddMissingKey(section, key, defaultValue, path) ? 1 : 0;
+#define SETTING_FLOAT(member, section, key, defaultValue) \
+	{ char buf[64] = {}; sprintf_s(buf, "%g", defaultValue); added += AddMissingKey(section, key, buf, path) ? 1 : 0; }
+#define SETTING_INT(member, section, key, defaultValue) \
+	{ char buf[64] = {}; sprintf_s(buf, "%d", defaultValue); added += AddMissingKey(section, key, buf, path) ? 1 : 0; }
+#include "Core/settings.def"
+#undef SETTING_STRING
+#undef SETTING_FLOAT
+#undef SETTING_INT
+
+	return added;
 }
 
 void WriteDefaultIni(const std::string& path)
@@ -151,6 +294,12 @@ bool Settings::LoadSettingsFile()
 	{
 		LOG("Settings file not found, writing defaults to %s", path.c_str());
 		WriteDefaultIni(path);
+	}
+	else
+	{
+		const int added = CompleteIniFile(path);
+		if (added > 0)
+			LOG("Completed the ini with %d missing key%s", added, added == 1 ? "" : "s");
 	}
 
 #define SETTING_STRING(member, section, key, defaultValue) \
@@ -266,6 +415,7 @@ void Settings::ApplySettings()
 	g_modVals.extraBackBuffer = g_settings.extraBackBuffer != 0;
 	g_modVals.pumpWait = g_settings.pumpWait != 0;
 	g_modVals.pumpWaitAllInput = g_settings.pumpWaitAllInput != 0;
+	g_modVals.wineSafeMode = g_settings.wineSafeMode;
 
 	g_modVals.internalResolutionPercent = g_settings.internalResolutionPercent;
 	if (g_modVals.internalResolutionPercent < 25 || g_modVals.internalResolutionPercent > 400)
@@ -292,9 +442,9 @@ void Settings::ApplySettings()
 	Profiler::SetEnabled(g_modVals.profilerEnabled);
 	FrameMeter::SetTraceEnabled(g_modVals.meterTrace);
 
-	LOG("Settings applied: overlay=%d hitbox=%d frameMeter=%d freeze=%d step=%d back=%d "
+	LOG("Settings applied: overlay=%d hitbox=%d frameMeter=%d freeze=%d step=%d "
 		"freezeMode=%d blockMouse=%d scale=%.2f",
 		g_modVals.toggleOverlayKey, g_modVals.toggleHitboxKey, g_modVals.toggleFrameMeterKey,
 		g_modVals.freezeFrameKey, g_modVals.stepForwardKey, g_modVals.freezeMode,
-		g_modVals.blockGameMouse ? 1 : 0, g_modVals.uiScale);
+		g_modVals.blockGameMouse ? 1 : 0, static_cast<double>(g_modVals.uiScale));
 }

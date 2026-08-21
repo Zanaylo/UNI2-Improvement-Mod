@@ -86,4 +86,7 @@ const char* const kDefaultIniLines[] = {
 	"Profiler = 0",
 	"MeterTrace = 0",
 	"Logging = 0",
+	"",
+	"[Compat]",
+	"WineSafeMode = -1",
 };

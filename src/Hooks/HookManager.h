@@ -1,5 +1,3 @@
-// MinHook wrapper plus the pattern, string and RTTI scanners used to locate game functions.
-
 #pragma once
 
 #include <Windows.h>
@@ -17,6 +15,15 @@ namespace HookManager
 	bool CreateVTableHook(void* instance, int index, void* detour, void** original, const char* label);
 	bool EnableAllHooks();
 	bool SetHookEnabled(void* target, bool enabled);
+
+	void* SkipJmpChain(void* target, int* outHops = nullptr);
+
+	int VerifyHooks();
+	void StartIntegrityWatchdog();
+	void StopIntegrityWatchdog();
+
+	bool AnyHookBroken();
+	const char* IntegrityStatus();
 
 	uintptr_t FindPattern(const char* pattern, const char* mask);
 	uintptr_t FindPatternInRange(uintptr_t start, size_t size, const char* pattern, const char* mask);

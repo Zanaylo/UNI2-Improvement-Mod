@@ -1,4 +1,21 @@
-LIBRARY dinput8
+; One binary, two names. As dinput8.dll only DirectInput8Create is ever asked for; a copy renamed to
+; d3d9.dll - which is how the mod loads on Proton without a launch option - is asked for the Direct3D
+; entry points instead. Exporting both sets costs nothing and keeps the two installs on one build.
+;
+; PSGPError, PSGPSampleTexture, DebugSetMute, DebugSetLevel, Direct3DShaderValidatorCreate9 and
+; Direct3D9EnableMaximizedWindowedModeShim are deliberately absent: they are undocumented, nothing
+; outside the Direct3D debug runtime imports them by name, and a wrong guess at an argument count
+; would corrupt the caller's stack rather than fail cleanly.
 
 EXPORTS
     DirectInput8Create
+
+    Direct3DCreate9
+    Direct3DCreate9Ex
+    D3DPERF_BeginEvent
+    D3DPERF_EndEvent
+    D3DPERF_GetStatus
+    D3DPERF_QueryRepeatFrame
+    D3DPERF_SetMarker
+    D3DPERF_SetOptions
+    D3DPERF_SetRegion

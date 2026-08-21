@@ -22,11 +22,45 @@ std::string BuildDumpPath()
 	return GetModLogPath(name);
 }
 
+void LogFaultLocation(EXCEPTION_POINTERS* exceptionInfo)
+{
+	const EXCEPTION_RECORD* const record =
+		exceptionInfo != nullptr ? exceptionInfo->ExceptionRecord : nullptr;
+
+	if (record == nullptr)
+	{
+		LOG("CRASH: no exception record");
+		return;
+	}
+
+	void* const address = record->ExceptionAddress;
+
+	char module[MAX_PATH] = "<no module>";
+	HMODULE owner = nullptr;
+
+	if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>(address), &owner) &&
+		owner != nullptr)
+	{
+		if (GetModuleFileNameA(owner, module, MAX_PATH) == 0)
+			strncpy_s(module, "<unnamed module>", _TRUNCATE);
+	}
+
+	const size_t offset = owner != nullptr
+		? static_cast<size_t>(reinterpret_cast<const char*>(address) -
+			reinterpret_cast<const char*>(owner))
+		: 0;
+
+	LOG("CRASH: code 0x%08lx at 0x%p in %s (+0x%zx)",
+		static_cast<unsigned long>(record->ExceptionCode), address, module, offset);
+}
+
 }
 
 LONG WINAPI UnhandledExceptionFilterProc(EXCEPTION_POINTERS* exceptionInfo)
 {
 	CreateModDirectories();
+	LogFaultLocation(exceptionInfo);
 
 	const std::string path = BuildDumpPath();
 	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

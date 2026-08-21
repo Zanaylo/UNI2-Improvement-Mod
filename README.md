@@ -42,8 +42,12 @@ Copy `dinput8.dll` next to `uni2.exe`:
 
 Press **F1** in game for the overlay. To uninstall, delete `dinput8.dll`.
 
-`UNI2_IM.ini` is written with defaults the first time the mod runs, next to the DLL. Delete it to go
-back to defaults. Every key in it is documented under [The ini file](#the-ini-file).
+`UNI2_IM.ini` is written with defaults the first time the mod runs, in the `UNI2-IM` folder next to
+the DLL. It repairs itself from then on: every run, any key or whole section the file is missing is
+appended with its default, and nothing you have edited is touched. A new version that adds settings
+therefore adds them to your existing file, and a file you cut down to two lines by hand is filled
+back in. Delete it to go back to defaults. Every key is documented under
+[The ini file](#the-ini-file).
 
 The frame meter draws with the game's own panel art and font. The mod lifts those files out of the
 game's `d` archive into `UNI2-IM\Assets` on first run, so there is nothing to extract by hand and no
@@ -51,6 +55,71 @@ game data in the download. Delete the folder and it is rebuilt; if the archive c
 meter still works, drawn in flat colours.
 
 To chain-load another `dinput8.dll` wrapper, put its full path in `[Mod] DinputDllWrapper`.
+
+### Linux and Steam Deck (Proton)
+
+Install it exactly as on Windows first: `dinput8.dll` next to `uni2.exe`, nothing else. Proton 9 and
+newer load a mod's own `dinput8.dll` on their own, so on a current Proton that is the whole of it.
+
+It is older Proton that does not. Wine decides which `dinput8.dll` to load from a per-prefix
+override rather than from the folder the file is in, so on those the DLL sits next to `uni2.exe` and
+is never loaded at all - that is what "the mod does nothing on Linux" is. If no `UNI2-IM` folder
+appears next to the game after a run, take one of these two, **never both at once**, or two copies
+of the mod load into the same process:
+
+**Without a launch option.** Rename the mod's `dinput8.dll` to `d3d9.dll` and leave it next to
+`uni2.exe`. Proton treats `d3d9` as native on every version, because that is how DXVK is installed,
+so the file is loaded with nothing to configure. This build carries the Direct3D 9 entry points as
+well as the DirectInput one and works out which name it was loaded as at startup.
+
+**The one that keeps the Windows name.** Keep `dinput8.dll` and set the game's Steam launch options
+to:
+
+```
+WINEDLLOVERRIDES="dinput8=n,b" %command%
+```
+
+This is the same thing Proton 9 and newer already do for you, spelled out by hand.
+
+On Linux the mod turns on **compatibility safe mode** by itself: no fullscreen refresh rewriting, no
+power throttling opt-out, no `Sleep` substitution. Those three are tuning for the Windows scheduler
+and desktop compositor, and on Linux DXVK and the kernel are already doing that job with better
+information. Set `[Compat] WineSafeMode = 0` to take them back - and to find out whether one of them
+is what is misbehaving, if something is.
+
+If nothing happens at all, look for a `UNI2-IM` folder next to `uni2.exe`. No folder means the DLL
+was never loaded, so the problem is the step above rather than the mod. To get a log out of a
+machine where it does load, create `UNI2-IM/UNI2_IM.ini` by hand with just these two lines and start
+the game once - the mod fills in the rest of the file by itself:
+
+```ini
+[Debug]
+Logging = 1
+```
+
+Do **not** use the `d3d9.dll` name on Windows. RivaTuner refuses to hook a Direct3D runtime that
+lives outside a system folder, so that name and RTSS cannot both work.
+
+### RivaTuner Statistics Server, MSI Afterburner and other overlays
+
+Two overlays in one game means two hook engines on the same Direct3D functions, and the usual way
+that ends is one of them writing its jump over the other's. RTSS checks that its own jump is still
+there and puts it back when it is not, which takes the other engine's hook with it - the mod's
+overlay draws for one frame and then never again, or the game crashes at startup.
+
+The mod no longer writes over anybody. Every hook follows the chain of jumps already at the front of
+the function and installs itself at the end of it, which is what the RTSS author asks third parties
+to do, so both overlays end up in one working chain and load order stops mattering. The same change
+is why the Steam overlay, which hooks the same functions, now composes cleanly as well.
+
+If something still goes wrong, set `[Debug] Logging = 1` in `UNI2_IM.ini` and run the game once: the
+log in `UNI2-IM/Logs` names the hook and says what happened to it, and the Debug window shows the
+same state live. Two RTSS settings fix the rest:
+
+- **Settings / General / Injection properties, "Use Microsoft Detours API hooking".** This switches
+  RTSS to a hooking model built for coexisting with other engines.
+- **The game's RTSS profile, Application detection level, None.** RTSS then leaves the game alone
+  entirely, and its own overlay with it.
 
 ## Features
 
@@ -167,8 +236,10 @@ search, a pointer follower and a struct viewer.
 
 ## The ini file
 
-`UNI2_IM.ini` sits next to the DLL. Missing keys take their defaults, so you can delete anything you
-are not changing, and the whole file can be deleted to start over.
+`UNI2_IM.ini` sits in the `UNI2-IM` folder next to the DLL, and the mod completes it on every run:
+a missing key or section is appended with its default, an edited one is left exactly as it is, and
+the whole file can be deleted to start over. So the file always lists every setting this build
+understands, and keys added by a new version turn up in it on the next launch.
 
 ### `[Mod]`
 
@@ -280,6 +351,16 @@ XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back
 | `Profiler` | `0` | Frame interval and per-section timing, shown in the Performance window's Metrics tab. |
 | `MeterTrace` | `0` | The frame meter's diagnostic capture and its CSV. |
 
+`Logging = 1` is what turns logging on, and nothing is written without it. It is the first thing to
+ask for when someone reports that the mod does nothing: the log records the startup trail, every
+hook the mod installed and where, and anything that faulted.
+
+### `[Compat]`
+
+| Key | Default | What it does |
+|---|---|---|
+| `WineSafeMode` | `-1` | `-1` automatic - on under Wine/Proton, off on Windows. `1` forces it on, `0` forces it off. On, the mod leaves the host's presentation and scheduling alone: no fullscreen refresh rewriting, no power throttling opt-out, no `Sleep` substitution. Set `0` on Linux to find out whether one of those three is what is misbehaving. |
+
 ## Building
 
 Needs **Visual Studio 2026** - the project targets platform toolset **v145**, which the 2022
@@ -366,8 +447,12 @@ Copie `dinput8.dll` para a pasta do `uni2.exe`:
 
 **F1** no jogo abre a interface. Para desinstalar, apague `dinput8.dll`.
 
-O `UNI2_IM.ini` é criado com os padrões na primeira vez que o mod roda, ao lado da DLL. Apague-o
-para voltar ao padrão. Cada chave dele está documentada em [The ini file](#the-ini-file).
+O `UNI2_IM.ini` é criado com os padrões na primeira vez que o mod roda, na pasta `UNI2-IM` ao lado
+da DLL. A partir daí ele se conserta sozinho: a cada execução, toda chave ou seção que estiver
+faltando é acrescentada com o valor padrão, e nada que você editou é tocado. Uma versão nova que
+adicione configurações passa a acrescentá-las no seu arquivo, e um arquivo que você reduziu a duas
+linhas na mão é preenchido de volta. Apague-o para voltar ao padrão. Cada chave está documentada em
+[The ini file](#the-ini-file).
 
 O medidor de quadros desenha com a arte de painel e a fonte do próprio jogo. O mod extrai esses
 arquivos do arquivo `d` do jogo para `UNI2-IM\Assets` na primeira execução, então não há nada para
@@ -376,6 +461,72 @@ puder ser lido, o medidor continua funcionando, desenhado em cores chapadas.
 
 Para encadear outro wrapper de `dinput8.dll`, ponha o caminho completo dele em
 `[Mod] DinputDllWrapper`.
+
+### Linux e Steam Deck (Proton)
+
+Instale exatamente como no Windows primeiro: `dinput8.dll` ao lado do `uni2.exe`, e mais nada. O
+Proton 9 e mais novos carregam o `dinput8.dll` de um mod por conta própria, então num Proton atual é
+só isso.
+
+Quem não faz isso é o Proton antigo. O Wine escolhe qual `dinput8.dll` carregar por uma configuração
+do prefixo, não pela pasta em que o arquivo está, então nesses a DLL fica ao lado do `uni2.exe` e
+simplesmente nunca é carregada - é isso que o relato "o mod não faz nada no Linux" quer dizer. Se
+nenhuma pasta `UNI2-IM` aparecer ao lado do jogo depois de uma execução, use um dos dois caminhos
+abaixo. **Nunca os dois ao mesmo tempo**, senão duas cópias do mod carregam no mesmo processo:
+
+**Sem launch option.** Renomeie o `dinput8.dll` do mod para `d3d9.dll` e deixe ao lado do
+`uni2.exe`. O Proton trata `d3d9` como nativo em todas as versões, porque é assim que o DXVK é
+instalado, então o arquivo carrega sem configurar nada. Esta build carrega os pontos de entrada do
+Direct3D 9 além do de DirectInput e descobre sozinha com qual nome foi carregada.
+
+**O jeito que mantém o nome do Windows.** Mantenha `dinput8.dll` e ponha nas opções de inicialização
+do jogo na Steam:
+
+```
+WINEDLLOVERRIDES="dinput8=n,b" %command%
+```
+
+É a mesma coisa que o Proton 9 e mais novos já fazem sozinhos, escrita à mão.
+
+No Linux o mod liga sozinho o **modo de compatibilidade**: sem reescrever a taxa de atualização em
+tela cheia, sem opt-out de power throttling e sem substituir o `Sleep`. Esses três são ajustes para
+o agendador e o compositor do Windows; no Linux o DXVK e o kernel já fazem esse trabalho com
+informação melhor. Ponha `[Compat] WineSafeMode = 0` para tê-los de volta - e para descobrir se um
+deles é o que está atrapalhando, caso algo esteja.
+
+Se não acontecer absolutamente nada, procure uma pasta `UNI2-IM` ao lado do `uni2.exe`. Se ela não
+existir, a DLL nunca foi carregada, então o problema é o passo acima e não o mod. Para tirar um log
+de uma máquina onde ele carrega, crie o `UNI2-IM/UNI2_IM.ini` na mão com só estas duas linhas e abra
+o jogo uma vez - o mod preenche o resto do arquivo sozinho:
+
+```ini
+[Debug]
+Logging = 1
+```
+
+**Não** use o nome `d3d9.dll` no Windows. O RivaTuner se recusa a hookar um runtime Direct3D que
+esteja fora de uma pasta de sistema, então esse nome e o RTSS não funcionam juntos.
+
+### RivaTuner Statistics Server, MSI Afterburner e outros overlays
+
+Dois overlays no mesmo jogo são dois motores de hook nas mesmas funções do Direct3D, e o final
+costuma ser um escrevendo o salto dele por cima do do outro. O RTSS verifica se o salto dele ainda
+está lá e o repõe quando não está, o que leva junto o hook do outro motor - o overlay do mod desenha
+um quadro e nunca mais, ou o jogo fecha na inicialização.
+
+O mod não escreve mais por cima de ninguém. Cada hook segue a cadeia de saltos que já está na frente
+da função e se instala no fim dela, que é exatamente o que o autor do RTSS pede que terceiros façam.
+Os dois overlays acabam numa cadeia só que funciona, e a ordem de carregamento deixa de importar. É
+a mesma mudança que fez o overlay da Steam, que hooka as mesmas funções, conviver bem também.
+
+Se mesmo assim algo der errado, ponha `[Debug] Logging = 1` no `UNI2_IM.ini` e rode o jogo uma vez: o
+log em `UNI2-IM/Logs` diz qual hook foi e o que aconteceu com ele, e a janela Debug mostra o mesmo
+estado ao vivo. Duas opções do RTSS resolvem o resto:
+
+- **Settings / General / Injection properties, "Use Microsoft Detours API hooking".** Isso muda o
+  RTSS para um modelo de hook feito para conviver com outros motores.
+- **No perfil do jogo no RTSS, Application detection level, None.** Aí o RTSS deixa o jogo em paz de
+  vez - e o overlay dele junto.
 
 ## Funções
 
@@ -559,8 +710,74 @@ arquivo inteiro pode ser apagado para recomeçar.
 
 ゲーム中に **F1** でオーバーレイを開きます。アンインストールは `dinput8.dll` を削除するだけです。
 
-`UNI2_IM.ini` は初回起動時に既定値で DLL の隣に作成されます。削除すれば既定値に戻ります。各キーの
+`UNI2_IM.ini` は初回起動時に既定値で DLL の隣の `UNI2-IM` フォルダーに作成されます。以降は自動的に補完
+されます。起動のたびに、ファイルに無いキーやセクションが既定値で追記され、編集済みの値には一切触れま
+せん。設定が増えた新しいバージョンでも、既存のファイルにその項目が追加されます。削除すれば既定値に戻り
+ます。各キーの
 説明は [The ini file](#the-ini-file) にあります。
+
+### Linux / Steam Deck (Proton)
+
+まず Windows と同じように入れてください。`uni2.exe` の隣に `dinput8.dll` を置くだけです。Proton 9 以降
+は MOD 自身の `dinput8.dll` を読み込むようになっているので、最近の Proton ならこれで終わりです。
+
+問題は古い Proton です。Wine はどの `dinput8.dll` を読み込むかを、ファイルの置き場所ではなくプレフィッ
+クスごとの設定で決めます。そのため古い Proton では、DLL を `uni2.exe` の隣に置いても読み込まれません。
+「Linux では何も起きない」という報告はこれです。一度起動しても `UNI2-IM` フォルダーができない場合は、
+次の二つのどちらかを使ってください。**両方を同時に置かないでください**。同じプロセスに MOD が二重に読
+み込まれます。
+
+**起動オプションを使わない方法**: MOD の `dinput8.dll` を `d3d9.dll` にリネームして `uni2.exe` の隣に
+置きます。Proton は DXVK の都合でどのバージョンでも `d3d9` をネイティブ扱いにしているため、設定なしで
+読み込まれます。このビルドは DirectInput だけでなく Direct3D 9 のエクスポートも持っていて、どちらの名
+前で読み込まれたかを起動時に自分で判断します。
+
+**Windows と同じ名前のままにする方**: `dinput8.dll` のまま、Steam の起動オプションに次を設定します。
+
+```
+WINEDLLOVERRIDES="dinput8=n,b" %command%
+```
+
+Proton 9 以降が自動でやっていることを、手で指定するだけです。
+
+Linux では MOD が自動的に**互換セーフモード**になります。フルスクリーンのリフレッシュレート書き換え、
+電力スロットリングの opt-out、`Sleep` の置き換えを行いません。いずれも Windows のスケジューラーとデス
+クトップコンポジター向けの調整で、Linux では DXVK とカーネルがより正確な情報で同じ仕事をしています。
+`[Compat] WineSafeMode = 0` で元に戻せます。不具合の切り分けにも使えます。
+
+何も起きない場合は、`uni2.exe` の隣に `UNI2-IM` フォルダーができているか確認してください。無ければ DLL
+自体が読み込まれていないので、原因は MOD ではなく上の手順です。読み込まれている環境でログを取るには、
+`UNI2-IM/UNI2_IM.ini` を次の 2 行だけで手動作成して一度起動してください。残りは MOD が自動で補完しま
+す。
+
+```ini
+[Debug]
+Logging = 1
+```
+
+Windows で `d3d9.dll` の名前を使わないでください。RivaTuner はシステムフォルダー外にある Direct3D ラン
+タイムへのフックを拒否するため、この名前と RTSS は両立しません。
+
+### RivaTuner Statistics Server / MSI Afterburner などのオーバーレイ
+
+同じゲームに二つのオーバーレイがあるということは、同じ Direct3D 関数に二つのフックエンジンが乗るという
+ことです。片方がもう片方のジャンプを上書きしてしまうのが典型的な結末です。RTSS は自分のジャンプが残っ
+ているかを定期的に確認し、無ければ書き戻すので、その際に相手のフックごと外れます。MOD のオーバーレイが
+1 フレームだけ描かれて消える、あるいは起動時に落ちるのはこれが原因です。
+
+この MOD はもう誰の上にも書き込みません。各フックは関数の先頭にすでにあるジャンプの連鎖をたどり、その
+末尾に自分を入れます。これは RTSS の作者がサードパーティに求めている方式そのもので、両方のオーバーレイ
+が一本の正しい連鎖に収まり、読み込み順は問題でなくなります。同じ関数をフックする Steam オーバーレイと
+共存できるようになったのも同じ変更によるものです。
+
+それでも問題が出る場合は `UNI2_IM.ini` の `[Debug] Logging = 1` を設定して一度起動してください。
+`UNI2-IM/Logs` のログにどのフックがどうなったかが記録され、Debug ウィンドウにも同じ状態が表示され
+ます。残りは RTSS 側の二つの設定で解決します。
+
+- **Settings / General / Injection properties の "Use Microsoft Detours API hooking"**。他のエンジン
+  との共存を前提としたフック方式に切り替わります。
+- **このゲームの RTSS プロファイルで Application detection level を None に**。RTSS はゲームに一切触
+  れなくなります（RTSS 自身のオーバーレイも出なくなります）。
 
 ## 機能
 

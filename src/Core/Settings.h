@@ -71,6 +71,8 @@ struct ModValues
 	bool pumpWait;
 	bool pumpWaitAllInput;
 
+	int wineSafeMode;
+
 	int internalResolutionPercent;
 	int internalResolutionBudgetMb;
 	bool disableBackBufferAa;

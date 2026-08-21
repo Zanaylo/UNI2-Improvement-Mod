@@ -1,5 +1,6 @@
 #include "D3D9/PresentTuning.h"
 
+#include "Core/Compat.h"
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 
@@ -176,9 +177,10 @@ void Rewrite(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
 
 void PresentTuning::Apply(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
 {
-	if (!g_modVals.displayTuning)
+	if (!g_modVals.displayTuning || Compat::SafeMode())
 	{
-		Decide("off - the game own parameters");
+		Decide(Compat::SafeMode() ? "safe mode - the host owns the presentation"
+			: "off - the game own parameters");
 		RewriteMultiSample(parameters);
 		return;
 	}
@@ -191,7 +193,7 @@ void PresentTuning::Apply(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS& param
 	if (device == nullptr)
 		return;
 
-	if (!g_modVals.displayTuning)
+	if (!g_modVals.displayTuning || Compat::SafeMode())
 	{
 		RewriteMultiSample(parameters);
 		return;
