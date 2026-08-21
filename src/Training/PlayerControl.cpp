@@ -91,7 +91,7 @@ bool SetPadSlot(int player, uint32_t slot)
 	return TryWriteDword(reinterpret_cast<void*>(base + static_cast<uintptr_t>(player) * 4), slot);
 }
 
-constexpr int kButtonByte[4] = { 3, 2, 0, 1 };
+int g_buttonByte[4] = { 3, 2, 0, 1 };
 
 void WriteStruct(void* out, uint8_t lever, uint8_t buttons)
 {
@@ -105,9 +105,20 @@ void WriteStruct(void* out, uint8_t lever, uint8_t buttons)
 	for (int bit = 0; bit < 4; ++bit)
 	{
 		if ((buttons & (1u << bit)) != 0)
-			bytes[0x08 + kButtonByte[bit]] = 1;
+			bytes[0x08 + g_buttonByte[bit]] = 1;
 	}
 }
+
+constexpr int kCalibrateByteCount = 12;
+constexpr int kCalibrateHoldFrames = 6;
+constexpr int kCalibrateSampleFrame = 4;
+constexpr int kCalibrateGapFrames = 3;
+
+bool g_calibrating = false;
+int g_calibrateByte = 0;
+int g_calibratePhase = 0;
+int g_calibrateFrame = 0;
+int g_calibrateFoundByte[4] = { -1, -1, -1, -1 };
 
 bool PrimePlayback()
 {
@@ -204,6 +215,88 @@ bool AnythingDriving()
 	return g_mode != PlayerControl::Mode_Mine || g_heldLever != 0 || g_heldButtons != 0 ||
 		g_tapFrames > 0 || g_scriptFrame[0] < g_scriptCount[0] ||
 		g_scriptFrame[1] < g_scriptCount[1];
+}
+
+void SampleCalibration()
+{
+	PlayerControl::Input input = {};
+	if (!PlayerControl::ReadInput(PlayerControl::GetHomeSide(), input) || input.buttons == 0)
+		return;
+
+	int found = -1;
+
+	for (int bit = 0; bit < 4; ++bit)
+	{
+		if ((input.buttons & (1u << bit)) == 0)
+			continue;
+
+		if (found >= 0)
+			return;
+
+		found = bit;
+	}
+
+	if (found >= 0 && g_calibrateFoundByte[found] < 0)
+		g_calibrateFoundByte[found] = g_calibrateByte;
+}
+
+void FinishCalibration()
+{
+	g_calibrating = false;
+	PutBack();
+
+	bool ok = true;
+	for (int bit = 0; bit < 4; ++bit)
+		ok = ok && g_calibrateFoundByte[bit] >= 0;
+
+	if (!ok)
+	{
+		sprintf_s(g_status, "calibration could not find all four buttons - kept the previous mapping");
+		LOG("player control: %s", g_status);
+		return;
+	}
+
+	for (int bit = 0; bit < 4; ++bit)
+		g_buttonByte[bit] = g_calibrateFoundByte[bit];
+
+	sprintf_s(g_status, "calibrated: A=byte%d B=byte%d C=byte%d D=byte%d", g_buttonByte[0],
+		g_buttonByte[1], g_buttonByte[2], g_buttonByte[3]);
+	LOG("player control: %s", g_status);
+}
+
+void UpdateCalibration()
+{
+	SetEnemyStatus(GameOffsets::kEnemyStatusController);
+	ClearInputHold();
+
+	++g_calibrateFrame;
+
+	if (g_calibratePhase == 0)
+	{
+		if (g_calibrateFrame == kCalibrateSampleFrame)
+			SampleCalibration();
+
+		if (g_calibrateFrame < kCalibrateHoldFrames)
+		{
+			sprintf_s(g_status, "calibrating button %d of %d", g_calibrateByte + 1,
+				kCalibrateByteCount);
+			return;
+		}
+
+		g_calibratePhase = 1;
+		g_calibrateFrame = 0;
+		return;
+	}
+
+	if (g_calibrateFrame < kCalibrateGapFrames)
+		return;
+
+	g_calibratePhase = 0;
+	g_calibrateFrame = 0;
+	++g_calibrateByte;
+
+	if (g_calibrateByte >= kCalibrateByteCount)
+		FinishCalibration();
 }
 
 void __fastcall HookedFetchPad(void* out, int player)
@@ -345,6 +438,8 @@ void PlayerControl::Release()
 	g_heldButtons = 0;
 	g_tapFrames = 0;
 
+	g_calibrating = false;
+
 	StopScript(0);
 	StopScript(1);
 
@@ -356,6 +451,40 @@ void PlayerControl::Release()
 bool PlayerControl::IsDriving()
 {
 	return g_routed;
+}
+
+void PlayerControl::Calibrate()
+{
+	if (!GameState::AllowsTrainingTools())
+	{
+		sprintf_s(g_status, "calibration needs a match");
+		return;
+	}
+
+	g_mode = Mode_Mine;
+	g_heldLever = 0;
+	g_heldButtons = 0;
+	g_tapFrames = 0;
+
+	StopScript(0);
+	StopScript(1);
+
+	SaveOnce();
+
+	g_calibrating = true;
+	g_calibrateByte = 0;
+	g_calibratePhase = 0;
+	g_calibrateFrame = 0;
+
+	for (int bit = 0; bit < 4; ++bit)
+		g_calibrateFoundByte[bit] = -1;
+
+	sprintf_s(g_status, "calibrating button 1 of %d", kCalibrateByteCount);
+}
+
+bool PlayerControl::IsCalibrating()
+{
+	return g_calibrating;
 }
 
 void PlayerControl::KeepAlive()
@@ -386,7 +515,16 @@ void PlayerControl::Update()
 void PlayerControl::OnFrameUpdate()
 {
 	if (!GameState::AllowsTrainingTools())
+	{
+		g_calibrating = false;
 		return;
+	}
+
+	if (g_calibrating)
+	{
+		UpdateCalibration();
+		return;
+	}
 
 	if (!AnythingDriving())
 	{
@@ -508,7 +646,7 @@ void DriveFetched(void* out, int player)
 	uint8_t mask = 0;
 	for (int bit = 0; bit < 4; ++bit)
 	{
-		if (buttons[kButtonByte[bit]] != 0)
+		if (buttons[g_buttonByte[bit]] != 0)
 			mask = static_cast<uint8_t>(mask | (1u << bit));
 	}
 
@@ -532,6 +670,23 @@ void PlayerControl::OnPadFetched(void* out, int player)
 {
 	if (out == nullptr || player < 0 || player > 1 || !GameState::AllowsTrainingTools())
 		return;
+
+	if (g_calibrating)
+	{
+		if (player != GetHomeSide())
+			return;
+
+		uint8_t* const bytes = static_cast<uint8_t*>(out);
+
+		bytes[0x04] = 0;
+		for (int i = 0; i < 12; ++i)
+			bytes[0x08 + i] = 0;
+
+		if (g_calibratePhase == 0)
+			bytes[0x08 + g_calibrateByte] = 1;
+
+		return;
+	}
 
 	DriveFetched(out, player);
 }

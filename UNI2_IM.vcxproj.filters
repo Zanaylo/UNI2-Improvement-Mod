@@ -93,6 +93,9 @@
     <ClCompile Include="src\Core\utils.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\AsyncFileDialog.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\TextEncoding.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -190,6 +193,9 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\LivePalette.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PngPalette.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\CgImage.cpp">
@@ -440,6 +446,9 @@
     <ClInclude Include="src\Core\utils.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\AsyncFileDialog.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\TextEncoding.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -540,6 +549,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\LivePalette.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PngPalette.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\CgImage.h">

@@ -3,6 +3,7 @@
 #include "Core/logger.h"
 #include "Core/Settings.h"
 #include "Core/utils.h"
+#include "Game/PartColourTable.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteFile.h"
@@ -98,6 +99,10 @@ bool PaletteChoice::Apply(int player, int chara, const char* file)
 		return false;
 
 	PalettePaint::Stage(player, colours);
+
+	if (!hasEffects)
+		hasEffects = PartColourTable::BuildAutoEffectBlock(chara, colours, effects);
+
 	EffectPaint::SetBlock(player, hasEffects ? effects : nullptr);
 
 	NoteWorn(player, file);

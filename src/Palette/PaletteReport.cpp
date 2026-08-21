@@ -9,6 +9,7 @@
 #include "Game/OnlineState.h"
 #include "Network/PaletteShare.h"
 #include "Network/SteamNetwork.h"
+#include "Palette/EffectPaint.h"
 #include "Palette/PaletteDrawProbe.h"
 #include "Palette/PaletteBinder.h"
 #include "Palette/PaletteFile.h"
@@ -265,8 +266,7 @@ void WriteSide(FILE* file, int player)
 	fprintf(file, "  foreign     %s\n", PaletteManager::HasForeign(player)
 		? PaletteManager::GetForeignName(player) : "(none)");
 
-	fprintf(file, "  effects     %d entries edited\n",
-		PaletteDrawProbe::GetEffectEntryEditedCount(player));
+	fprintf(file, "  effects     %d entries edited\n", EffectPaint::GetEditedCount(player));
 
 	fprintf(file, "  palettes on disk for this character: %d\n", PaletteManager::GetCount(player));
 

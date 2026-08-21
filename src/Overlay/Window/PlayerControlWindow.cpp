@@ -157,6 +157,8 @@ void PlayerControlWindow::Draw()
 	const int away = home == 0 ? 1 : 0;
 	InputLagMeter::KeepAlive(PlayerControl::GetMode() == PlayerControl::Mode_Other ? away : home);
 
+	DrawButtonCalibration();
+
 	if (ImGui::BeginTable("##sides", 2, ImGuiTableFlags_SizingStretchSame))
 	{
 		ImGui::TableNextRow();
@@ -196,6 +198,28 @@ void PlayerControlWindow::DrawSide(int player)
 	DrawButtons(input.buttons, 18.0f);
 
 	ImGui::PopID();
+}
+
+void PlayerControlWindow::DrawButtonCalibration()
+{
+	const bool calibrating = PlayerControl::IsCalibrating();
+
+	ImGui::BeginDisabled(calibrating);
+
+	if (ImGui::Button(calibrating ? "Calibrating..." : "Calibrate buttons"))
+		PlayerControl::Calibrate();
+
+	ImGui::EndDisabled();
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Presses each pad button on its own and watches which one lands, so scripts "
+			"and Player Control get your character's A/B/C/D right even with a custom button layout. "
+			"Takes a few seconds - hold still.");
+	}
+
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", PlayerControl::GetStatus());
 }
 
 void PlayerControlWindow::DrawKeyboard()

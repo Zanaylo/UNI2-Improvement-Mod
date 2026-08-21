@@ -41,6 +41,9 @@ namespace PlayerControl
 	void Release();
 	bool IsDriving();
 
+	void Calibrate();
+	bool IsCalibrating();
+
 	void KeepAlive();
 
 	void Update();

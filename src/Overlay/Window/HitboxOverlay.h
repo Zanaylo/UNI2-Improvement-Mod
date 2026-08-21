@@ -1,5 +1,6 @@
-// The hitbox viewer. ClassifyBox is the single place a box type is decided - no box number is a
-// mechanic on its own, so a catch is only ever read from the move's own catch record.
+// The hitbox viewer. ClassifyBox is the single place a box type is decided. A catch (Clash, Guard
+// point) is only ever read from the move's own catch record, never guessed from the index alone -
+// except Projectile clash, which the game itself keys by index (Etc 3) with no record at all.
 
 #pragma once
 

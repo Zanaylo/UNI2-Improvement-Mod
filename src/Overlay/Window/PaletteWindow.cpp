@@ -8,6 +8,7 @@
 #include "Game/EffectTable.h"
 #include "Game/PartColourTable.h"
 #include "Game/GameTables.h"
+#include "Game/PngPalette.h"
 #include "Game/StockPalettes.h"
 #include "Overlay/ComboNav.h"
 #include "Network/PaletteShare.h"
@@ -270,8 +271,7 @@ void PaletteWindow::DrawGroupedSwatches(int player, int chara, int parts)
 	ImGui::PopID();
 }
 
-// The rules the first palette system used, less the one for black. Judged on the game's own colours
-// rather than the composed ones, so editing an entry cannot make it disappear from under the cursor.
+
 bool PaletteWindow::IsJunk(int player, int entry) const
 {
 	if (!g_modVals.paletteFilterJunk)
@@ -280,8 +280,7 @@ bool PaletteWindow::IsJunk(int player, int entry) const
 	const uint8_t* const colours = m_colours[player].baseline;
 	const uint8_t* const colour = colours + entry * 4;
 
-	// Black stays: it is a real colour on plenty of characters, and hiding it cost more than the
-	// padding it also matched.
+
 	if (colour[0] == 0 && colour[1] == 255 && colour[2] == 0)
 		return true;
 
@@ -765,6 +764,7 @@ void PaletteWindow::LoadCreator()
 void PaletteWindow::DrawFiles(int player)
 {
 	LoadCreator();
+	PollPngDialogs(player);
 
 	// A side can stop being editable while its name is half typed - the local side is only known
 	// once a match starts, and a disabled field drops ImGui's focus, which hands the rest of the
@@ -889,6 +889,22 @@ void PaletteWindow::DrawFiles(int player)
 	if (ImGui::Button("Rescan"))
 		RefreshFiles(player);
 
+	const bool importing = m_pngImportDialog[player].IsRunning();
+
+	ImGui::BeginDisabled(importing);
+
+	if (ImGui::Button(importing ? "Importing..." : "Import PNG..."))
+		m_pngImportDialog[player].BeginOpen("Import a palette PNG", "PNG images\0*.png\0");
+
+	ImGui::EndDisabled();
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Applies an indexed PNG's own colour table straight to this character. "
+			"The PNG's entries have to already line up with the game's - this does not re-quantize "
+			"or reorder colours.");
+	}
+
 	if (!nameOk && m_name[player][0] != '\0')
 		ImGui::TextDisabled("that name cannot be a filename");
 	else if (m_status[player][0] != '\0')
@@ -1012,6 +1028,22 @@ bool PaletteWindow::Save(int player)
 	return true;
 }
 
+void PaletteWindow::ApplyImportedColours(int player, const uint8_t* colours, const uint8_t* effects)
+{
+	Record(player);
+	LivePalette::Reset(m_colours[player], m_chara[player]);
+
+	for (int i = 1; i < LivePalette::kColours; ++i)
+	{
+		memcpy(m_colours[player].entry[i], colours + i * 4, 3);
+		m_colours[player].edited[i] = true;
+	}
+
+	EffectPaint::SetBlock(player, effects);
+
+	Apply(player);
+}
+
 bool PaletteWindow::Load(int player, const char* name)
 {
 	uint8_t colours[PaletteFile::kBytes] = {};
@@ -1028,18 +1060,10 @@ bool PaletteWindow::Load(int player, const char* name)
 	strncpy_s(m_creator[player], info.creator, _TRUNCATE);
 	strncpy_s(m_description[player], info.description, _TRUNCATE);
 
-	Record(player);
-	LivePalette::Reset(m_colours[player], m_chara[player]);
+	if (!hasEffects)
+		hasEffects = PartColourTable::BuildAutoEffectBlock(m_chara[player], colours, effects);
 
-	for (int i = 1; i < LivePalette::kColours; ++i)
-	{
-		memcpy(m_colours[player].entry[i], colours + i * 4, 3);
-		m_colours[player].edited[i] = true;
-	}
-
-	EffectPaint::SetBlock(player, hasEffects ? effects : nullptr);
-
-	Apply(player);
+	ApplyImportedColours(player, colours, hasEffects ? effects : nullptr);
 
 	PaletteChoice::Remember(m_chara[player], name);
 	PaletteChoice::NoteWorn(player, name);
@@ -1048,6 +1072,59 @@ bool PaletteWindow::Load(int player, const char* name)
 	StripExtension(m_name[player]);
 
 	return true;
+}
+
+void PaletteWindow::PollPngDialogs(int player)
+{
+	std::string path;
+
+	if (m_pngImportDialog[player].TakeResult(path))
+		CompleteImportPng(player, path);
+
+	if (m_pngExportDialog[player].TakeResult(path))
+		CompleteExportPng(player, path);
+}
+
+void PaletteWindow::CompleteImportPng(int player, const std::string& path)
+{
+	uint8_t colours[PaletteFile::kBytes] = {};
+	std::string error;
+
+	if (!PngPalette::Read(path, colours, error))
+	{
+		sprintf_s(m_status[player], "%s", error.c_str());
+		return;
+	}
+
+	uint8_t effects[PaletteFile::kBytes] = {};
+	const bool haveEffects = PartColourTable::BuildAutoEffectBlock(m_chara[player], colours, effects);
+
+	ApplyImportedColours(player, colours, haveEffects ? effects : nullptr);
+
+	const size_t slash = path.find_last_of("\\/");
+	std::string stem = path.substr(slash == std::string::npos ? 0 : slash + 1);
+
+	const size_t dot = stem.find_last_of('.');
+	if (dot != std::string::npos)
+		stem.resize(dot);
+
+	strncpy_s(m_name[player], stem.c_str(), _TRUNCATE);
+
+	m_chosen[player] = -1;
+	sprintf_s(m_status[player], "Imported '%s'. Save to keep it as a .pal.", m_name[player]);
+}
+
+void PaletteWindow::CompleteExportPng(int player, const std::string& path)
+{
+	std::string error;
+
+	if (!PngPalette::Write(path, m_composed[player], error))
+	{
+		sprintf_s(m_status[player], "%s", error.c_str());
+		return;
+	}
+
+	sprintf_s(m_status[player], "Exported.");
 }
 
 void PaletteWindow::Adopt(int player, int chara)

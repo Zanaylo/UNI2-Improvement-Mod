@@ -120,6 +120,7 @@
     <ClCompile Include="src\Core\logger.cpp" />
     <ClCompile Include="src\Core\crashdump.cpp" />
     <ClCompile Include="src\Core\utils.cpp" />
+    <ClCompile Include="src\Core\AsyncFileDialog.cpp" />
     <ClCompile Include="src\Core\TextEncoding.cpp" />
     <ClCompile Include="src\Core\KeyboardCapture.cpp" />
     <ClCompile Include="src\Core\keycodes.cpp" />
@@ -179,6 +180,7 @@
     <ClCompile Include="src\Game\ColorCustomize.cpp" />
     <ClCompile Include="src\Game\ColorOverride.cpp" />
     <ClCompile Include="src\Game\LivePalette.cpp" />
+    <ClCompile Include="src\Game\PngPalette.cpp" />
     <ClCompile Include="src\Game\CgImage.cpp" />
     <ClCompile Include="src\Game\PatParts.cpp" />
     <ClCompile Include="src\Game\SaveData.cpp" />
@@ -228,6 +230,7 @@
     <ClInclude Include="src\Core\logger.h" />
     <ClInclude Include="src\Core\crashdump.h" />
     <ClInclude Include="src\Core\utils.h" />
+    <ClInclude Include="src\Core\AsyncFileDialog.h" />
     <ClInclude Include="src\Core\TextEncoding.h" />
     <ClInclude Include="src\Core\KeyboardCapture.h" />
     <ClInclude Include="src\Core\keycodes.h" />
@@ -256,6 +259,7 @@
     <ClInclude Include="src\Game\ColorCustomize.h" />
     <ClInclude Include="src\Game\ColorOverride.h" />
     <ClInclude Include="src\Game\LivePalette.h" />
+    <ClInclude Include="src\Game\PngPalette.h" />
     <ClInclude Include="src\Game\CgImage.h" />
     <ClInclude Include="src\Game\PatParts.h" />
     <ClInclude Include="src\Game\SaveData.h" />

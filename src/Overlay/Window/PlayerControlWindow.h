@@ -16,4 +16,5 @@ protected:
 private:
 	void DrawSide(int player);
 	void DrawKeyboard();
+	void DrawButtonCalibration();
 };

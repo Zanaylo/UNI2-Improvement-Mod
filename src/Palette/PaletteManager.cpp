@@ -7,6 +7,8 @@
 #include "Game/Camera.h"
 #include "Game/GameState.h"
 #include "Game/MemoryMap.h"
+#include "Game/PartColourTable.h"
+#include "Palette/EffectPaint.h"
 #include "Palette/PaletteDrawProbe.h"
 #include "Palette/PaletteFile.h"
 #include "Palette/PaletteIdentity.h"
@@ -109,18 +111,7 @@ bool FreshestEffectDrawRow(int texture, int& outRow)
 
 void ApplyEffectColours(int player, const uint8_t* colors)
 {
-	PaletteDrawProbe::ClearEffectEntryColours(player);
-
-	if (colors == nullptr)
-		return;
-
-	for (int entry = 1; entry < PaletteFile::kColors; ++entry)
-	{
-		if (colors[entry * 4 + 3] != 255)
-			continue;
-
-		PaletteDrawProbe::SetEffectEntryColour(player, entry, &colors[entry * 4]);
-	}
+	EffectPaint::SetBlock(player, colors);
 }
 
 void RestoreEffectRows()
@@ -592,7 +583,16 @@ bool PaletteManager::Apply(int player, int index)
 	PaletteDrawProbe::SyncEffectSides(GetCharaNumber(0), g_applied[0],
 		GetCharaNumber(1), g_applied[1]);
 
-	ApplyEffectColours(player, entry.hasEffect ? entry.effectColors : nullptr);
+	uint8_t autoEffect[PaletteFile::kBytes] = {};
+	const uint8_t* effectColors = entry.hasEffect ? entry.effectColors : nullptr;
+
+	if (effectColors == nullptr &&
+		PartColourTable::BuildAutoEffectBlock(folder->chara, entry.colors, autoEffect))
+	{
+		effectColors = autoEffect;
+	}
+
+	ApplyEffectColours(player, effectColors);
 
 	if (!g_suppressRemember)
 		g_handEdited[player] = false;
@@ -624,7 +624,7 @@ bool PaletteManager::Restore(int player, bool alsoEffects)
 	PaletteTexture::RestoreAll(texture);
 
 	if (alsoEffects)
-		PaletteDrawProbe::ClearEffectEntryColours(player);
+		EffectPaint::Clear(player);
 
 	g_handEdited[player] = false;
 

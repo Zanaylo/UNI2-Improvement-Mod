@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/AsyncFileDialog.h"
 #include "Game/LivePalette.h"
 #include "Overlay/Window/IWindow.h"
 
@@ -35,9 +36,15 @@ private:
 	void Apply(int player);
 	void Refresh(int player);
 
+	void ApplyImportedColours(int player, const uint8_t* colours, const uint8_t* effects);
+
 	bool Save(int player);
 	bool Load(int player, const char* name);
 	void RefreshFiles(int player);
+
+	void PollPngDialogs(int player);
+	void CompleteImportPng(int player, const std::string& path);
+	void CompleteExportPng(int player, const std::string& path);
 
 	void Adopt(int player, int chara);
 
@@ -65,6 +72,9 @@ private:
 	int m_fileCount[2] = {};
 	int m_chosen[2] = { -1, -1 };
 	char m_status[2][96] = {};
+
+	AsyncFileDialog m_pngImportDialog[2];
+	AsyncFileDialog m_pngExportDialog[2];
 
 	void LoadCreator();
 	void Bare(int player);

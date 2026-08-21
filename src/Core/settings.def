@@ -143,10 +143,10 @@ SETTING_INT(paletteOutOfMatch,      "Palette",  "PaintOutOfMatch",      0)
 
 // Reserved, and it no longer does anything.
 //
-// It used to gate writing a palette's saved effect block into a row of the effect *texture*. That
-// approach is in EFFECTS.md's refuted list - effects do not sample that texture, so it painted
-// nothing - and the block is now applied where the colour is really decided, one entry at a time
-// into the table the draw is answered from. The switch is left so an ini carrying it still loads.
+// It used to gate writing a palette's saved effect block into a row of the effect *texture*. Effects
+// do not sample that texture, so it painted nothing - the block is now applied where the colour is
+// really decided, one entry at a time into the table the draw is answered from. The switch is left
+// so an ini carrying it still loads.
 SETTING_INT(paletteEffectRows,      "Palette",  "PaintEffectRows",      1)
 
 // The first palette system is still compiled in and still works, but nothing in the interface

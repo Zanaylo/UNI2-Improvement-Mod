@@ -5,6 +5,9 @@ export/
 *.user
 *.aps
 *.log
+*.obj
+*.pdb
+*.ilk
 bindings.json
 __pycache__/
 tools/

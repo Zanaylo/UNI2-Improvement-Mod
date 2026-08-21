@@ -6,7 +6,7 @@
 #include "Game/GameState.h"
 #include "Game/GameTables.h"
 #include "Game/PartColourTable.h"
-#include "Palette/PaletteDrawProbe.h"
+#include "Palette/EffectPaint.h"
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteMemory.h"
 #include "Palette/PaletteTexture.h"
@@ -156,20 +156,19 @@ void PaletteEditorWindow::SyncEffectSwatches()
 {
 	for (int entry = 1; entry < PaletteFile::kColors; ++entry)
 	{
-		unsigned char drawn[3] = {};
-		unsigned char first[3] = {};
+		unsigned char observed[3] = {};
 
-		const bool seen = PaletteDrawProbe::GetEffectEntryColour(m_player, entry, drawn, first);
+		const bool seen = EffectPaint::GetObserved(m_player, entry, observed);
 
 		if (seen)
-			memcpy(&m_original[entry * 4], first, sizeof(first));
+			memcpy(&m_original[entry * 4], observed, sizeof(observed));
 
 		unsigned char edit[3] = {};
 
-		if (PaletteDrawProbe::GetEffectEntryEdit(m_player, entry, edit))
+		if (EffectPaint::GetEdit(m_player, entry, edit))
 			memcpy(&m_colors[entry * 4], edit, sizeof(edit));
 		else if (seen)
-			memcpy(&m_colors[entry * 4], drawn, sizeof(drawn));
+			memcpy(&m_colors[entry * 4], observed, sizeof(observed));
 	}
 }
 
@@ -213,7 +212,7 @@ void PaletteEditorWindow::DrawEffectEntries()
 		m_colors[m_selected * 4 + 1] = static_cast<uint8_t>(picked[1] * 255.0f + 0.5f);
 		m_colors[m_selected * 4 + 2] = static_cast<uint8_t>(picked[2] * 255.0f + 0.5f);
 
-		PaletteDrawProbe::SetEffectEntryColour(m_player, m_selected, &m_colors[m_selected * 4]);
+		EffectPaint::SetEntry(m_player, m_selected, &m_colors[m_selected * 4]);
 
 		PaletteManager::NoteHandEdited(m_player);
 	}
@@ -273,20 +272,8 @@ void PaletteEditorWindow::Save()
 		PaletteTexture::ReadRowAsRgba(characterTexture, static_cast<unsigned>(characterRow),
 			character);
 
-	bool haveEffect = false;
-
-	for (int entry = 1; entry < PaletteFile::kColors; ++entry)
-	{
-		unsigned char rgb[3] = {};
-		if (!PaletteDrawProbe::GetEffectEntryEdit(m_player, entry, rgb))
-			continue;
-
-		effect[entry * 4 + 0] = rgb[0];
-		effect[entry * 4 + 1] = rgb[1];
-		effect[entry * 4 + 2] = rgb[2];
-		effect[entry * 4 + 3] = 255;
-		haveEffect = true;
-	}
+	EffectPaint::GetBlock(m_player, effect);
+	const bool haveEffect = EffectPaint::GetEditedCount(m_player) > 0;
 
 	if (!haveCharacter)
 	{
@@ -471,7 +458,7 @@ void PaletteEditorWindow::DrawUndo(const char* label, const char* tip)
 	if (ImGui::Button(label))
 	{
 		if (m_editEffect)
-			PaletteDrawProbe::ClearEffectEntryColours(m_player);
+			EffectPaint::Clear(m_player);
 		else
 			PaletteManager::Restore(m_player, false);
 

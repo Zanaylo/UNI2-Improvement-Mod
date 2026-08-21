@@ -381,3 +381,26 @@ int PartColourTable::GetPartCount(int chara, int entry)
 
 	return 0;
 }
+
+bool PartColourTable::BuildAutoEffectBlock(int chara, const uint8_t* colours,
+	uint8_t* outEffect)
+{
+	const Chara* const found = FindChara(chara);
+	if (found == nullptr)
+		return false;
+
+	bool any = false;
+
+	for (int i = 0; i < found->count; ++i)
+	{
+		const int entry = found->rows[i].entry;
+
+		outEffect[entry * 4 + 0] = colours[entry * 4 + 0];
+		outEffect[entry * 4 + 1] = colours[entry * 4 + 1];
+		outEffect[entry * 4 + 2] = colours[entry * 4 + 2];
+		outEffect[entry * 4 + 3] = 255;
+		any = true;
+	}
+
+	return any;
+}
