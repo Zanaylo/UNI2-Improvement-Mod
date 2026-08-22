@@ -44,6 +44,17 @@ int g_stopTimeFrames = kDefaultStopTimeFrames;
 int g_refreshTicks = kDefaultRefreshTicks;
 int g_ticksSinceApply = 0;
 
+bool g_stopTimeHeld = false;
+
+void ReleaseStopTime()
+{
+	if (!g_stopTimeHeld)
+		return;
+
+	StopTime::ApplyAll(0);
+	g_stopTimeHeld = false;
+}
+
 uint64_t g_callCount = 0;
 uint64_t g_suppressedFrames = 0;
 
@@ -87,21 +98,25 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 			g_resumeCountdown = 0;
 			g_paused = false;
 
-			if (g_mode == FrameStepper::FreezeMode::StopTime)
+			if (g_stopTimeHeld)
+			{
 				StopTime::RequestOneShot(0);
+				g_stopTimeHeld = false;
+			}
 		}
 	}
 
 	const bool freezing = g_paused && allowed;
 
-	if (freezing && FrameStepper::GetEffectiveMode() == FrameStepper::FreezeMode::StopTime)
+	if (freezing && FrameStepper::GetEffectiveMode() == FrameStepper::FreezeMode::StopTime &&
+		!FrameMeter::IsSuperFlashRunning())
 	{
 
 		const bool advancing = g_pendingSteps > 0;
 
 		if (g_pendingSteps > 0)
 		{
-			StopTime::ApplyAll(0);
+			ReleaseStopTime();
 			g_ticksSinceApply = g_refreshTicks;
 			--g_pendingSteps;
 			g_steppedSinceLastPresent = true;
@@ -111,7 +126,10 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 			if (g_ticksSinceApply >= g_refreshTicks)
 			{
 				if (StopTime::ApplyAll(g_stopTimeFrames))
+				{
 					g_ticksSinceApply = 0;
+					g_stopTimeHeld = true;
+				}
 			}
 			else
 			{
@@ -147,6 +165,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 			return;
 		}
 
+		ReleaseStopTime();
 		--g_pendingSteps;
 		g_steppedSinceLastPresent = true;
 	}
@@ -225,9 +244,17 @@ bool FrameStepper::IsFrozen()
 	return g_paused && g_hooked && GameState::AllowsTrainingTools();
 }
 
+bool FrameStepper::SuppressesTicks()
+{
+	if (GetEffectiveMode() == FreezeMode::TickSuppress)
+		return true;
+
+	return FrameMeter::IsSuperFlashRunning();
+}
+
 bool FrameStepper::NeedsFrozenFrameReplay()
 {
-	return IsFrozen() && GetEffectiveMode() == FreezeMode::TickSuppress;
+	return IsFrozen() && SuppressesTicks();
 }
 
 bool FrameStepper::ConsumeSteppedFlag()
@@ -275,8 +302,11 @@ void FrameStepper::SetPaused(bool paused)
 
 	g_ticksSinceApply = g_refreshTicks;
 
-	if (!paused && GetEffectiveMode() == FreezeMode::StopTime)
+	if (!paused && g_stopTimeHeld)
+	{
 		StopTime::RequestOneShot(0);
+		g_stopTimeHeld = false;
+	}
 }
 
 void FrameStepper::TogglePaused()

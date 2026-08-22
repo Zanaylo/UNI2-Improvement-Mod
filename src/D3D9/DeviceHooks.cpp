@@ -260,7 +260,7 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitiveUP(IDirect3DDevice9* device,
 bool FrozenFrameCouldBeReplayed()
 {
 	return FrameStepper::IsImplemented() && GameState::AllowsTrainingTools() &&
-		FrameStepper::GetEffectiveMode() == FrameStepper::FreezeMode::TickSuppress;
+		FrameStepper::SuppressesTicks();
 }
 
 HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* sourceRect,

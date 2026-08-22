@@ -199,6 +199,7 @@
     <ClCompile Include="src\Training\StateRecorder.cpp" />
     <ClCompile Include="src\Training\DummyRecorder.cpp" />
     <ClCompile Include="src\Training\FrameMeter.cpp" />
+    <ClCompile Include="src\Training\SuperFlash.cpp" />
     <ClCompile Include="src\Overlay\FrameMeterHud.cpp" />
     <ClCompile Include="src\D3D9\DdsTexture.cpp" />
     <ClCompile Include="src\D3D9\QuadRenderer.cpp" />
@@ -312,6 +313,7 @@
     <ClInclude Include="src\Training\StateRecorder.h" />
     <ClInclude Include="src\Training\DummyRecorder.h" />
     <ClInclude Include="src\Training\FrameMeter.h" />
+    <ClInclude Include="src\Training\SuperFlash.h" />
     <ClInclude Include="src\Overlay\FrameMeterHud.h" />
     <ClInclude Include="src\D3D9\DdsTexture.h" />
     <ClInclude Include="src\D3D9\QuadRenderer.h" />

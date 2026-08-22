@@ -12,6 +12,7 @@
 #include "Game/MemoryMap.h"
 #include "Game/PlayerState.h"
 #include "Training/FrameStepper.h"
+#include "Training/SuperFlash.h"
 
 #include <cstdio>
 #include <cstring>
@@ -104,6 +105,8 @@ struct MoveSpan
 FrameMeter::Frame g_frames[FrameMeter::kPlayers][FrameMeter::kCapacity] = {};
 int g_length = 0;
 
+SuperFlash g_flash;
+
 int g_frame = 0;
 bool g_recording = false;
 int g_idleRun = 0;
@@ -156,6 +159,8 @@ bool g_hasAfterRecovery = false;
 struct DiagFrame
 {
 	bool recorded;
+
+	bool flashing;
 
 	int barIndex;
 	uint16_t pattern[FrameMeter::kPlayers];
@@ -788,27 +793,6 @@ void DropOldestFrames(int count)
 	g_length = remaining;
 }
 
-constexpr int kFlashTailFrames = 2;
-
-FrameMeter::Frame g_flashHold[FrameMeter::kPlayers][kFlashTailFrames] = {};
-int g_flashHeld = 0;
-
-void ReleaseFlashFrames()
-{
-	const int kept = g_flashHeld < kFlashTailFrames ? g_flashHeld : kFlashTailFrames;
-	const int first = g_flashHeld - kept;
-
-	for (int i = 0; i < kept && g_length < FrameMeter::kCapacity; ++i)
-	{
-		for (int p = 0; p < FrameMeter::kPlayers; ++p)
-			g_frames[p][g_length] = g_flashHold[p][(first + i) % kFlashTailFrames];
-
-		++g_length;
-	}
-
-	g_flashHeld = 0;
-}
-
 bool DelayWanted(FrameMeter::PauseSource source)
 {
 	if (!g_autoPause.resumeDelay)
@@ -992,7 +976,6 @@ void BeginExchange()
 	g_length = 0;
 	g_frame = 0;
 	g_idleRun = 0;
-	g_flashHeld = 0;
 	g_hasAdvantage = false;
 	g_hasAfterRecovery = false;
 	g_wasTrade = false;
@@ -1114,7 +1097,7 @@ void WriteTraceCsv(const DiagFrame* frames, int length)
 		return;
 	}
 
-	fprintf(file, "frame,bar,recorded,player,pattern,state,actionable,hitstop,stun,"
+	fprintf(file, "frame,bar,recorded,flash,player,pattern,state,actionable,hitstop,stun,"
 		"attackBoxes,boxEtc,boxKas,boxNorm,projectile,teching,inReaction,invulnKind,mutekiS,mutekiT,"
 		"actionLock,moveCode,command,freeFrom,moveEndAt,moveCodeEx1,moveCodeEx2,moveCodeEx3,moveCodeEx7,"
 		"attrInvuln,invuln,atemiBox,hurtboxes,cancelFree,cancelN,cancelS,mvCount,"
@@ -1126,9 +1109,9 @@ void WriteTraceCsv(const DiagFrame* frames, int length)
 
 		for (int p = 0; p < FrameMeter::kPlayers; ++p)
 		{
-			fprintf(file, "%d,%d,%d,%d,%u,%s,%u,%u,%u,%d,%u,%u,%u,%d,%d,%d,%u,%u,%u,0x%x,0x%x,0x%x,%d,%d,"
+			fprintf(file, "%d,%d,%d,%d,%d,%u,%s,%u,%u,%u,%d,%u,%u,%u,%d,%d,%d,%u,%u,%u,0x%x,0x%x,0x%x,%d,%d,"
 				"0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,%d,%u,%d,%u,%u,%u,%u,%d,%d\n",
-				i, d.barIndex, d.recorded ? 1 : 0, p, d.pattern[p],
+				i, d.barIndex, d.recorded ? 1 : 0, d.flashing ? 1 : 0, p, d.pattern[p],
 				FrameMeter::GetStateName(static_cast<FrameMeter::State>(d.state[p])),
 				d.actionable[p], d.hitstop[p], d.stun[p], d.attackBoxes[p],
 				d.counts[p][0], d.counts[p][1], d.counts[p][2],
@@ -1219,6 +1202,8 @@ void LogTrace()
 		LOG_RAW("  display +0x%02x = %d (0x%08x)", 0x10 + i * 4, static_cast<int>(raw[i]), raw[i]);
 	LOG_RAW("meter: advantage %+d%s   p0 free@%d  p1 free@%d   (bar indices)",
 		g_advantage, g_wasTrade ? " (trade)" : "", g_returnedAt[0], g_returnedAt[1]);
+	LOG_RAW("flash: p0 %d  p1 %d   (frames taken out of the bar)",
+		g_flash.GetFrames(0), g_flash.GetFrames(1));
 	LOG_RAW("held until: p0 frame %d bar %d   p1 frame %d bar %d   (recorded, not used)",
 		g_heldUntilFrame[0], g_heldUntilBar[0], g_heldUntilFrame[1], g_heldUntilBar[1]);
 	LOG_RAW("bracket %s %+d   techSeen %d/%d   techStartedAt %d/%d",
@@ -1244,7 +1229,7 @@ void LogTrace()
 				mask[b] = (d.boxMask[p] & (1u << b)) != 0 ? '1' : '.';
 
 			LOG_RAW("%3d %4d %5s %5u %3u %4u %4u | %2u/%2u/%2u/%2u  %s  %3u %3u %3u %3u %3u %3d %3u %3u %3d %3d %5d %5d %5d %8x %8x %s",
-				i, d.barIndex, d.recorded ? "rec" : "STOP",
+				i, d.barIndex, d.flashing ? "FLSH" : (d.recorded ? "rec" : "STOP"),
 				d.pattern[p], d.actionable[p], d.hitstop[p], d.stun[p],
 				d.counts[p][0], d.counts[p][1], d.counts[p][2], d.counts[p][3],
 				mask, d.invulnKind[p], d.counterState[p], d.shieldSuccess[p],
@@ -1367,7 +1352,7 @@ void FrameMeter::Reset()
 	g_length = 0;
 	g_recording = false;
 	g_idleRun = 0;
-	g_flashHeld = 0;
+	g_flash.Reset();
 	g_hasAdvantage = false;
 	g_advantage = 0;
 	g_advantageAttacker = -1;
@@ -1421,19 +1406,21 @@ void FrameMeter::SampleFromGameThread()
 			valid[p] = PlayerState::Read(g_tracked[p].entity, states[p]);
 	}
 
-	bool flashed = false;
+	int frozen = 0;
+	int live = 0;
+
 	for (int p = 0; p < kPlayers && p < g_trackedCount; ++p)
 	{
 		if (!valid[p])
 			continue;
 
-		flashed = flashed ||
-			(states[p].moveCodeEx[3] & GameOffsets::kMoveCode3Anten) != 0 ||
-			(states[p].moveCodeEx[2] & GameOffsets::kMoveCode2EnemyAntenStop) != 0;
+		++live;
+		frozen += states[p].hitstop > 0 ? 1 : 0;
 	}
 
-	if (!flashed && g_flashHeld > 0)
-		ReleaseFlashFrames();
+	g_flash.Update(states, valid, g_trackedCount);
+
+	const bool flashed = g_flash.IsFreezing();
 
 	for (int p = 0; p < kPlayers; ++p)
 	{
@@ -1473,26 +1460,16 @@ void FrameMeter::SampleFromGameThread()
 	for (int p = 0; p < kPlayers && p < g_trackedCount; ++p)
 		CheckCountAutoPause(p);
 
-	int frozen = 0;
-	int live = 0;
-
-	for (int p = 0; p < kPlayers && p < g_trackedCount; ++p)
-	{
-		if (!valid[p])
-			continue;
-
-		++live;
-		frozen += states[p].hitstop > 0 ? 1 : 0;
-	}
-
 	const bool inHitstop = live > 0 && frozen == live;
+	const bool frozenTick = g_flash.IsRunning() ? flashed : inHitstop;
 
-	const bool record = !inHitstop && (anyBusy || g_idleRun < kIdlePadding);
+	const bool record = !frozenTick && (anyBusy || g_idleRun < kIdlePadding);
 
 	if (g_diagEnabled && g_diagLength < kCapacity)
 	{
 		DiagFrame& d = g_diag[g_diagLength++];
 		d.recorded = record;
+		d.flashing = flashed;
 		d.barIndex = g_length;
 
 		for (int p = 0; p < kPlayers; ++p)
@@ -1557,9 +1534,7 @@ void FrameMeter::SampleFromGameThread()
 	{
 		if (record)
 		{
-
-			Frame& frame = flashed ? g_flashHold[p][g_flashHeld % kFlashTailFrames]
-				: g_frames[p][g_length];
+			Frame& frame = g_frames[p][g_length];
 
 			if (p >= g_trackedCount || !valid[p])
 			{
@@ -1704,23 +1679,15 @@ void FrameMeter::SampleFromGameThread()
 
 	if (record)
 	{
+		++g_length;
 
-		if (flashed)
-		{
-			++g_flashHeld;
-		}
-		else
-		{
-			++g_length;
-
-			for (int p = 0; p < kPlayers && p < g_trackedCount; ++p)
-				UpdateLastMoveFromBar(p);
-		}
+		for (int p = 0; p < kPlayers && p < g_trackedCount; ++p)
+			UpdateLastMoveFromBar(p);
 	}
 
 	++g_frame;
 
-	if (inHitstop)
+	if (frozenTick)
 		return;
 
 	g_idleRun = anyBusy ? 0 : g_idleRun + 1;
@@ -1759,6 +1726,16 @@ int FrameMeter::GetBlockedRun(int player)
 		return 0;
 
 	return g_tracked[player].blockedRun;
+}
+
+bool FrameMeter::IsSuperFlashRunning()
+{
+	return g_flash.IsRunning();
+}
+
+int FrameMeter::GetFlashFrames(int player)
+{
+	return g_flash.GetFrames(player);
 }
 
 bool FrameMeter::ConsumeMatchRestart()

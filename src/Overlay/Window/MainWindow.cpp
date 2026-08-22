@@ -570,13 +570,15 @@ void MainWindow::DrawFrameMeterControls()
 	}
 
 	ImGui::SameLine();
-	if (ImGui::Checkbox("Hitstun and gap", &g_modVals.frameMeterTotals))
+	if (ImGui::Checkbox("Hitstun, gap and flash", &g_modVals.frameMeterTotals))
 		Settings::SaveInt("FrameMeter", "LineTotals", g_modVals.frameMeterTotals ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Blockstun, hitstun and the gap for the whole exchange, on a line of its "
-			"own - above P1's numbers and below P2's, so each side's readouts sit together.");
+		ImGui::SetTooltip("Blockstun, hitstun and the gap for the whole exchange, and the super flash "
+			"inside the move above it, on a line of its own - above P1's numbers and below P2's, so "
+			"each side's readouts sit together. The flash is the one of those the bar cannot show, "
+			"since no cell is drawn for it.");
 	}
 
 	if (ImGui::Checkbox("Status Bar", &g_modVals.frameMeterAttributes))

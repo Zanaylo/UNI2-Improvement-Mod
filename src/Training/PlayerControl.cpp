@@ -8,6 +8,7 @@
 #include "Hooks/HookManager.h"
 
 #include <MinHook.h>
+#include <Windows.h>
 
 #include <cstdio>
 #include <cstring>
@@ -115,6 +116,8 @@ constexpr int kCalibrateSampleFrame = 4;
 constexpr int kCalibrateGapFrames = 3;
 
 bool g_calibrating = false;
+volatile LONG g_releaseRequest = 0;
+volatile LONG g_calibrateRequest = 0;
 int g_calibrateByte = 0;
 int g_calibratePhase = 0;
 int g_calibrateFrame = 0;
@@ -243,7 +246,6 @@ void SampleCalibration()
 void FinishCalibration()
 {
 	g_calibrating = false;
-	PutBack();
 
 	bool ok = true;
 	for (int bit = 0; bit < 4; ++bit)
@@ -266,7 +268,6 @@ void FinishCalibration()
 
 void UpdateCalibration()
 {
-	SetEnemyStatus(GameOffsets::kEnemyStatusController);
 	ClearInputHold();
 
 	++g_calibrateFrame;
@@ -297,6 +298,42 @@ void UpdateCalibration()
 
 	if (g_calibrateByte >= kCalibrateByteCount)
 		FinishCalibration();
+}
+
+void ReleaseNow()
+{
+	if (!g_routed && !g_calibrating && !AnythingDriving())
+		return;
+
+	g_mode = PlayerControl::Mode_Mine;
+
+	g_heldLever = 0;
+	g_heldButtons = 0;
+	g_tapFrames = 0;
+
+	g_calibrating = false;
+
+	PlayerControl::StopScript(0);
+	PlayerControl::StopScript(1);
+
+	PutBack();
+
+	sprintf_s(g_status, "not driving anything");
+}
+
+void StartCalibration()
+{
+	ReleaseNow();
+
+	g_calibrating = true;
+	g_calibrateByte = 0;
+	g_calibratePhase = 0;
+	g_calibrateFrame = 0;
+
+	for (int bit = 0; bit < 4; ++bit)
+		g_calibrateFoundByte[bit] = -1;
+
+	sprintf_s(g_status, "calibrating button 1 of %d", kCalibrateByteCount);
 }
 
 void __fastcall HookedFetchPad(void* out, int player)
@@ -432,20 +469,7 @@ int PlayerControl::GetScriptFrame(int player)
 
 void PlayerControl::Release()
 {
-	g_mode = Mode_Mine;
-
-	g_heldLever = 0;
-	g_heldButtons = 0;
-	g_tapFrames = 0;
-
-	g_calibrating = false;
-
-	StopScript(0);
-	StopScript(1);
-
-	PutBack();
-
-	sprintf_s(g_status, "not driving anything");
+	InterlockedExchange(&g_releaseRequest, 1);
 }
 
 bool PlayerControl::IsDriving()
@@ -461,30 +485,13 @@ void PlayerControl::Calibrate()
 		return;
 	}
 
-	g_mode = Mode_Mine;
-	g_heldLever = 0;
-	g_heldButtons = 0;
-	g_tapFrames = 0;
-
-	StopScript(0);
-	StopScript(1);
-
-	SaveOnce();
-
-	g_calibrating = true;
-	g_calibrateByte = 0;
-	g_calibratePhase = 0;
-	g_calibrateFrame = 0;
-
-	for (int bit = 0; bit < 4; ++bit)
-		g_calibrateFoundByte[bit] = -1;
-
+	InterlockedExchange(&g_calibrateRequest, 1);
 	sprintf_s(g_status, "calibrating button 1 of %d", kCalibrateByteCount);
 }
 
 bool PlayerControl::IsCalibrating()
 {
-	return g_calibrating;
+	return g_calibrating || InterlockedCompareExchange(&g_calibrateRequest, 0, 0) != 0;
 }
 
 void PlayerControl::KeepAlive()
@@ -499,26 +506,33 @@ void PlayerControl::Update()
 
 	if (!GameState::AllowsTrainingTools())
 	{
-		if (g_routed)
-			Release();
-
+		Release();
 		return;
 	}
 
-	if (alive || IsScriptRunning(0) || IsScriptRunning(1))
+	if (alive || IsCalibrating() || IsScriptRunning(0) || IsScriptRunning(1))
 		return;
 
-	if (g_routed)
-		Release();
+	if (!g_routed)
+		return;
+
+	Release();
 }
 
 void PlayerControl::OnFrameUpdate()
 {
+	if (InterlockedExchange(&g_releaseRequest, 0) != 0)
+		ReleaseNow();
+
 	if (!GameState::AllowsTrainingTools())
 	{
-		g_calibrating = false;
+		InterlockedExchange(&g_calibrateRequest, 0);
+		ReleaseNow();
 		return;
 	}
+
+	if (InterlockedExchange(&g_calibrateRequest, 0) != 0)
+		StartCalibration();
 
 	if (g_calibrating)
 	{

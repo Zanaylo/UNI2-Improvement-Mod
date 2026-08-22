@@ -143,6 +143,9 @@ namespace FrameMeter
 	int GetBlockedRun(int player);
 	int GetBlockedTotal(int player);
 
+	int GetFlashFrames(int player);
+	bool IsSuperFlashRunning();
+
 	bool ConsumeMatchRestart();
 
 	bool IsPlayerFree(int player);

@@ -24,6 +24,7 @@ namespace FrameStepper
 	bool ConsumeSteppedFlag();
 
 	bool NeedsFrozenFrameReplay();
+	bool SuppressesTicks();
 
 	void SetPaused(bool paused);
 	void TogglePaused();

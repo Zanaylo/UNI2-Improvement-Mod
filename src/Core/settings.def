@@ -70,8 +70,9 @@ SETTING_FLOAT(frameMeterScale,      "FrameMeter", "Scale",              1.5f)
 // hold its own number is left blank rather than drawn over its neighbour.
 SETTING_INT(frameMeterCounts,       "FrameMeter", "BandCounts",         1)
 
-// The exchange totalled - blockstun, hitstun and the gap - on its own line above P1's readout and
-// below P2's, so each side's numbers sit together.
+// Blockstun, hitstun and the gap for the whole exchange, plus the super flash that side is running
+// or last ran, on its own line above P1's readout and below P2's so each side's numbers sit
+// together. The flash is the one the bar cannot carry, since it never gains a cell for one.
 SETTING_INT(frameMeterTotals,       "FrameMeter", "LineTotals",         1)
 
 // The thin row under each bar naming every invincibility in force on that frame. Off makes the meter

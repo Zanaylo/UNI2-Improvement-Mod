@@ -299,7 +299,7 @@ XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back
 | `PositionX` / `PositionY` | `-1` | Top-left corner in pixels. `-1` means it has never been placed: the meter takes the automatic spot once, writes it here, and is draggable from there. |
 | `Scale` | `1.5` | Size of the meter. |
 | `BandCounts` | `1` | Print the length of every finished band inside the bar. |
-| `LineTotals` | `1` | The exchange totalled - blockstun, hitstun and the gap - on its own line. |
+| `LineTotals` | `1` | Blockstun, hitstun and the gap for the exchange, plus the super flash inside the move, on its own line. |
 | `AttributeRow` | `1` | The thin row under each bar naming every invincibility in force. |
 | `Opacity` | `100` | How solid the meter is drawn, as a percentage. |
 | `MouseDrag` | `1` | Whether a click that lands on the meter drags it. |

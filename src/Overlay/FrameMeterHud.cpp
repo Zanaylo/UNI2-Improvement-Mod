@@ -400,10 +400,12 @@ bool DrawLineTotals(float x, float y, float s, int player, int length)
 			++pendingGap;
 	}
 
-	if (blockstun == 0 && hitstun == 0)
+	const int flash = FrameMeter::GetFlashFrames(player);
+
+	if (blockstun == 0 && hitstun == 0 && flash == 0)
 		return false;
 
-	char text[96] = {};
+	char text[128] = {};
 	int at = 0;
 
 	if (blockstun > 0)
@@ -417,6 +419,9 @@ bool DrawLineTotals(float x, float y, float s, int player, int length)
 
 	if (gap > 0)
 		at += sprintf_s(text + at, sizeof(text) - at, "%sgap %d", at > 0 ? "  " : "", gap);
+
+	if (flash > 0)
+		at += sprintf_s(text + at, sizeof(text) - at, "%sflash %d", at > 0 ? "  " : "", flash);
 
 	DrawShadowedText(text, x, y, kTextScale * s, kActionName);
 	return true;

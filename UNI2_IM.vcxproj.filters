@@ -321,6 +321,9 @@
     <ClCompile Include="src\Training\FrameMeter.cpp">
       <Filter>Training</Filter>
     </ClCompile>
+    <ClCompile Include="src\Training\SuperFlash.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
     <ClCompile Include="src\Overlay\FrameMeterHud.cpp">
       <Filter>Overlay</Filter>
     </ClCompile>
@@ -675,6 +678,9 @@
       <Filter>Training</Filter>
     </ClInclude>
     <ClInclude Include="src\Training\FrameMeter.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\SuperFlash.h">
       <Filter>Training</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\FrameMeterHud.h">

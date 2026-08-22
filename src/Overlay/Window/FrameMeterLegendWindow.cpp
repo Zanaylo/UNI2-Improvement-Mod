@@ -193,4 +193,7 @@ void FrameMeterLegendWindow::Draw()
 	ImGui::BulletText("Blockstun - how long the opponent was held after blocking.");
 	ImGui::BulletText("Hitstun - how long the opponent was held after being hit.");
 	ImGui::BulletText("Gap - free frames between two held runs.");
+	ImGui::BulletText("Flash - how long the super flash ran inside the move above it. The bar never "
+		"gains a cell for one, so this line is the only place its length is shown. A combo that "
+		"flashes twice reports the move you are reading, not the sum.");
 }
