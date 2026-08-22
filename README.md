@@ -58,28 +58,28 @@ To chain-load another `dinput8.dll` wrapper, put its full path in `[Mod] DinputD
 
 ### Linux and Steam Deck (Proton)
 
-Install it exactly as on Windows first: `dinput8.dll` next to `uni2.exe`, nothing else. Proton 9 and
-newer load a mod's own `dinput8.dll` on their own, so on a current Proton that is the whole of it.
+Copy `dinput8.dll` next to `uni2.exe` exactly as on Windows, then do the one step Windows does not
+need - tell Wine to load it:
 
-It is older Proton that does not. Wine decides which `dinput8.dll` to load from a per-prefix
-override rather than from the folder the file is in, so on those the DLL sits next to `uni2.exe` and
-is never loaded at all - that is what "the mod does nothing on Linux" is. If no `UNI2-IM` folder
-appears next to the game after a run, take one of these two, **never both at once**, or two copies
-of the mod load into the same process:
-
-**Without a launch option.** Rename the mod's `dinput8.dll` to `d3d9.dll` and leave it next to
-`uni2.exe`. Proton treats `d3d9` as native on every version, because that is how DXVK is installed,
-so the file is loaded with nothing to configure. This build carries the Direct3D 9 entry points as
-well as the DirectInput one and works out which name it was loaded as at startup.
-
-**The one that keeps the Windows name.** Keep `dinput8.dll` and set the game's Steam launch options
-to:
+1. In your Steam library, right click **UNDER NIGHT IN-BIRTH II Sys:Celes** and open **Properties**.
+2. Under **General**, in **Launch options**, put this line exactly as written:
 
 ```
 WINEDLLOVERRIDES="dinput8=n,b" %command%
 ```
 
-This is the same thing Proton 9 and newer already do for you, spelled out by hand.
+3. Start the game and press **F1**.
+
+That is the whole of it. Nothing is renamed and nothing else is copied.
+
+**Why it is needed.** Wine decides which `dinput8.dll` to load from a per-prefix override rather than
+from the folder the file is in, so without that line the DLL sits next to `uni2.exe` and is never
+loaded at all - that is what "the mod does nothing on Linux" is. `n,b` reads *native first, then
+built-in*: the mod's copy loads, and Wine's own `dinput8` still answers everything the mod hands
+through to it, which is why the game's own controller input keeps working.
+
+Proton 9 and newer already do this for a mod's own `dinput8.dll`, so there the line changes nothing
+and is safe to leave set. Older Proton does not, and will not load the mod without it.
 
 On Linux the mod turns on **compatibility safe mode** by itself: no fullscreen refresh rewriting, no
 power throttling opt-out, no `Sleep` substitution. Those three are tuning for the Windows scheduler
@@ -96,9 +96,6 @@ the game once - the mod fills in the rest of the file by itself:
 [Debug]
 Logging = 1
 ```
-
-Do **not** use the `d3d9.dll` name on Windows. RivaTuner refuses to hook a Direct3D runtime that
-lives outside a system folder, so that name and RTSS cannot both work.
 
 ### RivaTuner Statistics Server, MSI Afterburner and other overlays
 
@@ -464,29 +461,30 @@ Para encadear outro wrapper de `dinput8.dll`, ponha o caminho completo dele em
 
 ### Linux e Steam Deck (Proton)
 
-Instale exatamente como no Windows primeiro: `dinput8.dll` ao lado do `uni2.exe`, e mais nada. O
-Proton 9 e mais novos carregam o `dinput8.dll` de um mod por conta própria, então num Proton atual é
-só isso.
+Copie o `dinput8.dll` para o lado do `uni2.exe` exatamente como no Windows e faça o único passo que
+o Windows não precisa - avisar o Wine para carregá-lo:
 
-Quem não faz isso é o Proton antigo. O Wine escolhe qual `dinput8.dll` carregar por uma configuração
-do prefixo, não pela pasta em que o arquivo está, então nesses a DLL fica ao lado do `uni2.exe` e
-simplesmente nunca é carregada - é isso que o relato "o mod não faz nada no Linux" quer dizer. Se
-nenhuma pasta `UNI2-IM` aparecer ao lado do jogo depois de uma execução, use um dos dois caminhos
-abaixo. **Nunca os dois ao mesmo tempo**, senão duas cópias do mod carregam no mesmo processo:
-
-**Sem launch option.** Renomeie o `dinput8.dll` do mod para `d3d9.dll` e deixe ao lado do
-`uni2.exe`. O Proton trata `d3d9` como nativo em todas as versões, porque é assim que o DXVK é
-instalado, então o arquivo carrega sem configurar nada. Esta build carrega os pontos de entrada do
-Direct3D 9 além do de DirectInput e descobre sozinha com qual nome foi carregada.
-
-**O jeito que mantém o nome do Windows.** Mantenha `dinput8.dll` e ponha nas opções de inicialização
-do jogo na Steam:
+1. Na sua biblioteca Steam, clique com o botão direito em **UNDER NIGHT IN-BIRTH II Sys:Celes** e
+   abra **Propriedades**.
+2. Em **Geral**, no campo **Opções de inicialização**, ponha esta linha exatamente assim:
 
 ```
 WINEDLLOVERRIDES="dinput8=n,b" %command%
 ```
 
-É a mesma coisa que o Proton 9 e mais novos já fazem sozinhos, escrita à mão.
+3. Abra o jogo e aperte **F1**.
+
+É só isso. Nada é renomeado e nada mais é copiado.
+
+**Por que é necessário.** O Wine escolhe qual `dinput8.dll` carregar por uma configuração do prefixo,
+não pela pasta em que o arquivo está, então sem essa linha a DLL fica ao lado do `uni2.exe` e
+simplesmente nunca é carregada - é isso que o relato "o mod não faz nada no Linux" quer dizer. `n,b`
+quer dizer *primeiro o nativo, depois o embutido*: a cópia do mod carrega, e o `dinput8` do próprio
+Wine continua respondendo tudo o que o mod repassa para ele, que é o motivo de o controle do jogo
+continuar funcionando.
+
+O Proton 9 e mais novos já fazem isso sozinhos com o `dinput8.dll` de um mod, então neles a linha não
+muda nada e pode ficar. O Proton antigo não faz, e sem ela não carrega o mod.
 
 No Linux o mod liga sozinho o **modo de compatibilidade**: sem reescrever a taxa de atualização em
 tela cheia, sem opt-out de power throttling e sem substituir o `Sleep`. Esses três são ajustes para
@@ -503,9 +501,6 @@ o jogo uma vez - o mod preenche o resto do arquivo sozinho:
 [Debug]
 Logging = 1
 ```
-
-**Não** use o nome `d3d9.dll` no Windows. O RivaTuner se recusa a hookar um runtime Direct3D que
-esteja fora de uma pasta de sistema, então esse nome e o RTSS não funcionam juntos.
 
 ### RivaTuner Statistics Server, MSI Afterburner e outros overlays
 
@@ -718,27 +713,29 @@ arquivo inteiro pode ser apagado para recomeçar.
 
 ### Linux / Steam Deck (Proton)
 
-まず Windows と同じように入れてください。`uni2.exe` の隣に `dinput8.dll` を置くだけです。Proton 9 以降
-は MOD 自身の `dinput8.dll` を読み込むようになっているので、最近の Proton ならこれで終わりです。
+Windows と同じように `uni2.exe` の隣に `dinput8.dll` を置き、そのうえで Windows では要らない手順を一つ
+だけ行います。Wine に読み込ませる指定です。
 
-問題は古い Proton です。Wine はどの `dinput8.dll` を読み込むかを、ファイルの置き場所ではなくプレフィッ
-クスごとの設定で決めます。そのため古い Proton では、DLL を `uni2.exe` の隣に置いても読み込まれません。
-「Linux では何も起きない」という報告はこれです。一度起動しても `UNI2-IM` フォルダーができない場合は、
-次の二つのどちらかを使ってください。**両方を同時に置かないでください**。同じプロセスに MOD が二重に読
-み込まれます。
-
-**起動オプションを使わない方法**: MOD の `dinput8.dll` を `d3d9.dll` にリネームして `uni2.exe` の隣に
-置きます。Proton は DXVK の都合でどのバージョンでも `d3d9` をネイティブ扱いにしているため、設定なしで
-読み込まれます。このビルドは DirectInput だけでなく Direct3D 9 のエクスポートも持っていて、どちらの名
-前で読み込まれたかを起動時に自分で判断します。
-
-**Windows と同じ名前のままにする方**: `dinput8.dll` のまま、Steam の起動オプションに次を設定します。
+1. Steam のライブラリで **UNDER NIGHT IN-BIRTH II Sys:Celes** を右クリックし、**プロパティ**を開きます。
+2. **一般**の**起動オプション**に、次の一行をそのまま入力します。
 
 ```
 WINEDLLOVERRIDES="dinput8=n,b" %command%
 ```
 
-Proton 9 以降が自動でやっていることを、手で指定するだけです。
+3. ゲームを起動して **F1** を押します。
+
+これだけです。ファイル名の変更も、他のファイルのコピーも必要ありません。
+
+**なぜ必要か**: Wine はどの `dinput8.dll` を読み込むかを、ファイルの置き場所ではなくプレフィックスごと
+の設定で決めます。そのためこの一行がないと、DLL を `uni2.exe` の隣に置いても読み込まれません。「Linux
+では何も起きない」という報告はこれです。`n,b` は*まずネイティブ、次に内蔵*という意味で、MOD 側が読み込
+まれたうえで、MOD が受け流した呼び出しには Wine 自身の `dinput8` が答えます。ゲームのコントローラー入力
+がそのまま動くのはこのためです。
+
+Proton 9 以降は MOD 自身の `dinput8.dll` について同じことを既に行っているので、そこではこの一行を入れて
+も何も変わらず、そのままにしておいて構いません。古い Proton は行わないため、これがないと MOD は読み込ま
+れません。
 
 Linux では MOD が自動的に**互換セーフモード**になります。フルスクリーンのリフレッシュレート書き換え、
 電力スロットリングの opt-out、`Sleep` の置き換えを行いません。いずれも Windows のスケジューラーとデス
@@ -754,9 +751,6 @@ Linux では MOD が自動的に**互換セーフモード**になります。�
 [Debug]
 Logging = 1
 ```
-
-Windows で `d3d9.dll` の名前を使わないでください。RivaTuner はシステムフォルダー外にある Direct3D ラン
-タイムへのフックを拒否するため、この名前と RTSS は両立しません。
 
 ### RivaTuner Statistics Server / MSI Afterburner などのオーバーレイ
 
