@@ -216,6 +216,65 @@ An earlier build of this mod made the game feel worse, and did so by default: it
 buffer for everyone and dragged high-refresh monitors down to 60 Hz in fullscreen, which cost a
 frame of input latency and bought nothing. It no longer touches the display unless asked.
 
+### POTATO MODE
+
+The **POTATO MODE** tab of the Performance window, for a machine that cannot hold 60.
+
+**The stage still draws at every level, and none of this touches the picture's size.**
+
+| Level | Draws at | Also |
+|---|---|---|
+| Off | the game's own Display option | nothing |
+| Balanced | 960x540 | back buffer multisampling off, the frame handshake waited on instead of the clock |
+| Potato | **480p, 360p, 240p or 144p** | and Character Visual Improvements off |
+
+Everything the mod draws - the overlay, the frame meter, the hitbox boxes and the origin cross -
+keeps the size it has always had, instead of growing along with the stretch.
+
+Pick Potato and a second row appears with the four sizes: `854x480`, `640x360`, `426x240`,
+`256x144`. It is only offered while Potato is the level, because a size that does nothing because
+another level is selected reads as broken.
+
+**The size is a size, not a fraction of your window.** 640x360 stays 640x360 whether the window is
+720p or 1440p, so you can make the window as large as you like and the game still only ever draws
+that many pixels - Direct3D stretches the result to fill it. The engine draws exactly as it always
+does, so nothing in it has to know and nothing can end up in the wrong place; the picture just gets
+soft, the way a low resolution looks on a flat panel. 640x360 in a 720p window is a quarter of the
+pixels to blend, scale and scan out; in a 1440p window it is a sixteenth.
+
+**Off means off.** The mod stops touching the size entirely and the window goes back to whatever the
+game's own Option -> Display says.
+
+**Windowed and borderless only**: exclusive fullscreen has to name a display mode your adapter really
+has, and choosing one for you is how a mod ends up owning your monitor. Set the size here and pick
+fullscreen in the game's own menu if you want both - the game will use its own mode there.
+
+The drawing size takes effect the next time the game builds its display: restart it, or touch any
+video option in its own menu. Everything else on the tab is immediate.
+
+*Character Visual Improvements* is the game's own option. It selects the filter techniques in the
+character shader, which resolve nine palette lookups per character pixel instead of one, and what it
+buys is a blur one source texel wide - about one screen pixel at 720p. Turning it off is the
+cheapest real win on a weak card, and the mod holds it off, because the game's own options screen
+writes the same setting back.
+
+*Back buffer multisampling* costs nothing to lose: a Direct3D 9 texture cannot be multisampled at
+all, so the game's Antialias never reaches a sprite edge - the only thing it can touch is the one
+quad the finished frame is drawn with, whose only edges are the edges of the screen. Raising the
+internal resolution above 100% is the only anti-aliasing this engine can be given, and the ini still
+allows it.
+
+**Nothing here reaches the simulation.** The match is the same match, nobody online can tell, and
+none of it is a training tool. It is only how the frame is drawn.
+
+The game builds its render targets once, so a resolution change takes effect after a restart, or
+after you touch any video option in the game's own menu. Everything else is immediate. The tab
+reports what is **actually** in force - the engine's own size, the drawing space, the largest render
+target seen, and whether every patched site verified - so when a request has not taken, it says so
+rather than leaving you to guess.
+
+If anything looks wrong, set the level back to Off. The mod puts every byte it changed back.
+
 ### Memory debug
 
 Off by default; set `[Debug] MemoryDebug = 1`, then **Ctrl+F1**. Raw readouts and the search tools
@@ -225,10 +284,6 @@ search, a pointer follower and a struct viewer.
 ## Coming later
 
 - **BGM selector**, with classic French Bread music.
-- **POTATO MODE** - the game renders every frame at a fixed 1280x720 and only then scales it to your
-  display, so rendering at half of that is a quarter of the pixels through all five of its
-  full-screen passes. Built and compiled in, held back until the resolution change has been checked
-  in a real match.
 - **Palettes in the lobby**, not only in the match.
 
 ## The ini file
@@ -330,6 +385,21 @@ XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back
 | `ExtraBackBuffer` | `0` | A second back buffer. Only helps in exclusive fullscreen with the game's vsync on, and costs up to a frame of input latency. Ignored windowed and with vsync off. |
 | `FlatStage` | `0` | Replace the stage with a flat colour, for keying a capture. |
 | `FlatStageColour` | `65280` | That colour, as `0xRRGGBB` in decimal. |
+
+### `[Graphics]`
+
+Set `PotatoMode` and leave the rest alone: it is a preset over the keys under it, and turning it off
+puts them back. They are here for taking one of them further than a preset does.
+
+| Key | Default | What it does |
+|---|---|---|
+| `PotatoMode` | `0` | 0 off, 1 balanced, 2 potato, 3 extreme potato. |
+| `DisableBackBufferAA` | `0` | Ask for a back buffer with no multisampling. The scene is never antialiased anyway, so the samples buy nothing. |
+| `DisableCharacterFilter` | `0` | Hold the game's own Character Visual Improvements off: nine palette lookups a pixel for a one pixel blur. |
+| `PresentWidth` | `0` | The width the finished frame is drawn at before it is stretched to your window. 0 leaves the game's own Display option alone. |
+| `PresentHeight` | `0` | The height, same rule. Both have to be set for either to do anything. Windowed and borderless only. |
+| `PotatoHeight` | `360` | Which size the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144. The two keys above are what actually reaches Direct3D; this is the one the tab offers. |
+| `SimpleStage` | `0` | Draw the empty stage instead of the built one. Deliberately not part of any POTATO MODE level. |
 
 ### `[Overlay]`
 
@@ -624,6 +694,50 @@ buffer para todo mundo e puxava monitores de alta taxa de atualização para 60 
 que custava um quadro de latência e não trazia nada em troca. Ele não mexe mais no display sem ser
 solicitado.
 
+### POTATO MODE
+
+A aba **POTATO MODE** da janela Performance, para uma máquina que não consegue segurar 60.
+
+O jogo rasteriza todo quadro em cinco render targets de 1280x720 fixos e só depois escala o
+resultado para o seu display, então quase todo pixel que ele paga é um desses. O POTATO MODE abaixa
+esse tamanho. Metade é um quarto dos pixels nas cinco passagens; um quarto é um dezesseis avos.
+**O cenário continua sendo desenhado em todos os níveis** — a imagem fica suave, não fica vazia.
+
+| Nível | Desenha em | E também |
+|---|---|---|
+| Off | o que a opção Display do jogo pedir | nada |
+| Balanced | 960x540 | multisampling do back buffer desligado, espera pelo handshake de quadro |
+| Potato | 480p, 360p, 240p ou 144p | e Character Visual Improvements desligado |
+
+**É um tamanho, não uma fração da janela.** 640x360 continua 640x360 com a janela em 720p ou em
+1440p, então você pode deixar a janela do tamanho que quiser que o jogo continua desenhando só essa
+quantidade de pixels — o Direct3D estica o resultado até preencher. A engine desenha exatamente como
+sempre desenhou, então nada nela precisa saber e nada pode acabar no lugar errado; a imagem só fica
+suave.
+
+**Off é off**: o mod para de mexer no tamanho e a janela volta ao que a opção Display do próprio jogo
+disser.
+
+Só em janela e janela sem borda. O tamanho vale a partir da próxima vez que o jogo montar o display —
+reinicie, ou mexa em qualquer opção de vídeo no menu dele.
+
+*Character Visual Improvements* é uma opção do próprio jogo. Ela seleciona as técnicas de filtro do
+shader de personagem, que resolvem nove consultas à paleta por pixel em vez de uma, e o que isso
+compra é um borrão de um texel de origem — cerca de um pixel de tela em 720p. Desligá-la é o ganho
+real mais barato numa placa fraca, e o mod a mantém desligada, porque a tela de opções do jogo
+reescreve a mesma configuração.
+
+*Multisampling do back buffer* não custa nada perder: uma textura Direct3D 9 não pode ser
+multisampled, então o Antialias do jogo nunca alcança a borda de um sprite. Subir a resolução
+interna acima de 100% é o único anti-aliasing que esta engine aceita, e o ini continua permitindo.
+
+**Nada aqui alcança a simulação.** A partida é a mesma partida e ninguém no online percebe.
+
+O jogo constrói os render targets uma vez, então mudar a resolução só vale depois de reiniciar, ou
+depois de mexer em qualquer opção de vídeo no menu do próprio jogo. O resto é imediato. A aba relata
+o que está **de fato** em vigor e avisa quando um pedido não pegou. Se algo parecer errado, volte o
+nível para Off: o mod devolve cada byte que alterou.
+
 ### Memory debug
 
 Desligado por padrão; coloque `[Debug] MemoryDebug = 1` e use **Ctrl+F1**. Leituras cruas e as
@@ -632,10 +746,6 @@ ferramentas de busca usadas para construir o resto do mod.
 ## O que vem depois
 
 - **Seletor de BGM**, com músicas clássicas da French Bread.
-- **POTATO MODE** — o jogo renderiza todo quadro num tamanho fixo de 1280x720 e só depois o escala
-  para o seu display, então renderizar na metade disso é um quarto dos pixels em todas as cinco
-  passagens de tela cheia. Já construído e compilado, guardado até que a mudança de resolução seja
-  verificada numa partida de verdade.
 - **Paletas no lobby**, e não apenas na partida.
 
 ## O arquivo ini
@@ -866,6 +976,46 @@ MOD が要求した値ではなく、デバイスから読み戻した **実際�
 高リフレッシュレートのモニターをフルスクリーンで 60 Hz へ落としていたためで、入力遅延を 1 フレーム
 増やすだけで何の利点もありませんでした。現在は指示がない限りディスプレイ設定に触れません。
 
+### POTATO MODE
+
+60 フレームを維持できないマシンのための、Performance ウィンドウの **POTATO MODE** タブです。
+
+本作は毎フレームを固定 1280x720 の 5 枚のレンダーターゲットへ描画してから画面へ拡大するため、
+負担のほとんどはそこにあります。POTATO MODE はそのサイズを下げます。半分なら 5 つの全画面パス
+すべてでピクセル数が 4 分の 1、4 分の 1 なら 16 分の 1 です。**どの段階でも背景は描画されます** —
+絵が甘くなるだけで、空にはなりません。
+
+| 段階 | 描画サイズ | 併せて |
+|---|---|---|
+| Off | ゲーム本体の Display 設定のまま | なし |
+| Balanced | 960x540 | バックバッファのマルチサンプリング無効、フレームのハンドシェイク待機 |
+| Potato | 480p / 360p / 240p / 144p | さらに Character Visual Improvements 無効 |
+
+**割合ではなくサイズです。** ウィンドウが 720p でも 1440p でも 640x360 は 640x360 のままなので、
+ウィンドウをいくら大きくしてもゲームが描くピクセル数は変わりません。Direct3D が引き伸ばして
+埋めます。エンジンはこれまでどおり描画するため、位置がずれることはなく、絵が甘くなるだけです。
+
+**Off は完全に off** で、MOD はサイズに一切触れず、ウィンドウはゲーム本体の Display 設定に戻ります。
+
+ウィンドウ／ボーダーレスのみ。描画サイズは次にゲームがディスプレイを構築したときに反映されます。
+
+*Character Visual Improvements* はゲーム本体の設定です。キャラクターシェーダーのフィルター
+テクニックを選び、1 ピクセルあたり 1 回で済むパレット参照を 9 回行いますが、得られるのは元
+テクセル 1 つ分（720p でおよそ画面 1 ピクセル）のぼかしだけです。無効化は非力な GPU で最も安価な
+実効果があり、ゲームのオプション画面が同じ値を書き戻すため MOD 側で保持し続けます。
+
+*バックバッファのマルチサンプリング* を失っても損はありません。Direct3D 9 のテクスチャは
+マルチサンプリングできないため、本作の Antialias はスプライトの輪郭に届きません。内部解像度を
+100% より上げることが、このエンジンで唯一可能なアンチエイリアスで、ini ではそれも許可しています。
+
+**ここにあるものはシミュレーションに一切触れません。** 対戦内容は同じで、オンラインの相手にも
+分かりません。
+
+レンダーターゲットは一度しか作られないため、解像度の変更は再起動後、またはゲーム本体の映像設定を
+何か触った後に反映されます。それ以外は即時です。タブは**実際に**適用されている値を表示し、要求が
+通っていなければそう伝えます。おかしいと感じたら段階を Off に戻してください。MOD は書き換えた
+バイトをすべて元に戻します。
+
 ### Memory debug
 
 既定では無効です。`[Debug] MemoryDebug = 1` を設定し **Ctrl+F1** で開きます。MOD の他の部分を
@@ -874,9 +1024,6 @@ MOD が要求した値ではなく、デバイスから読み戻した **実際�
 ## 今後の予定
 
 - **BGM セレクター**。French Bread の往年の楽曲を収録予定。
-- **POTATO MODE** — 本作は毎フレームを固定の 1280x720 で描画してから画面へ拡大するため、その半分
-  で描画すれば 5 つの全画面パスすべてでピクセル数が 4 分の 1 になります。実装・コンパイル済みです
-  が、解像度変更を実戦で確認するまで無効にしてあります。
 - **ロビーでのパレット表示**。対戦中だけでなく。
 
 ## ini ファイル

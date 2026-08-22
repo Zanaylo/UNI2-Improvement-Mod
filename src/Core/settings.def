@@ -211,36 +211,52 @@ SETTING_INT(pumpWait,               "Video",    "PumpWait",             0)
 SETTING_INT(pumpWaitAllInput,       "Video",    "PumpWaitAllInput",     0)
 
 // ---------------------------------------------------------------------------------------------
-// Graphics
+// Graphics - POTATO MODE
 //
 // For a machine that cannot hold 60. Nothing here is an image improvement - the game already looks
-// better than anything the mod can do to it.
+// better than anything the mod can do to it - and nothing here reaches the simulation, so a match
+// played on any of it is the same match.
 //
-// **Held back from the beta.** These keys are still read, so writing one into UNI2_IM.ini by hand
-// works, but the shipped ini does not carry them and the overlay tab that drives them is hidden
-// behind kShowPotatoTab in PerformanceWindow.cpp. The reason is that the internal resolution has
-// never been verified in game and a wrong answer there draws the scene into a corner.
+// Set PotatoMode and forget the rest: it is a preset over the keys below and it puts them back when
+// it is turned off. They are here for taking one of them further than a preset does.
 // ---------------------------------------------------------------------------------------------
 
-// The game renders every frame into five 1280x720 targets and only then scales the result to the
-// display. This is that 1280x720, as a percentage: 50 is a quarter of the pixels through all five
-// passes and is the largest single win on a weak machine. The targets are built once, so a change
-// takes effect the next time the game builds its display.
-SETTING_INT(internalResolutionPercent, "Graphics", "InternalResolutionPercent", 100)
+// The size of the surface the finished frame is presented through, in pixels. 0 leaves the game's
+// own Display option alone, which is what Off means.
+//
+// This is the whole of POTATO MODE's picture setting and it is deliberately a size rather than a
+// percentage: 640x360 stays 640x360 whether the window is 720p or 1440p, so the window can be as
+// large as you like and the game still only ever draws that many pixels. The engine keeps drawing
+// exactly as it always does and Direct3D stretches the result to the window - nothing in the game
+// has to know, and nothing can end up in the wrong place. It gets soft, and that is all.
+//
+// Windowed and borderless only. Exclusive fullscreen has to name a mode the adapter really has, and
+// picking one for somebody is how a mod ends up owning their display.
+SETTING_INT(presentWidth,           "Graphics", "PresentWidth",         0)
+SETTING_INT(presentHeight,          "Graphics", "PresentHeight",        0)
 
-// How much video memory the resolution above may ask for, in megabytes. The game is a 32 bit
-// process, so this is an address space limit rather than a card limit.
-SETTING_INT(internalResolutionBudgetMb, "Graphics", "InternalResolutionBudgetMB", 192)
+// Which of those sizes the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144.
+// The two keys above are what actually reaches Direct3D; this is the one the tab offers, so that
+// picking a level and picking how far it goes stay separate questions.
+SETTING_INT(potatoHeight,           "Graphics", "PotatoHeight",         360)
 
 // Ask Direct3D for a back buffer with no multisampling. A Direct3D 9 texture cannot be
 // multisampled, so the scene is never antialiased anyway and the samples are spent on the one quad
 // the finished frame is drawn with.
 SETTING_INT(disableBackBufferAa,    "Graphics", "DisableBackBufferAA",  0)
 
+// Hold the game's own Character Visual Improvements off. It selects the Filter techniques in
+// sh_chara.txt, which resolve nine palette lookups per character pixel where one would do, and what
+// it buys is a blur one source texel wide - about one screen pixel at 720p. The cheapest real win
+// on a weak card, and it is reasserted because the game's options screen writes the same global.
+SETTING_INT(disableCharacterFilter, "Graphics", "DisableCharacterFilter", 0)
+
 // Draw the empty stage instead of the built one. Characters and gameplay effects are untouched.
 SETTING_INT(simpleStage,            "Graphics", "SimpleStage",          0)
 
-// Half resolution and no back buffer multisampling. The stage still draws.
+// The preset over everything above. 0 off, 1 balanced, 2 potato. Setting it rewrites the keys it
+// covers; turning it off puts them back, which for the present size means back to the game's own
+// Display option.
 SETTING_INT(potatoMode,             "Graphics", "PotatoMode",           0)
 
 SETTING_INT(blockGameMouse,         "Overlay",  "BlockGameMouse",       0)

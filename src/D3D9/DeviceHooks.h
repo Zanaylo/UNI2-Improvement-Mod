@@ -13,4 +13,5 @@ namespace DeviceHooks
 
 	IDirect3DDevice9* GetDevice();
 	const D3DPRESENT_PARAMETERS& GetPresentParameters();
+	float GetOverlayScale();
 }

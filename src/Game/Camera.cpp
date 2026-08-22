@@ -2,7 +2,6 @@
 
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
-#include "D3D9/RenderScale.h"
 #include "Game/MemoryMap.h"
 
 #include <imgui.h>
@@ -11,24 +10,24 @@
 
 namespace {
 
-// The game draws in a virtual space the size of its render targets, so this follows them rather
-// than being the 1280x720 they happen to be as shipped.
+// World coordinates are mapped through this, so a wrong answer moves every hitbox.
+float ReferenceSize(uintptr_t rva, float fallback)
+{
+	uint32_t value = 0;
+	if (!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(rva)), value) || value == 0)
+		return fallback;
+
+	return static_cast<float>(value);
+}
+
 float ReferenceWidth()
 {
-	int width = RenderScale::kBaseWidth;
-	int height = RenderScale::kBaseHeight;
-	RenderScale::GetInForceSize(width, height);
-
-	return static_cast<float>(width);
+	return ReferenceSize(GameOffsets::kRenderPhysicalWidth, 1280.0f);
 }
 
 float ReferenceHeight()
 {
-	int width = RenderScale::kBaseWidth;
-	int height = RenderScale::kBaseHeight;
-	RenderScale::GetInForceSize(width, height);
-
-	return static_cast<float>(height);
+	return ReferenceSize(GameOffsets::kRenderPhysicalHeight, 720.0f);
 }
 
 bool ReadFloatGlobal(uintptr_t rva, float& out)

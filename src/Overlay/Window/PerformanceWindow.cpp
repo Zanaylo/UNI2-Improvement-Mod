@@ -7,7 +7,7 @@
 #include "Core/utils.h"
 #include "D3D9/DeviceHooks.h"
 #include "D3D9/PresentTuning.h"
-#include "D3D9/RenderScale.h"
+#include "Game/EngineQuality.h"
 #include "Game/PotatoMode.h"
 #include "Game/PumpWait.h"
 #include "Training/InputLagMeter.h"
@@ -18,12 +18,6 @@
 #include <vector>
 
 namespace {
-
-// POTATO MODE is finished and compiled in, but held back from the beta: the internal resolution it
-// turns down has never been verified in game, and a wrong answer there puts the scene in a corner of
-// the screen. Flip this to true to get the tab back; the settings under [Graphics] still work if
-// they are written into the ini by hand.
-constexpr bool kShowPotatoTab = false;
 
 constexpr float kHistogramHeight = 110.0f;
 constexpr float kDefaultWidth = 780.0f;
@@ -459,7 +453,7 @@ void PerformanceWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
-	if (kShowPotatoTab && ImGui::BeginTabItem("POTATO MODE"))
+	if (ImGui::BeginTabItem("POTATO MODE"))
 	{
 		DrawPotatoTab();
 		ImGui::EndTabItem();
@@ -905,20 +899,39 @@ void PerformanceWindow::DrawPotatoTab()
 {
 	ImGui::Spacing();
 
-	bool changed = false;
-	bool potato = PotatoMode::IsActive();
+	Muted("Every level here changes how the frame is drawn and nothing else. None of them reaches "
+		"the simulation, none of them is visible to an opponent, and the stage keeps drawing at all "
+		"of them.");
 
-	if (ImGui::Checkbox("POTATO MODE", &potato))
+	ImGui::Spacing();
+
+	bool changed = false;
+	const int level = PotatoMode::GetLevel();
+
+	for (int candidate = 0; candidate < PotatoMode::Level_COUNT; ++candidate)
 	{
-		PotatoMode::Apply(potato);
-		changed = true;
+		if (ImGui::RadioButton(PotatoMode::GetLevelName(candidate), level == candidate) &&
+			candidate != level)
+		{
+			PotatoMode::Apply(candidate);
+			changed = true;
+		}
+
+		ImGui::Indent();
+		Muted("%s", PotatoMode::Describe(candidate));
+
+		if (candidate == PotatoMode::Level_Potato && level == PotatoMode::Level_Potato)
+			changed = DrawPotatoHeight() || changed;
+
+		ImGui::Unindent();
 	}
 
-	ImGui::Indent();
-	Muted("%s", PotatoMode::Describe());
-	Muted("The game builds its render targets once, so this takes effect after a restart or after "
-		"you change any video option in the game's own menu.");
-	ImGui::Unindent();
+	ImGui::Spacing();
+
+	Muted("The drawing size takes effect the next time the game builds its display - restart it, or "
+		"touch any video option in its own menu. Everything else is immediate. Windowed and "
+		"borderless only: in exclusive fullscreen the game has to name a mode your monitor really "
+		"has, and choosing one for you is not the mod's business.");
 
 	ImGui::Spacing();
 
@@ -932,56 +945,96 @@ void PerformanceWindow::DrawPotatoTab()
 		changed = true;
 	}
 
+	ImGui::Indent();
+	Muted("Deliberately not part of any level above: a match with no background is a worse trade "
+		"than a soft one. Here for a machine that still cannot hold 60 on Potato.");
+	ImGui::Unindent();
+
 	ImGui::Spacing();
 	ImGui::SeparatorText("In force now");
 
-	if (!RenderScale::IsInstalled() && !RenderScale::Install() && !PotatoMode::IsActive())
-		Warn("%s", RenderScale::GetStatusText());
-
-	int requestedWidth = 0;
-	int requestedHeight = 0;
-	RenderScale::GetRequestedSize(requestedWidth, requestedHeight);
-
-	int liveWidth = 0;
-	int liveHeight = 0;
-	const bool haveLive = RenderScale::GetInForceSize(liveWidth, liveHeight);
-
-	int observedWidth = 0;
-	int observedHeight = 0;
-	int observedCount = 0;
-	const bool haveObserved = RenderScale::GetObservedSize(observedWidth, observedHeight,
-		observedCount);
-
-	ImGui::Text("Asked to render at %dx%d", requestedWidth, requestedHeight);
-
-	// The engine's own size globals are the answer, not what the mod asked for and not what the
-	// texture hook happened to see: the render targets are built during the game's display init,
-	// which can be over before the hook that watches them is in place.
-	if (haveLive && liveWidth == requestedWidth && liveHeight == requestedHeight)
-	{
-		ImGui::TextColored(kGoodColour, "The engine is rendering at %dx%d", liveWidth, liveHeight);
-	}
-	else if (haveLive)
-	{
-		Warn("The engine is still rendering at %dx%d. It builds its render targets once - restart "
-			"the game, or change any video option in its own menu.", liveWidth, liveHeight);
-	}
-
-	if (haveObserved)
-	{
-		ImGui::TextDisabled("largest render target seen since the overlay loaded: %dx%d, %d of them",
-			observedWidth, observedHeight, observedCount);
-	}
-
-	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
-	ImGui::Text("Back buffer %ux%u, multisampling %s", present.BackBufferWidth,
-		present.BackBufferHeight,
-		present.MultiSampleType == D3DMULTISAMPLE_NONE ? "off" : "on");
+	DrawPotatoState();
 
 	if (!changed)
 		return;
 
-	RenderScale::Apply();
 	PumpWait::Apply();
+	EngineQuality::Apply();
 	Profiler::Reset();
+}
+
+bool PerformanceWindow::DrawPotatoHeight()
+{
+	ImGui::Spacing();
+
+	const int current = PotatoMode::GetHeight();
+	bool changed = false;
+
+	for (const int height : PotatoMode::kHeights)
+	{
+		int width = 0;
+		int rounded = 0;
+		PotatoMode::SizeForHeight(height, width, rounded);
+
+		char label[48] = {};
+		snprintf(label, sizeof(label), "%dp (%dx%d)", height, width, rounded);
+
+		if (ImGui::RadioButton(label, current == height) && current != height)
+		{
+			PotatoMode::SetHeight(height);
+			changed = true;
+		}
+
+		ImGui::SameLine();
+	}
+
+	ImGui::NewLine();
+	return changed;
+}
+
+// Read back out of the device, not repeated from what the mod asked for: the thing worth knowing is
+// when a request has not taken yet.
+void PerformanceWindow::DrawPotatoState()
+{
+	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
+
+	if (g_modVals.presentWidth > 0 && g_modVals.presentHeight > 0)
+	{
+		const bool inForce = present.BackBufferWidth ==
+			static_cast<unsigned>(g_modVals.presentWidth) &&
+			present.BackBufferHeight == static_cast<unsigned>(g_modVals.presentHeight);
+
+		if (inForce)
+		{
+			ImGui::TextColored(kGoodColour, "Drawing at %ux%u and stretching it to the window",
+				present.BackBufferWidth, present.BackBufferHeight);
+		}
+		else
+		{
+			Warn("Asked to draw at %dx%d, still drawing at %ux%u. The display is built once - "
+				"restart the game, or touch any video option in its own menu.",
+				g_modVals.presentWidth, g_modVals.presentHeight, present.BackBufferWidth,
+				present.BackBufferHeight);
+		}
+	}
+	else
+	{
+		ImGui::Text("Drawing at %ux%u, which is the game's own Display option",
+			present.BackBufferWidth, present.BackBufferHeight);
+	}
+
+	if (!present.Windowed)
+		Warn("Exclusive fullscreen - the drawing size is left alone here.");
+
+	ImGui::Text("Back buffer multisampling %s",
+		present.MultiSampleType == D3DMULTISAMPLE_NONE ? "off" : "on");
+
+	bool filterOn = false;
+	if (EngineQuality::ReadCharacterFilter(filterOn))
+	{
+		ImGui::Text("Character Visual Improvements is %s", filterOn ? "on" : "off");
+
+		if (filterOn && !EngineQuality::WantsCharacterFilter())
+			Warn("It should be off. %s", EngineQuality::GetStatusText());
+	}
 }

@@ -1,6 +1,7 @@
 #include "Overlay/Window/HitboxOverlay.h"
 
 #include "Core/interfaces.h"
+#include "D3D9/DeviceHooks.h"
 #include "Game/Camera.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
@@ -304,9 +305,11 @@ void HitboxOverlay::DrawEntity(void* entity, bool isEffect)
 		float originY = 0.0f;
 		if (Camera::PixelToScreen(originPixelX, originPixelY, originX, originY))
 		{
-			drawList->AddLine(ImVec2(originX - 8.0f, originY), ImVec2(originX + 8.0f, originY),
+			const float arm = 8.0f * DeviceHooks::GetOverlayScale();
+
+			drawList->AddLine(ImVec2(originX - arm, originY), ImVec2(originX + arm, originY),
 				IM_COL32(255, 255, 0, 200), 1.5f);
-			drawList->AddLine(ImVec2(originX, originY - 8.0f), ImVec2(originX, originY + 8.0f),
+			drawList->AddLine(ImVec2(originX, originY - arm), ImVec2(originX, originY + arm),
 				IM_COL32(255, 255, 0, 200), 1.5f);
 		}
 	}
@@ -349,6 +352,7 @@ void HitboxOverlay::DrawEntity(void* entity, bool isEffect)
 			drawList->AddRectFilled(topLeft, bottomRight, WithAlpha(color, settings.fillAlpha));
 
 		if (settings.outlineAlpha > 0.0f)
-			drawList->AddRect(topLeft, bottomRight, WithAlpha(color, settings.outlineAlpha), 0.0f, 1.5f);
+			drawList->AddRect(topLeft, bottomRight, WithAlpha(color, settings.outlineAlpha), 0.0f,
+				1.5f * DeviceHooks::GetOverlayScale());
 	}
 }

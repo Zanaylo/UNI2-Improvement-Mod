@@ -3,82 +3,232 @@
 #include "Core/Settings.h"
 #include "Core/interfaces.h"
 #include "Core/logger.h"
-#include "D3D9/RenderScale.h"
+#include "Game/EngineQuality.h"
 #include "Game/PumpWait.h"
 
 namespace {
 
-constexpr int kPotatoPercent = 50;
+struct Preset
+{
+	const char* name;
+	const char* description;
+	int presentWidth;
+	int presentHeight;
+	bool sizeFromPotatoHeight;
+	bool disableBackBufferAa;
+	bool pumpWait;
+	bool disableCharacterFilter;
+};
+
+constexpr Preset kPresets[PotatoMode::Level_COUNT] = {
+	{
+		"Off",
+		"Everything as the game ships it, at whatever its own Display option asks for.",
+		0, 0, false, false, false, false,
+	},
+	{
+		"Balanced",
+		"Draws at 960x540 and stretches that to your window, drops the back buffer's anti-aliasing "
+		"- which a Direct3D 9 texture cannot use anyway - and waits on the frame handshake instead "
+		"of on the clock. Slightly soft.",
+		960, 540, false, true, true, false,
+	},
+	{
+		"Potato",
+		"Draws at the size chosen below and stretches that to your window, whatever size the window "
+		"is, and turns off Character Visual Improvements: nine palette lookups per character pixel "
+		"for a blur one screen pixel wide. Visibly soft, and the stage still draws.",
+		0, 0, true, true, true, true,
+	},
+};
 
 struct Snapshot
 {
-	int internalResolutionPercent;
+	int presentWidth;
+	int presentHeight;
 	bool disableBackBufferAa;
 	bool pumpWait;
+	bool disableCharacterFilter;
 	bool taken;
 };
 
 Snapshot g_before = {};
 
-void Save(const char* key, int value)
+int ClampLevel(int level)
 {
-	Settings::SaveInt("Graphics", key, value);
+	if (level < PotatoMode::Level_Off)
+		return PotatoMode::Level_Off;
+
+	if (level >= PotatoMode::Level_COUNT)
+		return PotatoMode::Level_COUNT - 1;
+
+	return level;
 }
 
+void TakeSnapshot()
+{
+	if (g_before.taken)
+		return;
+
+	g_before.presentWidth = g_modVals.presentWidth;
+	g_before.presentHeight = g_modVals.presentHeight;
+	g_before.disableBackBufferAa = g_modVals.disableBackBufferAa;
+	g_before.pumpWait = g_modVals.pumpWait;
+	g_before.disableCharacterFilter = g_modVals.disableCharacterFilter;
+	g_before.taken = true;
 }
 
-void PotatoMode::Apply(bool enabled)
+void Restore(const Snapshot& snapshot)
 {
-	if (enabled)
+	g_modVals.presentWidth = snapshot.presentWidth;
+	g_modVals.presentHeight = snapshot.presentHeight;
+	g_modVals.disableBackBufferAa = snapshot.disableBackBufferAa;
+	g_modVals.pumpWait = snapshot.pumpWait;
+	g_modVals.disableCharacterFilter = snapshot.disableCharacterFilter;
+}
+
+void RestoreOrShip()
+{
+	const bool taken = g_before.taken;
+	g_before.taken = false;
+
+	if (taken)
 	{
-		if (!g_before.taken)
-		{
-			g_before.internalResolutionPercent = g_modVals.internalResolutionPercent;
-			g_before.disableBackBufferAa = g_modVals.disableBackBufferAa;
-			g_before.pumpWait = g_modVals.pumpWait;
-			g_before.taken = true;
-		}
-
-		g_modVals.internalResolutionPercent = kPotatoPercent;
-		g_modVals.disableBackBufferAa = true;
-		g_modVals.pumpWait = true;
+		Restore(g_before);
+		return;
 	}
-	else if (g_before.taken)
-	{
-		g_modVals.internalResolutionPercent = g_before.internalResolutionPercent;
-		g_modVals.disableBackBufferAa = g_before.disableBackBufferAa;
-		g_modVals.pumpWait = g_before.pumpWait;
 
-		g_before.taken = false;
+	const Preset& off = kPresets[PotatoMode::Level_Off];
+
+	g_modVals.presentWidth = off.presentWidth;
+	g_modVals.presentHeight = off.presentHeight;
+	g_modVals.disableBackBufferAa = off.disableBackBufferAa;
+	g_modVals.pumpWait = off.pumpWait;
+	g_modVals.disableCharacterFilter = off.disableCharacterFilter;
+}
+
+void Adopt(const Preset& preset)
+{
+	g_modVals.disableBackBufferAa = preset.disableBackBufferAa;
+	g_modVals.pumpWait = preset.pumpWait;
+	g_modVals.disableCharacterFilter = preset.disableCharacterFilter;
+
+	if (!preset.sizeFromPotatoHeight)
+	{
+		g_modVals.presentWidth = preset.presentWidth;
+		g_modVals.presentHeight = preset.presentHeight;
+		return;
+	}
+
+	PotatoMode::SizeForHeight(g_modVals.potatoHeight, g_modVals.presentWidth,
+		g_modVals.presentHeight);
+}
+
+void Save()
+{
+	Settings::SaveInt("Graphics", "PotatoMode", g_modVals.potatoMode);
+	Settings::SaveInt("Graphics", "PotatoHeight", g_modVals.potatoHeight);
+	Settings::SaveInt("Graphics", "PresentWidth", g_modVals.presentWidth);
+	Settings::SaveInt("Graphics", "PresentHeight", g_modVals.presentHeight);
+	Settings::SaveInt("Graphics", "DisableBackBufferAA", g_modVals.disableBackBufferAa ? 1 : 0);
+	Settings::SaveInt("Graphics", "DisableCharacterFilter",
+		g_modVals.disableCharacterFilter ? 1 : 0);
+	Settings::SaveInt("Video", "PumpWait", g_modVals.pumpWait ? 1 : 0);
+}
+
+}
+
+void PotatoMode::Apply(int level)
+{
+	const int clamped = ClampLevel(level);
+
+	if (clamped == Level_Off)
+	{
+		RestoreOrShip();
 	}
 	else
 	{
-		// Switched on in the ini, so there is nothing to put back - go to the shipped values rather
-		// than refusing, which is what used to leave the box stuck on.
-		g_modVals.internalResolutionPercent = 100;
-		g_modVals.disableBackBufferAa = false;
+		TakeSnapshot();
+		Adopt(kPresets[clamped]);
 	}
 
-	g_modVals.potatoMode = enabled;
+	g_modVals.potatoMode = clamped;
 
-	Save("PotatoMode", enabled ? 1 : 0);
-	Save("InternalResolutionPercent", g_modVals.internalResolutionPercent);
-	Save("DisableBackBufferAA", g_modVals.disableBackBufferAa ? 1 : 0);
-	Settings::SaveInt("Video", "PumpWait", g_modVals.pumpWait ? 1 : 0);
+	Save();
 
-	RenderScale::Apply();
 	PumpWait::Apply();
+	EngineQuality::Apply();
 
-	LOG("potato mode %s", enabled ? "on" : "off");
+	LOG("potato mode %s", kPresets[clamped].name);
+}
+
+
+void PotatoMode::ApplySaved()
+{
+	const int level = GetLevel();
+
+	if (level == Level_Off)
+		return;
+
+	Adopt(kPresets[level]);
+}
+
+void PotatoMode::OnFrame()
+{
+	EngineQuality::OnFrame();
+}
+
+int PotatoMode::ClampHeight(int height)
+{
+	for (const int candidate : kHeights)
+	{
+		if (candidate == height)
+			return height;
+	}
+
+	return 360;
+}
+
+void PotatoMode::SizeForHeight(int height, int& outWidth, int& outHeight)
+{
+	outHeight = ClampHeight(height);
+	outWidth = (outHeight * 16 / 9) & ~1;
+}
+
+int PotatoMode::GetHeight()
+{
+	return ClampHeight(g_modVals.potatoHeight);
+}
+
+void PotatoMode::SetHeight(int height)
+{
+	g_modVals.potatoHeight = ClampHeight(height);
+
+	if (GetLevel() != Level_Potato)
+	{
+		Settings::SaveInt("Graphics", "PotatoHeight", g_modVals.potatoHeight);
+		return;
+	}
+
+	Apply(Level_Potato);
+}
+
+int PotatoMode::GetLevel()
+{
+	return ClampLevel(g_modVals.potatoMode);
 }
 
 bool PotatoMode::IsActive()
 {
-	return g_modVals.potatoMode;
+	return GetLevel() != Level_Off;
 }
 
-const char* PotatoMode::Describe()
+const char* PotatoMode::GetLevelName(int level)
 {
-	return "Renders at half resolution and scales up, drops the back buffer's unused anti-aliasing, "
-		"and leaves the rest of the frame alone. The stage still draws.";
+	return kPresets[ClampLevel(level)].name;
+}
+
+const char* PotatoMode::Describe(int level)
+{
+	return kPresets[ClampLevel(level)].description;
 }

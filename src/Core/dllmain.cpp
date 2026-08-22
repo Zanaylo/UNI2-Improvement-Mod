@@ -10,9 +10,8 @@
 #include "Core/utils.h"
 #include "D3D9/D3D9Proxy.h"
 #include "D3D9/D3D9Wrapper.h"
-#include "D3D9/D3DX9Hooks.h"
-#include "D3D9/RenderScale.h"
 #include "Game/CharaTracker.h"
+#include "Game/EngineQuality.h"
 #include "Game/UiAssets.h"
 #include "Game/PotatoMode.h"
 #include "Game/PumpWait.h"
@@ -140,9 +139,10 @@ void Stage_UpdateCheck()
 	UpdateCheck::Start();
 }
 
-void Stage_RenderScale()
+void Stage_GraphicsSettings()
 {
-	RenderScale::Apply();
+	PotatoMode::ApplySaved();
+	EngineQuality::Apply();
 }
 
 void Stage_UiAssets()
@@ -177,11 +177,6 @@ void Stage_D3D9()
 {
 	if (!D3D9Wrapper::InstallHooks())
 		LOG("D3D9 hook installation failed, overlay will not be available");
-}
-
-void Stage_D3DX9()
-{
-	D3DX9Hooks::Install();
 }
 
 void Stage_GameHooks()
@@ -230,7 +225,7 @@ DWORD WINAPI InitThread(LPVOID)
 	}
 
 	RunStage("update check", Stage_UpdateCheck);
-	RunStage("render scale", Stage_RenderScale);
+	RunStage("graphics settings", Stage_GraphicsSettings);
 	RunStage("ui assets", Stage_UiAssets);
 	RunStage("process tuning", Stage_ProcessTuning);
 
@@ -246,7 +241,6 @@ DWORD WINAPI InitThread(LPVOID)
 	RunStage("input entry point", Stage_InputEntry);
 
 	RunStage("d3d9 hooks", Stage_D3D9);
-	RunStage("d3dx9 hooks", Stage_D3DX9);
 	RunStage("game hooks", Stage_GameHooks);
 	RunStage("palette share", Stage_PaletteShare);
 	RunStage("input hooks", Stage_InputHooks);

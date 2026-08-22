@@ -31,9 +31,6 @@ namespace {
 
 WNDPROC g_originalWndProc = nullptr;
 
-// io.WantTextInput is a frame behind by construction: EndFrame copies this frame's answer into
-// WantTextInputNextFrame and only the next NewFrame publishes it. The game reads the keyboard on
-// its own tick, between two overlay frames, so the stale value handed it the first keystroke.
 bool WantsTextInputThisFrame()
 {
 	const ImGuiContext* const context = ImGui::GetCurrentContext();
@@ -122,6 +119,8 @@ bool WindowManager::Initialize(HWND window, IDirect3DDevice9* device)
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
 	ImGui::StyleColorsDark();
+	m_fontScale = ImGui::GetStyle().FontScaleMain;
+
 	if (g_modVals.uiScale != 1.0f)
 		ImGui::GetStyle().ScaleAllSizes(g_modVals.uiScale);
 
@@ -295,9 +294,7 @@ void WindowManager::HandleHotkeys()
 	if (m_container == nullptr)
 		return;
 
-	// WM_ACTIVATEAPP is the only thing that clears this, so a game that was alt-tabbed away from
-	// before the overlay existed never saw the message that would have set it, and the hotkeys
-	// stayed dead for the session. Asking the system costs a call only while it reads unfocused.
+
 	if (!m_hasFocus)
 	{
 		if (GetForegroundWindow() != m_window)
@@ -345,9 +342,7 @@ void WindowManager::HandleHotkeys()
 		PaletteChoice::Step(PaletteChoice::LocalPlayer(), -1);
 }
 
-// The Win32 backend hands ImGui the window size, which is not the surface the overlay is drawn
-// into whenever the two differ. Working in back buffer pixels keeps the widgets the size they are
-// meant to be and puts the cursor where they are drawn.
+
 void WindowManager::ScaleToBackBuffer()
 {
 	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
@@ -362,16 +357,26 @@ void WindowManager::ScaleToBackBuffer()
 	const float height = static_cast<float>(present.BackBufferHeight);
 
 	if (width == io.DisplaySize.x && height == io.DisplaySize.y)
-		return;
-
-	if (io.MousePos.x != -FLT_MAX && io.MousePos.y != -FLT_MAX)
 	{
-		io.MousePos.x *= width / io.DisplaySize.x;
-		io.MousePos.y *= height / io.DisplaySize.y;
+		ImGui::GetStyle().FontScaleMain = m_fontScale;
+		return;
+	}
+	const float scaleX = width / io.DisplaySize.x;
+	const float scaleY = height / io.DisplaySize.y;
+
+	POINT cursor = {};
+	if (GetCursorPos(&cursor) && ScreenToClient(m_window, &cursor) &&
+		cursor.x >= 0 && cursor.y >= 0 &&
+		cursor.x < static_cast<LONG>(io.DisplaySize.x) &&
+		cursor.y < static_cast<LONG>(io.DisplaySize.y))
+	{
+		io.AddMousePosEvent(cursor.x * scaleX, cursor.y * scaleY);
 	}
 
 	io.DisplaySize.x = width;
 	io.DisplaySize.y = height;
+
+	ImGui::GetStyle().FontScaleMain = m_fontScale * scaleX;
 }
 
 void WindowManager::Render()

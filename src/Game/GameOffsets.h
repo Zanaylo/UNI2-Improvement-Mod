@@ -417,28 +417,44 @@ namespace GameOffsets
 	constexpr uintptr_t kFrameWaitSkipOnce = 0x641bdc;
 	constexpr uintptr_t kFramePeriodSeconds = 0x55bc98;
 
-	// The scene is rendered into five full screen targets of this size and only then scaled to the
-	// display. The copies below are taken from these right after the targets are built.
-	constexpr uintptr_t kRenderTargetWidth = 0x5966b4;
-	constexpr uintptr_t kRenderTargetHeight = 0x5966b8;
+
+	constexpr uintptr_t kRenderPhysicalWidth = 0x5966b4;
+	constexpr uintptr_t kRenderPhysicalHeight = 0x5966b8;
+	constexpr uintptr_t kRenderVirtualWidth = 0x5966cc;
+	constexpr uintptr_t kRenderVirtualHeight = 0x5966d0;
 	constexpr uintptr_t kRenderTargetMain = 0x5966a4;
 	constexpr uintptr_t kRenderTargetArray = 0x5966a8;
 	constexpr uintptr_t kRenderTargetExtra = 0x5966c8;
-	constexpr uintptr_t kRenderTargetWidthCopy = 0x5966cc;
-	constexpr uintptr_t kRenderTargetHeightCopy = 0x5966d0;
 
-	// Where the size is written. The two global writes per axis are mov dword ptr [global], imm32,
-	// so the immediate sits six bytes in; the first render target is built from literals instead -
-	// mov edx, imm32 for the width and push imm32 for the height - so those are one byte in.
+
 	constexpr uintptr_t kRenderSizeWidthWrites[] = { 0x4d2153, 0xd3ba7 };
 	constexpr uintptr_t kRenderSizeHeightWrites[] = { 0x4d215d, 0xd3bb1 };
 	constexpr uintptr_t kRenderSizeWidthLiterals[] = { 0x4d2172, 0x4d219e };
 	constexpr uintptr_t kRenderSizeHeightLiterals[] = { 0x4d2182, 0x4d2199 };
 
+
+	constexpr uintptr_t kRenderVirtualCopyBlock = 0x4d2250;
+	constexpr int kRenderVirtualCopyBlockLength = 20;
+
+	constexpr uintptr_t kRenderProjectionWidthOperand = 0x11b674;
+	constexpr uintptr_t kRenderProjectionHeightOperand = 0x11b661;
+	constexpr uintptr_t kRenderDestWidthOperands[] = { 0x23b6af, 0x23b6f1, 0x23dda6, 0x23dddb };
+	constexpr uintptr_t kRenderDestHeightOperands[] = { 0x23b6a7, 0x23b6eb, 0x23dda0, 0x23ddd5 };
+	constexpr uintptr_t kRenderBackBufferDestWidthOperands[] = { 0x4d115e, 0x4d2e65 };
+	constexpr uintptr_t kRenderBackBufferDestHeightOperands[] = { 0x4d1158, 0x4d2e5f };
+	constexpr uintptr_t kRenderBackBufferSourceWidthOperands[] = { 0x4d114e, 0x4d2e55 };
+	constexpr uintptr_t kRenderBackBufferSourceHeightOperands[] = { 0x4d1148, 0x4d2e4f };
+	constexpr uintptr_t kRenderSwappedDestWidthOperands[] = { 0x43a902, 0x44f705 };
+	constexpr uintptr_t kRenderSwappedDestHeightOperands[] = { 0x43a8fc, 0x44f6ff };
+	constexpr uintptr_t kRenderSwappedSourceWidthOperands[] = { 0x43a8f2, 0x44f6f5 };
+	constexpr uintptr_t kRenderSwappedSourceHeightOperands[] = { 0x43a8ec, 0x44f6ef };
+	constexpr uintptr_t kDrawScaleEnabled = 0x5efb0e;
+	constexpr uintptr_t kDrawScaleX = 0x641790;
+	constexpr uintptr_t kDrawScaleY = 0x64168c;
+
 	constexpr uintptr_t kFnCreateRenderTexture = 0xad8b0;
 	constexpr uintptr_t kFnSetMultiSample = 0xad440;
 
-	// The [Display] block of the game's own save ini, widened into these on load.
 	constexpr uintptr_t kDisplayUseVSync = 0x3b3ae6c;
 	constexpr uintptr_t kDisplayResolutionType = 0x3b3ae78;
 	constexpr uintptr_t kDisplayFullScreen = 0x3b3ae7c;
@@ -452,8 +468,6 @@ namespace GameOffsets
 	constexpr uintptr_t kWindowHasFocus = 0x5e5e66;
 	constexpr uintptr_t kWindowHandle = 0x640fa0;
 
-	// The two Special K style writes. The dword is a shared polling interval the engine reads at
-	// three sleep sites, not only the one after Present; the push is the message pump's own Sleep(1).
 	constexpr uintptr_t kPostFrameSleepMs = 0x595e18;
 	constexpr uintptr_t kMessageLoopSleepPush = 0x4d8b1c;
 	constexpr uintptr_t kFrameBudgetAccumulator = 0x641bec;

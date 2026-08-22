@@ -45,6 +45,7 @@ private:
 	bool m_initialized = false;
 	bool m_deviceObjectsValid = false;
 	bool m_overlayActive = false;
+	float m_fontScale = 1.0f;
 	bool m_blockGameMouse = false;
 	bool m_updateAnnounced = false;
 	bool m_hasFocus = true;

@@ -6,6 +6,7 @@
 #include "Core/keycodes.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/PotatoMode.h"
 #include "Training/FrameMeter.h"
 #include "Training/StageColor.h"
 
@@ -401,8 +402,13 @@ void Settings::ApplySettings()
 	g_modVals.paletteFlashEntry = g_settings.paletteFlashEntry != 0;
 	g_modVals.paletteFilterJunk = g_settings.paletteFilterJunk != 0;
 
+	// [Video] FlatStage and [Graphics] SimpleStage are one switch with two names. Left to drift they
+	// disagree, and FlatStage = 1 with the tab's box unticked is a game with no stage and nothing
+	// saying why.
+	const bool flatStage = g_settings.stageFlatColour != 0 || g_settings.simpleStage != 0;
+
 	StageColor::SetColor(static_cast<uint32_t>(g_settings.stageFlatColourValue));
-	StageColor::SetEnabled(g_settings.stageFlatColour != 0);
+	StageColor::SetEnabled(flatStage);
 
 	g_modVals.timerResolution = g_settings.timerResolution != 0;
 	g_modVals.powerThrottlingOptOut = g_settings.powerThrottlingOptOut != 0;
@@ -417,17 +423,27 @@ void Settings::ApplySettings()
 	g_modVals.pumpWaitAllInput = g_settings.pumpWaitAllInput != 0;
 	g_modVals.wineSafeMode = g_settings.wineSafeMode;
 
-	g_modVals.internalResolutionPercent = g_settings.internalResolutionPercent;
-	if (g_modVals.internalResolutionPercent < 25 || g_modVals.internalResolutionPercent > 400)
-		g_modVals.internalResolutionPercent = 100;
 
-	g_modVals.internalResolutionBudgetMb = g_settings.internalResolutionBudgetMb;
-	if (g_modVals.internalResolutionBudgetMb < 16 || g_modVals.internalResolutionBudgetMb > 1024)
-		g_modVals.internalResolutionBudgetMb = 192;
+
+	g_modVals.presentWidth = g_settings.presentWidth;
+	g_modVals.presentHeight = g_settings.presentHeight;
+	g_modVals.potatoHeight = PotatoMode::ClampHeight(g_settings.potatoHeight);
+
+	if (g_modVals.presentWidth < 256 || g_modVals.presentHeight < 144 ||
+		g_modVals.presentWidth > 7680 || g_modVals.presentHeight > 4320)
+	{
+		g_modVals.presentWidth = 0;
+		g_modVals.presentHeight = 0;
+	}
 
 	g_modVals.disableBackBufferAa = g_settings.disableBackBufferAa != 0;
-	g_modVals.simpleStage = g_settings.simpleStage != 0;
-	g_modVals.potatoMode = g_settings.potatoMode != 0;
+	g_modVals.disableCharacterFilter = g_settings.disableCharacterFilter != 0;
+
+	g_modVals.simpleStage = flatStage;
+
+	g_modVals.potatoMode = g_settings.potatoMode;
+	if (g_modVals.potatoMode < 0 || g_modVals.potatoMode >= PotatoMode::Level_COUNT)
+		g_modVals.potatoMode = PotatoMode::Level_Off;
 
 	g_modVals.uiScale = g_settings.uiScale;
 	if (g_modVals.uiScale < 0.5f || g_modVals.uiScale > 4.0f)

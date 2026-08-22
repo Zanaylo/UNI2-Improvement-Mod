@@ -69,11 +69,8 @@
     <ClCompile Include="src\D3D9\PresentTuning.cpp">
       <Filter>D3D9</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\D3DX9Hooks.cpp">
-      <Filter>D3D9</Filter>
-    </ClCompile>
-    <ClCompile Include="src\D3D9\RenderScale.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\Game\EngineQuality.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\PotatoMode.cpp">
       <Filter>Game</Filter>
@@ -425,11 +422,8 @@
     <ClInclude Include="src\D3D9\PresentTuning.h">
       <Filter>D3D9</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\D3DX9Hooks.h">
-      <Filter>D3D9</Filter>
-    </ClInclude>
-    <ClInclude Include="src\D3D9\RenderScale.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\Game\EngineQuality.h">
+      <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\PotatoMode.h">
       <Filter>Game</Filter>

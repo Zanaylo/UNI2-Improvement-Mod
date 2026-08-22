@@ -12,3 +12,4 @@ bindings.json
 __pycache__/
 tools/
 docs/
+build/shots/

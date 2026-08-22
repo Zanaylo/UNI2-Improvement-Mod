@@ -2,6 +2,7 @@
 
 #include "Core/interfaces.h"
 #include "Core/Settings.h"
+#include "D3D9/DeviceHooks.h"
 #include "Core/utils.h"
 #include "D3D9/GameFont.h"
 #include "D3D9/QuadRenderer.h"
@@ -608,7 +609,7 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 	if (FAILED(device->GetViewport(&viewport)))
 		return;
 
-	const float s = g_modVals.frameMeterScale;
+	const float s = g_modVals.frameMeterScale * DeviceHooks::GetOverlayScale();
 	const float lineHeight = GameFont::GetLineHeight() * kTextScale * s;
 	const float width = kTrackWidth * s;
 	const float totalsHeight = g_modVals.frameMeterTotals ? (lineHeight + kTextGap * s) * 2.0f : 0.0f;
@@ -625,9 +626,6 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 
 	float x = placed ? static_cast<float>(g_modVals.frameMeterX) : autoX;
 	float y = placed ? static_cast<float>(g_modVals.frameMeterY) : autoY;
-
-	// Never placed and not asking for automatic: take the automatic spot once and keep it, so the
-	// meter starts where it belongs and can still be dragged without visiting a checkbox first.
 	if (!placed && !g_modVals.frameMeterAuto && viewport.Width > 0)
 	{
 		g_modVals.frameMeterX = static_cast<int>(x < 0.0f ? 0.0f : x);

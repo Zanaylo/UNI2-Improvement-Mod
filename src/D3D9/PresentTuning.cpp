@@ -49,9 +49,7 @@ bool RateIsListed(IDirect3D9* d3d9, UINT adapter, const D3DPRESENT_PARAMETERS& p
 	return false;
 }
 
-// The highest rate the adapter lists at the game resolution that divides evenly by 60 and is not
-// above the desktop one. Used only when vsync is on and the desktop rate is not itself a multiple
-// of 60, because that is the one case where the display grid and the 16.667 ms deadline beat.
+
 UINT HighestMultipleOfSixty(IDirect3D9* d3d9, UINT adapter,
 	const D3DPRESENT_PARAMETERS& parameters, UINT ceiling)
 {
@@ -94,10 +92,6 @@ UINT ChooseRefreshRate(IDirect3D9* d3d9, UINT adapter, const D3DPRESENT_PARAMETE
 	D3DDISPLAYMODE desktop = {};
 	if (FAILED(d3d9->GetAdapterDisplayMode(adapter, &desktop)) || desktop.RefreshRate == 0)
 		return parameters.FullScreen_RefreshRateInHz;
-
-	// With vsync off the engine limiter is the only pacer and Present never blocks, so the refresh
-	// rate decides nothing but how long a frame takes to scan out. Leave the desktop mode alone: a
-	// switch costs an alt-tab and a downshift to 60 costs scanout for nothing.
 	if (!VsyncIsOn(parameters))
 	{
 		if (RateIsListed(d3d9, adapter, parameters, desktop.RefreshRate))
@@ -121,17 +115,13 @@ UINT ChooseRefreshRate(IDirect3D9* d3d9, UINT adapter, const D3DPRESENT_PARAMETE
 
 UINT ChooseBackBufferCount(const D3DPRESENT_PARAMETERS& parameters)
 {
-	// A second buffer can only absorb a missed deadline where there is a deadline to miss. With the
-	// present interval immediate there is none, and the buffer becomes a queued frame of latency.
-	if (!g_modVals.extraBackBuffer || !VsyncIsOn(parameters))
+	
 		return parameters.BackBufferCount;
 
 	return 2;
 }
 
-// A Direct3D 9 texture cannot be multisampled, and the game renders its whole scene into textures.
-// The only thing the multisampled back buffer ever antialiases is the edge of the single quad the
-// finished frame is drawn with, which is the edge of the screen.
+
 void RewriteMultiSample(D3DPRESENT_PARAMETERS& parameters)
 {
 	if (!g_modVals.disableBackBufferAa || parameters.MultiSampleType == D3DMULTISAMPLE_NONE)
@@ -144,13 +134,34 @@ void RewriteMultiSample(D3DPRESENT_PARAMETERS& parameters)
 	parameters.MultiSampleQuality = 0;
 }
 
+
+void RewriteBackBufferSize(D3DPRESENT_PARAMETERS& parameters)
+{
+	if (g_modVals.presentWidth <= 0 || g_modVals.presentHeight <= 0 || !parameters.Windowed)
+		return;
+
+	const UINT width = static_cast<UINT>(g_modVals.presentWidth);
+	const UINT height = static_cast<UINT>(g_modVals.presentHeight);
+
+	if (width == parameters.BackBufferWidth && height == parameters.BackBufferHeight)
+		return;
+
+	LOG("[PresentTuning] back buffer %ux%u -> %ux%u", parameters.BackBufferWidth,
+		parameters.BackBufferHeight, width, height);
+
+	parameters.BackBufferWidth = width;
+	parameters.BackBufferHeight = height;
+}
+
 void Rewrite(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
 {
 	RewriteMultiSample(parameters);
+	RewriteBackBufferSize(parameters);
 
 	if (parameters.Windowed)
 	{
-		Decide("windowed - nothing rewritten, the compositor owns the presentation");
+		Decide("windowed - back buffer %ux%u, the compositor owns the rest",
+			parameters.BackBufferWidth, parameters.BackBufferHeight);
 		return;
 	}
 
@@ -182,6 +193,7 @@ void PresentTuning::Apply(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS&
 		Decide(Compat::SafeMode() ? "safe mode - the host owns the presentation"
 			: "off - the game own parameters");
 		RewriteMultiSample(parameters);
+		RewriteBackBufferSize(parameters);
 		return;
 	}
 
@@ -196,6 +208,7 @@ void PresentTuning::Apply(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS& param
 	if (!g_modVals.displayTuning || Compat::SafeMode())
 	{
 		RewriteMultiSample(parameters);
+		RewriteBackBufferSize(parameters);
 		return;
 	}
 

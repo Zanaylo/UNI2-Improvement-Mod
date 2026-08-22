@@ -3,9 +3,11 @@
 #include "Core/Profiler.h"
 #include "Core/interfaces.h"
 #include "Core/logger.h"
+#include "Core/utils.h"
+#include "Game/GameOffsets.h"
 #include "D3D9/PresentTuning.h"
-#include "D3D9/RenderScale.h"
 #include "Game/GameState.h"
+#include "Game/PotatoMode.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
 #include "Game/ReplayState.h"
@@ -35,6 +37,9 @@ namespace {
 
 constexpr int kResetIndex = 16;
 constexpr int kPresentIndex = 17;
+constexpr unsigned kSceneWidth = 1280;
+constexpr unsigned kSceneHeight = 720;
+
 constexpr int kClearIndex = 43;
 constexpr int kSetTextureIndex = 65;
 constexpr int kDrawPrimitiveIndex = 81;
@@ -145,12 +150,8 @@ bool TargetIsFullFrame(IDirect3DDevice9* device, unsigned& outWidth, unsigned& o
 	const bool presentSized = desc.Width == g_presentParameters.BackBufferWidth &&
 		desc.Height == g_presentParameters.BackBufferHeight;
 
-	int internalWidth = RenderScale::kBaseWidth;
-	int internalHeight = RenderScale::kBaseHeight;
-	RenderScale::GetInForceSize(internalWidth, internalHeight);
 
-	const bool referenceSized = desc.Width == static_cast<unsigned>(internalWidth) &&
-		desc.Height == static_cast<unsigned>(internalHeight);
+	const bool referenceSized = desc.Width == kSceneWidth && desc.Height == kSceneHeight;
 
 	return presentSized || referenceSized;
 }
@@ -312,28 +313,19 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	{
 		Profiler::Scope scope(Profiler::Section_PresentPalette);
 
-		// Who may dress whom is settled first: everything below it, and the effect tint detour
-		// on the render thread, read the answer rather than working it out again.
+
 		PaletteControl::OnFrame();
 
-		// PaletteTexture stays: it is the record of which D3D textures are palettes, and the
-		// new system checks the draw's pointer against it.
 		PaletteSeat::OnFrame();
 		PalettePaint::OnFrame();
 
-		// Each player's palettes, for the effect tint to match a colour against. It needs the
-		// texture index PalettePaint just resolved, and the draw path may not read any of it.
+
 		EffectOwner::OnFrame();
 
-		// What each character wears is decided after the seats resolve and before anything is
-		// sent, so a palette put on automatically goes out with the same frame's send.
+
 		PaletteChoice::OnFrame();
 
 		PaletteTexture::OnFrame();
-
-		// The first system's per-frame work - the identification heuristics and the applying
-		// they drive - runs only while its tab is on. Nothing in the new path needs any of it,
-		// and leaving it running means two systems writing the same rows.
 		if (g_modVals.showLegacyPalettes)
 		{
 			PaletteDrawProbe::OnFrame();
@@ -350,6 +342,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	InputProbe::OnFrame();
 	StageColor::OnFrame();
+	PotatoMode::OnFrame();
 
 	HRESULT result = D3D_OK;
 
@@ -440,6 +433,34 @@ unsigned long DeviceHooks::PresentCount()
 IDirect3DDevice9* DeviceHooks::GetDevice()
 {
 	return g_device;
+}
+
+float DeviceHooks::GetOverlayScale()
+{
+	static float cached = 1.0f;
+	static DWORD cachedTick = 0;
+
+	const DWORD now = GetTickCount();
+	if (cachedTick != 0 && now - cachedTick < 200)
+		return cached;
+
+	cachedTick = now;
+	cached = 1.0f;
+
+	if (g_presentParameters.BackBufferWidth == 0 || g_gameProc.hWndGame == nullptr)
+		return cached;
+
+	RECT client = {};
+	if (!GetClientRect(g_gameProc.hWndGame, &client) || client.right <= 0)
+		return cached;
+
+	cached = static_cast<float>(g_presentParameters.BackBufferWidth) /
+		static_cast<float>(client.right);
+
+	if (!(cached > 0.0f) || cached > 1.0f)
+		cached = 1.0f;
+
+	return cached;
 }
 
 const D3DPRESENT_PARAMETERS& DeviceHooks::GetPresentParameters()

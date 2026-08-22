@@ -73,11 +73,13 @@ struct ModValues
 
 	int wineSafeMode;
 
-	int internalResolutionPercent;
-	int internalResolutionBudgetMb;
+	int presentWidth;
+	int presentHeight;
+	int potatoHeight;
 	bool disableBackBufferAa;
+	bool disableCharacterFilter;
 	bool simpleStage;
-	bool potatoMode;
+	int potatoMode;
 
 	float uiScale;
 	bool notifications;
