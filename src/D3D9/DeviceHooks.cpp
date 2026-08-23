@@ -6,6 +6,9 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "D3D9/PresentTuning.h"
+#include "D3D9/Post/SceneUpscale.h"
+#include "D3D9/SceneScale.h"
+#include "D3D9/Post/PostChain.h"
 #include "Game/GameState.h"
 #include "Game/PotatoMode.h"
 #include "Game/MemoryMap.h"
@@ -93,6 +96,8 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 		FrozenFrame::OnDeviceLost();
 		FrameMeterHud::OnDeviceLost();
 		PaletteTexture::OnDeviceLost();
+		PostChain::OnDeviceLost();
+		SceneUpscale::OnDeviceLost();
 	}
 
 	const HRESULT result = oReset(device, presentParameters);
@@ -223,7 +228,7 @@ HRESULT STDMETHODCALLTYPE HookedSetTexture(IDirect3DDevice9* device, DWORD stage
 {
 	const bool paletteShaped = PaletteTexture::OnSetTexture(device, stage, texture);
 	PaletteDrawProbe::OnSetTexture(stage, texture, paletteShaped);
-	return oSetTexture(device, stage, texture);
+	return oSetTexture(device, stage, SceneUpscale::OnSetTexture(device, stage, texture));
 }
 
 HRESULT STDMETHODCALLTYPE HookedDrawPrimitive(IDirect3DDevice9* device, D3DPRIMITIVETYPE type,
@@ -297,6 +302,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 				FrozenFrame::Capture(device);
 		}
 
+		PostChain::Apply(device);
+
 		{
 			Profiler::Scope scope(Profiler::Section_PresentMeterHud);
 			FrameMeterHud::Render(device);
@@ -339,6 +346,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 		Profiler::Scope scope(Profiler::Section_PresentShare);
 		PaletteShare::OnFrame();
 	}
+
+	SceneScale::OnFrame();
+	SceneUpscale::OnPresent();
 
 	InputProbe::OnFrame();
 	StageColor::OnFrame();
@@ -457,7 +467,7 @@ float DeviceHooks::GetOverlayScale()
 	cached = static_cast<float>(g_presentParameters.BackBufferWidth) /
 		static_cast<float>(client.right);
 
-	if (!(cached > 0.0f) || cached > 1.0f)
+	if (!(cached > 0.1f) || cached > 8.0f)
 		cached = 1.0f;
 
 	return cached;

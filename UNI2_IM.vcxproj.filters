@@ -7,6 +7,12 @@
     <Filter Include="D3D9">
       <UniqueIdentifier>{555ad0b6-d9e4-56a9-86d1-d78540cc8637}</UniqueIdentifier>
     </Filter>
+    <Filter Include="D3D9\Post">
+      <UniqueIdentifier>{5f110828-9229-58dd-bb5d-3753e57675d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="D3D9\Post\Shaders">
+      <UniqueIdentifier>{253ec6e2-dd0e-53cc-af0c-4486d7d17211}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Dependencies">
       <UniqueIdentifier>{db7b8e17-8595-5a47-bce1-f417291f2c41}</UniqueIdentifier>
     </Filter>
@@ -46,6 +52,9 @@
     <Filter Include="Resources">
       <UniqueIdentifier>{9e5d43ff-8ea3-5dae-ae45-3ef6fc8b1847}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\shaders">
+      <UniqueIdentifier>{c0320b19-2d9b-57a8-a4f3-6396ac8fede3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Training">
       <UniqueIdentifier>{bbdc2753-4115-5e67-a788-75f2f4b9142d}</UniqueIdentifier>
     </Filter>
@@ -60,28 +69,13 @@
     <ClCompile Include="src\Core\Settings.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Profiler.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Core\ProcessTuning.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\D3D9\PresentTuning.cpp">
-      <Filter>D3D9</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\EngineQuality.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\PotatoMode.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\PumpWait.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Overlay\Window\PerformanceWindow.cpp">
-      <Filter>Overlay\Window</Filter>
-    </ClCompile>
     <ClCompile Include="src\Core\logger.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Compat.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\DpiScaling.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\crashdump.cpp">
@@ -120,6 +114,9 @@
     <ClCompile Include="src\Hooks\InputProbe.cpp">
       <Filter>Hooks</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\D3D9Proxy.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
     <ClCompile Include="src\D3D9\D3D9Wrapper.cpp">
       <Filter>D3D9</Filter>
     </ClCompile>
@@ -133,6 +130,15 @@
       <Filter>Overlay</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\NotificationBar.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\UiText.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\UiScale.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\OverlayFont.cpp">
       <Filter>Overlay</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\PlatePreview.cpp">
@@ -175,39 +181,6 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\GameState.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\PlayerCard.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\PlateCatalog.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\ColorCustomize.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\ColorOverride.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\LivePalette.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\PngPalette.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\CgImage.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\PatParts.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\SaveData.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\ColorPartTable.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\StockPalettes.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\OnlineState.cpp">
@@ -285,6 +258,42 @@
     <ClCompile Include="src\Game\EffectTable.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\PartName.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PlayerCard.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PlateCatalog.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ColorCustomize.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ColorOverride.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\LivePalette.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PngPalette.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\CgImage.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PatParts.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SaveData.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ColorPartTable.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StockPalettes.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\FrameDataTable.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -345,6 +354,12 @@
     <ClCompile Include="src\Overlay\Window\PlayerControlWindow.cpp">
       <Filter>Overlay\Window</Filter>
     </ClCompile>
+    <ClCompile Include="src\Overlay\Window\UpdateNotifierWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Web\UpdateCheck.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
     <ClCompile Include="src\Training\PlayerControl.cpp">
       <Filter>Training</Filter>
     </ClCompile>
@@ -359,6 +374,69 @@
     </ClCompile>
     <ClCompile Include="src\Overlay\WindowContainer\WindowContainer.cpp">
       <Filter>Overlay\WindowContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Profiler.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ProcessTuning.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\PresentTuning.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\SceneScale.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\SceneUpscale.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\DeviceState.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\ScratchTarget.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\FullScreenPass.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\UpscaleFilter.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\PostOptions.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\PostChain.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\ShaderPack.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\EngineQuality.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Improvements.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PotatoMode.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PresentSize.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PumpWait.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\DataArchive.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\UiAssets.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\PerformanceWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\GraphicsPanel.cpp">
+      <Filter>Overlay\Window</Filter>
     </ClCompile>
     <ClCompile Include="depends\imgui\imgui.cpp">
       <Filter>Dependencies\ImGui</Filter>
@@ -396,12 +474,6 @@
     <ClCompile Include="depends\minhook\src\hde\hde64.c">
       <Filter>Dependencies\MinHook\hde</Filter>
     </ClCompile>
-    <ClCompile Include="src\Web\UpdateCheck.cpp">
-      <Filter>Web</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Overlay\Window\UpdateNotifierWindow.cpp">
-      <Filter>Overlay\Window</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Core\Settings.h">
@@ -410,31 +482,13 @@
     <ClInclude Include="src\Core\settings.def">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Profiler.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\default_ini.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\ProcessTuning.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\D3D9\PresentTuning.h">
-      <Filter>D3D9</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\EngineQuality.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\PotatoMode.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\PumpWait.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Overlay\Window\PerformanceWindow.h">
-      <Filter>Overlay\Window</Filter>
-    </ClInclude>
     <ClInclude Include="src\Core\logger.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Compat.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\DpiScaling.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\crashdump.h">
@@ -476,6 +530,9 @@
     <ClInclude Include="src\Hooks\InputProbe.h">
       <Filter>Hooks</Filter>
     </ClInclude>
+    <ClInclude Include="src\D3D9\D3D9Proxy.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
     <ClInclude Include="src\D3D9\D3D9Wrapper.h">
       <Filter>D3D9</Filter>
     </ClInclude>
@@ -489,6 +546,15 @@
       <Filter>Overlay</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\NotificationBar.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\UiText.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\UiScale.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\OverlayFont.h">
       <Filter>Overlay</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\PlatePreview.h">
@@ -514,24 +580,6 @@
     </ClInclude>
     <ClInclude Include="src\Overlay\Window\PaletteWindow.h">
       <Filter>Overlay\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Overlay\Window\DebugWindow.h">
-      <Filter>Overlay\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\MemoryMap.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\CharaTracker.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\HitboxData.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\Camera.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\GameState.h">
-      <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\PlayerCard.h">
       <Filter>Game</Filter>
@@ -564,6 +612,24 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\StockPalettes.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\DebugWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\MemoryMap.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\CharaTracker.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\HitboxData.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Camera.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GameState.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\OnlineState.h">
@@ -641,6 +707,9 @@
     <ClInclude Include="src\Game\EffectTable.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\PartName.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\FrameDataTable.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -701,6 +770,12 @@
     <ClInclude Include="src\Overlay\Window\PlayerControlWindow.h">
       <Filter>Overlay\Window</Filter>
     </ClInclude>
+    <ClInclude Include="src\Overlay\Window\UpdateNotifierWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Web\UpdateCheck.h">
+      <Filter>Web</Filter>
+    </ClInclude>
     <ClInclude Include="src\Training\PlayerControl.h">
       <Filter>Training</Filter>
     </ClInclude>
@@ -716,6 +791,102 @@
     <ClInclude Include="src\Overlay\Window\HitboxOverlay.h">
       <Filter>Overlay\Window</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Profiler.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\default_ini.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ProcessTuning.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\PresentTuning.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\SceneScale.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\SceneUpscale.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\SceneUpscaleShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\DeviceState.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\ScratchTarget.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\FullScreenPass.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\UpscaleFilter.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\PostOptions.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\PostChain.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\ShaderPack.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\BicubicShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\LanczosShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\FxaaShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\RcasShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\LookShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\BloomBrightShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\BloomBlurShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\BloomMixShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\SharpenShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\EngineQuality.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Improvements.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PotatoMode.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PresentSize.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PumpWait.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\DataArchive.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\UiAssets.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\PerformanceWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\GraphicsPanel.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\GameOffsets.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -725,12 +896,6 @@
     <ClInclude Include="src\Overlay\WindowContainer\WindowType.h">
       <Filter>Overlay\WindowContainer</Filter>
     </ClInclude>
-    <ClInclude Include="src\Web\UpdateCheck.h">
-      <Filter>Web</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Overlay\Window\UpdateNotifierWindow.h">
-      <Filter>Overlay\Window</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resource\dinput8.def">
@@ -738,6 +903,36 @@
     </None>
     <None Include="resource\UNI2_IM.ini">
       <Filter>Resources</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_blur.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_bright.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\bloom_mix.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\fxaa.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\look.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\rcas.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\sceneupscale.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\sharpen.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\upscale_bicubic.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\upscale_lanczos.hlsl">
+      <Filter>Resources\shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

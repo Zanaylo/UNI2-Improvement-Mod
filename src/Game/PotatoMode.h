@@ -22,6 +22,7 @@ namespace PotatoMode
 
 	int GetLevel();
 	bool IsActive();
+	bool GetPresentSize(int& outWidth, int& outHeight);
 
 	// The Potato level's picture size, as the height of a 16:9 frame. The tab offers these and
 	// nothing else, because a size nobody asked for is a size nobody can report a bug about.

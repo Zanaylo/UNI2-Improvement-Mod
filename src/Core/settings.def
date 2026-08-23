@@ -240,6 +240,102 @@ SETTING_INT(presentHeight,          "Graphics", "PresentHeight",        0)
 // picking a level and picking how far it goes stay separate questions.
 SETTING_INT(potatoHeight,           "Graphics", "PotatoHeight",         360)
 
+// The Improvements tab, which is POTATO MODE the other way round: 0 off, 1 draws at 1080p, 2 at
+// 1440p and 3 at 4K, and lets Direct3D fit that to the window. It does not reach the five
+// 1280x720 scene targets, so it supersamples what is drawn straight into the back buffer and
+// nothing else. Offered only while PotatoMode is 0, and the size the two of them settle on is
+// what PresentWidth/PresentHeight hold.
+SETTING_INT(supersample,            "Graphics", "Supersample",          0)
+
+// Contrast adaptive sharpening over the finished frame, 0 to 100, 0 off. The softness in this game
+// is in the upscale rather than in the art - everything is rasterised at 1280x720 and blown up - so
+// putting the edge contrast back is most of what a higher resolution would have looked like. Drawn
+// from Present over the back buffer; it patches nothing and reads none of the game's shaders.
+SETTING_INT(sharpenStrength,        "Graphics", "Sharpen",              0)
+
+// An edge directed upscale of the scene target in place of the composite's linear filter, 0 off.
+// The engine rasterises into five 1280x720 targets and the composite is the only magnification in
+// the frame, so this is the one place a better kernel can reach. It runs FidelityFX EASU into a back
+// buffer sized copy and hands that to the composite, which then has nothing left to blur. Needs a
+// back buffer larger than 1280x720 to do anything, so it earns its keep with Supersample on.
+SETTING_INT(sceneUpscale,           "Graphics", "SceneUpscale",         0)
+
+// Which kernel magnifies the scene target on its way into the back buffer, in place of the
+// composite's own linear filter. 0 leaves the engine's bilinear alone, 1 Catmull-Rom bicubic,
+// 2 Lanczos, 3 FidelityFX EASU. It only does anything where the back buffer is larger than the
+// scene, so it is the partner of SceneTargetScale and Supersample rather than a setting of its own.
+SETTING_INT(upscaleFilter,          "Graphics", "UpscaleFilter",        0)
+
+// FXAA over the finished frame: 0 off, 1 low, 2 medium, 3 high, 4 ultra. Multisampling cannot reach
+// this game - a Direct3D 9 texture cannot be multisampled and the whole scene is drawn into
+// textures - so the two things that can antialias it are supersampling, which SceneTargetScale and
+// Supersample do, and a post filter, which is this.
+SETTING_INT(antiAliasing,           "Graphics", "AntiAliasing",         0)
+
+// Which kernel the sharpening pass uses: 0 contrast adaptive, 1 FidelityFX RCAS.
+SETTING_INT(sharpenMode,            "Graphics", "SharpenMode",          0)
+
+// Bloom over the finished frame: the bright parts of the picture are cut out, blurred at a quarter
+// of the size and screened back on. It is the one thing here that reads as lighting rather than as
+// filtering, and the neon in these stages and the EXS effects are what it is for. Off, and nothing
+// is drawn. Intensity and threshold are 0 to 100.
+SETTING_INT(bloomEnabled,           "Graphics", "Bloom",                0)
+SETTING_INT(bloomIntensity,         "Graphics", "BloomIntensity",       40)
+SETTING_INT(bloomThreshold,         "Graphics", "BloomThreshold",       75)
+
+// Whether the colour and display pass runs at all. Off, none of the values below is read and no pass
+// is drawn, whatever they hold.
+SETTING_INT(lookEnabled,            "Graphics", "Look",                 0)
+
+// The colour and display look, one pass over the finished frame, and every one of them neutral by
+// default so the pass does not run at all. Brightness, contrast, saturation, vibrance and
+// temperature are -100 to 100, gamma is a percentage of 1.0, vignette and scanlines are 0 to 100.
+SETTING_INT(lookBrightness,         "Graphics", "LookBrightness",       0)
+SETTING_INT(lookContrast,           "Graphics", "LookContrast",         0)
+SETTING_INT(lookGamma,              "Graphics", "LookGamma",            100)
+SETTING_INT(lookSaturation,         "Graphics", "LookSaturation",       0)
+SETTING_INT(lookVibrance,           "Graphics", "LookVibrance",         0)
+SETTING_INT(lookTemperature,        "Graphics", "LookTemperature",      0)
+SETTING_INT(lookVignette,           "Graphics", "LookVignette",         0)
+SETTING_INT(lookScanlines,          "Graphics", "LookScanlines",        0)
+SETTING_INT(lookDither,             "Graphics", "LookDither",           0)
+
+// The user shader pack that runs last in the chain, by file name, out of UNI2-IM/Shaders. Empty is
+// none. Compiling one needs d3dcompiler_47.dll; where it is missing the setting is ignored.
+SETTING_STRING(shaderPack,          "Graphics", "ShaderPack",           "")
+
+SETTING_INT(sceneScalePercent,      "Graphics", "SceneScale",           100)
+
+// Whether SceneScale also holds the engine's own 2D destination scale up. It reaches some 2D call
+// sites and not others - the menu's labels move and its bullets do not - so it is its own switch
+// rather than something SceneScale implies.
+SETTING_INT(sceneDrawScale,         "Graphics", "SceneDrawScale",       0)
+
+// Hold the second size pair and the projection block at 1280x720 while the targets grow. Measured
+// without it at 200%: the stage, the moon and the HUD are correct and the characters are drawn at
+// exactly twice their distance from the origin - x 0.334 of the screen becomes 0.676. The character
+// transform is the one thing that follows the projection, so this is what should stop it.
+SETTING_INT(scenePinProjection,     "Graphics", "ScenePinProjection",   0)
+
+// Scale the engine's four reference constants with the targets. The character sprite converts its
+// pixel position and its size into clip space with a hard coded 1/640 and 1/360 - RVAs 0x55bc78,
+// 0x55bc80, 0x55c0cc, 0x55c0d0 - while the block those pixels are computed through, 0x83a7e4 built
+// at 0x11b630, is derived from the physical render size. Two halves of one conversion that have to
+// agree and do not, which is what draws a character at twice its distance from the origin at 200%.
+// This is the second answer to that mismatch and ScenePinProjection is the first: that one holds the
+// block down to 1280x720, this one lets it follow the targets and moves the constants to meet it.
+// They are alternatives - measure with one or the other, not with both.
+SETTING_INT(sceneReferenceScale,    "Graphics", "SceneReferenceScale",  1)
+
+// The same correction for the second family. The engine spells half the reference width two ways -
+// the reciprocals above, and the plain literals 640.0 at 0x55c07c and 360.0 at 0x55c044, which the
+// character path divides by. Measured at 200%: everything derived from the camera block reads
+// 1/1280 and 1/720 correctly and both literals still read 640 and 360, which puts the sprite at
+// x/640-1 against a position already in the 2560 wide space - exactly where it is drawn. Separate
+// from the switch above because 360.0 has fourteen readers and some of them are degrees rather than
+// pixels, so the two families have to be measurable one at a time.
+SETTING_INT(sceneReferenceLiterals, "Graphics", "SceneReferenceLiterals", 1)
+
 // Ask Direct3D for a back buffer with no multisampling. A Direct3D 9 texture cannot be
 // multisampled, so the scene is never antialiased anyway and the samples are spent on the one quad
 // the finished frame is drawn with.
@@ -261,6 +357,19 @@ SETTING_INT(potatoMode,             "Graphics", "PotatoMode",           0)
 
 SETTING_INT(blockGameMouse,         "Overlay",  "BlockGameMouse",       0)
 SETTING_FLOAT(uiScale,              "Overlay",  "UiScale",              1.0f)
+
+// The overlay's font. Empty picks the first scalable face the system has, which on Windows is Segoe
+// UI and under Proton is usually DejaVu Sans; a path to a .ttf overrides that. The stock Dear ImGui
+// font is a bitmap and it is what makes the overlay look broken at 1440p and 4K - it has one size
+// and everything above it is that size stretched.
+SETTING_STRING(fontPath,            "Overlay",  "FontPath",             "")
+SETTING_FLOAT(fontSize,             "Overlay",  "FontSize",             16.0f)
+
+// Tell Windows the game handles its own scaling. Off, a display scale above 100% makes Windows
+// render the whole window small and stretch it, which is a second blur on top of everything else and
+// costs the overlay its sharpness. On, the window is laid out in real pixels. It is off by default
+// because the game was not written for it and its own window sizing has not been tested this way.
+SETTING_INT(dpiAware,               "Overlay",  "DpiAware",             0)
 
 // The line that slides across the top of the screen when the mod loads, naming the version and the
 // key that opens it. 0 silences it and anything else the mod would announce.

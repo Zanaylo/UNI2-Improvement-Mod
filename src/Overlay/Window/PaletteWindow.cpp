@@ -22,6 +22,8 @@
 #include "Palette/PaletteMemory.h"
 #include "Palette/PalettePaint.h"
 
+#include "Overlay/UiScale.h"
+
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -92,8 +94,8 @@ PaletteWindow::PaletteWindow(const std::string& title, bool closable, ImGuiWindo
 
 void PaletteWindow::BeforeDraw()
 {
-	ImGui::SetNextWindowSizeConstraints(ImVec2(440.0f, 460.0f), ImVec2(FLT_MAX, FLT_MAX));
-	ImGui::SetNextWindowSize(ImVec2(480.0f, 760.0f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(Ui::Scaled(440.0f, 460.0f), ImVec2(FLT_MAX, FLT_MAX));
+	ImGui::SetNextWindowSize(Ui::Scaled(480.0f, 760.0f), ImGuiCond_FirstUseEver);
 }
 
 void PaletteWindow::Draw()
@@ -215,7 +217,7 @@ void PaletteWindow::DrawPlayer(int player)
 
 void PaletteWindow::DrawSwatches(int player, int chara)
 {
-	ImGui::BeginChild("swatches", ImVec2(0.0f, 200.0f), ImGuiChildFlags_Borders);
+	ImGui::BeginChild("swatches", Ui::Scaled(0.0f, 200.0f), ImGuiChildFlags_Borders);
 
 	const int parts = GameTables::GetPartCount(chara);
 
@@ -340,7 +342,7 @@ void PaletteWindow::DrawParts(int player)
 		else
 			sprintf_s(label, "Colour %02d", colours.stock[part] + 1);
 
-		ImGui::SetNextItemWidth(140.0f);
+		Ui::SetItemWidth(140.0f);
 
 		if (ImGui::BeginCombo("##stock", label))
 		{
@@ -481,7 +483,7 @@ void PaletteWindow::DrawGrid(int player, const unsigned char* entries, int count
 
 		if (ImGui::ColorButton("##swatch", colour,
 			ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
-			ImVec2(kSwatch, kSwatch)))
+			Ui::Scaled(kSwatch, kSwatch)))
 		{
 			m_selected[player] = i;
 			StartFlash(player);
@@ -516,7 +518,7 @@ void PaletteWindow::DrawPicker(int player)
 		m_composed[player][selected * 4 + 2] / 255.0f,
 	};
 
-	ImGui::SetNextItemWidth(170.0f);
+	Ui::SetItemWidth(170.0f);
 
 	if (ImGui::ColorPicker3("##entry", picked, ImGuiColorEditFlags_NoSidePreview |
 		ImGuiColorEditFlags_NoSmallPreview))
@@ -641,7 +643,7 @@ void PaletteWindow::DrawEffects(int player)
 	if (ImGui::Button("Reset effects"))
 		EffectPaint::Clear(player);
 
-	ImGui::BeginChild("effects", ImVec2(0.0f, 150.0f), ImGuiChildFlags_Borders);
+	ImGui::BeginChild("effects", Ui::Scaled(0.0f, 150.0f), ImGuiChildFlags_Borders);
 
 	for (int n = 0; n < count; ++n)
 	{
@@ -677,7 +679,7 @@ void PaletteWindow::DrawEffects(int player)
 		if (ImGui::ColorButton("##effect",
 			ImVec4(rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f, 1.0f),
 			ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
-			ImVec2(kSwatch, kSwatch)))
+			Ui::Scaled(kSwatch, kSwatch)))
 		{
 			m_effectEntry[player] = entry;
 		}
@@ -729,7 +731,7 @@ void PaletteWindow::DrawEffects(int player)
 
 	float picked[3] = { rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f };
 
-	ImGui::SetNextItemWidth(170.0f);
+	Ui::SetItemWidth(170.0f);
 
 	if (ImGui::ColorPicker3("##effectpick", picked, ImGuiColorEditFlags_NoSidePreview |
 		ImGuiColorEditFlags_NoSmallPreview))
@@ -766,9 +768,7 @@ void PaletteWindow::DrawFiles(int player)
 	LoadCreator();
 	PollPngDialogs(player);
 
-	// A side can stop being editable while its name is half typed - the local side is only known
-	// once a match starts, and a disabled field drops ImGui's focus, which hands the rest of the
-	// word to the game.
+
 	const bool mine = PaletteControl::CanEdit(player);
 	const bool editingName = ImGui::GetActiveID() == ImGui::GetID("##name");
 
@@ -777,7 +777,7 @@ void PaletteWindow::DrawFiles(int player)
 
 	ImGui::TextUnformatted("Name");
 
-	ImGui::SetNextItemWidth(170.0f);
+	Ui::SetItemWidth(170.0f);
 	ImGui::InputText("##name", m_name[player], sizeof(m_name[player]));
 
 	if (editingName)
@@ -806,17 +806,15 @@ void PaletteWindow::DrawFiles(int player)
 
 	ImGui::TextUnformatted("Author");
 
-	ImGui::SetNextItemWidth(170.0f);
+	Ui::SetItemWidth(170.0f);
 	ImGui::InputText("##author", m_creator[player], sizeof(m_creator[player]));
 
-	// Remembered as soon as it is typed rather than only when a palette is saved: it is whoever is
-	// at the keyboard, not a property of one file.
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveString("Palette", "Creator", m_creator[player]);
 
 	ImGui::TextUnformatted("Description");
 
-	ImGui::SetNextItemWidth(340.0f);
+	Ui::SetItemWidth(340.0f);
 	ImGui::InputText("##description", m_description[player], sizeof(m_description[player]));
 
 	ImGui::TextUnformatted("Character Palette");
@@ -824,7 +822,7 @@ void PaletteWindow::DrawFiles(int player)
 	const char* const chosen = m_chosen[player] >= 0 && m_chosen[player] < m_fileCount[player]
 		? m_files[player][m_chosen[player]].c_str() : kDefaultPalette;
 
-	ImGui::SetNextItemWidth(170.0f);
+	Ui::SetItemWidth(170.0f);
 
 	if (ImGui::BeginCombo("##load", chosen))
 	{
@@ -857,7 +855,6 @@ void PaletteWindow::DrawFiles(int player)
 		ImGui::EndCombo();
 	}
 
-	// The wheel walks the same list the combo shows, so -1 is Default rather than "nothing".
 	const int steps = ComboNav::WheelSteps();
 	if (steps != 0)
 	{
@@ -937,8 +934,6 @@ void PaletteWindow::Undo(int player)
 		Refresh(player);
 }
 
-// Rescanning must not change what is selected. -1 means Default now, so blanking the selection here
-// made a save look like it had put the game's own colours back.
 void PaletteWindow::RefreshFiles(int player)
 {
 	std::string keep;
@@ -980,8 +975,6 @@ void PaletteWindow::SelectFile(int player, const char* file)
 	}
 }
 
-// The combo's Default entry. Same thing the Remove button does: the game's own colours back, and
-// this character is not dressed automatically next match either.
 void PaletteWindow::Bare(int player)
 {
 	PalettePaint::Clear(player);

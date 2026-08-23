@@ -14,6 +14,7 @@ protected:
 private:
 	void DrawPerformanceTab();
 	void DrawPotatoTab();
+	void DrawImprovementsTab();
 	void DrawMetricsTab();
 
 	bool DrawPotatoHeight();

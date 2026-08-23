@@ -38,6 +38,9 @@ private:
 	void HandleHotkeys();
 	void AnnounceUpdate();
 	void ScaleToBackBuffer();
+	bool GetBackBufferScale(float& outX, float& outY) const;
+	LPARAM ScaleMousePosition(LPARAM lParam) const;
+	void ApplyScale(float scale);
 	void ObserveFocus(UINT message, WPARAM wParam);
 	void InstallWindowProc(HWND window);
 	void RemoveWindowProc();
@@ -46,6 +49,9 @@ private:
 	bool m_deviceObjectsValid = false;
 	bool m_overlayActive = false;
 	float m_fontScale = 1.0f;
+	ImGuiStyle m_baseStyle;
+	float m_appliedScale = 0.0f;
+	float m_appliedFontSize = 0.0f;
 	bool m_blockGameMouse = false;
 	bool m_updateAnnounced = false;
 	bool m_hasFocus = true;

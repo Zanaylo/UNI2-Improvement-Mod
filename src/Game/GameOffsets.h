@@ -436,6 +436,17 @@ namespace GameOffsets
 	constexpr uintptr_t kRenderVirtualCopyBlock = 0x4d2250;
 	constexpr int kRenderVirtualCopyBlockLength = 20;
 
+	constexpr uintptr_t kReferenceHalfWidthLiteral = 0x55c07c;
+	constexpr uintptr_t kReferenceHalfHeightLiteral = 0x55c044;
+
+	constexpr uintptr_t kCameraHalfWidth = 0x83a7e4;
+	constexpr uintptr_t kCameraHalfHeight = 0x83a7e8;
+	constexpr uintptr_t kCameraRcpHalfWidth = 0x83a7ec;
+	constexpr uintptr_t kCameraRcpHalfHeight = 0x83a7f0;
+
+	constexpr uintptr_t kReferenceHalfWidth[] = { 0x55bc78, 0x55c0cc };
+	constexpr uintptr_t kReferenceHalfHeight[] = { 0x55bc80, 0x55c0d0 };
+
 	constexpr uintptr_t kRenderProjectionWidthOperand = 0x11b674;
 	constexpr uintptr_t kRenderProjectionHeightOperand = 0x11b661;
 	constexpr uintptr_t kRenderDestWidthOperands[] = { 0x23b6af, 0x23b6f1, 0x23dda6, 0x23dddb };

@@ -1,0 +1,13 @@
+# Compiled shader bytecode, written by tools/build_shaders.ps1 from resource/shaders/*.hlsl.
+# It has to be committed - tools/ is not in the repository, so a fresh clone cannot run fxc - but
+# it is machine output and nobody should ever read its diff.
+src/D3D9/Post/Shaders/*.h linguist-generated=true -diff
+
+# Written by tools/embed_default_ini.py from resource/UNI2_IM.ini. Edit the ini, not this.
+src/Core/default_ini.h linguist-generated=true -diff
+
+# Extracted from the game's own data by the tools of the same name. Machine output, same rule.
+src/Game/FrameDataTable.cpp linguist-generated=true -diff
+src/Game/EffectTable.cpp linguist-generated=true -diff
+src/Game/CharaTables.cpp linguist-generated=true -diff
+src/Game/GameTables.cpp linguist-generated=true -diff

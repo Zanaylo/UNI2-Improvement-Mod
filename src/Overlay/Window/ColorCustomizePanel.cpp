@@ -8,6 +8,8 @@
 #include "Palette/PaletteFile.h"
 #include "Palette/PaletteManager.h"
 
+#include "Overlay/UiScale.h"
+
 #include <imgui.h>
 
 #include <Windows.h>
@@ -124,7 +126,7 @@ void ColorCustomizePanel::DrawCharacter()
 	ImGui::TextUnformatted("Character");
 	ImGui::SameLine(ImGui::GetFontSize() * 8.0f);
 
-	ImGui::SetNextItemWidth(260.0f);
+	Ui::SetItemWidth(260.0f);
 
 	if (ImGui::BeginCombo("##chara", CharaTables::Name(m_chara)))
 	{
@@ -173,7 +175,7 @@ void ColorCustomizePanel::DrawPose()
 	char label[24] = {};
 	sprintf_s(label, "Pose %d", m_frame + 1);
 
-	ImGui::SetNextItemWidth(260.0f);
+	Ui::SetItemWidth(260.0f);
 
 	if (ImGui::BeginCombo("##pose", label))
 	{
@@ -321,7 +323,8 @@ void ColorCustomizePanel::DrawPreview()
 	uint8_t composed[StockPalettes::kColours * 4] = {};
 	Compose(composed);
 
-	const bool drawn = m_preview.Draw(m_chara, m_frame, composed, kPreviewWidth, kPreviewHeight);
+	const bool drawn = m_preview.Draw(m_chara, m_frame, composed, Ui::Scaled(kPreviewWidth),
+		Ui::Scaled(kPreviewHeight));
 
 	if (drawn)
 		ImGui::SameLine();
@@ -330,12 +333,13 @@ void ColorCustomizePanel::DrawPreview()
 	ImDrawList* const draw = ImGui::GetWindowDrawList();
 
 	const int rows = StockPalettes::kColours / kGridColumns;
+	const float cell = Ui::Scaled(kGridCell);
 
 	for (int index = 0; index < StockPalettes::kColours; ++index)
 	{
-		const ImVec2 start = ImVec2(origin.x + (index % kGridColumns) * kGridCell,
-			origin.y + (index / kGridColumns) * kGridCell);
-		const ImVec2 corner = ImVec2(start.x + kGridCell, start.y + kGridCell);
+		const ImVec2 start = ImVec2(origin.x + (index % kGridColumns) * cell,
+			origin.y + (index / kGridColumns) * cell);
+		const ImVec2 corner = ImVec2(start.x + cell, start.y + cell);
 
 		draw->AddRectFilled(start, corner, ColourAt(composed, index));
 	}
@@ -350,17 +354,17 @@ void ColorCustomizePanel::DrawPreview()
 		if (index < 0 || index >= StockPalettes::kColours)
 			continue;
 
-		const ImVec2 start = ImVec2(origin.x + (index % kGridColumns) * kGridCell,
-			origin.y + (index / kGridColumns) * kGridCell);
-		const ImVec2 corner = ImVec2(start.x + kGridCell, start.y + kGridCell);
+		const ImVec2 start = ImVec2(origin.x + (index % kGridColumns) * cell,
+			origin.y + (index / kGridColumns) * cell);
+		const ImVec2 corner = ImVec2(start.x + cell, start.y + cell);
 
 		draw->AddRect(start, corner, IM_COL32(255, 255, 255, 255));
 	}
 
-	draw->AddRect(origin, ImVec2(origin.x + kGridColumns * kGridCell, origin.y + rows * kGridCell),
+	draw->AddRect(origin, ImVec2(origin.x + kGridColumns * cell, origin.y + rows * cell),
 		IM_COL32(120, 120, 130, 255));
 
-	ImGui::Dummy(ImVec2(kGridColumns * kGridCell, rows * kGridCell));
+	ImGui::Dummy(ImVec2(kGridColumns * cell, rows * cell));
 
 	if (!drawn)
 		ImGui::TextDisabled("The character's poses could not be read out of the game's archive.");
@@ -377,7 +381,7 @@ void ColorCustomizePanel::DrawSlot()
 	char label[32] = {};
 	sprintf_s(label, "Custom %d", m_slot + 1);
 
-	ImGui::SetNextItemWidth(260.0f);
+	Ui::SetItemWidth(260.0f);
 
 	if (ImGui::BeginCombo("##slot", label))
 	{
@@ -424,7 +428,7 @@ void ColorCustomizePanel::DrawPart(int part)
 	char label[48] = {};
 	ColourName(m_chara, m_edit.values[part], label, sizeof(label));
 
-	ImGui::SetNextItemWidth(260.0f);
+	Ui::SetItemWidth(260.0f);
 
 	if (ImGui::BeginCombo("##colour", label))
 	{
@@ -468,7 +472,7 @@ void ColorCustomizePanel::DrawPart(int part)
 		uint8_t composed[StockPalettes::kColours * 4] = {};
 		Compose(composed);
 
-		DrawSwatches(composed, samples, sampleCount, kSampleCell);
+		DrawSwatches(composed, samples, sampleCount, Ui::Scaled(kSampleCell));
 	}
 
 	ImGui::SameLine();
@@ -477,8 +481,7 @@ void ColorCustomizePanel::DrawPart(int part)
 	ImGui::PopID();
 }
 
-// A pick sits beside the stock choice rather than replacing it: the stock byte is what an opponent
-// without the mod reads, and the pick is what everything the mod draws uses.
+
 void ColorCustomizePanel::DrawPick(int part)
 {
 	uint8_t rgb[3] = {};
@@ -616,9 +619,7 @@ void ColorCustomizePanel::DrawActions()
 	ImGui::TextColored(kWarning, "Unsaved - changing character or slot throws this away.");
 }
 
-// A pick cannot travel in the slot's byte, but the composed result is an ordinary 256-colour
-// palette - which is exactly what the mod's own palette system already loads, wears in a match and
-// shares with other mod users. So export is how a pick leaves this panel and becomes usable.
+
 void ColorCustomizePanel::DrawExport()
 {
 	const bool picks = ColorOverride::AnyInSlot(m_chara, m_slot);

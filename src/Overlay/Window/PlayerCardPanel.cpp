@@ -4,6 +4,8 @@
 #include "Game/PlateCatalog.h"
 #include "Overlay/ComboNav.h"
 
+#include "Overlay/UiScale.h"
+
 #include <imgui.h>
 
 #include <cstdio>
@@ -140,7 +142,7 @@ void PlayerCardPanel::DrawLayer(PlayerCard::PlateLayer layer)
 	char label[96] = {};
 	LayerLabel(layer, current, label, sizeof(label));
 
-	ImGui::SetNextItemWidth(260.0f);
+	Ui::SetItemWidth(260.0f);
 
 	if (ImGui::BeginCombo("##pick", label))
 	{
@@ -175,7 +177,7 @@ void PlayerCardPanel::DrawLayer(PlayerCard::PlateLayer layer)
 	StepLayer(layer, current, ComboNav::WheelSteps());
 
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(80.0f);
+	Ui::SetItemWidth(80.0f);
 	ImGui::InputInt("##id", &m_pendingId[index], 0, 0);
 
 	if (ImGui::IsItemActive())

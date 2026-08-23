@@ -1,3 +1,4 @@
+#include "Overlay/UiScale.h"
 #include "Overlay/Window/PlayerControlWindow.h"
 
 #include "Core/utils.h"
@@ -89,7 +90,7 @@ void DrawLagHistoryTable()
 		return;
 
 	if (!ImGui::BeginTable("lag_history", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-		ImGuiTableFlags_ScrollY, ImVec2(0.0f, 240.0f)))
+		ImGuiTableFlags_ScrollY, Ui::Scaled(0.0f, 240.0f)))
 	{
 		return;
 	}
@@ -141,8 +142,8 @@ PlayerControlWindow::PlayerControlWindow(const std::string& title, bool closable
 
 void PlayerControlWindow::BeforeDraw()
 {
-	ImGui::SetNextWindowSize(ImVec2(480.0f, 640.0f), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(420.0f, 200.0f), ImVec2(FLT_MAX, FLT_MAX));
+	ImGui::SetNextWindowSize(Ui::Scaled(480.0f, 640.0f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(Ui::Scaled(420.0f, 200.0f), ImVec2(FLT_MAX, FLT_MAX));
 }
 
 void PlayerControlWindow::Draw()

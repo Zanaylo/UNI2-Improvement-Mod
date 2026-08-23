@@ -1,4 +1,7 @@
+#include "Overlay/UiScale.h"
 #include "Overlay/Window/MainWindow.h"
+
+#include "Overlay/Window/GraphicsPanel.h"
 
 #include "Core/Hotkeys.h"
 #include "Core/info.h"
@@ -158,7 +161,7 @@ void MainWindow::DrawPaletteChooser(int player)
 
 	ImGui::BeginDisabled(!PaletteControl::CanEdit(player));
 
-	ImGui::SetNextItemWidth(170.0f);
+	Ui::SetItemWidth(170.0f);
 
 	if (ImGui::BeginCombo("##worn", bare ? kDefaultPalette : worn))
 	{
@@ -200,8 +203,6 @@ void MainWindow::DrawPaletteChooser(int player)
 	ImGui::PopID();
 }
 
-// The editor's own switches live here rather than inside it: they are about how you work, not
-// about a particular character, and the editor wants its room for colours.
 void MainWindow::DrawPaletteOptions()
 {
 	if (ImGui::Checkbox("Group by part", &g_modVals.paletteGroupByPart))
@@ -324,7 +325,7 @@ void MainWindow::DrawPalettesTab()
 		}
 
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(220.0f);
+		Ui::SetItemWidth(220.0f);
 
 		int chosen = applied + 1;
 
@@ -479,13 +480,28 @@ void MainWindow::DrawHitboxTypeControls()
 			"tell whether a projectile's boxes belong to the projectile or to whoever fired it.");
 	}
 
+	const ImGuiStyle& style = ImGui::GetStyle();
+
+	float widestName = 0.0f;
+	for (int i = 0; i < HitboxOverlay::BoxCategory_COUNT; ++i)
+	{
+		const float width = ImGui::CalcTextSize(HitboxOverlay::GetCategoryName(i)).x;
+
+		if (width > widestName)
+			widestName = width;
+	}
+
+	const float swatch = ImGui::GetFontSize();
+	const float typeWidth = widestName + swatch + style.ItemSpacing.x + style.CellPadding.x * 2.0f;
+	const float toggleWidth = ImGui::GetFrameHeight() + style.CellPadding.x * 2.0f;
+
 	if (ImGui::BeginTable("boxtypes", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
 		ImGuiTableFlags_SizingStretchProp))
 	{
-		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 130.0f);
-		ImGui::TableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, 30.0f);
-		ImGui::TableSetupColumn("Fill", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-		ImGui::TableSetupColumn("Outline", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, typeWidth);
+		ImGui::TableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, toggleWidth);
+		ImGui::TableSetupColumn("Fill", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("Outline", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableHeadersRow();
 
 		for (int i = 0; i < HitboxOverlay::BoxCategory_COUNT; ++i)
@@ -498,7 +514,7 @@ void MainWindow::DrawHitboxTypeControls()
 			ImGui::TableNextColumn();
 			ImGui::ColorButton("##swatch",
 				ImGui::ColorConvertU32ToFloat4(HitboxOverlay::GetCategoryColor(i)),
-				ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoPicker, ImVec2(14.0f, 14.0f));
+				ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoPicker, ImVec2(swatch, swatch));
 
 			ImGui::SameLine();
 			ImGui::TextUnformatted(HitboxOverlay::GetCategoryName(i));
@@ -543,12 +559,12 @@ void MainWindow::DrawFrameMeterControls()
 	if (!ImGui::TreeNode("Frame meter options"))
 		return;
 
-	ImGui::SetNextItemWidth(160.0f);
+	Ui::SetItemWidth(160.0f);
 	ImGui::SliderFloat("Size", &g_modVals.frameMeterScale, 0.5f, 4.0f, "%.2fx");
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveFloat("FrameMeter", "Scale", g_modVals.frameMeterScale);
 
-	ImGui::SetNextItemWidth(160.0f);
+	Ui::SetItemWidth(160.0f);
 	ImGui::SliderInt("Opacity", &g_modVals.frameMeterOpacity, 10, 100, "%d%%");
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveInt("FrameMeter", "Opacity", g_modVals.frameMeterOpacity);
@@ -610,12 +626,12 @@ void MainWindow::DrawFrameMeterControls()
 				"doing.");
 		}
 
-		ImGui::SetNextItemWidth(160.0f);
+		Ui::SetItemWidth(160.0f);
 		ImGui::DragInt("X", &g_modVals.frameMeterX, 2.0f, 0, 4096);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 			Settings::SaveInt("FrameMeter", "PositionX", g_modVals.frameMeterX);
 
-		ImGui::SetNextItemWidth(160.0f);
+		Ui::SetItemWidth(160.0f);
 		ImGui::DragInt("Y", &g_modVals.frameMeterY, 2.0f, 0, 4096);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 			Settings::SaveInt("FrameMeter", "PositionY", g_modVals.frameMeterY);
@@ -710,7 +726,7 @@ void DrawStopList(const char* label, const char* tooltip, bool& enabled, int* st
 			continue;
 
 		ImGui::PushID(i);
-		ImGui::SetNextItemWidth(70.0f);
+		Ui::SetItemWidth(70.0f);
 
 		if (ImGui::InputInt("##stop", &stops[i], 0))
 		{
@@ -767,7 +783,7 @@ void MainWindow::DrawTimingControls()
 	if (!ImGui::TreeNode("Timing"))
 		return;
 
-	ImGui::SetNextItemWidth(90.0f);
+	Ui::SetItemWidth(90.0f);
 	if (ImGui::InputInt("frames", &config.resumeDelayFrames, 0))
 	{
 		if (config.resumeDelayFrames < FrameMeter::kMinResumeFrames)
@@ -780,7 +796,7 @@ void MainWindow::DrawTimingControls()
 	ImGui::Checkbox("Recording", &config.onDummyRecord);
 
 	ImGui::BeginDisabled(!config.onDummyRecord);
-	ImGui::SetNextItemWidth(260.0f);
+	Ui::SetItemWidth(260.0f);
 
 	static const char* kLeadInModes[] =
 	{
@@ -883,7 +899,7 @@ void MainWindow::DrawAutoPauseControls()
 	}
 
 	int blockedMode = config.blockedAllowsGaps ? 1 : 0;
-	ImGui::SetNextItemWidth(220.0f);
+	Ui::SetItemWidth(220.0f);
 	static const char* kBlockedModes[] = { "True blockstring only", "Any blocked hits" };
 	if (ImGui::Combo("##blockcounting", &blockedMode, kBlockedModes, 2))
 		config.blockedAllowsGaps = blockedMode == 1;
@@ -995,7 +1011,7 @@ void MainWindow::DrawScriptTab(int player)
 		ImGui::Text("Slot");
 		ImGui::SameLine();
 
-		ImGui::SetNextItemWidth(110.0f);
+		Ui::SetItemWidth(110.0f);
 		ImGui::InputInt("##slot", &tab.slot);
 		tab.slot = tab.slot < 1 ? 1 : (tab.slot > GameOffsets::kRecorderSlotCount
 			? GameOffsets::kRecorderSlotCount : tab.slot);
@@ -1055,7 +1071,7 @@ void MainWindow::DrawScriptTab(int player)
 	else
 		ImGui::TextDisabled("%d frames", DummyScript::GetFrameCount());
 
-	ImGui::SetNextItemWidth(130.0f);
+	Ui::SetItemWidth(130.0f);
 	ImGui::InputText("##scriptname", tab.name, sizeof(tab.name));
 
 	ImGui::SameLine();
@@ -1068,7 +1084,7 @@ void MainWindow::DrawScriptTab(int player)
 	const int count = DummyScript::GetLibraryCount();
 	const int chara = PaletteManager::GetCharaNumber(player);
 
-	ImGui::SetNextItemWidth(200.0f);
+	Ui::SetItemWidth(200.0f);
 	if (ImGui::BeginCombo("##scriptlibrary",
 		tab.selected >= 0 && tab.selected < count ? DummyScript::GetLibraryName(tab.selected)
 		: "Saved scripts"))
@@ -1228,7 +1244,7 @@ void MainWindow::DrawFreezeModeCombo()
 	const bool forced = FrameStepper::IsModeForced();
 	const FrameStepper::FreezeMode current = FrameStepper::GetEffectiveMode();
 
-	ImGui::SetNextItemWidth(160.0f);
+	Ui::SetItemWidth(160.0f);
 	ImGui::BeginDisabled(forced);
 
 	if (ImGui::BeginCombo("Pause mode", FrameStepper::GetModeName(current)))
@@ -1335,9 +1351,11 @@ void MainWindow::DrawConfigGeneralTab()
 		ImGui::SetTooltip("Stops the game from seeing the mouse at all, so clicking the overlay can "
 			"never disturb it.\nSaved to the ini as soon as it changes.");
 
+	GraphicsPanel::DrawOverlayAppearance();
+
 	ImGui::SeparatorText("Holding the next-frame key");
 
-	ImGui::SetNextItemWidth(160.0f);
+	Ui::SetItemWidth(160.0f);
 	ImGui::SliderInt("Wait before repeating", &g_modVals.stepRepeatDelayMs, 0, 1000, "%d ms");
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveInt("Training", "StepRepeatDelayMs", g_modVals.stepRepeatDelayMs);
@@ -1348,7 +1366,7 @@ void MainWindow::DrawConfigGeneralTab()
 			"tap is always one frame, whatever this says.");
 	}
 
-	ImGui::SetNextItemWidth(160.0f);
+	Ui::SetItemWidth(160.0f);
 	ImGui::SliderInt("Between steps", &g_modVals.stepRepeatIntervalMs, 16, 500, "%d ms");
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveInt("Training", "StepRepeatIntervalMs", g_modVals.stepRepeatIntervalMs);

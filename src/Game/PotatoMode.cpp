@@ -4,6 +4,7 @@
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Game/EngineQuality.h"
+#include "Game/PresentSize.h"
 #include "Game/PumpWait.h"
 
 namespace {
@@ -44,8 +45,6 @@ constexpr Preset kPresets[PotatoMode::Level_COUNT] = {
 
 struct Snapshot
 {
-	int presentWidth;
-	int presentHeight;
 	bool disableBackBufferAa;
 	bool pumpWait;
 	bool disableCharacterFilter;
@@ -70,8 +69,6 @@ void TakeSnapshot()
 	if (g_before.taken)
 		return;
 
-	g_before.presentWidth = g_modVals.presentWidth;
-	g_before.presentHeight = g_modVals.presentHeight;
 	g_before.disableBackBufferAa = g_modVals.disableBackBufferAa;
 	g_before.pumpWait = g_modVals.pumpWait;
 	g_before.disableCharacterFilter = g_modVals.disableCharacterFilter;
@@ -80,8 +77,6 @@ void TakeSnapshot()
 
 void Restore(const Snapshot& snapshot)
 {
-	g_modVals.presentWidth = snapshot.presentWidth;
-	g_modVals.presentHeight = snapshot.presentHeight;
 	g_modVals.disableBackBufferAa = snapshot.disableBackBufferAa;
 	g_modVals.pumpWait = snapshot.pumpWait;
 	g_modVals.disableCharacterFilter = snapshot.disableCharacterFilter;
@@ -100,8 +95,6 @@ void RestoreOrShip()
 
 	const Preset& off = kPresets[PotatoMode::Level_Off];
 
-	g_modVals.presentWidth = off.presentWidth;
-	g_modVals.presentHeight = off.presentHeight;
 	g_modVals.disableBackBufferAa = off.disableBackBufferAa;
 	g_modVals.pumpWait = off.pumpWait;
 	g_modVals.disableCharacterFilter = off.disableCharacterFilter;
@@ -112,16 +105,6 @@ void Adopt(const Preset& preset)
 	g_modVals.disableBackBufferAa = preset.disableBackBufferAa;
 	g_modVals.pumpWait = preset.pumpWait;
 	g_modVals.disableCharacterFilter = preset.disableCharacterFilter;
-
-	if (!preset.sizeFromPotatoHeight)
-	{
-		g_modVals.presentWidth = preset.presentWidth;
-		g_modVals.presentHeight = preset.presentHeight;
-		return;
-	}
-
-	PotatoMode::SizeForHeight(g_modVals.potatoHeight, g_modVals.presentWidth,
-		g_modVals.presentHeight);
 }
 
 void Save()
@@ -154,6 +137,7 @@ void PotatoMode::Apply(int level)
 
 	g_modVals.potatoMode = clamped;
 
+	PresentSize::Refresh();
 	Save();
 
 	PumpWait::Apply();
@@ -167,10 +151,10 @@ void PotatoMode::ApplySaved()
 {
 	const int level = GetLevel();
 
-	if (level == Level_Off)
-		return;
+	if (level != Level_Off)
+		Adopt(kPresets[level]);
 
-	Adopt(kPresets[level]);
+	PresentSize::Refresh();
 }
 
 void PotatoMode::OnFrame()
@@ -211,6 +195,22 @@ void PotatoMode::SetHeight(int height)
 	}
 
 	Apply(Level_Potato);
+}
+
+bool PotatoMode::GetPresentSize(int& outWidth, int& outHeight)
+{
+	const Preset& preset = kPresets[GetLevel()];
+
+	if (preset.sizeFromPotatoHeight)
+	{
+		SizeForHeight(GetHeight(), outWidth, outHeight);
+		return true;
+	}
+
+	outWidth = preset.presentWidth;
+	outHeight = preset.presentHeight;
+
+	return preset.presentWidth > 0 && preset.presentHeight > 0;
 }
 
 int PotatoMode::GetLevel()

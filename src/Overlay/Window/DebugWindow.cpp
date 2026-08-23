@@ -1,3 +1,4 @@
+#include "Overlay/UiScale.h"
 #include "Overlay/Window/DebugWindow.h"
 
 #include "Core/interfaces.h"
@@ -411,7 +412,7 @@ void DebugWindow::DrawPaletteOwnerSection()
 	}
 
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(160.0f);
+	Ui::SetItemWidth(160.0f);
 
 	if (ImGui::ColorEdit3("##forcedcolour", m_forceEffectRgb, ImGuiColorEditFlags_NoInputs))
 	{
@@ -425,7 +426,7 @@ void DebugWindow::DrawPaletteOwnerSection()
 	}
 
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(120.0f);
+	Ui::SetItemWidth(120.0f);
 
 	if (ImGui::InputInt("only entry", &m_forceEffectEntry))
 	{
@@ -509,7 +510,7 @@ void DebugWindow::DrawPaletteOwnerSection()
 
 			ImGui::TableNextColumn();
 			ImGui::ColorButton("##drawn", ImVec4(call.rgb[0] / 255.0f, call.rgb[1] / 255.0f,
-				call.rgb[2] / 255.0f, 1.0f), ImGuiColorEditFlags_NoTooltip, ImVec2(16.0f, 16.0f));
+				call.rgb[2] / 255.0f, 1.0f), ImGuiColorEditFlags_NoTooltip, Ui::Scaled(16.0f, 16.0f));
 			ImGui::SameLine();
 			ImGui::Text("%d,%d,%d", call.rgb[0], call.rgb[1], call.rgb[2]);
 
@@ -523,7 +524,7 @@ void DebugWindow::DrawPaletteOwnerSection()
 				{
 					ImGui::ColorButton("##worn", ImVec4(worn[0] / 255.0f, worn[1] / 255.0f,
 						worn[2] / 255.0f, 1.0f), ImGuiColorEditFlags_NoTooltip,
-						ImVec2(16.0f, 16.0f));
+						Ui::Scaled(16.0f, 16.0f));
 					ImGui::SameLine();
 					ImGui::Text("%d,%d,%d", worn[0], worn[1], worn[2]);
 				}
@@ -716,7 +717,7 @@ void DebugWindow::DrawScannerSection()
 
 	ImGui::TextWrapped("Type the number, Find, change it in game, Find again. Repeat until few remain.");
 
-	ImGui::SetNextItemWidth(140.0f);
+	Ui::SetItemWidth(140.0f);
 	ImGui::InputInt("Exact value", &m_scanValue);
 	ImGui::SameLine();
 	if (ImGui::Button("Find"))
@@ -754,7 +755,7 @@ void DebugWindow::DrawScannerSection()
 		return;
 
 	if (ImGui::BeginTable("scan", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-		ImGuiTableFlags_ScrollY, ImVec2(0.0f, 220.0f)))
+		ImGuiTableFlags_ScrollY, Ui::Scaled(0.0f, 220.0f)))
 	{
 		ImGui::TableSetupColumn("address");
 		ImGui::TableSetupColumn("value");
@@ -793,7 +794,7 @@ void DebugWindow::DrawPointerScan()
 {
 	ImGui::Spacing();
 
-	ImGui::SetNextItemWidth(140.0f);
+	Ui::SetItemWidth(140.0f);
 	ImGui::InputText("Heap address", m_pointerTarget, sizeof(m_pointerTarget),
 		ImGuiInputTextFlags_CharsHexadecimal);
 
@@ -812,7 +813,7 @@ void DebugWindow::DrawPointerScan()
 	ImGui::Text("pointers: %d   (also written to the log)", hits);
 
 	if (!ImGui::BeginTable("ptrs", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-		ImGuiTableFlags_ScrollY, ImVec2(0.0f, 160.0f)))
+		ImGuiTableFlags_ScrollY, Ui::Scaled(0.0f, 160.0f)))
 	{
 		return;
 	}
@@ -1059,7 +1060,7 @@ void DebugWindow::DrawMeterComparisonSection()
 	if (!ImGui::CollapsingHeader("Meter vs game display"))
 		return;
 
-	ImGui::SetNextItemWidth(120.0f);
+	Ui::SetItemWidth(120.0f);
 	ImGui::Combo("Meter side", &m_comparisonPlayer, "P1\0P2\0");
 
 	ImGui::SameLine();
@@ -1691,7 +1692,7 @@ void DebugWindow::DrawHitboxSection()
 		return;
 
 	if (ImGui::BeginTable("boxes", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-		ImGuiTableFlags_ScrollY, ImVec2(0.0f, 220.0f)))
+		ImGuiTableFlags_ScrollY, Ui::Scaled(0.0f, 220.0f)))
 	{
 		ImGui::TableSetupColumn("index");
 		ImGui::TableSetupColumn("kind");
@@ -1768,7 +1769,7 @@ void DebugWindow::DrawDiffSearchSection()
 	void* entity = GetSelectedEntity();
 
 	if (ImGui::BeginTable("cands", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-		ImGuiTableFlags_ScrollY, ImVec2(0.0f, 220.0f)))
+		ImGuiTableFlags_ScrollY, Ui::Scaled(0.0f, 220.0f)))
 	{
 		ImGui::TableSetupColumn("offset");
 		ImGui::TableSetupColumn("int");
@@ -1835,7 +1836,7 @@ void DebugWindow::DrawPointerSection()
 	}
 
 	if (ImGui::BeginTable("follow", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-		ImGuiTableFlags_ScrollY, ImVec2(0.0f, 260.0f)))
+		ImGuiTableFlags_ScrollY, Ui::Scaled(0.0f, 260.0f)))
 	{
 		ImGui::TableSetupColumn("offset");
 		ImGui::TableSetupColumn("hex");
@@ -1921,7 +1922,7 @@ void DebugWindow::DrawStructSection()
 	m_structFirstOffset &= ~3;
 
 	if (ImGui::BeginTable("struct", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-		ImGuiTableFlags_ScrollY, ImVec2(0.0f, 300.0f)))
+		ImGuiTableFlags_ScrollY, Ui::Scaled(0.0f, 300.0f)))
 	{
 		ImGui::TableSetupColumn("offset");
 		ImGui::TableSetupColumn("hex");

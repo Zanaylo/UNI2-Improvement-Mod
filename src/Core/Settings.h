@@ -76,12 +76,37 @@ struct ModValues
 	int presentWidth;
 	int presentHeight;
 	int potatoHeight;
+	int supersample;
+	int sharpenStrength;
+	int sharpenMode;
+	int upscaleFilter;
+	int antiAliasing;
+	bool bloomEnabled;
+	int bloomIntensity;
+	int bloomThreshold;
+	bool lookEnabled;
+	int lookBrightness;
+	int lookContrast;
+	int lookGamma;
+	int lookSaturation;
+	int lookVibrance;
+	int lookTemperature;
+	int lookVignette;
+	int lookScanlines;
+	bool lookDither;
+	int sceneScalePercent;
+	bool sceneDrawScale;
+	bool scenePinProjection;
+	bool sceneReferenceScale;
+	bool sceneReferenceLiterals;
 	bool disableBackBufferAa;
 	bool disableCharacterFilter;
 	bool simpleStage;
 	int potatoMode;
 
 	float uiScale;
+	float fontSize;
+	bool dpiAware;
 	bool notifications;
 
 	bool memoryDebugEnabled;

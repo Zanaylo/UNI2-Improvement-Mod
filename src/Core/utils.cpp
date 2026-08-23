@@ -133,6 +133,11 @@ std::string GetModScriptPath(const std::string& fileName)
 	return GetModRootPath("Scripts\\") + fileName;
 }
 
+std::string GetModShaderPath(const std::string& fileName)
+{
+	return GetModRootPath("Shaders\\") + fileName;
+}
+
 std::string GetModDownloadPath(const std::string& fileName)
 {
 	return GetModRootPath("Downloads\\") + fileName;
@@ -155,7 +160,8 @@ bool CreateModDirectories()
 	MoveStrays(root);
 
 	return MakeDirectory(root + "\\Assets") && MakeDirectory(root + "\\Palettes") &&
-		MakeDirectory(root + "\\Downloads") && MakeDirectory(root + "\\Scripts");
+		MakeDirectory(root + "\\Downloads") && MakeDirectory(root + "\\Scripts") &&
+		MakeDirectory(root + "\\Shaders");
 }
 
 bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t minimumSize)

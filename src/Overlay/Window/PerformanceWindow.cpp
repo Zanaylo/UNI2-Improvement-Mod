@@ -1,3 +1,4 @@
+#include "Overlay/UiScale.h"
 #include "Overlay/Window/PerformanceWindow.h"
 
 #include "Core/ProcessTuning.h"
@@ -8,8 +9,11 @@
 #include "D3D9/DeviceHooks.h"
 #include "D3D9/PresentTuning.h"
 #include "Game/EngineQuality.h"
+#include "Game/Improvements.h"
 #include "Game/PotatoMode.h"
 #include "Game/PumpWait.h"
+#include "Overlay/UiText.h"
+#include "Overlay/Window/GraphicsPanel.h"
 #include "Training/InputLagMeter.h"
 #include "Training/StageColor.h"
 
@@ -71,48 +75,9 @@ const Option kOptions[] = {
 	},
 };
 
-void Help(const char* text)
-{
-	ImGui::SameLine();
-	ImGui::TextDisabled("(?)");
-
-	if (!ImGui::IsItemHovered())
-		return;
-
-	ImGui::BeginTooltip();
-	ImGui::PushTextWrapPos(ImGui::GetFontSize() * 34.0f);
-	ImGui::TextUnformatted(text);
-	ImGui::PopTextWrapPos();
-	ImGui::EndTooltip();
-}
-
-void Muted(const char* format, ...)
-{
-	char text[768] = {};
-
-	va_list args;
-	va_start(args, format);
-	vsprintf_s(text, format, args);
-	va_end(args);
-
-	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
-	ImGui::TextWrapped("%s", text);
-	ImGui::PopStyleColor();
-}
-
-void Warn(const char* format, ...)
-{
-	char text[512] = {};
-
-	va_list args;
-	va_start(args, format);
-	vsprintf_s(text, format, args);
-	va_end(args);
-
-	ImGui::PushStyleColor(ImGuiCol_Text, kWarnColour);
-	ImGui::TextWrapped("%s", text);
-	ImGui::PopStyleColor();
-}
+using UiText::Help;
+using UiText::Muted;
+using UiText::Warn;
 
 void SaveVideo(const char* key, int value)
 {
@@ -244,7 +209,7 @@ void DrawHistogram()
 	}
 
 	ImGui::PlotHistogram("##frameinterval", values, Profiler::kHistogramBuckets, 0, nullptr, 0.0f,
-		peak, ImVec2(-1.0f, kHistogramHeight));
+		peak, ImVec2(-1.0f, Ui::Scaled(kHistogramHeight)));
 
 	Muted("Every frame since the last reset, in 1 ms buckets from 0 to 40 ms. This is where a "
 		"dropped frame shows up, as a tail to the right.");
@@ -264,7 +229,7 @@ void DrawFineHistogram()
 	}
 
 	ImGui::PlotHistogram("##fineinterval", values, Profiler::kFineBuckets, 0, nullptr, 0.0f, peak,
-		ImVec2(-1.0f, kHistogramHeight));
+		ImVec2(-1.0f, Ui::Scaled(kHistogramHeight)));
 
 	const double base = Profiler::GetFineHistogramBaseMs();
 	Muted("The same frames in quarter-millisecond buckets from %.2f to %.2f ms. Smooth is one spike "
@@ -366,9 +331,6 @@ bool VsyncIsOn(const D3DPRESENT_PARAMETERS& present)
 	return present.PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
 }
 
-// Enumerating adapter modes is a pile of real Direct3D calls, and the interval readouts each
-// sort a 240 sample window. Doing any of that once a frame is what dropped the frame rate while
-// this window was open; none of it is worth more than a few updates a second.
 constexpr DWORD kRefreshIntervalMs = 250;
 
 bool ShouldRefresh(DWORD& lastTick)
@@ -433,13 +395,13 @@ void PerformanceWindow::BeforeDraw()
 {
 	const ImGuiViewport* const viewport = ImGui::GetMainViewport();
 
-	const float width = kDefaultWidth * g_modVals.uiScale;
-	const float height = kDefaultHeight * g_modVals.uiScale;
+	const float width = Ui::Scaled(kDefaultWidth);
+	const float height = Ui::Scaled(kDefaultHeight);
 
 	ImGui::SetNextWindowSize(ImVec2(width < viewport->WorkSize.x ? width : viewport->WorkSize.x,
 		height < viewport->WorkSize.y ? height : viewport->WorkSize.y), ImGuiCond_FirstUseEver);
 
-	ImGui::SetNextWindowSizeConstraints(ImVec2(440.0f, 280.0f), viewport->WorkSize);
+	ImGui::SetNextWindowSizeConstraints(Ui::Scaled(440.0f, 280.0f), viewport->WorkSize);
 }
 
 void PerformanceWindow::Draw()
@@ -459,6 +421,19 @@ void PerformanceWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
+	// The two settle the same drawing size from opposite ends, so only one of them is ever offered.
+	if (!PotatoMode::IsActive() && ImGui::BeginTabItem("Improvements"))
+	{
+		DrawImprovementsTab();
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("Shaders"))
+	{
+		GraphicsPanel::DrawShadersTab();
+		ImGui::EndTabItem();
+	}
+
 	if (ImGui::BeginTabItem("Metrics"))
 	{
 		DrawMetricsTab();
@@ -468,8 +443,7 @@ void PerformanceWindow::Draw()
 	ImGui::EndTabBar();
 }
 
-// Everything here is read back from the device and from the engine. Nothing on this panel is the
-// mod repeating what it asked for - the point of it is to say when a request was refused.
+
 void PerformanceWindow::DrawWhatIsHappening()
 {
 	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
@@ -577,7 +551,7 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	ImGui::BeginDisabled(!g_modVals.displayTuning);
 
-	ImGui::SetNextItemWidth(320.0f);
+	Ui::SetItemWidth(320.0f);
 
 	if (ImGui::BeginCombo("Fullscreen refresh", preview))
 	{
@@ -756,8 +730,7 @@ void PerformanceWindow::DrawMetricsTab()
 
 	const bool hasBaseline = Profiler::HasBaseline();
 
-	// Every one of these sorts its own 240 sample window, so they are taken a few times a second
-	// rather than once a frame - this tab used to cost the game frames just by being open.
+
 	static DWORD metricsTick = 0;
 	static double metricsFps = 0.0;
 	static Profiler::Stats framePresent = {};
@@ -963,6 +936,53 @@ void PerformanceWindow::DrawPotatoTab()
 	Profiler::Reset();
 }
 
+void PerformanceWindow::DrawImprovementsTab()
+{
+	ImGui::Spacing();
+
+	bool changed = GraphicsPanel::DrawEverythingOff();
+
+	ImGui::SameLine();
+	Muted("POTATO MODE the other way round: the frame is drawn larger than your window and fitted "
+		"back down.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Present size");
+
+	const int level = Improvements::GetLevel();
+
+	for (int candidate = 0; candidate < Improvements::Level_COUNT; ++candidate)
+	{
+		if (candidate > 0)
+			ImGui::SameLine();
+
+		if (ImGui::RadioButton(Improvements::GetLevelName(candidate), level == candidate) &&
+			candidate != level)
+		{
+			Improvements::Apply(candidate);
+			changed = true;
+		}
+	}
+
+	Help("Everything drawn straight into the back buffer - the HUD, the menus, the composite's "
+		"edges and this overlay - is supersampled. The characters and the stage are rasterised at "
+		"1280x720 first and stretched afterwards, so a sprite gains no detail from it. "
+		"Windowed only, takes effect after a restart, and it costs fill rate: 4K is nine times "
+		"720p.");
+
+	Muted("%s", Improvements::Describe(Improvements::GetLevel()));
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("In force now");
+
+	DrawPotatoState();
+
+	if (!changed)
+		return;
+
+	Profiler::Reset();
+}
+
 bool PerformanceWindow::DrawPotatoHeight()
 {
 	ImGui::Spacing();
@@ -1006,8 +1026,9 @@ void PerformanceWindow::DrawPotatoState()
 
 		if (inForce)
 		{
-			ImGui::TextColored(kGoodColour, "Drawing at %ux%u and stretching it to the window",
-				present.BackBufferWidth, present.BackBufferHeight);
+			ImGui::TextColored(kGoodColour, "Drawing at %ux%u and %s it to the window",
+				present.BackBufferWidth, present.BackBufferHeight,
+				DeviceHooks::GetOverlayScale() > 1.0f ? "fitting" : "stretching");
 		}
 		else
 		{

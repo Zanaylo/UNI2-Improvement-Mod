@@ -6,6 +6,8 @@
 #include "Core/keycodes.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "D3D9/Post/PostOptions.h"
+#include "D3D9/Post/UpscaleFilter.h"
 #include "Game/PotatoMode.h"
 #include "Training/FrameMeter.h"
 #include "Training/StageColor.h"
@@ -19,6 +21,17 @@
 namespace {
 
 const char* const kIniFileName = "UNI2_IM.ini";
+
+int ClampRange(int value, int lowest, int highest)
+{
+	if (value < lowest)
+		return lowest;
+
+	if (value > highest)
+		return highest;
+
+	return value;
+}
 
 std::string ReadIniString(const char* section, const char* key, const char* defaultValue, const std::string& path)
 {
@@ -51,12 +64,10 @@ int ReadIniInt(const char* section, const char* key, int defaultValue, const std
 	return static_cast<int>(GetPrivateProfileIntA(section, key, defaultValue, path.c_str()));
 }
 
-// The generated ini would carry every setting and not one word about what any of them does. The
-// shipped file is the documentation, so a fresh install gets that; the key-by-key writer stays as
-// the fallback for when the file cannot be written whole.
+
 bool WriteShippedIni(const std::string& path)
 {
-	// Text mode, so the newlines come out as an ini file on Windows is expected to have them.
+
 	FILE* file = nullptr;
 	if (fopen_s(&file, path.c_str(), "w") != 0 || file == nullptr)
 		return false;
@@ -402,9 +413,7 @@ void Settings::ApplySettings()
 	g_modVals.paletteFlashEntry = g_settings.paletteFlashEntry != 0;
 	g_modVals.paletteFilterJunk = g_settings.paletteFilterJunk != 0;
 
-	// [Video] FlatStage and [Graphics] SimpleStage are one switch with two names. Left to drift they
-	// disagree, and FlatStage = 1 with the tab's box unticked is a game with no stage and nothing
-	// saying why.
+
 	const bool flatStage = g_settings.stageFlatColour != 0 || g_settings.simpleStage != 0;
 
 	StageColor::SetColor(static_cast<uint32_t>(g_settings.stageFlatColourValue));
@@ -428,6 +437,42 @@ void Settings::ApplySettings()
 	g_modVals.presentWidth = g_settings.presentWidth;
 	g_modVals.presentHeight = g_settings.presentHeight;
 	g_modVals.potatoHeight = PotatoMode::ClampHeight(g_settings.potatoHeight);
+	g_modVals.supersample = g_settings.supersample;
+
+	g_modVals.sceneScalePercent = g_settings.sceneScalePercent;
+	g_modVals.sceneDrawScale = g_settings.sceneDrawScale != 0;
+	g_modVals.scenePinProjection = g_settings.scenePinProjection != 0;
+	g_modVals.sceneReferenceScale = g_settings.sceneReferenceScale != 0;
+	g_modVals.sceneReferenceLiterals = g_settings.sceneReferenceLiterals != 0;
+	g_modVals.sharpenStrength = g_settings.sharpenStrength;
+	if (g_modVals.sharpenStrength < 0 || g_modVals.sharpenStrength > 100)
+		g_modVals.sharpenStrength = 0;
+
+	g_modVals.sharpenMode = SharpenMode::Clamp(g_settings.sharpenMode);
+	if (g_modVals.sharpenMode == SharpenMode::Kind_Off && g_modVals.sharpenStrength > 0)
+		g_modVals.sharpenMode = SharpenMode::Kind_Cas;
+
+	g_modVals.antiAliasing = AntiAlias::Clamp(g_settings.antiAliasing);
+
+	g_modVals.bloomEnabled = g_settings.bloomEnabled != 0;
+	g_modVals.bloomIntensity = ClampRange(g_settings.bloomIntensity, 0, 100);
+	g_modVals.bloomThreshold = ClampRange(g_settings.bloomThreshold, 0, 100);
+
+	g_modVals.lookEnabled = g_settings.lookEnabled != 0;
+
+	g_modVals.upscaleFilter = UpscaleFilter::Clamp(g_settings.upscaleFilter);
+	if (g_modVals.upscaleFilter == UpscaleFilter::Kind_Off && g_settings.sceneUpscale != 0)
+		g_modVals.upscaleFilter = UpscaleFilter::Kind_Easu;
+
+	g_modVals.lookBrightness = ClampRange(g_settings.lookBrightness, -100, 100);
+	g_modVals.lookContrast = ClampRange(g_settings.lookContrast, -100, 100);
+	g_modVals.lookGamma = ClampRange(g_settings.lookGamma, 25, 400);
+	g_modVals.lookSaturation = ClampRange(g_settings.lookSaturation, -100, 100);
+	g_modVals.lookVibrance = ClampRange(g_settings.lookVibrance, -100, 100);
+	g_modVals.lookTemperature = ClampRange(g_settings.lookTemperature, -100, 100);
+	g_modVals.lookVignette = ClampRange(g_settings.lookVignette, 0, 100);
+	g_modVals.lookScanlines = ClampRange(g_settings.lookScanlines, 0, 100);
+	g_modVals.lookDither = g_settings.lookDither != 0;
 
 	if (g_modVals.presentWidth < 256 || g_modVals.presentHeight < 144 ||
 		g_modVals.presentWidth > 7680 || g_modVals.presentHeight > 4320)
@@ -448,6 +493,12 @@ void Settings::ApplySettings()
 	g_modVals.uiScale = g_settings.uiScale;
 	if (g_modVals.uiScale < 0.5f || g_modVals.uiScale > 4.0f)
 		g_modVals.uiScale = 1.0f;
+
+	g_modVals.fontSize = g_settings.fontSize;
+	if (!(g_modVals.fontSize >= 8.0f) || g_modVals.fontSize > 64.0f)
+		g_modVals.fontSize = 16.0f;
+
+	g_modVals.dpiAware = g_settings.dpiAware != 0;
 
 	g_modVals.notifications = g_settings.notifications != 0;
 

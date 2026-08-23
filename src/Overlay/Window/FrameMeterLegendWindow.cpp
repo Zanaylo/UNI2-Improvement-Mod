@@ -1,3 +1,4 @@
+#include "Overlay/UiScale.h"
 #include "Overlay/Window/FrameMeterLegendWindow.h"
 
 #include "Training/FrameMeter.h"
@@ -59,7 +60,7 @@ void Cell(ImDrawList* draw, ImVec2 at, float width, float height, unsigned int c
 
 void DrawSampleMeter()
 {
-	const float scale = ImGui::GetFontSize() / 13.0f;
+	const float scale = Ui::Scale();
 	const float cellW = 11.0f * scale;
 	const float gap = 1.0f * scale;
 	const float rowH = 20.0f * scale;
@@ -108,7 +109,7 @@ void Entry(unsigned int color, const char* name, float columnWidth)
 		IM_COL32(0, 0, 0, 160));
 
 	ImGui::Dummy(ImVec2(size, size));
-	ImGui::SameLine(0.0f, 6.0f);
+	ImGui::SameLine(0.0f, Ui::Scaled(6.0f));
 	ImGui::TextUnformatted(name);
 	ImGui::SameLine(0.0f, 0.0f);
 	ImGui::Dummy(ImVec2(columnWidth - (ImGui::GetItemRectMax().x - at.x), 0.0f));
@@ -133,7 +134,7 @@ void FrameMeterLegendWindow::BeforeDraw()
 	const float height = maxHeight * 0.55f < 260.0f ? maxHeight : maxHeight * 0.55f;
 
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(420.0f, 200.0f), ImVec2(maxWidth, maxHeight));
+	ImGui::SetNextWindowSizeConstraints(Ui::Scaled(420.0f, 200.0f), ImVec2(maxWidth, maxHeight));
 }
 
 void FrameMeterLegendWindow::Draw()
@@ -151,7 +152,7 @@ void FrameMeterLegendWindow::Draw()
 	for (int i = 0; i < IM_ARRAYSIZE(kStates); ++i, ++placed)
 	{
 		if (placed % perRow != 0)
-			ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SameLine(0.0f, Ui::Scaled(8.0f));
 
 		Entry(FrameMeter::GetStateColor(kStates[i]), FrameMeter::GetStateName(kStates[i]), column);
 	}
@@ -161,7 +162,7 @@ void FrameMeterLegendWindow::Draw()
 		const FrameMeter::Marker marker = static_cast<FrameMeter::Marker>(i);
 
 		if (placed % perRow != 0)
-			ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SameLine(0.0f, Ui::Scaled(8.0f));
 
 		Entry(FrameMeter::GetMarkerColor(marker), FrameMeter::GetMarkerName(marker), column);
 	}
@@ -178,7 +179,7 @@ void FrameMeterLegendWindow::Draw()
 		const FrameMeter::Marker marker = static_cast<FrameMeter::Marker>(i);
 
 		if (placed % perRow != 0)
-			ImGui::SameLine(0.0f, 8.0f);
+			ImGui::SameLine(0.0f, Ui::Scaled(8.0f));
 
 		Entry(FrameMeter::GetMarkerColor(marker), FrameMeter::GetMarkerName(marker), column);
 	}

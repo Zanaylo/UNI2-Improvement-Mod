@@ -1,3 +1,4 @@
+#include "Overlay/UiScale.h"
 #include "Overlay/Window/DummyScriptGuideWindow.h"
 
 namespace {
@@ -29,7 +30,7 @@ void DummyScriptGuideWindow::BeforeDraw()
 	const float height = maxHeight * 0.70f < 320.0f ? maxHeight : maxHeight * 0.70f;
 
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(380.0f, 240.0f), ImVec2(maxWidth, maxHeight));
+	ImGui::SetNextWindowSizeConstraints(Ui::Scaled(380.0f, 240.0f), ImVec2(maxWidth, maxHeight));
 }
 
 void DummyScriptGuideWindow::Draw()
@@ -49,7 +50,7 @@ void DummyScriptGuideWindow::Draw()
 
 	if (ImGui::BeginTable("##steps", 2, ImGuiTableFlags_SizingFixedFit))
 	{
-		ImGui::TableSetupColumn("step", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+		ImGui::TableSetupColumn("step", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
 		ImGui::TableSetupColumn("meaning", ImGuiTableColumnFlags_WidthStretch);
 
 		Step("W12", "Wait twelve frames, holding whatever is held.");

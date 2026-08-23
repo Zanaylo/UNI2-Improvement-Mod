@@ -275,6 +275,68 @@ rather than leaving you to guess.
 
 If anything looks wrong, set the level back to Off. The mod puts every byte it changed back.
 
+### Improvements
+
+The **Improvements** tab of the same window, and POTATO MODE the other way round: the frame is drawn
+*larger* than your window and Direct3D fits it back down, so every edge is sampled several times over.
+
+| Level | Draws at |
+|---|---|
+| Off | the game's own Display option |
+| 1440p | 2560x1440 |
+| 4K | 3840x2160 |
+
+**Be clear about what it does and does not do.** The game rasterises the characters and the stage
+into five render targets of a fixed 1280x720 before any of this, and that is untouched - a sprite
+gains no detail from it. What it cleans up is everything drawn straight into the back buffer: the
+HUD, the menus, the composite's edges, and the mod's own overlay. It is supersampling, not a higher
+internal resolution.
+
+It costs fill rate in proportion to the size - 4K is nine times 720p - so it is for a machine with
+headroom, which is why it lives on its own tab. **The tab is only offered while POTATO MODE is Off**,
+because the two settle the same drawing size from opposite ends.
+
+**Sharpening** is on the same tab and is the more useful half. The game rasterises everything at
+1280x720 and the composite blows that up to your window with a linear filter, so the softness you see
+is in the upscale rather than in the art. This puts the edge contrast back - contrast adaptive, so it
+follows edges instead of ringing them - and it is drawn over the finished frame from `Present`, which
+means it patches nothing, reads none of the game's shaders and takes effect the moment you move the
+slider. 40-60%% is the useful range. Measured on a real frame it raises mean edge gradient by about
+47%%.
+
+Windowed and borderless only, and like POTATO MODE it takes effect the next time the game builds its
+display: restart it, or touch any video option in its own menu.
+
+### Shaders
+
+A tab of its own, next to Improvements. Everything on it runs over the picture and none of it touches
+the simulation, the inputs or anything an opponent can see.
+
+**Every stage is off by default and every one of them has an explicit Off.** While they all are, the
+chain does not read the back buffer at all - the frame is the game's own.
+
+- **Upscale filter** - Off, bicubic, Lanczos or FidelityFX EASU, substituted for the engine's own
+  bilinear stretch to your window. EASU reads the gradient of the neighbourhood and stretches its
+  kernel along the edge it finds, which turns a diagonal back into a line instead of a staircase.
+  Needs a back buffer larger than 1280x720, so raise the present size with it.
+- **Anti-aliasing** - FXAA in five steps. Multisampling is not offered because it cannot reach this
+  game: a Direct3D 9 texture cannot be multisampled and the whole scene is drawn into textures.
+- **Bloom** - the bright parts of the frame cut out, blurred at a quarter of the size and screened
+  back on. The one setting here that reads as lighting rather than as filtering; the neon in these
+  stages and the glow on EXS and super effects are what it is for.
+- **Sharpening** - contrast adaptive, or FidelityFX RCAS to pair with the EASU upscale.
+- **Colour and display** - brightness, contrast, gamma, saturation, vibrance, warmth, vignette,
+  scanlines and dither.
+- **Shader packs** - drop a `.hlsl` in `UNI2-IM/Shaders` and pick it; it is compiled on selection and
+  runs last in the chain. The folder gets a README with the entry point and the constants the mod
+  binds. Compilation needs `d3dcompiler_47.dll`, which ships with Windows and with Proton; without it
+  the rest of the tab is unaffected.
+
+**Everything off** is a button on both this tab and Improvements. It puts the present size, all five
+stages, the upscale filter, the back buffer's multisampling, Character Visual Improvements, the empty
+stage and POTATO MODE back to the game's own in one click - after it the mod draws nothing into the
+frame and reads nothing out of it.
+
 ### Memory debug
 
 Off by default; set `[Debug] MemoryDebug = 1`, then **Ctrl+F1**. Raw readouts and the search tools
@@ -284,6 +346,11 @@ search, a pointer follower and a struct viewer.
 ## Coming later
 
 - **BGM selector**, with classic French Bread music.
+- **A real internal resolution.** Six readings of the engine have now been built and measured and
+  none of them survives a match: the sixth left every engine global alone and still drew the
+  characters and the effects several times oversized while the stage and the HUD stayed correct.
+  `UNI2-docs/HANDOFF.md` 4.D and 4.D-bis have every measurement, and 4.D-bis has the diagnosis the
+  seventh attempt should start from.
 - **Palettes in the lobby**, not only in the match.
 
 ## The ini file
@@ -398,7 +465,22 @@ puts them back. They are here for taking one of them further than a preset does.
 | `DisableCharacterFilter` | `0` | Hold the game's own Character Visual Improvements off: nine palette lookups a pixel for a one pixel blur. |
 | `PresentWidth` | `0` | The width the finished frame is drawn at before it is stretched to your window. 0 leaves the game's own Display option alone. |
 | `PresentHeight` | `0` | The height, same rule. Both have to be set for either to do anything. Windowed and borderless only. |
-| `PotatoHeight` | `360` | Which size the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144. The two keys above are what actually reaches Direct3D; this is the one the tab offers. |
+| `PotatoHeight` | `360` | Which size the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144. |
+| `Supersample` | `0` | The Improvements tab: 0 off, 1 draws at 1440p, 2 at 4K, and Direct3D fits that to your window. Ignored while `PotatoMode` is set - the two settle the same size from opposite ends. |
+| `Sharpen` | `0` | Sharpening over the finished frame, 0 to 100. 0 is off, 40-60 is the useful range. Immediate; works at any drawing size, POTATO MODE included. |
+| `SharpenMode` | `0` | Which kernel that uses: 0 off, 1 contrast adaptive, 2 FidelityFX RCAS. |
+| `UpscaleFilter` | `0` | Which kernel magnifies the scene on its way to your window, in place of the engine's bilinear: 0 off, 1 bicubic, 2 Lanczos, 3 FidelityFX EASU. Only does anything where the back buffer is larger than 1280x720. |
+| `Bloom` `BloomIntensity` `BloomThreshold` | `0` `40` `75` | Bloom over the finished frame. `Bloom` is the switch; the other two are 0 to 100. |
+| `Look` | `0` | Whether the colour and display pass runs at all. Off, none of the `Look*` values below is read. |
+| `AntiAliasing` | `0` | FXAA over the finished frame: 0 off, 1 low, 2 medium, 3 high, 4 ultra. Multisampling cannot reach this game, so supersampling and this filter are the two things that can. |
+| `LookBrightness` `LookContrast` `LookSaturation` `LookVibrance` `LookTemperature` | `0` | The colour pass, -100 to 100 each. The pass does not run at all while every one of them is neutral. |
+| `LookGamma` | `100` | Gamma as a percentage of 1.0. |
+| `LookVignette` `LookScanlines` | `0` | 0 to 100 each. |
+| `LookDither` | `0` | A pixel of noise under the banding a gradient picks up on an 8 bit back buffer. |
+| `ShaderPack` | empty | The user shader that runs last in the chain, by file name, out of `UNI2-IM/Shaders`. Needs `d3dcompiler_47.dll`, which ships with Windows and with Proton. |
+
+`PresentWidth` and `PresentHeight` are **derived** from `PotatoMode` + `PotatoHeight` + `Supersample`
+and rewritten whenever any of those change; they are what actually reaches Direct3D.
 | `SimpleStage` | `0` | Draw the empty stage instead of the built one. Deliberately not part of any POTATO MODE level. |
 
 ### `[Overlay]`
@@ -406,6 +488,9 @@ puts them back. They are here for taking one of them further than a preset does.
 | Key | Default | What it does |
 |---|---|---|
 | `UiScale` | `1.0` | Overlay scale. 1.0 is native. |
+| `FontPath` | empty | A `.ttf` for the overlay. Empty picks the first scalable face the system has - Segoe UI on Windows, usually DejaVu Sans under Proton. |
+| `FontSize` | `16.0` | Its size in pixels before scaling. |
+| `DpiAware` | `0` | Tell Windows the game handles its own scaling. Off, a display scale above 100% makes Windows render the window small and stretch it, which is a second blur over everything. Has to be set before the game makes its window, so it needs a restart, and the Config tab reports whether it took. |
 | `Notifications` | `1` | The line that slides across the top when the mod loads. 0 silences it. |
 | `BlockGameMouse` | `0` | Stop the game seeing the mouse at all, so clicking the overlay cannot disturb it. |
 | `DrawWhileGamePaused` | `0` | Keeps the hitbox viewer and the frame meter up while the game's own pause menu is open. Off, both hide with the battle tick. |
@@ -738,6 +823,25 @@ depois de mexer em qualquer opção de vídeo no menu do próprio jogo. O resto 
 o que está **de fato** em vigor e avisa quando um pedido não pegou. Se algo parecer errado, volte o
 nível para Off: o mod devolve cada byte que alterou.
 
+### Improvements
+
+A aba **Improvements** da mesma janela, e é o POTATO MODE ao contrário: o quadro é desenhado *maior*
+que a sua janela e o Direct3D encaixa de volta, então cada borda é amostrada várias vezes.
+
+| Nível | Desenha em |
+|---|---|
+| Off | o que a opção Display do jogo pedir |
+| 1440p | 2560x1440 |
+| 4K | 3840x2160 |
+
+**Seja claro sobre o que isso faz e o que não faz.** O jogo rasteriza personagens e cenário em cinco
+render targets de 1280x720 fixos antes de tudo isso, e isso não é tocado — um sprite não ganha
+detalhe nenhum. O que melhora é tudo que é desenhado direto no back buffer: o HUD, os menus, as
+bordas da composição e o próprio overlay do mod. É supersampling, não resolução interna.
+
+Custa fill rate proporcional ao tamanho — 4K é nove vezes 720p. **A aba só aparece com o POTATO MODE
+em Off**, porque os dois decidem o mesmo tamanho por lados opostos. Só em janela e janela sem borda.
+
 ### Memory debug
 
 Desligado por padrão; coloque `[Debug] MemoryDebug = 1` e use **Ctrl+F1**. Leituras cruas e as
@@ -1015,6 +1119,25 @@ MOD が要求した値ではなく、デバイスから読み戻した **実際�
 何か触った後に反映されます。それ以外は即時です。タブは**実際に**適用されている値を表示し、要求が
 通っていなければそう伝えます。おかしいと感じたら段階を Off に戻してください。MOD は書き換えた
 バイトをすべて元に戻します。
+
+### Improvements
+
+同じウィンドウの **Improvements** タブ。POTATO MODE の逆で、ウィンドウより*大きく*描画してから
+Direct3D が縮小して合わせるため、各エッジが複数回サンプリングされます。
+
+| 段階 | 描画サイズ |
+|---|---|
+| Off | ゲーム本体の Display 設定のまま |
+| 1440p | 2560x1440 |
+| 4K | 3840x2160 |
+
+**できることとできないことを明確に。** 本作はその手前でキャラクターと背景を固定 1280x720 の 5 枚の
+レンダーターゲットへ描画しており、そこには手を加えないため、スプライトの精細度は上がりません。
+良くなるのはバックバッファへ直接描かれるもの — HUD、メニュー、合成のエッジ、MOD のオーバーレイ —
+だけです。内部解像度ではなくスーパーサンプリングです。
+
+負荷はサイズに比例します（4K は 720p の 9 倍）。**POTATO MODE が Off のときだけ表示されます。**
+ウィンドウ／ボーダーレスのみ。
 
 ### Memory debug
 

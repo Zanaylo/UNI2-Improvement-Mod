@@ -119,6 +119,7 @@
     <ClCompile Include="src\Core\Settings.cpp" />
     <ClCompile Include="src\Core\logger.cpp" />
     <ClCompile Include="src\Core\Compat.cpp" />
+    <ClCompile Include="src\Core\DpiScaling.cpp" />
     <ClCompile Include="src\Core\crashdump.cpp" />
     <ClCompile Include="src\Core\utils.cpp" />
     <ClCompile Include="src\Core\AsyncFileDialog.cpp" />
@@ -137,6 +138,9 @@
     <ClCompile Include="src\D3D9\FrozenFrame.cpp" />
     <ClCompile Include="src\Overlay\WindowManager.cpp" />
     <ClCompile Include="src\Overlay\NotificationBar.cpp" />
+    <ClCompile Include="src\Overlay\UiText.cpp" />
+    <ClCompile Include="src\Overlay\UiScale.cpp" />
+    <ClCompile Include="src\Overlay\OverlayFont.cpp" />
     <ClCompile Include="src\Overlay\PlatePreview.cpp" />
     <ClCompile Include="src\Overlay\ComboNav.cpp" />
     <ClCompile Include="src\Overlay\CharaPreview.cpp" />
@@ -218,12 +222,24 @@
     <ClCompile Include="src\Core\Profiler.cpp" />
     <ClCompile Include="src\Core\ProcessTuning.cpp" />
     <ClCompile Include="src\D3D9\PresentTuning.cpp" />
+    <ClCompile Include="src\D3D9\SceneScale.cpp" />
+    <ClCompile Include="src\D3D9\Post\SceneUpscale.cpp" />
+    <ClCompile Include="src\D3D9\Post\DeviceState.cpp" />
+    <ClCompile Include="src\D3D9\Post\ScratchTarget.cpp" />
+    <ClCompile Include="src\D3D9\Post\FullScreenPass.cpp" />
+    <ClCompile Include="src\D3D9\Post\UpscaleFilter.cpp" />
+    <ClCompile Include="src\D3D9\Post\PostOptions.cpp" />
+    <ClCompile Include="src\D3D9\Post\PostChain.cpp" />
+    <ClCompile Include="src\D3D9\Post\ShaderPack.cpp" />
     <ClCompile Include="src\Game\EngineQuality.cpp" />
+    <ClCompile Include="src\Game\Improvements.cpp" />
     <ClCompile Include="src\Game\PotatoMode.cpp" />
+    <ClCompile Include="src\Game\PresentSize.cpp" />
     <ClCompile Include="src\Game\PumpWait.cpp" />
     <ClCompile Include="src\Game\DataArchive.cpp" />
     <ClCompile Include="src\Game\UiAssets.cpp" />
     <ClCompile Include="src\Overlay\Window\PerformanceWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\GraphicsPanel.cpp" />
   </ItemGroup>
 
   <ItemGroup>
@@ -231,6 +247,7 @@
     <ClInclude Include="src\Core\settings.def" />
     <ClInclude Include="src\Core\logger.h" />
     <ClInclude Include="src\Core\Compat.h" />
+    <ClInclude Include="src\Core\DpiScaling.h" />
     <ClInclude Include="src\Core\crashdump.h" />
     <ClInclude Include="src\Core\utils.h" />
     <ClInclude Include="src\Core\AsyncFileDialog.h" />
@@ -250,6 +267,9 @@
     <ClInclude Include="src\D3D9\FrozenFrame.h" />
     <ClInclude Include="src\Overlay\WindowManager.h" />
     <ClInclude Include="src\Overlay\NotificationBar.h" />
+    <ClInclude Include="src\Overlay\UiText.h" />
+    <ClInclude Include="src\Overlay\UiScale.h" />
+    <ClInclude Include="src\Overlay\OverlayFont.h" />
     <ClInclude Include="src\Overlay\PlatePreview.h" />
     <ClInclude Include="src\Overlay\ComboNav.h" />
     <ClInclude Include="src\Overlay\CharaPreview.h" />
@@ -332,12 +352,34 @@
     <ClInclude Include="src\Core\default_ini.h" />
     <ClInclude Include="src\Core\ProcessTuning.h" />
     <ClInclude Include="src\D3D9\PresentTuning.h" />
+    <ClInclude Include="src\D3D9\SceneScale.h" />
+    <ClInclude Include="src\D3D9\Post\SceneUpscale.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\SceneUpscaleShader.h" />
+    <ClInclude Include="src\D3D9\Post\DeviceState.h" />
+    <ClInclude Include="src\D3D9\Post\ScratchTarget.h" />
+    <ClInclude Include="src\D3D9\Post\FullScreenPass.h" />
+    <ClInclude Include="src\D3D9\Post\UpscaleFilter.h" />
+    <ClInclude Include="src\D3D9\Post\PostOptions.h" />
+    <ClInclude Include="src\D3D9\Post\PostChain.h" />
+    <ClInclude Include="src\D3D9\Post\ShaderPack.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\BicubicShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\LanczosShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\FxaaShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\RcasShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\LookShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\BloomBrightShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\BloomBlurShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\BloomMixShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\SharpenShader.h" />
     <ClInclude Include="src\Game\EngineQuality.h" />
+    <ClInclude Include="src\Game\Improvements.h" />
     <ClInclude Include="src\Game\PotatoMode.h" />
+    <ClInclude Include="src\Game\PresentSize.h" />
     <ClInclude Include="src\Game\PumpWait.h" />
     <ClInclude Include="src\Game\DataArchive.h" />
     <ClInclude Include="src\Game\UiAssets.h" />
     <ClInclude Include="src\Overlay\Window\PerformanceWindow.h" />
+    <ClInclude Include="src\Overlay\Window\GraphicsPanel.h" />
     <ClInclude Include="src\Game\GameOffsets.h" />
     <ClInclude Include="src\Overlay\WindowContainer\WindowContainer.h" />
     <ClInclude Include="src\Overlay\WindowContainer\WindowType.h" />
@@ -361,6 +403,16 @@
   <ItemGroup>
     <None Include="resource\dinput8.def" />
     <None Include="resource\UNI2_IM.ini" />
+    <None Include="resource\shaders\bloom_blur.hlsl" />
+    <None Include="resource\shaders\bloom_bright.hlsl" />
+    <None Include="resource\shaders\bloom_mix.hlsl" />
+    <None Include="resource\shaders\fxaa.hlsl" />
+    <None Include="resource\shaders\look.hlsl" />
+    <None Include="resource\shaders\rcas.hlsl" />
+    <None Include="resource\shaders\sceneupscale.hlsl" />
+    <None Include="resource\shaders\sharpen.hlsl" />
+    <None Include="resource\shaders\upscale_bicubic.hlsl" />
+    <None Include="resource\shaders\upscale_lanczos.hlsl" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,3 +1,4 @@
+#include "Overlay/UiScale.h"
 #include "Overlay/Window/HitboxLegendWindow.h"
 
 #include "Overlay/Window/HitboxOverlay.h"
@@ -41,7 +42,7 @@ void HitboxLegendWindow::BeforeDraw()
 	const float height = maxHeight * 0.70f < 320.0f ? maxHeight : maxHeight * 0.70f;
 
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(420.0f, 240.0f), ImVec2(maxWidth, maxHeight));
+	ImGui::SetNextWindowSizeConstraints(Ui::Scaled(420.0f, 240.0f), ImVec2(maxWidth, maxHeight));
 }
 
 void HitboxLegendWindow::Draw()

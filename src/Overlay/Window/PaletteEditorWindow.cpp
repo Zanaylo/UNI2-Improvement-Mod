@@ -1,3 +1,4 @@
+#include "Overlay/UiScale.h"
 #include "Overlay/Window/PaletteEditorWindow.h"
 
 #include "Core/Settings.h"
@@ -84,7 +85,7 @@ void PaletteEditorWindow::ForgetIfListChanged()
 void PaletteEditorWindow::BeforeDraw()
 {
 
-	ImGui::SetNextWindowSize(ImVec2(680.0f, 640.0f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(Ui::Scaled(680.0f, 640.0f), ImGuiCond_FirstUseEver);
 }
 
 bool PaletteEditorWindow::IsUsed(int entry) const
@@ -128,7 +129,7 @@ void PaletteEditorWindow::DrawSwatches(const unsigned char* entries, int count)
 		}
 
 		if (ImGui::ColorButton("##swatch", color,
-			ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(22.0f, 22.0f)))
+			ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, Ui::Scaled(22.0f, 22.0f)))
 		{
 			m_selected = i;
 
@@ -190,7 +191,7 @@ void PaletteEditorWindow::DrawEffectEntries()
 	if (entryCount == 0)
 		return;
 
-	ImGui::BeginChild("effectlist", ImVec2(0.0f, 120.0f), ImGuiChildFlags_Borders);
+	ImGui::BeginChild("effectlist", Ui::Scaled(0.0f, 120.0f), ImGuiChildFlags_Borders);
 	DrawSwatches(entries, entryCount);
 	ImGui::EndChild();
 
@@ -203,7 +204,7 @@ void PaletteEditorWindow::DrawEffectEntries()
 		m_colors[m_selected * 4 + 2] / 255.0f,
 	};
 
-	ImGui::SetNextItemWidth(170.0f);
+	Ui::SetItemWidth(170.0f);
 	if (ImGui::ColorPicker3("##effectcolor", picked,
 		ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHex |
 		ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoSmallPreview))
@@ -525,7 +526,7 @@ void PaletteEditorWindow::DrawCharacterColors()
 
 	ImGui::Separator();
 
-	ImGui::BeginChild("swatches", ImVec2(0.0f, 190.0f), ImGuiChildFlags_Borders);
+	ImGui::BeginChild("swatches", Ui::Scaled(0.0f, 190.0f), ImGuiChildFlags_Borders);
 
 	if (parts > 0 && m_byPart)
 	{
@@ -595,7 +596,7 @@ void PaletteEditorWindow::DrawCharacterColors()
 		m_colors[m_selected * 4 + 2] / 255.0f
 	};
 
-	ImGui::SetNextItemWidth(170.0f);
+	Ui::SetItemWidth(170.0f);
 	if (ImGui::ColorPicker3("##picker", picked, ImGuiColorEditFlags_NoSidePreview |
 		ImGuiColorEditFlags_NoSmallPreview))
 	{
@@ -613,13 +614,13 @@ void PaletteEditorWindow::DrawSaving()
 {
 	ImGui::Separator();
 
-	ImGui::SetNextItemWidth(220.0f);
+	Ui::SetItemWidth(220.0f);
 	ImGui::InputText("File name", m_fileName, sizeof(m_fileName));
 
-	ImGui::SetNextItemWidth(220.0f);
+	Ui::SetItemWidth(220.0f);
 	ImGui::InputText("Creator", m_creator, sizeof(m_creator));
 
-	ImGui::SetNextItemWidth(220.0f);
+	Ui::SetItemWidth(220.0f);
 	ImGui::InputText("Description", m_description, sizeof(m_description));
 
 	if (ImGui::Button("Save"))

@@ -14,6 +14,7 @@
 #include "Hooks/InputProbe.h"
 #include "Overlay/FrameMeterHud.h"
 #include "Overlay/NotificationBar.h"
+#include "Overlay/OverlayFont.h"
 #include "Palette/PaletteChoice.h"
 #include "Training/FrameMeter.h"
 #include "Training/FrameStepper.h"
@@ -29,6 +30,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 namespace {
 
+constexpr float kReferenceFontSize = 13.0f;
+
 WNDPROC g_originalWndProc = nullptr;
 
 bool WantsTextInputThisFrame()
@@ -38,6 +41,21 @@ bool WantsTextInputThisFrame()
 		return true;
 
 	return ImGui::GetIO().WantTextInput;
+}
+
+bool HasClientMousePosition(UINT message)
+{
+	switch (message)
+	{
+	case WM_MOUSEMOVE:
+	case WM_LBUTTONDOWN: case WM_LBUTTONUP: case WM_LBUTTONDBLCLK:
+	case WM_RBUTTONDOWN: case WM_RBUTTONUP: case WM_RBUTTONDBLCLK:
+	case WM_MBUTTONDOWN: case WM_MBUTTONUP: case WM_MBUTTONDBLCLK:
+	case WM_XBUTTONDOWN: case WM_XBUTTONUP: case WM_XBUTTONDBLCLK:
+		return true;
+	default:
+		return false;
+	}
 }
 
 bool IsMouseMessage(UINT message)
@@ -118,11 +136,12 @@ bool WindowManager::Initialize(HWND window, IDirect3DDevice9* device)
 	io.IniFilename = nullptr;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
+	OverlayFont::Load();
+
 	ImGui::StyleColorsDark();
 	m_fontScale = ImGui::GetStyle().FontScaleMain;
-
-	if (g_modVals.uiScale != 1.0f)
-		ImGui::GetStyle().ScaleAllSizes(g_modVals.uiScale);
+	m_baseStyle = ImGui::GetStyle();
+	m_appliedScale = 0.0f;
 
 	if (!ImGui_ImplWin32_Init(window))
 	{
@@ -209,7 +228,10 @@ LRESULT WindowManager::HandleWindowMessage(HWND window, UINT message, WPARAM wPa
 		return 0;
 
 	if (m_overlayActive)
-		ImGui_ImplWin32_WndProcHandler(window, message, wParam, lParam);
+	{
+		ImGui_ImplWin32_WndProcHandler(window, message, wParam,
+			HasClientMousePosition(message) ? ScaleMousePosition(lParam) : lParam);
+	}
 
 	if (m_blockGameMouse && IsMouseMessage(message))
 	{
@@ -343,40 +365,91 @@ void WindowManager::HandleHotkeys()
 }
 
 
+bool WindowManager::GetBackBufferScale(float& outX, float& outY) const
+{
+	outX = 1.0f;
+	outY = 1.0f;
+
+	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
+	if (present.BackBufferWidth == 0 || present.BackBufferHeight == 0 || m_window == nullptr)
+		return false;
+
+	RECT client = {};
+	if (!GetClientRect(m_window, &client) || client.right <= 0 || client.bottom <= 0)
+		return false;
+
+	outX = static_cast<float>(present.BackBufferWidth) / static_cast<float>(client.right);
+	outY = static_cast<float>(present.BackBufferHeight) / static_cast<float>(client.bottom);
+
+	return outX != 1.0f || outY != 1.0f;
+}
+
+
+LPARAM WindowManager::ScaleMousePosition(LPARAM lParam) const
+{
+	float scaleX = 1.0f;
+	float scaleY = 1.0f;
+
+	if (!GetBackBufferScale(scaleX, scaleY))
+		return lParam;
+
+	const int x = static_cast<int>(static_cast<short>(LOWORD(lParam)) * scaleX);
+	const int y = static_cast<int>(static_cast<short>(HIWORD(lParam)) * scaleY);
+
+	return MAKELPARAM(static_cast<short>(x), static_cast<short>(y));
+}
+
 void WindowManager::ScaleToBackBuffer()
 {
-	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
-	if (present.BackBufferWidth == 0 || present.BackBufferHeight == 0)
-		return;
-
 	ImGuiIO& io = ImGui::GetIO();
-	if (io.DisplaySize.x <= 0.0f || io.DisplaySize.y <= 0.0f)
-		return;
 
-	const float width = static_cast<float>(present.BackBufferWidth);
-	const float height = static_cast<float>(present.BackBufferHeight);
+	float scaleX = 1.0f;
+	float scaleY = 1.0f;
 
-	if (width == io.DisplaySize.x && height == io.DisplaySize.y)
+	if (!GetBackBufferScale(scaleX, scaleY))
 	{
-		ImGui::GetStyle().FontScaleMain = m_fontScale;
+		ApplyScale(g_modVals.uiScale);
 		return;
 	}
-	const float scaleX = width / io.DisplaySize.x;
-	const float scaleY = height / io.DisplaySize.y;
 
+	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
+
+	RECT client = {};
 	POINT cursor = {};
-	if (GetCursorPos(&cursor) && ScreenToClient(m_window, &cursor) &&
-		cursor.x >= 0 && cursor.y >= 0 &&
-		cursor.x < static_cast<LONG>(io.DisplaySize.x) &&
-		cursor.y < static_cast<LONG>(io.DisplaySize.y))
+
+	if (GetClientRect(m_window, &client) && GetCursorPos(&cursor) &&
+		ScreenToClient(m_window, &cursor) && cursor.x >= 0 && cursor.y >= 0 &&
+		cursor.x < client.right && cursor.y < client.bottom)
 	{
 		io.AddMousePosEvent(cursor.x * scaleX, cursor.y * scaleY);
 	}
 
-	io.DisplaySize.x = width;
-	io.DisplaySize.y = height;
+	io.DisplaySize.x = static_cast<float>(present.BackBufferWidth);
+	io.DisplaySize.y = static_cast<float>(present.BackBufferHeight);
 
-	ImGui::GetStyle().FontScaleMain = m_fontScale * scaleX;
+	ApplyScale(g_modVals.uiScale * scaleX);
+}
+
+// The style carries every padding, rounding and border in the same units the windows are laid out
+// in, so scaling the font alone leaves the text growing inside furniture that did not. Rebuilt from
+// the pristine copy each time rather than scaled again, because ScaleAllSizes multiplies in place.
+void WindowManager::ApplyScale(float scale)
+{
+	if (scale <= 0.0f || (scale == m_appliedScale && g_modVals.fontSize == m_appliedFontSize))
+		return;
+
+	m_appliedFontSize = g_modVals.fontSize;
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	const float text = g_modVals.fontSize / kReferenceFontSize;
+
+	style = m_baseStyle;
+	style.ScaleAllSizes(scale * text);
+	style.FontScaleMain = m_fontScale * scale;
+	style.FontSizeBase = g_modVals.fontSize;
+
+	m_appliedScale = scale;
 }
 
 void WindowManager::Render()

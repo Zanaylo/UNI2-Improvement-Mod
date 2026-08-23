@@ -20,6 +20,7 @@ std::string GetModPalettePath(const std::string& fileName = std::string());
 std::string GetModDownloadPath(const std::string& fileName = std::string());
 std::string GetModLogPath(const std::string& fileName = std::string());
 std::string GetModScriptPath(const std::string& fileName = std::string());
+std::string GetModShaderPath(const std::string& fileName = std::string());
 
 bool CreateModDirectories();
 

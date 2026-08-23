@@ -1,4 +1,5 @@
 #include "Core/Compat.h"
+#include "Core/DpiScaling.h"
 #include "Core/ProcessTuning.h"
 #include "Core/Hotkeys.h"
 #include "Core/Settings.h"
@@ -10,6 +11,8 @@
 #include "Core/utils.h"
 #include "D3D9/D3D9Proxy.h"
 #include "D3D9/D3D9Wrapper.h"
+#include "D3D9/SceneScale.h"
+#include "D3D9/Post/ShaderPack.h"
 #include "Game/CharaTracker.h"
 #include "Game/EngineQuality.h"
 #include "Game/UiAssets.h"
@@ -141,8 +144,11 @@ void Stage_UpdateCheck()
 
 void Stage_GraphicsSettings()
 {
+	DpiScaling::Apply();
 	PotatoMode::ApplySaved();
 	EngineQuality::Apply();
+	SceneScale::Apply();
+	ShaderPack::Refresh();
 }
 
 void Stage_UiAssets()
