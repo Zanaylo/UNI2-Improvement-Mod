@@ -408,3 +408,18 @@ SETTING_INT(keyboardSeat,           "Input",    "KeyboardSeat",         0)
 // Whether the seat above also writes the two sides' pad slots every frame of a match. Off, the seat
 // only makes the keyboard a player of its own and the game decides which side it lands on.
 SETTING_INT(keyboardSeatRouteSides, "Input",    "KeyboardSeatRouteSides", 1)
+
+// Every replay the game records is also written to UNI2-IM\Replays as a file of its own, named
+// from the record: date, a per-day number, both players and both characters. 0 leaves the game's
+// single REP-DATA as the only copy.
+SETTING_INT(replayAutoExport,       "Replays",  "AutoExport",           1)
+
+// A replay the mod launches leaves the pad slots at 0,1 where the game's own Playback leaves
+// 0,-1. 1 writes the game's pair back for the whole launch. Measured in play on 2026-08-23: it is
+// a real difference and it is not what stops the input, so it is off.
+SETTING_INT(replayHoldNativePads,   "Replays",  "HoldNativePads",       0)
+
+// A replay the mod launches ends by handing control to a Replay list that was never loaded - no
+// rows, no cursor, no session - and a list with nothing in it reads no input. 1 asks the game for
+// the menu instead, with the same five writes 0x2311b8 makes when the replay menu gives up.
+SETTING_INT(replayLeaveDeadList,    "Replays",  "LeaveDeadList",        1)

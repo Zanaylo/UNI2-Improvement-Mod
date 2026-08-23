@@ -389,6 +389,65 @@ namespace GameOffsets
 	constexpr size_t kKeyRepeatBytesPerPlayer = 0x240;
 
 	constexpr uintptr_t kFnPadUpdate = 0x200f80;
+	constexpr uintptr_t kReplayArrayPointer = 0x820d18;
+	constexpr uintptr_t kReplayStagingArray = 0x1b6c684;
+	constexpr uintptr_t kReplayStagingRecord = 0x1b64bf8;
+	constexpr uintptr_t kReplayPendingFlag = 0x1b6c680;
+	constexpr uintptr_t kReplayTargetRecord = 0x1b6c688;
+	constexpr uintptr_t kFnSaveReplay = 0x2279f0;
+
+	constexpr uintptr_t kReplayLoadObject = 0x1a64998;
+	constexpr uintptr_t kFnLoadReplayFile = 0x212fe0;
+	constexpr uintptr_t kFnStartReplayPlayback = 0x21c170;
+
+	constexpr uintptr_t kFnResetInputLog = 0x20b7e0;
+	constexpr uintptr_t kReplayInputLogA = 0x1a351f0;
+	constexpr uintptr_t kReplayInputLogB = 0x1a39358;
+	constexpr uintptr_t kReplayTakeCountA = 0x1a35200;
+	constexpr uintptr_t kReplayTakeCountB = 0x1a39368;
+	constexpr uintptr_t kReplayLogFlag = 0x1a351f8;
+	constexpr uintptr_t kReplayLogIndex = 0x1a351fc;
+	constexpr uintptr_t kFnSetLogName = 0x38e60;
+	constexpr uintptr_t kReplayLogFlagB = 0x1a39360;
+	constexpr uintptr_t kReplayLogIndexB = 0x1a39364;
+
+	constexpr uintptr_t kFnPlayReplayRecord = 0x40b1c0;
+	constexpr uintptr_t kReplayHeaderCopy = 0x3b49d68;
+
+	constexpr uintptr_t kReplayPlaySource = 0x3b49d64;
+	constexpr int kReplaySourceList = 0;
+	constexpr int kReplaySourceNone = -1;
+
+	constexpr uintptr_t kReplayTakeState = 0x1a64990;
+	constexpr uint32_t kReplayTakePlaying = 2;
+
+	constexpr uintptr_t kSceneId = 0x596a84;
+	constexpr uintptr_t kSceneRequest = 0x754480;
+	constexpr uintptr_t kSceneRequestFlag = 0x596a8c;
+	constexpr uintptr_t kSceneResultA = 0x5978d0;
+	constexpr uintptr_t kSceneResultB = 0x5978d4;
+
+	constexpr uint32_t kSceneMenu = 3;
+	constexpr uint32_t kSceneReplayList = 46;
+
+	constexpr uintptr_t kReplayListLoaded = 0x3b49d60;
+	constexpr uintptr_t kReplayListActive = 0x3b49d61;
+	constexpr uintptr_t kReplayListLeaving = 0x3b49d62;
+	constexpr uintptr_t kReplayListBuffer = 0x820d20;
+	constexpr uintptr_t kReplayListCursor = 0x820d24;
+	constexpr uintptr_t kReplayRecordTable = 0x1b8a8fc;
+
+	constexpr uintptr_t kPlayerInfoObjects = 0x1a351f0;
+	constexpr size_t kPlayerInfoStride = 0x4168;
+	constexpr uintptr_t kPlayerInfoHasId = 0x40e8;
+	constexpr uintptr_t kPlayerInfoSteamId = 0x40f0;
+
+	constexpr uintptr_t kInputBlockCount = 0x753dfc;
+	constexpr uintptr_t kInputBlockLevel = 0x753e00;
+	constexpr uintptr_t kInputBlockStack = 0x753e10;
+	constexpr uintptr_t kFnPushInputBlock = 0x1fec30;
+	constexpr uintptr_t kFnPopInputBlock = 0x1febc0;
+	constexpr uintptr_t kFnFindOldestReplay = 0x225e30;
 	constexpr uintptr_t kPadPortState = 0x753f10;
 	constexpr size_t kPadPortStateStride = 0x18;
 

@@ -16,6 +16,7 @@
 #include "Game/CharaTracker.h"
 #include "Game/EngineQuality.h"
 #include "Game/KeyboardSeat.h"
+#include "Game/ReplayFiles.h"
 #include "Game/UiAssets.h"
 #include "Game/PotatoMode.h"
 #include "Game/PumpWait.h"
@@ -200,6 +201,7 @@ void Stage_GameHooks()
 	if (g_modVals.showLegacyPalettes)
 		PaletteDrawProbe::Install();
 	KeyboardSeat::Initialize();
+	ReplayFiles::Initialize();
 	PumpWait::Apply();
 	KeyboardSeat::ApplySaved();
 }

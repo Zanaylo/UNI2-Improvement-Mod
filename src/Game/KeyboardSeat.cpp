@@ -7,6 +7,8 @@
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
 #include "Game/OnlineState.h"
+#include "Game/ReplayFiles.h"
+#include "Game/ReplayState.h"
 #include "Hooks/HookManager.h"
 #include "Training/PlayerControl.h"
 
@@ -113,6 +115,15 @@ void HoldSlots()
 	WriteDword(SlotRva(1), g_wroteSlot[1]);
 }
 
+void ReleaseFlag()
+{
+	if (!g_flagHeld)
+		return;
+
+	WriteDword(PadPortIsKeyboardRva(), g_savedPortIsKeyboard);
+	g_flagHeld = false;
+}
+
 void ReleaseNow()
 {
 	if (g_slotsHeld)
@@ -122,11 +133,19 @@ void ReleaseNow()
 		g_slotsHeld = false;
 	}
 
-	if (g_flagHeld)
-	{
-		WriteDword(PadPortIsKeyboardRva(), g_savedPortIsKeyboard);
-		g_flagHeld = false;
-	}
+	ReleaseFlag();
+}
+
+void StandDown()
+{
+	g_slotsHeld = false;
+	ReleaseFlag();
+}
+
+bool Suspended()
+{
+	return OnlineState::IsOnline() || ReplayState::IsPlaying() ||
+		ReplayFiles::IsPlaybackSession();
 }
 
 void ExchangePortRecords()
@@ -161,7 +180,7 @@ void Describe()
 
 void __fastcall HookedPadUpdate(void* self)
 {
-	const bool exchange = Seated() && !OnlineState::IsOnline();
+	const bool exchange = Seated() && !Suspended();
 
 	if (exchange)
 		ExchangePortRecords();
@@ -242,7 +261,13 @@ void KeyboardSeat::OnFrameUpdate()
 	if (InterlockedExchange(&g_releaseRequest, 0) != 0)
 		ReleaseNow();
 
-	if (!Seated() || OnlineState::IsOnline())
+	if (Suspended())
+	{
+		StandDown();
+		return;
+	}
+
+	if (!Seated())
 	{
 		ReleaseNow();
 		return;
@@ -262,7 +287,13 @@ void KeyboardSeat::Update()
 	if (InterlockedExchange(&g_releaseRequest, 0) != 0)
 		ReleaseNow();
 
-	if (!Seated() || OnlineState::IsOnline())
+	if (Suspended())
+	{
+		StandDown();
+		return;
+	}
+
+	if (!Seated())
 	{
 		ReleaseNow();
 		return;

@@ -76,6 +76,10 @@ struct ModValues
 	int keyboardSeat;
 	bool keyboardSeatRouteSides;
 
+	bool replayAutoExport;
+	bool replayHoldNativePads;
+	bool replayLeaveDeadList;
+
 	int presentWidth;
 	int presentHeight;
 	int potatoHeight;

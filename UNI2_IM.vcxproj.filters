@@ -75,6 +75,9 @@
     <ClCompile Include="src\Core\Compat.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Deflate.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\DpiScaling.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -306,6 +309,9 @@
     <ClCompile Include="src\Game\ReplayState.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\SteamNames.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Training\FrameStepper.cpp">
       <Filter>Training</Filter>
     </ClCompile>
@@ -423,6 +429,9 @@
     <ClCompile Include="src\Game\PotatoMode.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\ReplayFiles.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\PresentSize.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -489,6 +498,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Compat.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Deflate.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\DpiScaling.h">
@@ -725,6 +737,9 @@
     <ClInclude Include="src\Game\ReplayState.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\SteamNames.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Training\FrameStepper.h">
       <Filter>Training</Filter>
     </ClInclude>
@@ -873,6 +888,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\PotatoMode.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ReplayFiles.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\PresentSize.h">

@@ -14,6 +14,8 @@
 #include "Game/GameState.h"
 #include "Game/GameTables.h"
 #include "Game/KeyboardSeat.h"
+#include "Game/ReplayFiles.h"
+#include "Game/SteamNames.h"
 #include "Game/OnlineState.h"
 #include "Network/PaletteShare.h"
 #include "Overlay/FrameMeterHud.h"
@@ -81,7 +83,224 @@ void MainWindow::Draw()
 	ImGui::Separator();
 	DrawCustomSection();
 	ImGui::Separator();
+	DrawReplaySection();
+	ImGui::Separator();
 	DrawConfigSection();
+}
+
+void MainWindow::DrawReplaySection()
+{
+	if (!ImGui::CollapsingHeader("Replays"))
+		return;
+
+	const bool readable = ReplayFiles::IsAvailable();
+	const bool live = ReplayFiles::IsLive();
+
+	ImGui::TextWrapped("Every replay the game records is written to UNI2-IM\\Replays as a file of "
+		"its own, so one match can be sent to somebody without sending them all of them. Files are "
+		"named after the two players; a name Steam cannot resolve is written as P1 or P2.");
+
+	ImGui::Spacing();
+
+	bool automatic = ReplayFiles::GetAutoExport();
+	if (ImGui::Checkbox("Save each new replay to a file", &automatic))
+	{
+		ReplayFiles::SetAutoExport(automatic);
+		Settings::SaveInt("Replays", "AutoExport", automatic ? 1 : 0);
+	}
+
+	bool leaveDead = ReplayFiles::GetLeaveDeadList();
+	if (ImGui::Checkbox("Go to the menu if a mod replay ends on an empty Replay list", &leaveDead))
+	{
+		ReplayFiles::SetLeaveDeadList(leaveDead);
+		Settings::SaveInt("Replays", "LeaveDeadList", leaveDead ? 1 : 0);
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Start Replay never loads the Replay list, so the screen the replay hands "
+			"control back to has no rows, no cursor and no session, and reads no input. This asks "
+			"the game for the menu instead, and only when that screen is the one that came up.");
+	}
+
+	bool holdPads = ReplayFiles::GetHoldNativePads();
+	if (ImGui::Checkbox("Hold the pad slots at 0,-1 while a mod replay runs", &holdPads))
+	{
+		ReplayFiles::SetHoldNativePads(holdPads);
+		Settings::SaveInt("Replays", "HoldNativePads", holdPads ? 1 : 0);
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("The game's own Playback leaves 0,-1 and a mod-launched one leaves 0,1. "
+			"A real difference, measured in play not to be what stops the input.");
+	}
+
+	ImGui::BeginDisabled(!readable);
+
+	if (ImGui::Button("Export all"))
+	{
+		std::string error;
+		ReplayFiles::ExportAll(error);
+	}
+
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Anything already in the folder is left alone.");
+
+	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Open folder"))
+		ShellExecuteA(nullptr, "open", ReplayFiles::GetFolder().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Refresh"))
+		ReplayFiles::Refresh();
+
+	ImGui::Spacing();
+
+	const std::vector<std::string>& files = ReplayFiles::ListFiles();
+	static int picked = 0;
+
+	if (picked >= static_cast<int>(files.size()))
+		picked = 0;
+
+	if (files.empty())
+	{
+		ImGui::TextDisabled("No replay files yet.");
+	}
+	else
+	{
+		Ui::SetItemWidth(-1.0f);
+
+		if (ImGui::BeginCombo("##replayfile", files[picked].c_str()))
+		{
+			for (int i = 0; i < static_cast<int>(files.size()); ++i)
+			{
+				const bool selected = i == picked;
+
+				ImGui::PushID(i);
+
+				if (ImGui::Selectable(files[i].c_str(), selected))
+					picked = i;
+
+				ComboNav::KeepSelectedInView(selected);
+
+				ImGui::PopID();
+			}
+
+			ImGui::EndCombo();
+		}
+
+		const int steps = ComboNav::WheelSteps();
+		const int target = picked + steps;
+
+		if (steps != 0 && target >= 0 && target < static_cast<int>(files.size()))
+			picked = target;
+
+		const bool canPlay = ReplayFiles::CanPlay();
+
+		ImGui::BeginDisabled(!canPlay);
+
+		if (ImGui::Button("Start Replay"))
+		{
+			std::string error;
+			if (!ReplayFiles::RequestPlayback(ReplayFiles::GetFolder() + files[picked], error))
+				NotificationBar::Add("%s", error.c_str());
+		}
+
+		ImGui::EndDisabled();
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip(canPlay
+				? "Plays this file straight away, through the same call the Replay list's own "
+				  "Playback runs, so both names load with it. It uses no slot and does not touch "
+				  "REP-DATA."
+				: "Not while a match is running.");
+		}
+
+		ImGui::SameLine();
+
+		ImGui::BeginDisabled(!readable);
+
+		if (ImGui::Button("Load into the game's replay list"))
+		{
+			std::string error;
+			if (!ReplayFiles::Import(ReplayFiles::GetFolder() + files[picked], error))
+				NotificationBar::Add("%s", error.c_str());
+		}
+
+		ImGui::EndDisabled();
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Writes it into the oldest unprotected slot. The Replay screen sorts by date, so it "
+				"appears at its own timestamp. Protect anything you want to keep there first.");
+		}
+	}
+
+	if (!readable)
+	{
+		ImGui::Spacing();
+		ImGui::TextDisabled("No replays could be read - neither the game's own nor REP-DATA.");
+		return;
+	}
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("%d of %d slots used, replay format version %d%s",
+		ReplayFiles::CountUsed(), ReplayFiles::kSlotCount, ReplayFiles::CurrentVersion(),
+		live ? "" : " (read from REP-DATA - a load shows up after a restart)");
+
+	ImGui::TextDisabled("Steam names: %s", SteamNames::GetStatus());
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Kept in UNI2-IM\\SteamNames.txt and reused every session. An account "
+			"Steam cannot answer for is asked again at most once every 20 seconds.");
+	}
+
+	if (ReplayFiles::GetStatus()[0] != 0)
+		ImGui::TextDisabled("%s", ReplayFiles::GetStatus());
+
+	int blockCount = 0;
+	int blockLevel = 0;
+	ReplayFiles::ReadInputBlock(blockCount, blockLevel);
+
+	ImGui::TextWrapped("%s", ReplayFiles::DescribeInputState());
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("block held/level, external-input flags, both pad slots, battle mode, "
+			"scene id, side, take state, keyboard port flags, where the replay says it came from, "
+			"the Replay list's three session flags and its loaded row table, cursor and buffer.");
+	}
+
+	if (ImGui::Button("Set pads to 0,-1 now"))
+		ReplayFiles::HoldNativePadsNow();
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Writes the pair the game's own Playback leaves and keeps writing it until "
+			"the next match, so nothing can put a port back over it. Press it on the screen that has "
+			"stopped reading input: if input comes back, the pad slots are the cause.");
+	}
+
+	if (blockLevel > 0)
+	{
+		ImGui::SameLine();
+
+		if (ImGui::Button("Release"))
+			ReplayFiles::ClearInputBlock();
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Nothing anywhere accepts input while the level is above zero. This "
+				"pops what is left through the game's own release.");
+		}
+	}
 }
 
 void MainWindow::DrawCustomSection()
@@ -117,7 +336,6 @@ void MainWindow::DrawCustomSection()
 		ImGui::EndTabItem();
 	}
 
-	// The first palette system is kept for its machinery but no longer named anywhere in the
 	if (g_modVals.showLegacyPalettes && ImGui::BeginTabItem("Palette (legacy)"))
 	{
 		DrawPalettesTab();
@@ -458,8 +676,7 @@ void MainWindow::DrawHitboxControls()
 	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.toggleFrameMeterKey));
 }
 
-// Kept out of the two checkboxes above and drawn at the bottom of the section instead, so the panel
-// does not reflow every time the viewer or the meter is switched on.
+
 void MainWindow::DrawHitboxTypeControls()
 {
 	WindowContainer* container = WindowManager::GetInstance().GetContainer();

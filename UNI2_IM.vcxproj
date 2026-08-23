@@ -119,6 +119,7 @@
     <ClCompile Include="src\Core\Settings.cpp" />
     <ClCompile Include="src\Core\logger.cpp" />
     <ClCompile Include="src\Core\Compat.cpp" />
+    <ClCompile Include="src\Core\Deflate.cpp" />
     <ClCompile Include="src\Core\DpiScaling.cpp" />
     <ClCompile Include="src\Core\crashdump.cpp" />
     <ClCompile Include="src\Core\utils.cpp" />
@@ -196,6 +197,7 @@
     <ClCompile Include="src\Game\GameTables.cpp" />
     <ClCompile Include="src\Game\PlayerState.cpp" />
     <ClCompile Include="src\Game\ReplayState.cpp" />
+    <ClCompile Include="src\Game\SteamNames.cpp" />
     <ClCompile Include="src\Training\FrameStepper.cpp" />
     <ClCompile Include="src\Training\StopTime.cpp" />
     <ClCompile Include="src\Training\StageColor.cpp" />
@@ -235,6 +237,7 @@
     <ClCompile Include="src\Game\Improvements.cpp" />
     <ClCompile Include="src\Game\KeyboardSeat.cpp" />
     <ClCompile Include="src\Game\PotatoMode.cpp" />
+    <ClCompile Include="src\Game\ReplayFiles.cpp" />
     <ClCompile Include="src\Game\PresentSize.cpp" />
     <ClCompile Include="src\Game\PumpWait.cpp" />
     <ClCompile Include="src\Game\DataArchive.cpp" />
@@ -248,6 +251,7 @@
     <ClInclude Include="src\Core\settings.def" />
     <ClInclude Include="src\Core\logger.h" />
     <ClInclude Include="src\Core\Compat.h" />
+    <ClInclude Include="src\Core\Deflate.h" />
     <ClInclude Include="src\Core\DpiScaling.h" />
     <ClInclude Include="src\Core\crashdump.h" />
     <ClInclude Include="src\Core\utils.h" />
@@ -326,6 +330,7 @@
     <ClInclude Include="src\Game\GameTables.h" />
     <ClInclude Include="src\Game\PlayerState.h" />
     <ClInclude Include="src\Game\ReplayState.h" />
+    <ClInclude Include="src\Game\SteamNames.h" />
     <ClInclude Include="src\Training\FrameStepper.h" />
     <ClInclude Include="src\Training\StopTime.h" />
     <ClInclude Include="src\Training\StageColor.h" />
@@ -376,6 +381,7 @@
     <ClInclude Include="src\Game\Improvements.h" />
     <ClInclude Include="src\Game\KeyboardSeat.h" />
     <ClInclude Include="src\Game\PotatoMode.h" />
+    <ClInclude Include="src\Game\ReplayFiles.h" />
     <ClInclude Include="src\Game\PresentSize.h" />
     <ClInclude Include="src\Game\PumpWait.h" />
     <ClInclude Include="src\Game\DataArchive.h" />
