@@ -10,6 +10,7 @@
 #include "D3D9/SceneScale.h"
 #include "D3D9/Post/PostChain.h"
 #include "Game/GameState.h"
+#include "Game/KeyboardSeat.h"
 #include "Game/PotatoMode.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
@@ -316,6 +317,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	}
 
 	PlayerControl::Update();
+	KeyboardSeat::Update();
 
 	{
 		Profiler::Scope scope(Profiler::Section_PresentPalette);

@@ -6,6 +6,7 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
+#include "Game/KeyboardSeat.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
 #include "Game/ReplayState.h"
@@ -171,6 +172,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 	}
 
 	PlayerControl::OnFrameUpdate();
+	KeyboardSeat::OnFrameUpdate();
 
 	{
 		Profiler::Scope scope(Profiler::Section_TickGame);

@@ -372,6 +372,29 @@ namespace GameOffsets
 	constexpr uintptr_t kFnAssignDummyPad = 0x1a2a00;
 	constexpr uintptr_t kFnReleaseDummyPad = 0x1a2bb0;
 
+	constexpr uintptr_t kKeyboardBattleKeys = 0x59a5a0;
+	constexpr uintptr_t kKeyboardBattleStride = 14;
+	constexpr uintptr_t kKeyboardExtraKeys = 0x5af44a;
+	constexpr uintptr_t kKeyboardExtraStride = 2;
+	constexpr uintptr_t kKeyboardMenuKeys = 0x59a5bc;
+	constexpr uintptr_t kKeyboardMenuStride = 16;
+	constexpr uintptr_t kKeyboardSecondPlayer = 0x59a5e4;
+
+	constexpr uintptr_t kFnSampleKeyboard = 0x4d5640;
+	constexpr uintptr_t kKeyStateHeld = 0x5e5020;
+	constexpr uintptr_t kKeyStateTrigger = 0x5e5140;
+	constexpr uintptr_t kKeyStateRepeat = 0x5e5260;
+	constexpr uintptr_t kKeyStateReleased = 0x5e56e0;
+	constexpr size_t kKeyStateBytesPerPlayer = 0x90;
+	constexpr size_t kKeyRepeatBytesPerPlayer = 0x240;
+
+	constexpr uintptr_t kFnPadUpdate = 0x200f80;
+	constexpr uintptr_t kPadPortState = 0x753f10;
+	constexpr size_t kPadPortStateStride = 0x18;
+
+	constexpr uintptr_t kPadPortIsKeyboard = 0x753e08;
+	constexpr int kKeyboardPlayerCount = 2;
+
 	constexpr uintptr_t kDummyActionMode = 0x858640;
 	constexpr uint32_t kDummyActionModeReversal = 1;
 

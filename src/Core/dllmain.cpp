@@ -15,6 +15,7 @@
 #include "D3D9/Post/ShaderPack.h"
 #include "Game/CharaTracker.h"
 #include "Game/EngineQuality.h"
+#include "Game/KeyboardSeat.h"
 #include "Game/UiAssets.h"
 #include "Game/PotatoMode.h"
 #include "Game/PumpWait.h"
@@ -198,7 +199,9 @@ void Stage_GameHooks()
 	EffectPaint::Install();
 	if (g_modVals.showLegacyPalettes)
 		PaletteDrawProbe::Install();
+	KeyboardSeat::Initialize();
 	PumpWait::Apply();
+	KeyboardSeat::ApplySaved();
 }
 
 void Stage_PaletteShare()

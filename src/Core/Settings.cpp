@@ -8,6 +8,7 @@
 #include "Core/utils.h"
 #include "D3D9/Post/PostOptions.h"
 #include "D3D9/Post/UpscaleFilter.h"
+#include "Game/KeyboardSeat.h"
 #include "Game/PotatoMode.h"
 #include "Training/FrameMeter.h"
 #include "Training/StageColor.h"
@@ -431,6 +432,15 @@ void Settings::ApplySettings()
 	g_modVals.pumpWait = g_settings.pumpWait != 0;
 	g_modVals.pumpWaitAllInput = g_settings.pumpWaitAllInput != 0;
 	g_modVals.wineSafeMode = g_settings.wineSafeMode;
+
+	g_modVals.keyboardSeat = g_settings.keyboardSeat;
+	if (g_modVals.keyboardSeat < KeyboardSeat::Seat_Default ||
+		g_modVals.keyboardSeat > KeyboardSeat::Seat_P2)
+	{
+		g_modVals.keyboardSeat = KeyboardSeat::Seat_Default;
+	}
+
+	g_modVals.keyboardSeatRouteSides = g_settings.keyboardSeatRouteSides != 0;
 
 
 

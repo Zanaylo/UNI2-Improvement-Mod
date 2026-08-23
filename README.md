@@ -171,6 +171,26 @@ changing. The keyboard and every pad are sampled about a thousand times a second
 their own, rather than read from the game's once-a-frame poll, which would quantise every answer to
 16.7 ms and measure nothing. Both of the pad APIs the game uses are covered.
 
+### Keyboard side
+
+*Config → Keyboard.* Pick whether the keyboard plays **1P** or **2P**, and it becomes a player of
+its own with the keys you already configured. Built for local play at a tournament, where the two
+players share one machine and one of them is on a keyboard.
+
+The game gives the keyboard and the first controller the same player number, so in local versus
+they drive the same character. Picking a side here moves the **controller** to the other one; the
+keyboard stays exactly as it is, with the keys already configured.
+
+It never writes your key settings, and it never moves the keyboard between the game's two keyboard
+players - both of those were tried, and both broke something. If you have a second keyboard player
+configured in the game's own options, those keys answer on the controller's side; set *Keyboard
+Player Number* to 1 there to switch them off.
+
+*Hold the side during a match* keeps writing both sides' controller slots while a local match runs,
+so the side you picked is the side you get. Turn it off to let the game decide who joins where.
+
+Nothing here runs online.
+
 ### Palettes
 
 Any colour on either character, applied live. A colour belongs to the character rather than to a
@@ -396,6 +416,13 @@ XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back
 | `StepForward` | empty | One frame forward; hold to repeat. |
 | `NextPalette` | empty | Next palette on the character you are playing. |
 | `PreviousPalette` | empty | The same, backwards. |
+
+### `[Input]`
+
+| Key | Default | What it does |
+|---|---|---|
+| `KeyboardSeat` | `0` | Which player number the keyboard is: 0 leaves the game alone, 1 puts your own keys on 1P, 2 on 2P. |
+| `KeyboardSeatRouteSides` | `1` | Whether the seat also writes both sides' controller slots every frame of a local match. |
 
 ### `[Training]`
 
@@ -733,6 +760,26 @@ daquele personagem. O teclado e cada controle são amostrados cerca de mil vezes
 thread própria, em vez de lidos da varredura de uma vez por quadro do jogo, que quantizaria toda
 resposta em 16,7 ms e não mediria nada. As duas APIs de controle que o jogo usa estão cobertas.
 
+### Lado do teclado
+
+*Config → Keyboard.* Escolha se o teclado joga como **1P** ou **2P**: ele passa a ser um jogador
+próprio, com as teclas que você já configurou. Feito para jogo local em torneio, onde os dois
+jogadores dividem a mesma máquina e um deles está no teclado.
+
+O jogo dá ao teclado e ao primeiro controle o mesmo número de jogador, então no versus local os
+dois movem o mesmo personagem. Escolher um lado aqui move o **controle** para o outro; o teclado
+fica exatamente como está, com as teclas que você já configurou.
+
+Ele nunca escreve nas suas configurações de tecla, e nunca move o teclado entre os dois jogadores
+de teclado do jogo — as duas coisas foram tentadas e as duas quebraram algo. Se você tem um segundo
+jogador de teclado configurado nas opções do jogo, aquelas teclas respondem no lado do controle;
+coloque *Keyboard Player Number* em 1 lá para desligá-las.
+
+*Hold the side during a match* continua escrevendo as portas dos dois lados durante a partida local,
+para que o lado escolhido seja o lado que você recebe. Desligue para deixar o jogo decidir.
+
+Nada disso roda online.
+
 ### Paletas
 
 Qualquer cor em qualquer um dos personagens, aplicada ao vivo. Uma cor pertence ao personagem, e não
@@ -1035,6 +1082,26 @@ Logging = 1
 実時間です。キーボードと各パッドは専用スレッドで毎秒約 1000 回サンプリングしています。ゲームの
 1 フレームに 1 回のポーリングを読むと、すべての結果が 16.7 ms 単位に丸められて計測にならないため
 です。ゲームが使う 2 種類のパッド API の両方に対応しています。
+
+### キーボードのサイド
+
+*Config → Keyboard*。キーボードを **1P** と **2P** のどちらで遊ぶか選べます。すでに設定済みの
+キーのまま、キーボードが独立したプレイヤーになります。1 台の本体を 2 人で使い、片方がキーボード
+という大会のローカル対戦を想定した機能です。
+
+ゲームはキーボードと 1 台目のコントローラーに同じプレイヤー番号を与えるため、ローカル対戦では
+同じキャラクターを操作してしまいます。ここでサイドを選ぶと、動くのは**コントローラー**の側です。
+キーボードは設定済みのキーのまま、何も変わりません。
+
+キー設定を書き換えることはありません。また、ゲームが持つ 2 つのキーボードプレイヤー間でキーボード
+を移動することもしません — どちらも試して、どちらも何かを壊しました。ゲーム側のオプションで
+2 人目のキーボードプレイヤーを設定している場合、そのキーはコントローラー側で反応します。
+*Keyboard Player Number* を 1 にすると無効になります。
+
+*Hold the side during a match* は、ローカル対戦中に両サイドのポート割り当てを毎フレーム書き込み、
+選んだサイドを保ちます。オフにすると、どちらに入るかはゲームが決めます。
+
+オンラインでは何も行いません。
 
 ### パレット
 

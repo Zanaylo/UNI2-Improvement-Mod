@@ -13,6 +13,7 @@
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
 #include "Game/GameTables.h"
+#include "Game/KeyboardSeat.h"
 #include "Game/OnlineState.h"
 #include "Network/PaletteShare.h"
 #include "Overlay/FrameMeterHud.h"
@@ -1286,6 +1287,65 @@ void MainWindow::DrawFreezeModeCombo()
 	}
 }
 
+
+void MainWindow::DrawKeyboardTab()
+{
+	ImGui::TextWrapped("The game gives the keyboard and the first controller the same player "
+		"number, so in local versus they drive the same character. Pick a side for the keyboard "
+		"here and the controller moves to the other one. Your key settings are never touched.");
+
+	ImGui::Spacing();
+
+	if (!KeyboardSeat::IsAvailable())
+	{
+		ImGui::TextDisabled("The game is not mapped yet.");
+		return;
+	}
+
+	const int seats[] = { KeyboardSeat::Seat_Default, KeyboardSeat::Seat_P1, KeyboardSeat::Seat_P2 };
+	const int current = KeyboardSeat::GetSeat();
+
+	Ui::SetItemWidth(160.0f);
+
+	if (ImGui::BeginCombo("Keyboard plays", KeyboardSeat::GetSeatName(current)))
+	{
+		for (int seat : seats)
+		{
+			if (ImGui::Selectable(KeyboardSeat::GetSeatName(seat), seat == current))
+				KeyboardSeat::SetSeat(seat);
+		}
+
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Game default leaves the keyboard where the game puts it.\n"
+			"1P and 2P keep your keys exactly as configured and move the controller to the other side.");
+	}
+
+	bool route = KeyboardSeat::GetRouteSides();
+	if (ImGui::Checkbox("Hold the side during a match", &route))
+		KeyboardSeat::SetRouteSides(route);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Writes both sides' controller slots every frame, so the side you picked is "
+			"the side you get. Off, the game decides who joins where and only the controller moves.");
+	}
+
+	ImGui::Spacing();
+	ImGui::TextWrapped("If you have a second keyboard player configured in the game's own options, "
+		"those keys will answer on the controller's side. Set Keyboard Player Number to 1 there to "
+		"switch them off.");
+
+	ImGui::Spacing();
+	ImGui::TextDisabled("%s", KeyboardSeat::GetStatus());
+
+	if (OnlineState::IsOnline())
+		ImGui::TextDisabled("Online: the sides are left alone until the match ends.");
+}
+
 void MainWindow::DrawConfigSection()
 {
 	if (!ImGui::CollapsingHeader("Config"))
@@ -1311,6 +1371,12 @@ void MainWindow::DrawConfigSection()
 	else
 	{
 		SetBindCapture(-1, false);
+	}
+
+	if (ImGui::BeginTabItem("Keyboard"))
+	{
+		DrawKeyboardTab();
+		ImGui::EndTabItem();
 	}
 
 	ImGui::EndTabBar();

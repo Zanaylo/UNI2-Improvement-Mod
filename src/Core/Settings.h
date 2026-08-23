@@ -73,6 +73,9 @@ struct ModValues
 
 	int wineSafeMode;
 
+	int keyboardSeat;
+	bool keyboardSeatRouteSides;
+
 	int presentWidth;
 	int presentHeight;
 	int potatoHeight;

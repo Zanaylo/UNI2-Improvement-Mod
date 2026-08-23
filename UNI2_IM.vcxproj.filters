@@ -417,6 +417,9 @@
     <ClCompile Include="src\Game\Improvements.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\KeyboardSeat.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\PotatoMode.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -864,6 +867,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Improvements.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\KeyboardSeat.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\PotatoMode.h">

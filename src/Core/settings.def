@@ -399,3 +399,12 @@ SETTING_INT(profilerEnabled,        "Debug",    "Profiler",             0)
 SETTING_INT(meterTrace,             "Debug",    "MeterTrace",           0)
 
 SETTING_INT(wineSafeMode,           "Compat",   "WineSafeMode",         -1)
+
+// Which player number the keyboard is: 0 leaves the game alone, 1 puts your own keys on 1P, 2 puts
+// them on 2P. Off 0, the keyboard shares the first pad's player number, which is why a keyboard and
+// a single controller drive the same character.
+SETTING_INT(keyboardSeat,           "Input",    "KeyboardSeat",         0)
+
+// Whether the seat above also writes the two sides' pad slots every frame of a match. Off, the seat
+// only makes the keyboard a player of its own and the game decides which side it lands on.
+SETTING_INT(keyboardSeatRouteSides, "Input",    "KeyboardSeatRouteSides", 1)

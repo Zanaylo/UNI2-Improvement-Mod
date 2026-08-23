@@ -32,6 +32,7 @@ private:
 	void DrawConfigSection();
 	void DrawConfigGeneralTab();
 	void DrawKeybindsTab();
+	void DrawKeyboardTab();
 	void DrawCustomSection();
 	void DrawPalettesTab();
 	void CaptureBind();
