@@ -40,8 +40,6 @@ constexpr int kSettleFrames = 180;
 
 constexpr int kLaunchFrames = 600;
 
-constexpr uint32_t kNativeSlots[2] = { 0, GameOffsets::kInputPadSlotNone };
-
 constexpr size_t kFileNameChars = 32;
 
 constexpr size_t kOffPayload = 0x278;
@@ -106,9 +104,6 @@ enum Session
 Session g_session = Session_None;
 int g_settleFrames = 0;
 
-bool g_holdNativePads = false;
-bool g_holdNow = false;
-bool g_leaveDeadList = true;
 bool g_escapeArmed = false;
 
 void HookedSampleKeyboard()
@@ -990,44 +985,6 @@ bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError
 
 namespace {
 
-bool ReadSlots(uint32_t out[2])
-{
-	const uintptr_t p1 = RvaToAddress(GameOffsets::kInputPadSlotP1);
-	const uintptr_t p2 = RvaToAddress(GameOffsets::kInputPadSlotP2);
-
-	return p1 != 0 && p2 != 0 &&
-		TryReadDword(reinterpret_cast<const void*>(p1), out[0]) &&
-		TryReadDword(reinterpret_cast<const void*>(p2), out[1]);
-}
-
-void WriteSlots(const uint32_t in[2])
-{
-	const uintptr_t p1 = RvaToAddress(GameOffsets::kInputPadSlotP1);
-	const uintptr_t p2 = RvaToAddress(GameOffsets::kInputPadSlotP2);
-
-	if (p1 == 0 || p2 == 0)
-		return;
-
-	TryWriteDword(reinterpret_cast<void*>(p1), in[0]);
-	TryWriteDword(reinterpret_cast<void*>(p2), in[1]);
-}
-
-void HoldPads()
-{
-	uint32_t live[2] = {};
-	if (!ReadSlots(live))
-		return;
-
-	if (live[0] == kNativeSlots[0] && live[1] == kNativeSlots[1])
-		return;
-
-	WriteSlots(kNativeSlots);
-
-	LOG("replay files: pads were %d,%d - put to %d,%d",
-		static_cast<int>(live[0]), static_cast<int>(live[1]),
-		static_cast<int>(kNativeSlots[0]), static_cast<int>(kNativeSlots[1]));
-}
-
 uint32_t Peek(uintptr_t rva)
 {
 	const uintptr_t at = RvaToAddress(rva);
@@ -1084,18 +1041,11 @@ void EndSession()
 	g_session = Session_None;
 	g_settleFrames = 0;
 	g_escapeArmed = false;
-	g_holdNow = false;
 }
 
 void StartedPlaying()
 {
 	g_session = Session_Playing;
-
-	uint32_t live[2] = {};
-	ReadSlots(live);
-
-	LOG("replay files: the replay is running, the game left the pads at %d,%d",
-		static_cast<int>(live[0]), static_cast<int>(live[1]));
 }
 
 void StoppedPlaying()
@@ -1154,13 +1104,8 @@ void AdvanceSession()
 		break;
 
 	default:
-		if (inMatch)
-			g_holdNow = false;
 		break;
 	}
-
-	if (g_holdNow || (g_holdNativePads && g_session != Session_None))
-		HoldPads();
 }
 
 }
@@ -1184,7 +1129,7 @@ void ReplayFiles::OnGameFrame()
 
 	g_session = Session_Requested;
 	g_settleFrames = kLaunchFrames;
-	g_escapeArmed = g_leaveDeadList;
+	g_escapeArmed = true;
 
 	reinterpret_cast<PlayRecordFn>(play)(GameOffsets::kReplaySourceList,
 		g_playbackRecord.data());
@@ -1195,39 +1140,7 @@ void ReplayFiles::OnGameFrame()
 
 bool ReplayFiles::IsPlaybackSession()
 {
-	return g_session != Session_None || g_holdNow;
-}
-
-void ReplayFiles::SetLeaveDeadList(bool leave)
-{
-	g_leaveDeadList = leave;
-}
-
-bool ReplayFiles::GetLeaveDeadList()
-{
-	return g_leaveDeadList;
-}
-
-void ReplayFiles::SetHoldNativePads(bool hold)
-{
-	g_holdNativePads = hold;
-}
-
-bool ReplayFiles::GetHoldNativePads()
-{
-	return g_holdNativePads;
-}
-
-void ReplayFiles::HoldNativePadsNow()
-{
-	g_holdNow = true;
-
-	HoldPads();
-
-	sprintf_s(g_status, "pads held at %d,%d until the next match",
-		static_cast<int>(kNativeSlots[0]), static_cast<int>(kNativeSlots[1]));
-
-	LOG("replay files: %s", g_status);
+	return g_session != Session_None;
 }
 
 bool ReplayFiles::Initialize()

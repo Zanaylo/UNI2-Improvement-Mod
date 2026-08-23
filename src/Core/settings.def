@@ -414,12 +414,3 @@ SETTING_INT(keyboardSeatRouteSides, "Input",    "KeyboardSeatRouteSides", 1)
 // single REP-DATA as the only copy.
 SETTING_INT(replayAutoExport,       "Replays",  "AutoExport",           1)
 
-// A replay the mod launches leaves the pad slots at 0,1 where the game's own Playback leaves
-// 0,-1. 1 writes the game's pair back for the whole launch. Measured in play on 2026-08-23: it is
-// a real difference and it is not what stops the input, so it is off.
-SETTING_INT(replayHoldNativePads,   "Replays",  "HoldNativePads",       0)
-
-// A replay the mod launches ends by handing control to a Replay list that was never loaded - no
-// rows, no cursor, no session - and a list with nothing in it reads no input. 1 asks the game for
-// the menu instead, with the same five writes 0x2311b8 makes when the replay menu gives up.
-SETTING_INT(replayLeaveDeadList,    "Replays",  "LeaveDeadList",        1)

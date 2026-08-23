@@ -42,6 +42,30 @@ namespace {
 
 constexpr const char* kDefaultPalette = "Default";
 
+bool Contains(const std::string& text, const char* needle)
+{
+	if (needle == nullptr || needle[0] == '\0')
+		return true;
+
+	const auto fold = [](char c) { return static_cast<char>(tolower(static_cast<unsigned char>(c))); };
+
+	const size_t length = strlen(needle);
+	if (length > text.size())
+		return false;
+
+	for (size_t at = 0; at + length <= text.size(); ++at)
+	{
+		size_t i = 0;
+		while (i < length && fold(text[at + i]) == fold(needle[i]))
+			++i;
+
+		if (i == length)
+			return true;
+	}
+
+	return false;
+}
+
 constexpr int kFunctionRow = Hotkeys::Action_Count;
 
 int g_bindCapture = -1;
@@ -109,33 +133,6 @@ void MainWindow::DrawReplaySection()
 		Settings::SaveInt("Replays", "AutoExport", automatic ? 1 : 0);
 	}
 
-	bool leaveDead = ReplayFiles::GetLeaveDeadList();
-	if (ImGui::Checkbox("Go to the menu if a mod replay ends on an empty Replay list", &leaveDead))
-	{
-		ReplayFiles::SetLeaveDeadList(leaveDead);
-		Settings::SaveInt("Replays", "LeaveDeadList", leaveDead ? 1 : 0);
-	}
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Start Replay never loads the Replay list, so the screen the replay hands "
-			"control back to has no rows, no cursor and no session, and reads no input. This asks "
-			"the game for the menu instead, and only when that screen is the one that came up.");
-	}
-
-	bool holdPads = ReplayFiles::GetHoldNativePads();
-	if (ImGui::Checkbox("Hold the pad slots at 0,-1 while a mod replay runs", &holdPads))
-	{
-		ReplayFiles::SetHoldNativePads(holdPads);
-		Settings::SaveInt("Replays", "HoldNativePads", holdPads ? 1 : 0);
-	}
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("The game's own Playback leaves 0,-1 and a mod-launched one leaves 0,1. "
-			"A real difference, measured in play not to be what stops the input.");
-	}
-
 	ImGui::BeginDisabled(!readable);
 
 	if (ImGui::Button("Export all"))
@@ -173,12 +170,28 @@ void MainWindow::DrawReplaySection()
 	}
 	else
 	{
+		static char search[64] = "";
+
 		Ui::SetItemWidth(-1.0f);
 
 		if (ImGui::BeginCombo("##replayfile", files[picked].c_str()))
 		{
+			if (ImGui::IsWindowAppearing())
+			{
+				search[0] = '\0';
+				ImGui::SetKeyboardFocusHere();
+			}
+
+			ImGui::SetNextItemWidth(-1.0f);
+			ImGui::InputTextWithHint("##replaysearch", "Search", search, sizeof(search));
+
+			ImGui::Separator();
+
 			for (int i = 0; i < static_cast<int>(files.size()); ++i)
 			{
+				if (!Contains(files[i], search))
+					continue;
+
 				const bool selected = i == picked;
 
 				ImGui::PushID(i);
@@ -265,42 +278,6 @@ void MainWindow::DrawReplaySection()
 	if (ReplayFiles::GetStatus()[0] != 0)
 		ImGui::TextDisabled("%s", ReplayFiles::GetStatus());
 
-	int blockCount = 0;
-	int blockLevel = 0;
-	ReplayFiles::ReadInputBlock(blockCount, blockLevel);
-
-	ImGui::TextWrapped("%s", ReplayFiles::DescribeInputState());
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("block held/level, external-input flags, both pad slots, battle mode, "
-			"scene id, side, take state, keyboard port flags, where the replay says it came from, "
-			"the Replay list's three session flags and its loaded row table, cursor and buffer.");
-	}
-
-	if (ImGui::Button("Set pads to 0,-1 now"))
-		ReplayFiles::HoldNativePadsNow();
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("Writes the pair the game's own Playback leaves and keeps writing it until "
-			"the next match, so nothing can put a port back over it. Press it on the screen that has "
-			"stopped reading input: if input comes back, the pad slots are the cause.");
-	}
-
-	if (blockLevel > 0)
-	{
-		ImGui::SameLine();
-
-		if (ImGui::Button("Release"))
-			ReplayFiles::ClearInputBlock();
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("Nothing anywhere accepts input while the level is above zero. This "
-				"pops what is left through the game's own release.");
-		}
-	}
 }
 
 void MainWindow::DrawCustomSection()

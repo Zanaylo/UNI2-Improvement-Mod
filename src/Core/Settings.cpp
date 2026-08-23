@@ -446,11 +446,6 @@ void Settings::ApplySettings()
 	g_modVals.replayAutoExport = g_settings.replayAutoExport != 0;
 	ReplayFiles::SetAutoExport(g_modVals.replayAutoExport);
 
-	g_modVals.replayHoldNativePads = g_settings.replayHoldNativePads != 0;
-	ReplayFiles::SetHoldNativePads(g_modVals.replayHoldNativePads);
-
-	g_modVals.replayLeaveDeadList = g_settings.replayLeaveDeadList != 0;
-	ReplayFiles::SetLeaveDeadList(g_modVals.replayLeaveDeadList);
 
 
 

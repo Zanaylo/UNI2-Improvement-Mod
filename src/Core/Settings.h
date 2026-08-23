@@ -77,8 +77,6 @@ struct ModValues
 	bool keyboardSeatRouteSides;
 
 	bool replayAutoExport;
-	bool replayHoldNativePads;
-	bool replayLeaveDeadList;
 
 	int presentWidth;
 	int presentHeight;

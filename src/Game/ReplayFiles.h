@@ -52,13 +52,6 @@ namespace ReplayFiles
 
 	bool IsPlaybackSession();
 
-	void SetLeaveDeadList(bool leave);
-	bool GetLeaveDeadList();
-
-	void SetHoldNativePads(bool hold);
-	bool GetHoldNativePads();
-	void HoldNativePadsNow();
-
 	int FindFreeSlot();
 
 	int CurrentVersion();
