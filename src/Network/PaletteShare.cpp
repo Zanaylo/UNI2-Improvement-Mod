@@ -381,12 +381,19 @@ bool Unpack(const uint8_t* data, int size, uint16_t version, PacketV3& out, Inco
 	return true;
 }
 
-void HandlePacket(const uint8_t* data, int size)
+void HandlePacket(const uint8_t* data, int size, uint64_t from)
 {
 	uint16_t version = 0;
 
 	if (!ReadHeader(data, size, version))
 		return;
+
+	if (from == 0 || from != SteamNetwork::GetPeer())
+	{
+		PaletteTrace::Note("a packet from %llu is not the opponent's, dropped",
+			(unsigned long long)from);
+		return;
+	}
 
 	if (!g_modVals.showOnlinePalettes)
 	{
@@ -424,7 +431,7 @@ void Receive()
 	uint64_t from = 0;
 
 	while (SteamNetwork::Receive(buffer, sizeof(buffer), size, from))
-		HandlePacket(buffer, size);
+		HandlePacket(buffer, size, from);
 }
 
 void ForgetForeign()
@@ -487,6 +494,8 @@ void PaletteShare::OnFrame()
 	if (!SteamNetwork::IsReady() && !RetrySteam())
 		return;
 
+	Receive();
+
 	const bool inMatch = GameState::IsInMatch();
 
 	if (inMatch != g_inMatch)
@@ -523,8 +532,6 @@ void PaletteShare::OnFrame()
 		g_sideLogged = true;
 		LOG("PaletteShare: peer is up and [0x597940] reads %d", GetOwnSide());
 	}
-
-	Receive();
 
 	const int own = OwnPlayer();
 

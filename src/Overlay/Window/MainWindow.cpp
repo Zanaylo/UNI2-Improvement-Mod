@@ -120,9 +120,11 @@ void MainWindow::DrawReplaySection()
 	const bool readable = ReplayFiles::IsAvailable();
 	const bool live = ReplayFiles::IsLive();
 
-	ImGui::TextWrapped("Every replay the game records is written to UNI2-IM\\Replays as a file of "
-		"its own, so one match can be sent to somebody without sending them all of them. Files are "
-		"named after the two players; a name Steam cannot resolve is written as P1 or P2.");
+	ImGui::TextWrapped("Every replay the game records from now on is written to UNI2-IM\\Replays as "
+		"a file of its own, so one match can be sent to somebody without sending them all of "
+		"them. Files are named after the two players; a name Steam cannot resolve is written as "
+		"P1 or P2. The replays already in REP-DATA are left where they are until Export all is "
+		"pressed.");
 
 	ImGui::Spacing();
 

@@ -207,7 +207,6 @@ void MakeRoom()
 		if (g_seen[i] == nullptr || g_frameSerial - g_lastBound[i] <= kInUseFrames)
 			continue;
 
-		PaletteTexture::RestoreAll(i);
 		RemoveAt(i, "the list was full");
 	}
 }
@@ -475,8 +474,7 @@ bool PaletteTexture::GetMatchTextures(int& outFirst, int& outSecond)
 void PaletteTexture::OnFrame()
 {
 	// Same reason as PaletteSeat: with the game's frame suppressed nothing binds a texture, so the
-	// stale sweep below would drop every one of them while the user is simply paused.
-	if (FrameStepper::IsFrozen())
+	if (FrameStepper::NeedsFrozenFrameReplay())
 		return;
 
 	++g_frameSerial;
@@ -717,8 +715,11 @@ void PaletteTexture::Forget()
 {
 	for (int i = 0; i < g_seenCount; ++i)
 	{
-		if (g_seen[i] != nullptr)
-			g_seen[i]->Release();
+		if (g_seen[i] == nullptr)
+			continue;
+
+		RestoreAll(i);
+		g_seen[i]->Release();
 	}
 
 	ForgetRejected();
@@ -831,6 +832,8 @@ void RemoveAt(int index, const char* why)
 
 	LOG("palette texture: 0x%p %s (%s players 0x%x chara %d)", g_seen[index], why,
 		OwnerKindName(g_ownerOf[index].kind), g_ownerOf[index].players, g_ownerOf[index].chara);
+
+	PaletteTexture::RestoreAll(index);
 
 	if (g_seen[index] != nullptr)
 		g_seen[index]->Release();

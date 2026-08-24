@@ -409,8 +409,12 @@ SETTING_INT(keyboardSeat,           "Input",    "KeyboardSeat",         0)
 // only makes the keyboard a player of its own and the game decides which side it lands on.
 SETTING_INT(keyboardSeatRouteSides, "Input",    "KeyboardSeatRouteSides", 1)
 
-// Every replay the game records is also written to UNI2-IM\Replays as a file of its own, named
-// from the record: date, a per-day number, both players and both characters. 0 leaves the game's
-// single REP-DATA as the only copy.
+// Every replay the game records **from now on** is also written to UNI2-IM\Replays as a file of its
+// own, named from the record: date, a per-day number, both players and both characters. 0 leaves the
+// game's single REP-DATA as the only copy.
+//
+// It never touches the records that were already in REP-DATA when the game started. Writing four
+// hundred files uninvited on the first frame is not what a switch called AutoExport should mean, and
+// the backlog is what the Export all button is for.
 SETTING_INT(replayAutoExport,       "Replays",  "AutoExport",           1)
 

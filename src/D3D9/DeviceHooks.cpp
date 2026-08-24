@@ -37,6 +37,7 @@
 #include "Training/FrameStepper.h"
 
 #include <MinHook.h>
+#include <cstring>
 
 namespace {
 
@@ -84,8 +85,14 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 {
 	const bool isTrackedDevice = (device == g_device);
 
-	if (isTrackedDevice && presentParameters != nullptr)
+	D3DPRESENT_PARAMETERS asked = {};
+	const bool tunable = isTrackedDevice && presentParameters != nullptr;
+
+	if (tunable)
+	{
+		asked = *presentParameters;
 		PresentTuning::Apply(device, *presentParameters);
+	}
 
 	if (isTrackedDevice)
 	{
@@ -102,7 +109,16 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 		SceneUpscale::OnDeviceLost();
 	}
 
-	const HRESULT result = oReset(device, presentParameters);
+	HRESULT result = oReset(device, presentParameters);
+
+	if (FAILED(result) && tunable && memcmp(&asked, presentParameters, sizeof(asked)) != 0)
+	{
+		LOG("Reset refused the tuned parameters (0x%08lx), retrying with the game's own",
+			static_cast<unsigned long>(result));
+
+		*presentParameters = asked;
+		result = oReset(device, presentParameters);
+	}
 
 	if (isTrackedDevice)
 	{

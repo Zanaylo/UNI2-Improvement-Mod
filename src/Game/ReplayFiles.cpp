@@ -72,6 +72,7 @@ char g_status[256] = "";
 
 bool g_autoExport = true;
 uint64_t g_seen[ReplayFiles::kSlotCount] = {};
+bool g_seeded = false;
 
 std::vector<std::string> g_files;
 bool g_filesValid = false;
@@ -1204,6 +1205,9 @@ void ReplayFiles::Update()
 	if (!SourceIsCurrent())
 		return;
 
+	const bool seeding = !g_seeded;
+	g_seeded = true;
+
 	int budget = kExportsPerPass;
 
 	for (int slot = 0; slot < kSlotCount; ++slot)
@@ -1217,7 +1221,7 @@ void ReplayFiles::Update()
 		if (live == g_seen[slot])
 			continue;
 
-		if (g_autoExport && live != 0 && !AlreadyExported(time))
+		if (!seeding && g_autoExport && live != 0 && !AlreadyExported(time))
 		{
 			if (budget == 0)
 				return;
@@ -1235,6 +1239,9 @@ void ReplayFiles::Update()
 		g_seen[slot] = live;
 		g_used = -1;
 	}
+
+	if (seeding)
+		LOG("replay files: %d records already in REP-DATA, left for Export all", CountUsed());
 }
 
 const char* ReplayFiles::GetStatus()

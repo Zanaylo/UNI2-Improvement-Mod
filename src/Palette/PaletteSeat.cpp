@@ -204,11 +204,7 @@ void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int side)
 
 void PaletteSeat::OnFrame()
 {
-	// A seat ages by presented frames, and it is a draw call that keeps it alive. Tick stop does not
-	// run the game's frame at all, so nothing draws and every seat would age out in two seconds of
-	// being paused - taking the texture identity, the paint and the effect colours with it. The
-	// absence of draws here is the mod's own doing, not evidence the character has gone.
-	if (FrameStepper::IsFrozen())
+	if (FrameStepper::NeedsFrozenFrameReplay())
 		return;
 
 	++g_frame;

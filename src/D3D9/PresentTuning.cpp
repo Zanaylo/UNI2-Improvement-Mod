@@ -115,10 +115,10 @@ UINT ChooseRefreshRate(IDirect3D9* d3d9, UINT adapter, const D3DPRESENT_PARAMETE
 
 UINT ChooseBackBufferCount(const D3DPRESENT_PARAMETERS& parameters)
 {
-	
+	if (!g_modVals.extraBackBuffer || !VsyncIsOn(parameters))
 		return parameters.BackBufferCount;
 
-	return 2;
+	return parameters.BackBufferCount >= 2 ? parameters.BackBufferCount : 2;
 }
 
 

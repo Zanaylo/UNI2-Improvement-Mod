@@ -42,6 +42,7 @@ struct Player
 
 Player g_players[PalettePaint::kPlayers] = {};
 int g_paintedFrame = -1;
+bool g_allowed = false;
 
 int g_innerOffset = -1;
 
@@ -316,6 +317,16 @@ void PalettePaint::OnFrame()
 		EffectPaint::Forget();
 	}
 
+	g_allowed = inMatch || g_modVals.paletteOutOfMatch;
+
+	if (!g_allowed)
+	{
+		for (int player = 0; player < kPlayers; ++player)
+			Release(g_players[player]);
+
+		return;
+	}
+
 	for (int player = 0; player < kPlayers; ++player)
 	{
 		Player& entry = g_players[player];
@@ -382,6 +393,9 @@ bool PalettePaint::ReadGameColours(int player, uint8_t* rgba)
 
 void PalettePaint::OnDraw()
 {
+	if (!g_allowed)
+		return;
+
 	const int frame = PaletteSeat::GetFrame();
 
 	if (g_paintedFrame == frame)

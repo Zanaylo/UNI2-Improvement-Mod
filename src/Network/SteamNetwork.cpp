@@ -14,16 +14,16 @@ namespace {
 constexpr int kSendP2PPacket = 0;
 constexpr int kIsP2PPacketAvailable = 1;
 constexpr int kReadP2PPacket = 2;
-constexpr int kAcceptP2PSession = 3;
 
 constexpr int kSendReliable = 2;
+
+constexpr DWORD kPeerFreshMs = 3000;
 
 constexpr int kGetISteamGenericInterface = 12;
 
 using SendP2PPacket_t = bool(__fastcall*)(void*, void*, uint64_t, const void*, uint32_t, int, int);
 using IsP2PPacketAvailable_t = bool(__fastcall*)(void*, void*, uint32_t*, int);
 using ReadP2PPacket_t = bool(__fastcall*)(void*, void*, void*, uint32_t, uint32_t*, uint64_t*, int);
-using AcceptP2PSession_t = bool(__fastcall*)(void*, void*, uint64_t);
 using GetGenericInterface_t = void*(__fastcall*)(void*, void*, int32_t, int32_t, const char*);
 
 using GetHSteamUser_t = int32_t(__cdecl*)();
@@ -37,6 +37,7 @@ uint64_t g_peer = 0;
 uint64_t g_lastLoggedPeer = 0;
 
 volatile DWORD g_lastTrafficTick = 0;
+volatile DWORD g_lastPeerTick = 0;
 char g_status[192] = "not started";
 
 SendP2PPacket_t oSendP2PPacket = nullptr;
@@ -58,8 +59,15 @@ bool __fastcall HookedSendP2PPacket(void* self, void* edx, uint64_t steamIDRemot
 {
 	if (steamIDRemote != 0 && channel != SteamNetwork::kChannel)
 	{
-		g_peer = steamIDRemote;
-		g_lastTrafficTick = GetTickCount();
+		const DWORD now = GetTickCount();
+
+		g_lastTrafficTick = now;
+
+		if (channel == SteamNetwork::kRollbackChannel)
+		{
+			g_peer = steamIDRemote;
+			g_lastPeerTick = now;
+		}
 	}
 
 	return oSendP2PPacket(self, edx, steamIDRemote, data, size, sendType, channel);
@@ -177,21 +185,32 @@ uint64_t SteamNetwork::GetPeer()
 	return g_peer;
 }
 
+namespace {
+
+bool PeerIsFresh()
+{
+	const DWORD last = g_lastPeerTick;
+
+	if (g_peer == 0 || last == 0)
+		return false;
+
+	return GetTickCount() - last < kPeerFreshMs;
+}
+
+}
+
 bool SteamNetwork::HasPeer()
 {
-	if (g_peer != 0 && g_peer != g_lastLoggedPeer)
+	if (!PeerIsFresh())
+		return false;
+
+	if (g_peer != g_lastLoggedPeer)
 	{
 		g_lastLoggedPeer = g_peer;
-		LOG("SteamNetwork: peer is %llu", (unsigned long long)g_peer);
-
-		auto accept = reinterpret_cast<AcceptP2PSession_t>(
-			VTableEntry(g_networking, kAcceptP2PSession));
-
-		if (accept != nullptr)
-			accept(g_networking, nullptr, g_peer);
+		LOG("SteamNetwork: the rollback peer is %llu", (unsigned long long)g_peer);
 	}
 
-	return g_peer != 0;
+	return true;
 }
 
 bool SteamNetwork::HasRecentPeerTraffic(unsigned withinMs)
@@ -205,7 +224,7 @@ bool SteamNetwork::HasRecentPeerTraffic(unsigned withinMs)
 
 bool SteamNetwork::Send(const void* data, int size)
 {
-	if (!g_ready || g_peer == 0 || data == nullptr || size <= 0)
+	if (!g_ready || data == nullptr || size <= 0 || !PeerIsFresh())
 		return false;
 
 	auto send = reinterpret_cast<SendP2PPacket_t>(VTableEntry(g_networking, kSendP2PPacket));

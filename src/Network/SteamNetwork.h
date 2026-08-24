@@ -1,4 +1,5 @@
-// The mod's Steam P2P channel. Channel separation is the safety property of the whole feature.
+// The mod's Steam P2P channel. Channel separation is the safety property of the whole feature, and
+// the peer is the one GGPO's own rollback channel names rather than whoever the game last spoke to.
 
 #pragma once
 
@@ -7,6 +8,8 @@
 namespace SteamNetwork
 {
 	constexpr int kChannel = 0x504C;
+
+	constexpr int kRollbackChannel = 1;
 
 	bool Initialize();
 	bool IsReady();
