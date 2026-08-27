@@ -260,6 +260,12 @@ bool ModFiles::Initialize()
 	return true;
 }
 
+void ModFiles::Rescan()
+{
+	Rebuild();
+	LOG("ModFiles: %s", g_status);
+}
+
 void ModFiles::SetThemeFolder(const char* folder)
 {
 	g_theme = folder != nullptr ? folder : "";

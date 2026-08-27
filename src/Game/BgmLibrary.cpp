@@ -241,6 +241,16 @@ void LoadPack(const std::string& path)
 	fclose(handle);
 }
 
+bool SlotHolds(int slot, const char* file)
+{
+	BgmTable::Entry entry = {};
+
+	if (!BgmTable::Read(slot, entry) || !entry.present)
+		return false;
+
+	return _stricmp(entry.file, file) == 0;
+}
+
 int PickWindow()
 {
 	for (int id = BgmTable::kSlotCount - 1; id >= 100; --id)
@@ -259,6 +269,7 @@ void BgmLibrary::Load()
 	g_tracks.clear();
 	g_tags.clear();
 	g_bound = -1;
+	g_window = -1;
 	g_loaded = true;
 
 	const std::string folder = FolderPath();
@@ -437,7 +448,14 @@ void BgmLibrary::FormatRef(int id, char* out, int size)
 int BgmLibrary::SlotOf(int id)
 {
 	const Track* track = Get(id);
-	return track != nullptr ? track->slot : -1;
+
+	if (track == nullptr)
+		return -1;
+
+	if (track->slot >= 0 && !SlotHolds(track->slot, track->file))
+		return -1;
+
+	return track->slot;
 }
 
 bool BgmLibrary::IsMirroredSlot(int slot)
@@ -476,10 +494,16 @@ int BgmLibrary::Bind(int id)
 	if (track == nullptr)
 		return -1;
 
-	if (track->slot >= 0 && BgmTable::IsPresent(track->slot))
+	if (track->slot >= 0 && SlotHolds(track->slot, track->file))
 	{
 		g_bound = id;
 		return track->slot;
+	}
+
+	if (track->slot >= 0 && BgmTable::IsPresent(track->slot))
+	{
+		LOG("BgmLibrary: slot %d still holds the table the game read at boot, so '%s' goes "
+			"through the window slot until the next launch", track->slot, track->file);
 	}
 
 	const int slot = WindowSlot();

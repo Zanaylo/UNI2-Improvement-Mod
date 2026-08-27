@@ -5,6 +5,7 @@
 #include "Core/utils.h"
 #include "Game/BgmLibrary.h"
 #include "Game/BgmThemes.h"
+#include "Game/ModFiles.h"
 
 #include <Windows.h>
 
@@ -35,6 +36,7 @@ const char* const kReadme =
 
 char g_status[256] = "idle";
 volatile long g_busy = 0;
+volatile long g_finished = 0;
 
 struct Job
 {
@@ -126,8 +128,7 @@ bool RunImport(const std::string& path)
 		return false;
 	}
 
-	BgmLibrary::Load();
-	BgmThemes::Reload();
+	InterlockedExchange(&g_finished, 1);
 
 	sprintf_s(g_status, "%s - restart the game so it reads the new bgm.txt", detail);
 	LOG("SoundpackTransfer: %s", g_status);
@@ -186,6 +187,16 @@ bool SoundpackTransfer::Export(const char* zipPath)
 bool SoundpackTransfer::Import(const char* zipPath)
 {
 	return Start(zipPath, false);
+}
+
+void SoundpackTransfer::Update()
+{
+	if (InterlockedCompareExchange(&g_finished, 0, 1) != 1)
+		return;
+
+	ModFiles::Rescan();
+	BgmLibrary::Load();
+	BgmThemes::Reload();
 }
 
 bool SoundpackTransfer::IsBusy()

@@ -265,7 +265,11 @@ void MusicPanel::DrawSoundpacks()
 		ImGui::TextWrapped("Looked in: %s", BgmThemes::ThemesPath());
 
 		if (ImGui::Button("Rescan folder"))
+		{
+			ModFiles::Rescan();
+			BgmLibrary::Load();
 			BgmThemes::Reload();
+		}
 
 		return;
 	}
@@ -328,7 +332,11 @@ void MusicPanel::DrawSoundpacks()
 	ImGui::EndTable();
 
 	if (ImGui::Button("Rescan folder"))
+	{
+		ModFiles::Rescan();
+		BgmLibrary::Load();
 		BgmThemes::Reload();
+	}
 
 	ImGui::SameLine();
 

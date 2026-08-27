@@ -4,6 +4,7 @@
 #include "Core/utils.h"
 #include "Game/BgmLibrary.h"
 #include "Game/BgmTableFile.h"
+#include "Game/ModFiles.h"
 #include "Game/BgmThemes.h"
 #include "Game/DataArchive.h"
 #include "Game/OstPac.h"
@@ -67,6 +68,7 @@ struct Track
 
 char g_status[256] = "idle";
 volatile long g_busy = 0;
+volatile long g_finished = 0;
 volatile long g_progress = 0;
 
 std::string Combine(const std::string& folder, const char* name)
@@ -855,8 +857,7 @@ DWORD WINAPI Worker(void* parameter)
 		strncpy_s(g_status, "that folder is not a French-Bread game the mod knows", _TRUNCATE);
 	}
 
-	BgmLibrary::Load();
-	BgmThemes::Reload();
+	InterlockedExchange(&g_finished, 1);
 
 	delete folder;
 	InterlockedExchange(&g_progress, 100);
@@ -929,6 +930,16 @@ bool OstImport::Begin(const char* folder)
 
 	CloseHandle(thread);
 	return true;
+}
+
+void OstImport::Update()
+{
+	if (InterlockedCompareExchange(&g_finished, 0, 1) != 1)
+		return;
+
+	ModFiles::Rescan();
+	BgmLibrary::Load();
+	BgmThemes::Reload();
 }
 
 bool OstImport::IsBusy()

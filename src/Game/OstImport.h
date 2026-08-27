@@ -16,6 +16,8 @@ namespace OstImport
 
 	bool Begin(const char* folder);
 
+	void Update();
+
 	bool IsBusy();
 	int Progress();
 

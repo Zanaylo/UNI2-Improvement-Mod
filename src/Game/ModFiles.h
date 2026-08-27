@@ -6,6 +6,8 @@ namespace ModFiles
 
 	void SetThemeFolder(const char* folder);
 
+	void Rescan();
+
 	int Count();
 	int Hits();
 	int ThemeCount();

@@ -16,6 +16,8 @@
 #include "Game/PotatoMode.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
+#include "Game/OstImport.h"
+#include "Game/SoundpackTransfer.h"
 #include "Network/NetplayTick.h"
 #include "Game/ReplayState.h"
 #include "Hooks/HookManager.h"
@@ -304,6 +306,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			Profiler::Scope scope(Profiler::Section_PresentOnline);
 			OnlineState::Update();
 			NetplayTick::Update();
+			OstImport::Update();
+			SoundpackTransfer::Update();
 		}
 
 		{
