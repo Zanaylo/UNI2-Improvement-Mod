@@ -546,6 +546,9 @@
     <ClCompile Include="src\Network\RoomRoster.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="src\Network\PlayerCount.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network\ModPresence.cpp">
       <Filter>Network</Filter>
     </ClCompile>
@@ -1059,6 +1062,9 @@
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\RoomRoster.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\PlayerCount.h">
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\ModPresence.h">
