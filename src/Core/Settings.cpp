@@ -66,7 +66,6 @@ int ReadIniInt(const char* section, const char* key, int defaultValue, const std
 	return static_cast<int>(GetPrivateProfileIntA(section, key, defaultValue, path.c_str()));
 }
 
-
 bool WriteShippedIni(const std::string& path)
 {
 
@@ -415,7 +414,6 @@ void Settings::ApplySettings()
 	g_modVals.paletteFlashEntry = g_settings.paletteFlashEntry != 0;
 	g_modVals.paletteFilterJunk = g_settings.paletteFilterJunk != 0;
 
-
 	const bool flatStage = g_settings.stageFlatColour != 0 || g_settings.simpleStage != 0;
 
 	StageColor::SetColor(static_cast<uint32_t>(g_settings.stageFlatColourValue));
@@ -445,9 +443,6 @@ void Settings::ApplySettings()
 
 	g_modVals.replayAutoExport = g_settings.replayAutoExport != 0;
 	ReplayFiles::SetAutoExport(g_modVals.replayAutoExport);
-
-
-
 
 	g_modVals.presentWidth = g_settings.presentWidth;
 	g_modVals.presentHeight = g_settings.presentHeight;
@@ -516,6 +511,10 @@ void Settings::ApplySettings()
 	g_modVals.dpiAware = g_settings.dpiAware != 0;
 
 	g_modVals.notifications = g_settings.notifications != 0;
+
+	g_modVals.roomRosterFix = g_settings.roomRosterFix != 0;
+	g_modVals.republishPingLocation = g_settings.republishPingLocation != 0;
+	g_modVals.netplayDiagnostics = g_settings.netplayDiagnostics != 0;
 
 	g_modVals.memoryDebugEnabled = g_settings.memoryDebugEnabled != 0;
 	g_modVals.profilerEnabled = g_settings.profilerEnabled != 0;

@@ -22,6 +22,11 @@
 #include "Overlay/ComboNav.h"
 #include "Overlay/NotificationBar.h"
 #include "Overlay/Window/HitboxOverlay.h"
+#include "Game/BgmControl.h"
+#include "Network/PlayerCount.h"
+#include "Game/BgmNames.h"
+#include "Game/VisualThemes.h"
+#include "Overlay/UiText.h"
 #include "Overlay/WindowManager.h"
 #include "Palette/PaletteChoice.h"
 #include "Palette/PaletteControl.h"
@@ -95,21 +100,70 @@ void MainWindow::BeforeDraw()
 
 	const float base = ImGui::GetFontSize() * 32.0f;
 
+	const float ceiling = ImGui::GetIO().DisplaySize.y * 0.85f;
+
 	ImGui::SetNextWindowSizeConstraints(ImVec2(max(titleWidth + decorations, base), 0.0f),
-		ImVec2(FLT_MAX, FLT_MAX));
+		ImVec2(FLT_MAX, ceiling > 0.0f ? ceiling : FLT_MAX));
 
 	ImGui::SetNextWindowSize(ImVec2(base, 0.0f), ImGuiCond_FirstUseEver);
 }
 
+void MainWindow::DrawPlayerCount()
+{
+	ImGui::TextUnformatted("Current online players:");
+	ImGui::SameLine();
+
+	if (!PlayerCount::IsKnown())
+	{
+		UiText::Muted("%s", PlayerCount::GetStatusText());
+		return;
+	}
+
+	UiText::Good("%d", PlayerCount::Get());
+}
+
 void MainWindow::Draw()
 {
+	DrawPlayerCount();
+	ImGui::Separator();
 	DrawTrainingSection();
 	ImGui::Separator();
 	DrawCustomSection();
 	ImGui::Separator();
 	DrawReplaySection();
 	ImGui::Separator();
+	DrawMusicSection();
+	ImGui::Separator();
 	DrawConfigSection();
+}
+
+void MainWindow::DrawMusicSection()
+{
+	if (!ImGui::CollapsingHeader("Music"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Music) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close music" : "Open music"))
+		window->Toggle();
+
+	ImGui::TextWrapped("Soundpacks, the whole track list and the rules that decide what plays "
+		"where all live in that window.");
+
+	if (!BgmControl::IsHooked())
+	{
+		UiText::Warn("Music control is not active: %s", BgmControl::GetStatusText());
+		return;
+	}
+
+	char playing[224] = {};
+
+	if (!BgmNames::Describe(BgmControl::Current(), playing, sizeof(playing)))
+		strncpy_s(playing, "silence", _TRUNCATE);
+
+	UiText::Muted("Playing: %s", playing);
 }
 
 void MainWindow::DrawReplaySection()
@@ -654,7 +708,6 @@ void MainWindow::DrawHitboxControls()
 	ImGui::SameLine();
 	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.toggleFrameMeterKey));
 }
-
 
 void MainWindow::DrawHitboxTypeControls()
 {
@@ -1482,7 +1535,6 @@ void MainWindow::DrawFreezeModeCombo()
 		ImGui::TextDisabled("(forced - replay or watch mode)");
 	}
 }
-
 
 void MainWindow::DrawKeyboardTab()
 {

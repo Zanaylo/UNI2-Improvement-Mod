@@ -1,4 +1,4 @@
-#include "Core/Compat.h"
+﻿#include "Core/Compat.h"
 #include "Core/DpiScaling.h"
 #include "Core/ProcessTuning.h"
 #include "Core/Hotkeys.h"
@@ -13,6 +13,9 @@
 #include "D3D9/D3D9Wrapper.h"
 #include "D3D9/SceneScale.h"
 #include "D3D9/Post/ShaderPack.h"
+#include "Game/BgmControl.h"
+#include "Game/ModFiles.h"
+#include "Game/VisualThemes.h"
 #include "Game/CharaTracker.h"
 #include "Game/EngineQuality.h"
 #include "Game/KeyboardSeat.h"
@@ -26,6 +29,7 @@
 #include "Hooks/HookManager.h"
 #include "Hooks/InputProbe.h"
 #include "Hooks/hooks_input.h"
+#include "Network/NetplayTick.h"
 #include "Network/PaletteShare.h"
 #include "Palette/PaletteDrawProbe.h"
 #include "Palette/EffectPaint.h"
@@ -202,6 +206,7 @@ void Stage_GameHooks()
 		PaletteDrawProbe::Install();
 	KeyboardSeat::Initialize();
 	ReplayFiles::Initialize();
+	BgmControl::Initialize();
 	PumpWait::Apply();
 	KeyboardSeat::ApplySaved();
 }
@@ -209,6 +214,11 @@ void Stage_GameHooks()
 void Stage_PaletteShare()
 {
 	PaletteShare::Initialize();
+}
+
+void Stage_Netplay()
+{
+	NetplayTick::Initialize();
 }
 
 void Stage_InputHooks()
@@ -249,11 +259,15 @@ DWORD WINAPI InitThread(LPVOID)
 		return 0;
 	}
 
+	ModFiles::Initialize();
+	VisualThemes::Initialize();
+
 	RunStage("input entry point", Stage_InputEntry);
 
 	RunStage("d3d9 hooks", Stage_D3D9);
 	RunStage("game hooks", Stage_GameHooks);
 	RunStage("palette share", Stage_PaletteShare);
+	RunStage("netplay", Stage_Netplay);
 	RunStage("input hooks", Stage_InputHooks);
 
 	HookManager::EnableAllHooks();

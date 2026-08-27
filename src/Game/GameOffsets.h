@@ -499,7 +499,6 @@ namespace GameOffsets
 	constexpr uintptr_t kFrameWaitSkipOnce = 0x641bdc;
 	constexpr uintptr_t kFramePeriodSeconds = 0x55bc98;
 
-
 	constexpr uintptr_t kRenderPhysicalWidth = 0x5966b4;
 	constexpr uintptr_t kRenderPhysicalHeight = 0x5966b8;
 	constexpr uintptr_t kRenderVirtualWidth = 0x5966cc;
@@ -508,12 +507,10 @@ namespace GameOffsets
 	constexpr uintptr_t kRenderTargetArray = 0x5966a8;
 	constexpr uintptr_t kRenderTargetExtra = 0x5966c8;
 
-
 	constexpr uintptr_t kRenderSizeWidthWrites[] = { 0x4d2153, 0xd3ba7 };
 	constexpr uintptr_t kRenderSizeHeightWrites[] = { 0x4d215d, 0xd3bb1 };
 	constexpr uintptr_t kRenderSizeWidthLiterals[] = { 0x4d2172, 0x4d219e };
 	constexpr uintptr_t kRenderSizeHeightLiterals[] = { 0x4d2182, 0x4d2199 };
-
 
 	constexpr uintptr_t kRenderVirtualCopyBlock = 0x4d2250;
 	constexpr int kRenderVirtualCopyBlockLength = 20;
@@ -576,6 +573,45 @@ namespace GameOffsets
 	constexpr uintptr_t kSaveTotalSize = 0x59a53c;
 
 	constexpr uint32_t kSaveFileSize = 0x7d805;
+
+	constexpr uintptr_t kFnBgmPlay = 0xd6d20;
+	constexpr uintptr_t kFnBgmStop = 0xd6b10;
+	constexpr uintptr_t kFnBgmCurrent = 0xd6cd0;
+	constexpr uintptr_t kFnBgmStart = 0xd6c20;
+	constexpr uintptr_t kFnBgmPause = 0xd6b90;
+	constexpr uintptr_t kBgmState = 0x641bd4;
+	constexpr uintptr_t kBgmLoadedFlag = 0x641ab8;
+	constexpr uintptr_t kFnBgmSelectable = 0x112c10;
+	constexpr uintptr_t kBgmCurrentId = 0x595e14;
+	constexpr uintptr_t kBgmPlayer = 0x641ac0;
+	constexpr uintptr_t kBgmSuppressed = 0x641b4c;
+	constexpr uintptr_t kBgmTableBase = 0x822b60;
+	constexpr size_t kBgmTableStride = 0x40;
+	constexpr int kBgmSlotCount = 200;
+	constexpr uintptr_t kBgmSource = 0x00;
+	constexpr uintptr_t kBgmPresent = 0x04;
+	constexpr uintptr_t kBgmIsLoop = 0x08;
+	constexpr uintptr_t kBgmLoopPos = 0x10;
+	constexpr uintptr_t kBgmVolume = 0x18;
+	constexpr uintptr_t kBgmNoRecording = 0x1c;
+	constexpr uintptr_t kBgmFile = 0x20;
+	constexpr int kBgmFileMax = 32;
+
+	constexpr uintptr_t kNetplayActive = 0x5969a0;
+	constexpr uintptr_t kNetplayFrame = 0x5969a4;
+	constexpr uintptr_t kNetplayFrameB = 0x5969a8;
+	constexpr uintptr_t kRollbackCount = 0x822aac;
+
+	constexpr uintptr_t kGgpoSession = 0x3b49858;
+	constexpr uintptr_t kGgpoBackendVTable = 0x529900;
+	constexpr int kGgpoGetNetworkStats = 8;
+
+	constexpr uintptr_t kFnOnLobbyChatUpdate = 0x101d80;
+	constexpr uintptr_t kLobbyChatUpdateUser = 0x08;
+	constexpr uintptr_t kLobbyChatUpdateFlags = 0x18;
+
+	constexpr uintptr_t kSessionManager = 0x826820;
+	constexpr uintptr_t kSessionManagerLobbyId = 0x826949;
 
 	constexpr uintptr_t kPlayerCardBlock = 0x5af46c;
 	constexpr size_t kPlayerCardBlockSize = 0x4000;

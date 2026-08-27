@@ -1,4 +1,4 @@
-SETTING_STRING(dinputDllWrapper,    "Mod",      "DinputDllWrapper",     "")
+﻿SETTING_STRING(dinputDllWrapper,    "Mod",      "DinputDllWrapper",     "")
 
 // Asks GitHub once, on a thread of its own, whether a newer release exists. Nothing is downloaded
 // and nothing is installed - a window offers the release page and that is all.
@@ -365,6 +365,16 @@ SETTING_FLOAT(uiScale,              "Overlay",  "UiScale",              1.0f)
 SETTING_STRING(fontPath,            "Overlay",  "FontPath",             "")
 SETTING_FLOAT(fontSize,             "Overlay",  "FontSize",             16.0f)
 
+// A second face merged behind the first one, for the characters it has no glyph for - Japanese
+// track titles, Japanese player names. It is only ever asked for a codepoint the main face does not
+// provide, so it cannot change how anything already on screen looks. Empty picks a system CJK face.
+SETTING_STRING(fallbackFontPath,    "Overlay",  "FallbackFontPath",     "")
+
+// The visual theme, a folder under UNI2-IM/Themes whose files stand in for the game's own by path.
+// A marker file is written while one loads and removed once the game has drawn for a while, so a
+// theme that stops the game from starting switches itself off rather than locking the overlay away.
+SETTING_STRING(visualTheme,         "Theme",    "Visual",               "")
+
 // Tell Windows the game handles its own scaling. Off, a display scale above 100% makes Windows
 // render the whole window small and stretch it, which is a second blur on top of everything else and
 // costs the overlay its sharpness. On, the window is laid out in real pixels. It is off by default
@@ -417,4 +427,16 @@ SETTING_INT(keyboardSeatRouteSides, "Input",    "KeyboardSeatRouteSides", 1)
 // hundred files uninvited on the first frame is not what a switch called AutoExport should mean, and
 // the backlog is what the Export all button is for.
 SETTING_INT(replayAutoExport,       "Replays",  "AutoExport",           1)
+
+// The room roster removes a member only on an exact Left, so Disconnected, Kicked and Banned all
+// leave a ghost behind. On, those are routed to the same handler the game uses for Left.
+SETTING_INT(roomRosterFix,          "Netplay",  "RoomRosterFix",        1)
+
+// Republishes your SteamNetworkingPingLocation into the room every 30 s. The game publishes it
+// once, on join, and never again - which is the whole reason rejoining "resets" the ping.
+SETTING_INT(republishPingLocation,  "Netplay",  "RepublishPingLocation", 1)
+
+// Asks GGPO for ping and frame advantage once a frame. Off, the Netplay window still shows the
+// game's own rollback and frame counters, which are plain reads and touch no session object.
+SETTING_INT(netplayDiagnostics,     "Netplay",  "Diagnostics",          1)
 

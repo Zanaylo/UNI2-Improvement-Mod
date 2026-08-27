@@ -1,5 +1,6 @@
 #include "Core/crashdump.h"
 
+#include "Core/CrashContext.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 
@@ -61,6 +62,7 @@ LONG WINAPI UnhandledExceptionFilterProc(EXCEPTION_POINTERS* exceptionInfo)
 {
 	CreateModDirectories();
 	LogFaultLocation(exceptionInfo);
+	CrashContext::WriteAll();
 
 	const std::string path = BuildDumpPath();
 	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

@@ -13,6 +13,7 @@ public:
 	bool TakeResult(std::string& outPath);
 
 	void BeginOpen(const char* title, const char* filter);
+	void BeginFolder(const char* title);
 	void BeginSave(const char* title, const char* filter, const char* defaultName);
 
 private:

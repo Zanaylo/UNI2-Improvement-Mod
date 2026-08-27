@@ -217,6 +217,33 @@ Edits the card the game publishes to your opponent: the four plate layers and th
 title is free text - the three shop words are only the picker's state - so any phrase you write is
 saved and reaches the opponent as written.
 
+### BGM selector
+
+Its own window, opened from **Music** in the mod menu.
+
+Every screen with music goes through one entry point in the game, so any of them can be given a
+different track: a character's battle theme, the character select, the VS screen, a menu. The game
+ships three matchup themes; this is the same idea without the limit.
+
+**Soundpacks** installs a whole game's soundtrack at once and points every screen at it. **Get OST
+from French-Bread games** reads one out of a copy you already own - point it at the folder holding
+`UNIclr.exe` or `UNIst.exe`, `MBTL.exe`, or `MBAA.exe` - and installs it here with song titles and
+loop points. Nothing is downloaded, and no audio ships with the mod. Running it twice on the same
+game replaces what it added rather than doubling it. Export and Import move your packs to and from
+a single zip, so a friend can have the same set without repeating any of this.
+
+**Browse** lists every track the game can play, searchable and filtered by source, with Play to
+start one and hold it - the game gets its music back when you press Stop. The **Randomizer** hands
+the game a random track from that list every time it asks for music, and every track has a switch,
+so anything you turn off is never picked.
+
+**Rules** is the manual version: play this track for this matchup, for this character, or in place
+of this screen. Rules can be exported and imported as well, and importing adds to your list instead
+of replacing it.
+
+Your own music works too: drop `.ogg` files into a folder under `UNI2-IM/Music` and they turn up in
+the list beside everything else.
+
 ### Performance
 
 Its own window, opened from Config. It exists because the engine's frame pacing has a specific,
@@ -365,12 +392,6 @@ search, a pointer follower and a struct viewer.
 
 ## Coming later
 
-- **BGM selector**, with classic French Bread music.
-- **A real internal resolution.** Six readings of the engine have now been built and measured and
-  none of them survives a match: the sixth left every engine global alone and still drew the
-  characters and the effects several times oversized while the stage and the HUD stayed correct.
-  `UNI2-docs/HANDOFF.md` 4.D and 4.D-bis have every measurement, and 4.D-bis has the diagnosis the
-  seventh attempt should start from.
 - **Palettes in the lobby**, not only in the match.
 
 ## The ini file
@@ -806,6 +827,33 @@ Edita o cartão que o jogo publica para o seu oponente: as quatro camadas da pla
 título é texto livre — as três palavras da loja são apenas o estado do seletor — então qualquer
 frase escrita ali é salva e chega ao oponente exatamente como foi escrita.
 
+### Seletor de BGM
+
+Em uma janela própria, aberta pelo item **Music** no menu do mod.
+
+Toda tela com música passa por um único ponto de entrada no jogo, então qualquer uma pode receber
+outra faixa: o tema de batalha de um personagem, a seleção de personagem, a tela de VS, um menu. O
+jogo traz três temas de confronto; isto é a mesma ideia sem o limite.
+
+**Soundpacks** instala a trilha inteira de um jogo de uma vez e aponta todas as telas para ela.
+**Get OST from French-Bread games** lê a trilha de uma cópia que você já tem — aponte para a pasta
+com `UNIclr.exe` ou `UNIst.exe`, `MBTL.exe`, ou `MBAA.exe` — e instala aqui com títulos das músicas
+e pontos de loop. Nada é baixado, e nenhum áudio acompanha o mod. Rodar duas vezes no mesmo jogo
+substitui o que foi adicionado em vez de duplicar. Export e Import levam e trazem seus packs em um
+único zip, para um amigo ter o mesmo conjunto sem repetir nada disso.
+
+**Browse** lista todas as faixas que o jogo pode tocar, com busca e filtro por origem, e Play para
+iniciar uma e segurá-la — o jogo recupera a música dele quando você aperta Stop. O **Randomizer**
+entrega uma faixa aleatória dessa lista toda vez que o jogo pede música, e cada faixa tem um
+interruptor, então o que você desliga nunca é sorteado.
+
+**Rules** é a versão manual: toque esta faixa neste confronto, para este personagem, ou no lugar
+desta tela. As regras também podem ser exportadas e importadas, e importar soma à sua lista em vez
+de substituí-la.
+
+Sua própria música também funciona: coloque arquivos `.ogg` em uma pasta dentro de `UNI2-IM/Music`
+e eles aparecem na lista junto com o resto.
+
 ### Performance
 
 Janela própria, aberta pelo Config. Ela existe porque o ritmo de quadros da engine tem um problema
@@ -896,7 +944,6 @@ ferramentas de busca usadas para construir o resto do mod.
 
 ## O que vem depois
 
-- **Seletor de BGM**, com músicas clássicas da French Bread.
 - **Paletas no lobby**, e não apenas na partida.
 
 ## O arquivo ini
@@ -1129,6 +1176,30 @@ player's colours** は相手サイドの扱いを 1 つのスイッチで決め�
 自由入力で、ショップの 3 単語は選択 UI の状態にすぎないため、書いた文言がそのまま保存され相手に
 届きます。
 
+### BGM セレクター
+
+MOD メニューの **Music** から開く専用ウィンドウ。
+
+音楽が鳴る画面はすべてゲーム内の同じ入口を通るため、どの画面にも別の曲を割り当てられる。キャラ
+の戦闘テーマ、キャラクター選択、VS 画面、メニュー。ゲーム本体は対戦テーマを 3 つ持つが、これは
+その考え方から上限を外したもの。
+
+**Soundpacks** は 1 つのゲームのサウンドトラックをまとめて導入し、全画面をそこに向ける。**Get
+OST from French-Bread games** は手持ちのゲームから直接読み出す。`UNIclr.exe` または `UNIst.exe`、
+`MBTL.exe`、`MBAA.exe` があるフォルダーを指定すると、曲名とループ位置つきで導入される。ダウン
+ロードは一切なく、音声は MOD に同梱されない。同じゲームで二度実行しても、追加分が重複せず置き
+換わる。Export と Import は自分のパックを 1 つの zip でやり取りするので、友人も同じ構成をこの
+手順なしで揃えられる。
+
+**Browse** は再生可能な全曲の一覧。検索と出典フィルターがあり、Play で 1 曲を再生して保持する。
+Stop を押すとゲームに音楽が戻る。**Randomizer** をオンにすると、ゲームが音楽を要求するたびに
+この一覧から無作為に 1 曲が渡される。曲ごとにスイッチがあるので、切った曲は選ばれない。
+
+**Rules** は手動版。この対戦で、このキャラで、あるいはこの画面の代わりに、この曲を鳴らす。ルール
+も書き出しと読み込みができ、読み込みは既存のリストに追加される。
+
+自分の音楽も使える。`UNI2-IM/Music` の下のフォルダーに `.ogg` を置けば、他と並んで一覧に出る。
+
 ### Performance
 
 Config から開く専用ウィンドウです。エンジンのフレーム進行には特定可能な問題があります。ゲームは
@@ -1213,7 +1284,6 @@ Direct3D が縮小して合わせるため、各エッジが複数回サンプ�
 
 ## 今後の予定
 
-- **BGM セレクター**。French Bread の往年の楽曲を収録予定。
 - **ロビーでのパレット表示**。対戦中だけでなく。
 
 ## ini ファイル

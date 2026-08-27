@@ -486,6 +486,87 @@
     <ClCompile Include="depends\minhook\src\hde\hde64.c">
       <Filter>Dependencies\MinHook\hde</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\CrashContext.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmTable.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmLibrary.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ModFiles.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OstImport.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OstPac.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OstUniNames.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SoundpackTransfer.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ZipArchive.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\VisualThemes.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmNames.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmRules.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmThemes.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmTableFile.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmCatalog.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmControl.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OpponentLog.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SteamInterfaces.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RollbackStats.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomRoster.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\ModPresence.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomPing.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\NetplayTick.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\NetplayWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\MusicPanel.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\MusicWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\ThemeWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Core\Settings.h">
@@ -919,6 +1000,87 @@
     </ClInclude>
     <ClInclude Include="src\Overlay\WindowContainer\WindowType.h">
       <Filter>Overlay\WindowContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\CrashContext.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmTable.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmLibrary.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ModFiles.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OstImport.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OstPac.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OstUniNames.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SoundpackTransfer.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ZipArchive.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\VisualThemes.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmNames.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmRules.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmThemes.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmTableFile.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmCatalog.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmControl.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OpponentLog.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SteamInterfaces.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RollbackStats.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomRoster.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\ModPresence.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomPing.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\NetplayTick.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\NetplayWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\MusicPanel.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\MusicWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\ThemeWindow.h">
+      <Filter>Overlay\Window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

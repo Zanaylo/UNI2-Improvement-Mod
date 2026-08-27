@@ -655,7 +655,7 @@ std::string ReplayFiles::Export(int slot)
 	FILE* file = nullptr;
 	if (fopen_s(&file, path.c_str(), "wb") != 0 || file == nullptr)
 	{
-		sprintf_s(g_status, "could not write %s", path.c_str());
+		_snprintf_s(g_status, _TRUNCATE, "could not write %s", path.c_str());
 		return std::string();
 	}
 
@@ -677,7 +677,7 @@ std::string ReplayFiles::Export(int slot)
 	if (!ok)
 	{
 		DeleteFileA(path.c_str());
-		sprintf_s(g_status, "could not write %s", path.c_str());
+		_snprintf_s(g_status, _TRUNCATE, "could not write %s", path.c_str());
 		return std::string();
 	}
 
@@ -976,7 +976,7 @@ bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError
 	if (!BuildRecord(record, outError))
 		return false;
 
-	sprintf_s(g_status, "playing %s", Matchup(record, names).c_str());
+	_snprintf_s(g_status, _TRUNCATE, "playing %s", Matchup(record, names).c_str());
 
 	g_playbackRecord.swap(record);
 	InterlockedExchange(&g_playbackRequest, 1);
@@ -1231,7 +1231,7 @@ void ReplayFiles::Update()
 			const std::string path = Export(slot);
 			if (!path.empty())
 			{
-				sprintf_s(g_status, "saved %s", path.c_str());
+				_snprintf_s(g_status, _TRUNCATE, "saved %s", path.c_str());
 				LOG("replay files: %s", g_status);
 			}
 		}

@@ -1,4 +1,4 @@
-#include "Overlay/WindowContainer/WindowContainer.h"
+﻿#include "Overlay/WindowContainer/WindowContainer.h"
 
 #include "Core/info.h"
 #include "Core/interfaces.h"
@@ -8,6 +8,8 @@
 #include "Overlay/Window/HitboxLegendWindow.h"
 #include "Overlay/Window/PaletteEditorWindow.h"
 #include "Overlay/Window/PaletteWindow.h"
+#include "Overlay/Window/MusicWindow.h"
+#include "Overlay/Window/NetplayWindow.h"
 #include "Overlay/Window/PerformanceWindow.h"
 #include "Overlay/Window/PlayerControlWindow.h"
 #include "Overlay/Window/UpdateNotifierWindow.h"
@@ -44,6 +46,10 @@ WindowContainer::WindowContainer()
 	m_windows[WindowType_Palette] = std::make_unique<PaletteWindow>("Palette", true);
 
 	m_windows[WindowType_Performance] = std::make_unique<PerformanceWindow>("Performance", true);
+
+	m_windows[WindowType_Netplay] = std::make_unique<NetplayWindow>("Netplay", true);
+
+	m_windows[WindowType_Music] = std::make_unique<MusicWindow>("Music", true);
 
 	m_windows[WindowType_UpdateNotifier] = std::make_unique<UpdateNotifierWindow>(
 		"Update available", true);

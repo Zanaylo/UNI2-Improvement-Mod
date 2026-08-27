@@ -310,6 +310,7 @@ void GraphicsPanel::DrawOverlayAppearance()
 	Help("Both are live. Set [Overlay] FontPath in the ini to use a .ttf of your own.");
 
 	Muted("%s", OverlayFont::GetStatusText());
+	Muted("Japanese and the rest fall back to %s", OverlayFont::GetFallbackText());
 
 	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
 	const float scale = DeviceHooks::GetOverlayScale();

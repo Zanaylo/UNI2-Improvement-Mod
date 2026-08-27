@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 enum WindowType
 {
@@ -11,6 +11,9 @@ enum WindowType
 	WindowType_PaletteEditor,
 	WindowType_Palette,
 	WindowType_Performance,
+	WindowType_Netplay,
+	WindowType_Music,
+	WindowType_Theme,
 	WindowType_Debug,
 	WindowType_UpdateNotifier,
 	WindowType_COUNT

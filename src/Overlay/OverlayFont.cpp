@@ -22,9 +22,23 @@ const char* const kCandidates[] = {
 	"FreeSans.ttf",
 };
 
+const char* const kFallbackCandidates[] = {
+	"meiryo.ttc",
+	"YuGothM.ttc",
+	"YuGothR.ttc",
+	"msgothic.ttc",
+	"msmincho.ttc",
+	"malgun.ttf",
+	"simsun.ttc",
+	"NotoSansCJK-Regular.ttc",
+	"NotoSansCJKjp-Regular.otf",
+};
+
 constexpr int kCandidateCount = sizeof(kCandidates) / sizeof(kCandidates[0]);
+constexpr int kFallbackCount = sizeof(kFallbackCandidates) / sizeof(kFallbackCandidates[0]);
 
 char g_status[320] = "not loaded";
+char g_fallback[160] = "none";
 
 std::string FontsDirectory()
 {
@@ -45,15 +59,41 @@ bool FileExists(const std::string& path)
 		(attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 }
 
-bool AddFace(const std::string& path, float size)
+bool AddFace(const std::string& path, float size, bool merge)
 {
 	if (path.empty() || !FileExists(path))
 		return false;
 
 	ImFontConfig config;
 	config.SizePixels = size;
+	config.MergeMode = merge;
 
 	return ImGui::GetIO().Fonts->AddFontFromFileTTF(path.c_str(), size, &config) != nullptr;
+}
+
+void AddFallback(float size)
+{
+	if (AddFace(g_settings.fallbackFontPath, size, true))
+	{
+		strncpy_s(g_fallback, g_settings.fallbackFontPath.c_str(), _TRUNCATE);
+		LOG("[OverlayFont] fallback face %s", g_fallback);
+		return;
+	}
+
+	const std::string directory = FontsDirectory();
+
+	for (int i = 0; i < kFallbackCount; ++i)
+	{
+		if (!AddFace(directory + kFallbackCandidates[i], size, true))
+			continue;
+
+		strncpy_s(g_fallback, kFallbackCandidates[i], _TRUNCATE);
+		LOG("[OverlayFont] fallback face %s", g_fallback);
+		return;
+	}
+
+	LOG("[OverlayFont] no CJK face found in %s, so Japanese titles will show as boxes",
+		directory.c_str());
 }
 
 }
@@ -62,11 +102,12 @@ void OverlayFont::Load()
 {
 	const float size = g_modVals.fontSize;
 
-	if (AddFace(g_settings.fontPath, size))
+	if (AddFace(g_settings.fontPath, size, false))
 	{
 		snprintf(g_status, sizeof(g_status), "%s at %.0fpx", g_settings.fontPath.c_str(),
 			static_cast<double>(size));
 		LOG("[OverlayFont] %s", g_status);
+		AddFallback(size);
 		return;
 	}
 
@@ -80,16 +121,18 @@ void OverlayFont::Load()
 
 	for (int i = 0; i < kCandidateCount; ++i)
 	{
-		if (!AddFace(directory + kCandidates[i], size))
+		if (!AddFace(directory + kCandidates[i], size, false))
 			continue;
 
 		snprintf(g_status, sizeof(g_status), "%s at %.0fpx", kCandidates[i],
 			static_cast<double>(size));
 		LOG("[OverlayFont] %s", g_status);
+		AddFallback(size);
 		return;
 	}
 
 	ImGui::GetIO().Fonts->AddFontDefault();
+	AddFallback(size);
 
 	snprintf(g_status, sizeof(g_status), "no scalable face found in %s - using the stock bitmap "
 		"font, which will look soft above 1080p. Set [Overlay] FontPath to a .ttf.",
@@ -101,4 +144,9 @@ void OverlayFont::Load()
 const char* OverlayFont::GetStatusText()
 {
 	return g_status;
+}
+
+const char* OverlayFont::GetFallbackText()
+{
+	return g_fallback;
 }

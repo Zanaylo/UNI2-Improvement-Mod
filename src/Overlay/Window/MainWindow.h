@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Hotkeys.h"
 #include "Overlay/Window/ColorCustomizePanel.h"
@@ -34,6 +34,8 @@ private:
 	void DrawKeybindsTab();
 	void DrawKeyboardTab();
 	void DrawReplaySection();
+	void DrawPlayerCount();
+	void DrawMusicSection();
 	void DrawCustomSection();
 	void DrawPalettesTab();
 	void CaptureBind();

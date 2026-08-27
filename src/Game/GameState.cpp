@@ -128,3 +128,21 @@ bool GameState::IsInMatch()
 
 	return g_inMatch;
 }
+
+int GameState::GetLoadedCharacter(int side)
+{
+	if (side < 0 || side > 1)
+		return -1;
+
+	const uintptr_t address = RvaToAddress(GameOffsets::kCharaRecordBase) +
+		side * GameOffsets::kCharaRecordStride;
+
+	uint32_t number = 0;
+	if (!TryReadDword(reinterpret_cast<const void*>(address), number))
+		return -1;
+
+	if (number > 0x7fffffffu)
+		return -1;
+
+	return static_cast<int>(number);
+}

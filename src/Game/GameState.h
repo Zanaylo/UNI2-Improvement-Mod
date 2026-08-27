@@ -1,6 +1,3 @@
-// "In a match" and "the simulation is ticking" are different questions: hitstop, super freeze and
-// the pause menu all stop scripts without leaving the match.
-
 #pragma once
 
 #include <cstdint>
@@ -22,4 +19,6 @@ namespace GameState
 	bool AllowsPalettes();
 
 	bool IsSimulating();
+
+	int GetLoadedCharacter(int side);
 }

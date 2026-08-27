@@ -6,6 +6,7 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "D3D9/PresentTuning.h"
+#include "Game/VisualThemes.h"
 #include "D3D9/Post/SceneUpscale.h"
 #include "D3D9/SceneScale.h"
 #include "D3D9/Post/PostChain.h"
@@ -15,6 +16,7 @@
 #include "Game/PotatoMode.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
+#include "Network/NetplayTick.h"
 #include "Game/ReplayState.h"
 #include "Hooks/HookManager.h"
 #include "Hooks/InputProbe.h"
@@ -173,7 +175,6 @@ bool TargetIsFullFrame(IDirect3DDevice9* device, unsigned& outWidth, unsigned& o
 	const bool presentSized = desc.Width == g_presentParameters.BackBufferWidth &&
 		desc.Height == g_presentParameters.BackBufferHeight;
 
-
 	const bool referenceSized = desc.Width == kSceneWidth && desc.Height == kSceneHeight;
 
 	return presentSized || referenceSized;
@@ -302,6 +303,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 		{
 			Profiler::Scope scope(Profiler::Section_PresentOnline);
 			OnlineState::Update();
+			NetplayTick::Update();
 		}
 
 		{
@@ -340,15 +342,12 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	{
 		Profiler::Scope scope(Profiler::Section_PresentPalette);
 
-
 		PaletteControl::OnFrame();
 
 		PaletteSeat::OnFrame();
 		PalettePaint::OnFrame();
 
-
 		EffectOwner::OnFrame();
-
 
 		PaletteChoice::OnFrame();
 
@@ -369,6 +368,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	SceneScale::OnFrame();
 	SceneUpscale::OnPresent();
+	VisualThemes::OnFrame();
 
 	InputProbe::OnFrame();
 	StageColor::OnFrame();

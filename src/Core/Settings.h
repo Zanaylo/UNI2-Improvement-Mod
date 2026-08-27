@@ -1,5 +1,3 @@
-// The ini, generated from settings.def so a key cannot be saved that ApplySettings never reads.
-
 #pragma once
 
 #include <string>
@@ -77,6 +75,10 @@ struct ModValues
 	bool keyboardSeatRouteSides;
 
 	bool replayAutoExport;
+
+	bool roomRosterFix;
+	bool republishPingLocation;
+	bool netplayDiagnostics;
 
 	int presentWidth;
 	int presentHeight;
