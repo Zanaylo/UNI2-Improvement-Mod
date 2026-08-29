@@ -12,4 +12,10 @@ public:
 protected:
 	void BeforeDraw() override;
 	void Draw() override;
+
+private:
+	void DrawThemeList(int count, int active);
+	void DrawControls(int active);
+	void DrawScreens(int active);
+	void DrawCursorSearch();
 };

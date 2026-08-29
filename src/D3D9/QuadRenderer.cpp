@@ -1,5 +1,6 @@
 #include "D3D9/QuadRenderer.h"
 
+#include <cmath>
 #include <vector>
 
 namespace {
@@ -24,6 +25,7 @@ IDirect3DDevice9* g_device = nullptr;
 IDirect3DStateBlock9* g_stateBlock = nullptr;
 IDirect3DTexture9* g_white = nullptr;
 bool g_openedScene = false;
+int g_blend = QuadRenderer::Blend_Normal;
 
 std::vector<Vertex> g_batch;
 IDirect3DTexture9* g_batchTexture = nullptr;
@@ -100,6 +102,53 @@ void PushQuad(IDirect3DTexture9* texture, float x, float y, float width, float h
 	PushQuadShaded(texture, x, y, width, height, u0, v0, u1, v1, color, color);
 }
 
+void PushQuadRotated(IDirect3DTexture9* texture, float x, float y, float width, float height,
+	float pivotX, float pivotY, float radians, float u0, float v0, float u1, float v1,
+	uint32_t color)
+{
+	if (g_device == nullptr || width <= 0.0f || height <= 0.0f)
+		return;
+
+	if (texture == nullptr)
+		texture = g_white;
+
+	if (texture != g_batchTexture)
+	{
+		Flush();
+		g_batchTexture = texture;
+	}
+
+	const float sine = sinf(radians);
+	const float cosine = cosf(radians);
+	const float centreX = x + pivotX - 0.5f;
+	const float centreY = y + pivotY - 0.5f;
+
+	const float cornerX[4] = { -pivotX, width - pivotX, -pivotX, width - pivotX };
+	const float cornerY[4] = { -pivotY, -pivotY, height - pivotY, height - pivotY };
+	const float cornerU[4] = { u0, u1, u0, u1 };
+	const float cornerV[4] = { v0, v0, v1, v1 };
+
+	Vertex corners[4] = {};
+
+	for (int i = 0; i < 4; ++i)
+	{
+		corners[i].x = centreX + cornerX[i] * cosine - cornerY[i] * sine;
+		corners[i].y = centreY + cornerX[i] * sine + cornerY[i] * cosine;
+		corners[i].z = 0.0f;
+		corners[i].rhw = 1.0f;
+		corners[i].color = color;
+		corners[i].u = cornerU[i];
+		corners[i].v = cornerV[i];
+	}
+
+	g_batch.push_back(corners[0]);
+	g_batch.push_back(corners[1]);
+	g_batch.push_back(corners[2]);
+	g_batch.push_back(corners[1]);
+	g_batch.push_back(corners[3]);
+	g_batch.push_back(corners[2]);
+}
+
 }
 
 bool QuadRenderer::Begin(IDirect3DDevice9* device)
@@ -131,6 +180,7 @@ bool QuadRenderer::Begin(IDirect3DDevice9* device)
 
 	g_batch.clear();
 	g_batchTexture = g_white;
+	g_blend = Blend_Normal;
 
 	device->SetVertexShader(nullptr);
 	device->SetPixelShader(nullptr);
@@ -169,8 +219,36 @@ bool QuadRenderer::Begin(IDirect3DDevice9* device)
 	return true;
 }
 
+void QuadRenderer::SetBlend(int blend)
+{
+	if (g_device == nullptr || blend == g_blend)
+		return;
+
+	Flush();
+	g_blend = blend;
+
+	if (blend == Blend_Additive)
+	{
+		g_device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+		g_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+		return;
+	}
+
+	if (blend == Blend_Subtractive)
+	{
+		g_device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_REVSUBTRACT);
+		g_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+		return;
+	}
+
+	g_device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+	g_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+}
+
 void QuadRenderer::End()
 {
+	SetBlend(Blend_Normal);
+
 	if (g_device == nullptr)
 		return;
 
@@ -235,6 +313,19 @@ void QuadRenderer::TexturedRect(IDirect3DTexture9* texture, float x, float y, fl
 	float height, float u0, float v0, float u1, float v1, uint32_t tint)
 {
 	PushQuad(texture, x, y, width, height, u0, v0, u1, v1, tint);
+}
+
+void QuadRenderer::TexturedRectRotated(IDirect3DTexture9* texture, float x, float y, float width,
+	float height, float pivotX, float pivotY, float radians,
+	float u0, float v0, float u1, float v1, uint32_t tint)
+{
+	if (radians == 0.0f)
+	{
+		PushQuad(texture, x, y, width, height, u0, v0, u1, v1, tint);
+		return;
+	}
+
+	PushQuadRotated(texture, x, y, width, height, pivotX, pivotY, radians, u0, v0, u1, v1, tint);
 }
 
 void QuadRenderer::NineSlice(IDirect3DTexture9* texture, unsigned textureWidth,

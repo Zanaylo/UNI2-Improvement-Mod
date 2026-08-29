@@ -370,10 +370,14 @@ SETTING_FLOAT(fontSize,             "Overlay",  "FontSize",             16.0f)
 // provide, so it cannot change how anything already on screen looks. Empty picks a system CJK face.
 SETTING_STRING(fallbackFontPath,    "Overlay",  "FallbackFontPath",     "")
 
-// The visual theme, a folder under UNI2-IM/Themes whose files stand in for the game's own by path.
-// A marker file is written while one loads and removed once the game has drawn for a while, so a
-// theme that stops the game from starting switches itself off rather than locking the overlay away.
-SETTING_STRING(visualTheme,         "Theme",    "Visual",               "")
+// The screen theme: a folder under UNI2-IM/Screens holding another French-Bread game's .pat files
+// and one screen.ini that says which of their patterns make up each screen and which UNI2 scene it
+// stands in for. Empty leaves every screen the game's own.
+SETTING_STRING(screenTheme,         "Theme",    "Screens",              "")
+
+// Draw the screen theme at all. The theme stays selected while this is off, so a screen that goes
+// wrong can be put aside without losing which theme was chosen.
+SETTING_INT(screenThemeDrawn,       "Theme",    "ScreensDrawn",         1)
 
 // Tell Windows the game handles its own scaling. Off, a display scale above 100% makes Windows
 // render the whole window small and stretch it, which is a second blur on top of everything else and

@@ -12,6 +12,8 @@
 #include "Overlay/Window/NetplayWindow.h"
 #include "Overlay/Window/PerformanceWindow.h"
 #include "Overlay/Window/PlayerControlWindow.h"
+#include "Overlay/Window/ThemeWindow.h"
+#include "Screens/ScreenDirector.h"
 #include "Overlay/Window/UpdateNotifierWindow.h"
 #include "Overlay/Window/HitboxOverlay.h"
 #include "Overlay/Window/MainWindow.h"
@@ -50,6 +52,9 @@ WindowContainer::WindowContainer()
 	m_windows[WindowType_Netplay] = std::make_unique<NetplayWindow>("Netplay", true);
 
 	m_windows[WindowType_Music] = std::make_unique<MusicWindow>("Music", true);
+
+	if (!ScreenDirector::kOnHold)
+		m_windows[WindowType_Theme] = std::make_unique<ThemeWindow>("Theme", true);
 
 	m_windows[WindowType_UpdateNotifier] = std::make_unique<UpdateNotifierWindow>(
 		"Update available", true);

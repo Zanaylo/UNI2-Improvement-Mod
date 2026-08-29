@@ -36,6 +36,7 @@ private:
 	void DrawReplaySection();
 	void DrawPlayerCount();
 	void DrawMusicSection();
+	void DrawThemeSection();
 	void DrawCustomSection();
 	void DrawPalettesTab();
 	void CaptureBind();

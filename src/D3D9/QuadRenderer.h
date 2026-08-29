@@ -8,8 +8,17 @@
 
 namespace QuadRenderer
 {
+	enum Blend
+	{
+		Blend_Normal = 0,
+		Blend_Additive = 1,
+		Blend_Subtractive = 2,
+	};
+
 	bool Begin(IDirect3DDevice9* device);
 	void End();
+
+	void SetBlend(int blend);
 
 	void OnDeviceLost();
 
@@ -20,6 +29,10 @@ namespace QuadRenderer
 	void StrokeRect(float x, float y, float width, float height, float thickness, uint32_t color);
 
 	void TexturedRect(IDirect3DTexture9* texture, float x, float y, float width, float height,
+		float u0, float v0, float u1, float v1, uint32_t tint);
+
+	void TexturedRectRotated(IDirect3DTexture9* texture, float x, float y, float width, float height,
+		float pivotX, float pivotY, float radians,
 		float u0, float v0, float u1, float v1, uint32_t tint);
 
 	void NineSlice(IDirect3DTexture9* texture, unsigned textureWidth, unsigned textureHeight,

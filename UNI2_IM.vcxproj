@@ -47,7 +47,7 @@
     <TargetName>dinput8</TargetName>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\</IntDir>
-    <IncludePath>$(ProjectDir)src;$(ProjectDir)depends\imgui;$(ProjectDir)depends\imgui\backends;$(ProjectDir)depends\minhook\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)src;$(ProjectDir)depends\imgui;$(ProjectDir)depends\imgui\backends;$(ProjectDir)depends\minhook\include;$(ProjectDir)depends\minimp3;$(ProjectDir)depends\vorbis\include;$(ProjectDir)depends\vorbis\vorbis;$(IncludePath)</IncludePath>
   </PropertyGroup>
 
   <!-- F5 launches the game with the freshly built proxy beside it, so breakpoints bind on load.
@@ -118,6 +118,11 @@
     <ClCompile Include="src\Core\dllmain.cpp" />
     <ClCompile Include="src\Core\CrashContext.cpp" />
     <ClCompile Include="src\Game\BgmTable.cpp" />
+    <ClCompile Include="src\Game\AudioFile.cpp" />
+    <ClCompile Include="src\Game\OggWriter.cpp" />
+    <ClCompile Include="src\Game\MusicRefresh.cpp" />
+    <ClCompile Include="src\Game\UserMusic.cpp" />
+    <ClCompile Include="src\Game\SoundpackBuilder.cpp" />
     <ClCompile Include="src\Game\BgmLibrary.cpp" />
     <ClCompile Include="src\Game\ModFiles.cpp" />
     <ClCompile Include="src\Game\OstImport.cpp" />
@@ -125,7 +130,6 @@
     <ClCompile Include="src\Game\OstUniNames.cpp" />
     <ClCompile Include="src\Game\SoundpackTransfer.cpp" />
     <ClCompile Include="src\Core\ZipArchive.cpp" />
-    <ClCompile Include="src\Game\VisualThemes.cpp" />
     <ClCompile Include="src\Game\BgmNames.cpp" />
     <ClCompile Include="src\Game\BgmRules.cpp" />
     <ClCompile Include="src\Game\BgmThemes.cpp" />
@@ -219,6 +223,15 @@
     <ClCompile Include="src\Game\CgImage.cpp" />
     <ClCompile Include="src\Game\PatParts.cpp" />
     <ClCompile Include="src\Game\SaveData.cpp" />
+    <ClCompile Include="src\Game\SceneWatch.cpp" />
+    <ClCompile Include="src\Game\CharaSelectProbe.cpp" />
+    <ClCompile Include="src\Game\CharaSelectState.cpp" />
+    <ClCompile Include="src\Screens\CharaGrid.cpp" />
+    <ClCompile Include="src\Screens\PatFile.cpp" />
+    <ClCompile Include="src\Screens\PatTextures.cpp" />
+    <ClCompile Include="src\Screens\PatPainter.cpp" />
+    <ClCompile Include="src\Screens\ScreenTheme.cpp" />
+    <ClCompile Include="src\Screens\ScreenDirector.cpp" />
     <ClCompile Include="src\Game\ColorPartTable.cpp" />
     <ClCompile Include="src\Game\StockPalettes.cpp" />
     <ClCompile Include="src\Game\FrameDataTable.cpp" />
@@ -278,6 +291,11 @@
     <ClInclude Include="src\Core\Settings.h" />
     <ClInclude Include="src\Core\CrashContext.h" />
     <ClInclude Include="src\Game\BgmTable.h" />
+    <ClInclude Include="src\Game\AudioFile.h" />
+    <ClInclude Include="src\Game\OggWriter.h" />
+    <ClInclude Include="src\Game\MusicRefresh.h" />
+    <ClInclude Include="src\Game\UserMusic.h" />
+    <ClInclude Include="src\Game\SoundpackBuilder.h" />
     <ClInclude Include="src\Game\BgmLibrary.h" />
     <ClInclude Include="src\Game\ModFiles.h" />
     <ClInclude Include="src\Game\OstImport.h" />
@@ -285,7 +303,6 @@
     <ClInclude Include="src\Game\OstUniNames.h" />
     <ClInclude Include="src\Game\SoundpackTransfer.h" />
     <ClInclude Include="src\Core\ZipArchive.h" />
-    <ClInclude Include="src\Game\VisualThemes.h" />
     <ClInclude Include="src\Game\BgmNames.h" />
     <ClInclude Include="src\Game\BgmRules.h" />
     <ClInclude Include="src\Game\BgmThemes.h" />
@@ -348,6 +365,15 @@
     <ClInclude Include="src\Game\CgImage.h" />
     <ClInclude Include="src\Game\PatParts.h" />
     <ClInclude Include="src\Game\SaveData.h" />
+    <ClInclude Include="src\Game\SceneWatch.h" />
+    <ClInclude Include="src\Game\CharaSelectProbe.h" />
+    <ClInclude Include="src\Game\CharaSelectState.h" />
+    <ClInclude Include="src\Screens\CharaGrid.h" />
+    <ClInclude Include="src\Screens\PatFile.h" />
+    <ClInclude Include="src\Screens\PatTextures.h" />
+    <ClInclude Include="src\Screens\PatPainter.h" />
+    <ClInclude Include="src\Screens\ScreenTheme.h" />
+    <ClInclude Include="src\Screens\ScreenDirector.h" />
     <ClInclude Include="src\Game\ColorPartTable.h" />
     <ClInclude Include="src\Game\StockPalettes.h" />
     <ClInclude Include="src\Overlay\Window\DebugWindow.h" />
@@ -462,6 +488,71 @@
     <ClCompile Include="depends\minhook\src\trampoline.c" />
     <ClCompile Include="depends\minhook\src\hde\hde32.c" />
     <ClCompile Include="depends\minhook\src\hde\hde64.c" />
+    <ClInclude Include="depends\minimp3\minimp3.h" />
+    <ClInclude Include="depends\minimp3\minimp3_ex.h" />
+    <ClCompile Include="depends\vorbis\ogg\bitwise.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\ogg\framing.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\analysis.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\bitrate.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\block.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\codebook.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\envelope.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\floor0.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\floor1.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\info.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\lpc.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\lsp.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\mapping0.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\mdct.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\psy.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\registry.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\res0.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\sharedbook.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\smallft.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\vorbisenc.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\window.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
   </ItemGroup>
 
   <ItemGroup>
@@ -500,5 +591,174 @@
          written to the game folder and never to a release. -->
     <WriteLinesToFile File="$(GameDir)steam_appid.txt" Lines="$(SteamAppId)" Overwrite="true"
                       Condition="!Exists('$(GameDir)steam_appid.txt')" ContinueOnError="true" />
+  </Target>
+  <!-- Solution Explorer folders are a generated artifact, not a hand-kept file. Every new source
+       file used to land at the project root until somebody remembered to edit the .filters by hand.
+       This rebuilds it from the item lists on every build and writes only when it actually changed,
+       so the tree always mirrors the folders on disk. Set SyncFilters=false to skip it. -->
+  <UsingTask TaskName="SyncFilters" TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Compiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Includes ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Nones ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <OutputFile ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Class" Language="cs"><![CDATA[
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
+public class SyncFilters : Task
+{
+    public ITaskItem[] Compiles { get; set; }
+    public ITaskItem[] Includes { get; set; }
+    public ITaskItem[] Nones { get; set; }
+    public string OutputFile { get; set; }
+
+    const char Sep = (char)92;
+    static readonly string Wall = Sep.ToString();
+    static readonly string Quote = ((char)34).ToString();
+    static readonly string Nl = ((char)13).ToString() + ((char)10).ToString();
+
+    static readonly string[][] Roots =
+    {
+        new[] { "depends" + Wall + "imgui", "Dependencies" + Wall + "ImGui" },
+        new[] { "depends" + Wall + "minhook" + Wall + "src", "Dependencies" + Wall + "MinHook" },
+        new[] { "depends" + Wall + "minhook", "Dependencies" + Wall + "MinHook" },
+        new[] { "depends" + Wall + "minimp3", "Dependencies" + Wall + "minimp3" },
+        new[] { "depends" + Wall + "vorbis" + Wall + "ogg", "Dependencies" + Wall + "Vorbis" },
+        new[] { "depends" + Wall + "vorbis" + Wall + "vorbis", "Dependencies" + Wall + "Vorbis" },
+        new[] { "depends" + Wall + "vorbis", "Dependencies" + Wall + "Vorbis" },
+        new[] { "resource", "Resources" },
+        new[] { "src", "" },
+    };
+
+    static string FilterOf(string spec)
+    {
+        var dir = Path.GetDirectoryName(spec ?? string.Empty) ?? string.Empty;
+        dir = dir.Replace((char)47, Sep).Trim(Sep);
+
+        foreach (var pair in Roots)
+        {
+            if (string.Equals(dir, pair[0], StringComparison.OrdinalIgnoreCase))
+                return pair[1];
+
+            var prefix = pair[0] + Wall;
+
+            if (dir.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var rest = dir.Substring(prefix.Length);
+                return pair[1].Length == 0 ? rest : pair[1] + Wall + rest;
+            }
+        }
+
+        return dir;
+    }
+
+    static ulong Fnv(string text, ulong seed)
+    {
+        var hash = seed;
+
+        foreach (var c in text)
+        {
+            hash ^= c;
+            hash *= 1099511628211UL;
+        }
+
+        return hash;
+    }
+
+    static string Identifier(string name)
+    {
+        var key = name.ToLowerInvariant();
+        var hex = Fnv(key, 14695981039346656037UL).ToString("x16") +
+                  Fnv(key + Wall, 1469598103934665603UL).ToString("x16");
+
+        return "{" + hex.Substring(0, 8) + "-" + hex.Substring(8, 4) + "-" + hex.Substring(12, 4) +
+               "-" + hex.Substring(16, 4) + "-" + hex.Substring(20, 12) + "}";
+    }
+
+    static void Group(StringBuilder text, string element, ITaskItem[] items, SortedSet<string> folders)
+    {
+        if (items == null || items.Length == 0)
+            return;
+
+        text.Append("  <ItemGroup>" + Nl);
+
+        foreach (var item in items)
+        {
+            var filter = FilterOf(item.ItemSpec);
+            var open = "    <" + element + " Include=" + Quote + item.ItemSpec + Quote;
+
+            if (filter.Length == 0)
+            {
+                text.Append(open + " />" + Nl);
+                continue;
+            }
+
+            for (var at = filter.IndexOf(Sep); at >= 0; at = filter.IndexOf(Sep, at + 1))
+                folders.Add(filter.Substring(0, at));
+
+            folders.Add(filter);
+
+            text.Append(open + ">" + Nl);
+            text.Append("      <Filter>" + filter + "</Filter>" + Nl);
+            text.Append("    </" + element + ">" + Nl);
+        }
+
+        text.Append("  </ItemGroup>" + Nl);
+    }
+
+    public override bool Execute()
+    {
+        var folders = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var body = new StringBuilder();
+
+        Group(body, "ClCompile", Compiles, folders);
+        Group(body, "ClInclude", Includes, folders);
+        Group(body, "None", Nones, folders);
+
+        var text = new StringBuilder();
+        text.Append("<?xml version=" + Quote + "1.0" + Quote + " encoding=" + Quote + "utf-8" + Quote + "?>" + Nl);
+        text.Append("<Project ToolsVersion=" + Quote + "4.0" + Quote + " xmlns=" + Quote +
+                    "http://schemas.microsoft.com/developer/msbuild/2003" + Quote + ">" + Nl);
+        text.Append("  <ItemGroup>" + Nl);
+
+        foreach (var folder in folders)
+        {
+            text.Append("    <Filter Include=" + Quote + folder + Quote + ">" + Nl);
+            text.Append("      <UniqueIdentifier>" + Identifier(folder) + "</UniqueIdentifier>" + Nl);
+            text.Append("    </Filter>" + Nl);
+        }
+
+        text.Append("  </ItemGroup>" + Nl);
+        text.Append(body.ToString());
+        text.Append("</Project>");
+
+        var wanted = text.ToString();
+
+        if (File.Exists(OutputFile) && File.ReadAllText(OutputFile) == wanted)
+            return true;
+
+        File.WriteAllText(OutputFile, wanted, new UTF8Encoding(true));
+        Log.LogMessage(MessageImportance.High,
+            "Solution Explorer folders rebuilt: " + folders.Count + " filter(s)");
+
+        return true;
+    }
+}
+]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="SyncProjectFilters" BeforeTargets="PrepareForBuild"
+          Condition="'$(SyncFilters)'!='false' And '$(DesignTimeBuild)'!='true'">
+    <SyncFilters Compiles="@(ClCompile)" Includes="@(ClInclude)" Nones="@(None)"
+                 OutputFile="$(MSBuildProjectFullPath).filters" />
   </Target>
 </Project>

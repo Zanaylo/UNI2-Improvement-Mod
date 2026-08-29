@@ -3,6 +3,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/BgmTable.h"
+#include "Game/UserMusic.h"
 
 #include <Windows.h>
 
@@ -26,109 +27,34 @@ std::string FolderPath()
 	return GetModRootPath("library");
 }
 
-std::string MusicPath()
+int LoadUserMusic()
 {
-	return GetModRootPath("Music");
-}
-
-void PrettyTitle(const char* file, char* out, int size)
-{
-	int at = 0;
-
-	for (; file[at] != 0 && at + 1 < size; ++at)
-		out[at] = file[at] == '_' ? ' ' : file[at];
-
-	out[at] = 0;
-}
-
-int LoadUserFolder(const std::string& folder, const char* tag)
-{
-	WIN32_FIND_DATAA found = {};
-	const HANDLE search = FindFirstFileA((folder + "\\*.ogg").c_str(), &found);
-
-	if (search == INVALID_HANDLE_VALUE)
-		return 0;
-
 	int added = 0;
 
-	do
+	for (const UserMusic::Entry& entry : UserMusic::Snapshot())
 	{
+		if (entry.status != UserMusic::Status_Ready)
+			continue;
+
 		if (g_tracks.size() >= BgmLibrary::kMaxTracks)
 			break;
 
-		char stem[64] = {};
-		strncpy_s(stem, found.cFileName, _TRUNCATE);
-
-		char* dot = strrchr(stem, '.');
-
-		if (dot != nullptr)
-			*dot = 0;
-
-		if (stem[0] == 0 || strlen(stem) > 31)
-		{
-			LOG("BgmLibrary: '%s' in %s is too long for the game's 31 character name field",
-				found.cFileName, tag);
+		if (BgmLibrary::Find(entry.slotName.c_str()) >= 0)
 			continue;
-		}
-
-		if (BgmLibrary::Find(stem) >= 0)
-		{
-			LOG("BgmLibrary: '%s' in %s is already the name of another track, skipped", stem, tag);
-			continue;
-		}
 
 		BgmLibrary::Track track = {};
-		strncpy_s(track.file, stem, _TRUNCATE);
-		strncpy_s(track.tag, tag, _TRUNCATE);
-		PrettyTitle(stem, track.title, sizeof(track.title));
+		strncpy_s(track.file, entry.slotName.c_str(), _TRUNCATE);
+		strncpy_s(track.tag, entry.pack.c_str(), _TRUNCATE);
+		strncpy_s(track.title, entry.title.c_str(), _TRUNCATE);
 		track.loops = true;
-		track.loopPos = 0.0;
+		track.loopPos = entry.loopPos;
 		track.volume = 10000;
 		track.slot = -1;
 
 		g_tracks.push_back(track);
 		++added;
 	}
-	while (FindNextFileA(search, &found) != 0);
 
-	FindClose(search);
-	return added;
-}
-
-int LoadUserMusic()
-{
-	const std::string root = MusicPath();
-
-	if (GetFileAttributesA(root.c_str()) == INVALID_FILE_ATTRIBUTES)
-	{
-		CreateDirectoryA(root.c_str(), nullptr);
-		return 0;
-	}
-
-	WIN32_FIND_DATAA found = {};
-	const HANDLE search = FindFirstFileA((root + "\\*").c_str(), &found);
-
-	if (search == INVALID_HANDLE_VALUE)
-		return 0;
-
-	int added = 0;
-
-	do
-	{
-		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
-			continue;
-
-		if (found.cFileName[0] == '.')
-			continue;
-
-		char tag[16] = {};
-		strncpy_s(tag, found.cFileName, _TRUNCATE);
-
-		added += LoadUserFolder(root + "\\" + found.cFileName, tag);
-	}
-	while (FindNextFileA(search, &found) != 0);
-
-	FindClose(search);
 	return added;
 }
 
@@ -251,6 +177,26 @@ bool SlotHolds(int slot, const char* file)
 	return _stricmp(entry.file, file) == 0;
 }
 
+void CollectTags()
+{
+	for (const BgmLibrary::Track& track : g_tracks)
+	{
+		bool known = false;
+
+		for (const std::string& tag : g_tags)
+		{
+			if (tag == track.tag)
+			{
+				known = true;
+				break;
+			}
+		}
+
+		if (!known)
+			g_tags.push_back(track.tag);
+	}
+}
+
 int PickWindow()
 {
 	for (int id = BgmTable::kSlotCount - 1; id >= 100; --id)
@@ -280,48 +226,24 @@ void BgmLibrary::Load()
 
 	int packs = 0;
 
-	if (search == INVALID_HANDLE_VALUE)
+	if (search != INVALID_HANDLE_VALUE)
 	{
-		const int mine = LoadUserMusic();
+		do
+		{
+			if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+				continue;
 
-		for (const Track& track : g_tracks)
-			g_tags.push_back(track.tag);
+			LoadPack(folder + "\\" + found.cFileName);
+			++packs;
+		}
+		while (FindNextFileA(search, &found) != 0);
 
-		sprintf_s(g_status, "no packs installed, %d track(s) of your own", mine);
-		LOG("BgmLibrary: %s", g_status);
-		return;
+		FindClose(search);
 	}
-
-	do
-	{
-		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-			continue;
-
-		LoadPack(folder + "\\" + found.cFileName);
-		++packs;
-	}
-	while (FindNextFileA(search, &found) != 0);
-
-	FindClose(search);
 
 	const int mine = LoadUserMusic();
 
-	for (const Track& track : g_tracks)
-	{
-		bool known = false;
-
-		for (const std::string& tag : g_tags)
-		{
-			if (tag == track.tag)
-			{
-				known = true;
-				break;
-			}
-		}
-
-		if (!known)
-			g_tags.push_back(track.tag);
-	}
+	CollectTags();
 
 	sprintf_s(g_status, "%d track(s) from %d pack(s), %d of your own",
 		static_cast<int>(g_tracks.size()), packs, mine);

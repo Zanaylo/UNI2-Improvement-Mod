@@ -2,69 +2,174 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Core">
-      <UniqueIdentifier>{6c3411e0-96a8-594d-8d14-ed9e82ea715f}</UniqueIdentifier>
+      <UniqueIdentifier>{0bf2fb91-1980-759e-0b3a-05bc77ef3cbc}</UniqueIdentifier>
     </Filter>
     <Filter Include="D3D9">
-      <UniqueIdentifier>{555ad0b6-d9e4-56a9-86d1-d78540cc8637}</UniqueIdentifier>
+      <UniqueIdentifier>{126d8768-1125-f82f-157c-9df5afd0fa57}</UniqueIdentifier>
     </Filter>
     <Filter Include="D3D9\Post">
-      <UniqueIdentifier>{5f110828-9229-58dd-bb5d-3753e57675d6}</UniqueIdentifier>
+      <UniqueIdentifier>{55a2e3a1-41ad-d0cb-1573-fff5b90c9d3f}</UniqueIdentifier>
     </Filter>
     <Filter Include="D3D9\Post\Shaders">
-      <UniqueIdentifier>{253ec6e2-dd0e-53cc-af0c-4486d7d17211}</UniqueIdentifier>
+      <UniqueIdentifier>{298e1698-4b07-91f1-12b4-84bb758b5275}</UniqueIdentifier>
     </Filter>
     <Filter Include="Dependencies">
-      <UniqueIdentifier>{db7b8e17-8595-5a47-bce1-f417291f2c41}</UniqueIdentifier>
+      <UniqueIdentifier>{ccfa12bb-6c45-a400-65e8-0ef99dbe8956}</UniqueIdentifier>
     </Filter>
     <Filter Include="Dependencies\ImGui">
-      <UniqueIdentifier>{85521ad0-c55b-5b06-8a2c-a8bda882fe4a}</UniqueIdentifier>
+      <UniqueIdentifier>{913e927c-eb22-48b9-1738-3c5e99cd8645}</UniqueIdentifier>
     </Filter>
     <Filter Include="Dependencies\ImGui\backends">
-      <UniqueIdentifier>{f5257411-0d9a-5cb0-9f4e-3306281b8aa9}</UniqueIdentifier>
+      <UniqueIdentifier>{2ab04985-22fb-606a-d22d-3a4451f05598}</UniqueIdentifier>
     </Filter>
     <Filter Include="Dependencies\MinHook">
-      <UniqueIdentifier>{5c7ab9e7-9e51-51be-8450-dbb114907c6e}</UniqueIdentifier>
+      <UniqueIdentifier>{35b32b79-5926-6d67-653b-b2ed4d16d493}</UniqueIdentifier>
     </Filter>
     <Filter Include="Dependencies\MinHook\hde">
-      <UniqueIdentifier>{bfbdabfc-65a9-598a-a7bc-41a6ecd172b8}</UniqueIdentifier>
+      <UniqueIdentifier>{de4713b1-b0da-7208-f693-9c25c3f3ca96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencies\minimp3">
+      <UniqueIdentifier>{349f5585-4bd6-88f7-c187-c80bba76f483}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencies\Vorbis">
+      <UniqueIdentifier>{be08d7e3-ba1d-1ddf-c946-53300ca46963}</UniqueIdentifier>
     </Filter>
     <Filter Include="Game">
-      <UniqueIdentifier>{fa75ccce-68f3-5a60-938e-873191302e12}</UniqueIdentifier>
+      <UniqueIdentifier>{8adaa572-0431-2527-3db7-4cc82812c2d7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Hooks">
-      <UniqueIdentifier>{099de8f9-c3c8-5458-8528-dfdfee9ce506}</UniqueIdentifier>
+      <UniqueIdentifier>{8dc6a37a-e1a1-a81b-cdb7-6eb24bb92a03}</UniqueIdentifier>
     </Filter>
     <Filter Include="Network">
-      <UniqueIdentifier>{426781b3-34d9-58e0-a624-04f8b0de0fba}</UniqueIdentifier>
+      <UniqueIdentifier>{1e8e57b2-909b-2a85-3983-a93f378eb6b5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Overlay">
-      <UniqueIdentifier>{468c75e3-4649-501a-afd8-0b82d53f3104}</UniqueIdentifier>
+      <UniqueIdentifier>{5cb27212-0b10-9463-f43d-d2d90de1bc67}</UniqueIdentifier>
     </Filter>
     <Filter Include="Overlay\Window">
-      <UniqueIdentifier>{624e3f33-dcf2-5c64-9ddd-ab755d063ce3}</UniqueIdentifier>
+      <UniqueIdentifier>{6d748d6a-9131-d495-4248-2b79235b0531}</UniqueIdentifier>
     </Filter>
     <Filter Include="Overlay\WindowContainer">
-      <UniqueIdentifier>{959154fa-3859-5c3b-b954-afe8c08cae36}</UniqueIdentifier>
+      <UniqueIdentifier>{3d43096c-1a13-bcc8-8952-7fa04f4dfaba}</UniqueIdentifier>
     </Filter>
     <Filter Include="Palette">
-      <UniqueIdentifier>{9063b56b-91a8-5c43-b9cb-564120b34cb7}</UniqueIdentifier>
+      <UniqueIdentifier>{9dd69108-8352-b680-025d-8f853d2d59e2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resources">
-      <UniqueIdentifier>{9e5d43ff-8ea3-5dae-ae45-3ef6fc8b1847}</UniqueIdentifier>
+      <UniqueIdentifier>{034d5a1b-ef24-5df2-c657-695f9ea78a18}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resources\shaders">
-      <UniqueIdentifier>{c0320b19-2d9b-57a8-a4f3-6396ac8fede3}</UniqueIdentifier>
+      <UniqueIdentifier>{7a716d8f-e0df-bf90-1165-208b79f5f236}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Screens">
+      <UniqueIdentifier>{6ceeb9f1-e249-f966-98b7-ed74094ff428}</UniqueIdentifier>
     </Filter>
     <Filter Include="Training">
-      <UniqueIdentifier>{bbdc2753-4115-5e67-a788-75f2f4b9142d}</UniqueIdentifier>
+      <UniqueIdentifier>{e0ad314c-b345-1fb7-a5ed-68bb70aa22ab}</UniqueIdentifier>
     </Filter>
     <Filter Include="Web">
-      <UniqueIdentifier>{c1a7e2b4-9f31-4d55-8a10-77bd41e0a903}</UniqueIdentifier>
+      <UniqueIdentifier>{5ea0e119-4872-1ef1-f5cb-85505db1a525}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Core\dllmain.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\CrashContext.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmTable.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\AudioFile.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OggWriter.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\MusicRefresh.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\UserMusic.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SoundpackBuilder.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmLibrary.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ModFiles.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OstImport.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OstPac.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OstUniNames.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SoundpackTransfer.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ZipArchive.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmNames.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmRules.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmThemes.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmTableFile.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmCatalog.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgmControl.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OpponentLog.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SteamInterfaces.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RollbackStats.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomRoster.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\ModPresence.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\PlayerCount.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomPing.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\NetplayTick.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\NetplayWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\MusicPanel.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\MusicWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\ThemeWindow.cpp">
+      <Filter>Overlay\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Settings.cpp">
       <Filter>Core</Filter>
@@ -291,6 +396,33 @@
     <ClCompile Include="src\Game\SaveData.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\SceneWatch.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\CharaSelectProbe.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\CharaSelectState.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Screens\CharaGrid.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Screens\PatFile.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Screens\PatTextures.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Screens\PatPainter.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Screens\ScreenTheme.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Screens\ScreenDirector.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\ColorPartTable.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -486,94 +618,169 @@
     <ClCompile Include="depends\minhook\src\hde\hde64.c">
       <Filter>Dependencies\MinHook\hde</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\CrashContext.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="depends\vorbis\ogg\bitwise.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmTable.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\ogg\framing.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmLibrary.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\analysis.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ModFiles.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\bitrate.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OstImport.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\block.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OstPac.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\codebook.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OstUniNames.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\envelope.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SoundpackTransfer.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\floor0.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\ZipArchive.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\floor1.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\VisualThemes.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\info.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmNames.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\lpc.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmRules.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\lsp.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmThemes.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\mapping0.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmTableFile.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\mdct.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmCatalog.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\psy.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmControl.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\registry.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OpponentLog.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\res0.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SteamInterfaces.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\sharedbook.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\RollbackStats.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\smallft.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\RoomRoster.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\vorbisenc.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\PlayerCount.cpp">
-      <Filter>Network</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Network\ModPresence.cpp">
-      <Filter>Network</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Network\RoomPing.cpp">
-      <Filter>Network</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Network\NetplayTick.cpp">
-      <Filter>Network</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Overlay\Window\NetplayWindow.cpp">
-      <Filter>Overlay\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Overlay\Window\MusicPanel.cpp">
-      <Filter>Overlay\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Overlay\Window\MusicWindow.cpp">
-      <Filter>Overlay\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Overlay\Window\ThemeWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="depends\vorbis\vorbis\window.c">
+      <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Core\Settings.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\CrashContext.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmTable.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\AudioFile.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OggWriter.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\MusicRefresh.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\UserMusic.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SoundpackBuilder.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmLibrary.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ModFiles.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OstImport.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OstPac.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OstUniNames.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SoundpackTransfer.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ZipArchive.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmNames.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmRules.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmThemes.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmTableFile.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmCatalog.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgmControl.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OpponentLog.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SteamInterfaces.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RollbackStats.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomRoster.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\ModPresence.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\PlayerCount.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomPing.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\NetplayTick.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\NetplayWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\MusicPanel.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\MusicWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\ThemeWindow.h">
+      <Filter>Overlay\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\settings.def">
       <Filter>Core</Filter>
@@ -706,6 +913,33 @@
     </ClInclude>
     <ClInclude Include="src\Game\SaveData.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SceneWatch.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\CharaSelectProbe.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\CharaSelectState.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\CharaGrid.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\PatFile.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\PatTextures.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\PatPainter.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\ScreenTheme.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\ScreenDirector.h">
+      <Filter>Screens</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\ColorPartTable.h">
       <Filter>Game</Filter>
@@ -1004,89 +1238,11 @@
     <ClInclude Include="src\Overlay\WindowContainer\WindowType.h">
       <Filter>Overlay\WindowContainer</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\CrashContext.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="depends\minimp3\minimp3.h">
+      <Filter>Dependencies\minimp3</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmTable.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\BgmLibrary.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\ModFiles.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\OstImport.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\OstPac.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\OstUniNames.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\SoundpackTransfer.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Core\ZipArchive.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\VisualThemes.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\BgmNames.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\BgmRules.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\BgmThemes.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\BgmTableFile.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\BgmCatalog.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\BgmControl.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\OpponentLog.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Network\SteamInterfaces.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Network\RollbackStats.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Network\RoomRoster.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Network\PlayerCount.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Network\ModPresence.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Network\RoomPing.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Network\NetplayTick.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Overlay\Window\NetplayWindow.h">
-      <Filter>Overlay\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Overlay\Window\MusicPanel.h">
-      <Filter>Overlay\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Overlay\Window\MusicWindow.h">
-      <Filter>Overlay\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Overlay\Window\ThemeWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="depends\minimp3\minimp3_ex.h">
+      <Filter>Dependencies\minimp3</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

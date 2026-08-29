@@ -8,8 +8,11 @@
 #include "Game/BgmThemes.h"
 #include "Game/CharaTables.h"
 #include "Game/ModFiles.h"
+#include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
+#include "Game/SoundpackBuilder.h"
 #include "Game/SoundpackTransfer.h"
+#include "Game/UserMusic.h"
 #include "Overlay/ComboNav.h"
 #include "Overlay/UiScale.h"
 #include "Overlay/UiText.h"
@@ -188,6 +191,12 @@ void MusicPanel::Draw()
 		ImGui::EndTabItem();
 	}
 
+	if (ImGui::BeginTabItem("Add music"))
+	{
+		DrawMyMusic();
+		ImGui::EndTabItem();
+	}
+
 	if (ImGui::BeginTabItem("Browse"))
 	{
 		DrawBrowse();
@@ -265,11 +274,7 @@ void MusicPanel::DrawSoundpacks()
 		ImGui::TextWrapped("Looked in: %s", BgmThemes::ThemesPath());
 
 		if (ImGui::Button("Rescan folder"))
-		{
-			ModFiles::Rescan();
-			BgmLibrary::Load();
-			BgmThemes::Reload();
-		}
+			MusicRefresh::Rescan();
 
 		return;
 	}
@@ -332,11 +337,7 @@ void MusicPanel::DrawSoundpacks()
 	ImGui::EndTable();
 
 	if (ImGui::Button("Rescan folder"))
-	{
-		ModFiles::Rescan();
-		BgmLibrary::Load();
-		BgmThemes::Reload();
-	}
+		MusicRefresh::Rescan();
 
 	ImGui::SameLine();
 
@@ -354,6 +355,240 @@ void MusicPanel::DrawSoundpacks()
 
 	if (apply >= 0)
 		BgmThemes::Apply(apply);
+}
+
+void MusicPanel::DrawPackBuilder()
+{
+	if (!SoundpackBuilder::IsOpen())
+	{
+		if (ImGui::Button("New soundpack"))
+			SoundpackBuilder::Begin();
+
+		ImGui::SameLine();
+		UiText::Help("Start one and a Pack column appears in the list below. Tick the tracks you "
+			"want in it, choose which screen each one plays on, and save.");
+
+		if (m_packStatus[0] != 0)
+			UiText::Muted("%s", m_packStatus);
+
+		return;
+	}
+
+	DrawPackDraft();
+}
+
+void MusicPanel::DrawPackDraft()
+{
+	Ui::SetItemWidth(kComboWidth);
+	ImGui::InputTextWithHint("Name", "Soundpack name", SoundpackBuilder::NameBuffer(),
+		SoundpackBuilder::NameCapacity());
+
+	ImGui::SameLine();
+
+	Ui::SetItemWidth(kComboWidth);
+	ImGui::InputTextWithHint("Author", "You", SoundpackBuilder::AuthorBuffer(),
+		SoundpackBuilder::AuthorCapacity());
+
+	const int count = SoundpackBuilder::Count();
+
+	if (count == 0)
+		UiText::Warn("Nothing picked yet. Tick Pack on the tracks you want in it.");
+	else
+		DrawPackDraftTable(count);
+
+	ImGui::BeginDisabled(count == 0);
+
+	if (ImGui::Button("Save soundpack"))
+		SoundpackBuilder::Save(m_packStatus, sizeof(m_packStatus));
+
+	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Cancel"))
+	{
+		SoundpackBuilder::Cancel();
+		m_packStatus[0] = 0;
+	}
+
+	if (m_packStatus[0] != 0)
+		UiText::Warn("%s", m_packStatus);
+}
+
+void MusicPanel::DrawPackDraftTable(int count)
+{
+	if (!ImGui::BeginTable("##packdraft", 3,
+		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
+		ImGuiTableFlags_ScrollY, ImVec2(0.0f, Ui::Scaled(130.0f))))
+	{
+		return;
+	}
+
+	ImGui::TableSetupColumn("Track");
+	ImGui::TableSetupColumn("Plays on");
+	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(60.0f));
+	ImGui::TableSetupScrollFreeze(0, 1);
+	ImGui::TableHeadersRow();
+
+	int removeIndex = -1;
+
+	for (int i = 0; i < count; ++i)
+	{
+		ImGui::PushID(i);
+		ImGui::TableNextRow();
+
+		ImGui::TableNextColumn();
+		char track[224] = {};
+		DescribeTrack(SoundpackBuilder::TrackAt(i), track, sizeof(track));
+		ImGui::TextUnformatted(track);
+
+		ImGui::TableNextColumn();
+		int scene = SoundpackBuilder::SceneAt(i);
+
+		if (DrawSceneCombo(scene))
+			SoundpackBuilder::SetScene(i, scene);
+
+		ImGui::TableNextColumn();
+
+		if (ImGui::SmallButton("Drop"))
+			removeIndex = i;
+
+		ImGui::PopID();
+	}
+
+	ImGui::EndTable();
+
+	if (removeIndex >= 0)
+		SoundpackBuilder::RemoveAt(removeIndex);
+}
+
+void MusicPanel::DrawMyMusic()
+{
+	UiText::Muted("Add your own music");
+	UiText::Help("Pick an MP3, OGG or WAV and it is copied into the mod and listed in Browse. The "
+		"game will open a loose file only when it is OGG Vorbis, so anything else is re-encoded on "
+		"the way in - the converted copy sits in Music\\.cache and can be deleted at any time.");
+
+	Ui::SetItemWidth(kComboWidth);
+	ImGui::InputTextWithHint("Goes in", "Folder name", m_musicPack, IM_ARRAYSIZE(m_musicPack));
+
+	if (ImGui::Button("Import music"))
+		m_musicDialog.BeginOpen("Pick the music to add", UserMusic::SupportedFilter());
+
+	ImGui::SameLine();
+
+	bool rescan = ImGui::Button("Rescan music folder");
+
+	std::string picked;
+
+	if (m_musicDialog.TakeResult(picked))
+		rescan = UserMusic::Import(picked, m_musicPack, m_musicStatus, sizeof(m_musicStatus));
+
+	if (rescan)
+		MusicRefresh::Rescan();
+
+	if (m_musicStatus[0] != 0)
+		UiText::Muted("%s", m_musicStatus);
+
+	RefreshMusicList();
+
+	if (m_music.empty())
+	{
+		UiText::Muted("Nothing in %s yet.", UserMusic::Root().c_str());
+		return;
+	}
+
+	DrawMyMusicTable();
+}
+
+void MusicPanel::RefreshMusicList()
+{
+	const int version = UserMusic::Version();
+
+	if (version != m_musicVersion)
+	{
+		m_music = UserMusic::Snapshot();
+		m_musicVersion = version;
+	}
+
+	int pending = 0;
+
+	for (const UserMusic::Entry& entry : m_music)
+	{
+		if (entry.status == UserMusic::Status_Converting)
+			++pending;
+	}
+
+	if (pending > 0)
+		UiText::Warn("Converting %d file(s)...", pending);
+}
+
+void MusicPanel::DrawMyMusicTable()
+{
+
+	UiText::Help("Loop from is where the track restarts when it reaches the end, in seconds. Leave "
+		"it at 0 and the whole thing repeats, intro and all; set it past the intro and the loop "
+		"sounds like the game's own music. This is what a soundpack track carries as its loop "
+		"point.");
+
+	if (!ImGui::BeginTable("##usermusic", 5,
+		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
+		ImGuiTableFlags_ScrollY, ImVec2(0.0f, Ui::Scaled(190.0f))))
+	{
+		return;
+	}
+
+	ImGui::TableSetupColumn("Folder", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
+	ImGui::TableSetupColumn("File");
+	ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
+	ImGui::TableSetupColumn("Loop from", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(80.0f));
+	ImGui::TableSetupColumn("Notes");
+	ImGui::TableSetupScrollFreeze(0, 1);
+	ImGui::TableHeadersRow();
+
+	int row = 0;
+
+	for (const UserMusic::Entry& entry : m_music)
+	{
+		ImGui::PushID(row++);
+		ImGui::TableNextRow();
+
+		ImGui::TableNextColumn();
+		UiText::Muted("%s", entry.pack.c_str());
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(entry.fileName.c_str());
+
+		ImGui::TableNextColumn();
+
+		if (entry.status == UserMusic::Status_Ready)
+			UiText::Good("plays");
+		else if (entry.status == UserMusic::Status_Converting)
+			UiText::Warn("working");
+		else
+			UiText::Warn("skipped");
+
+		ImGui::TableNextColumn();
+
+		float loop = static_cast<float>(entry.loopPos);
+
+		ImGui::SetNextItemWidth(-1.0f);
+
+		ImGui::InputFloat("##loop", &loop, 0.0f, 0.0f, "%.3f");
+
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			UserMusic::SetLoopPoint(entry.slotName, loop);
+			BgmLibrary::Load();
+		}
+
+		ImGui::TableNextColumn();
+		UiText::Muted("%s", entry.note.c_str());
+
+		ImGui::PopID();
+	}
+
+	ImGui::EndTable();
 }
 
 void MusicPanel::DrawGetOst()
@@ -513,6 +748,8 @@ void MusicPanel::DrawShuffle()
 
 void MusicPanel::DrawBrowse()
 {
+	DrawPackBuilder();
+	ImGui::Separator();
 	DrawShuffle();
 
 	Ui::SetItemWidth(kComboWidth);
@@ -521,6 +758,17 @@ void MusicPanel::DrawBrowse()
 	ImGui::SameLine();
 	DrawSourceFilter();
 
+	ImGui::SameLine();
+	DrawTrackCount();
+
+	UiText::Muted("Play starts a track and holds it. The game gets its music back when you press "
+		"Stop.");
+
+	DrawTrackTable();
+}
+
+void MusicPanel::DrawTrackCount()
+{
 	int shown = 0;
 	int total = 0;
 
@@ -539,22 +787,28 @@ void MusicPanel::DrawBrowse()
 			++shown;
 	}
 
-	ImGui::SameLine();
-
 	if (shown == total)
+	{
 		UiText::Muted("%d tracks", total);
-	else
-		UiText::Muted("%d of %d tracks", shown, total);
+		return;
+	}
 
-	UiText::Muted("Play starts a track and holds it. The game gets its music back when you press "
-		"Stop.");
+	UiText::Muted("%d of %d tracks", shown, total);
+}
 
-	if (!ImGui::BeginTable("##bgmtracks", 6,
+void MusicPanel::DrawTrackTable()
+{
+	const bool building = SoundpackBuilder::IsOpen();
+
+	if (!ImGui::BeginTable(building ? "##bgmtrackspack" : "##bgmtracks", building ? 7 : 6,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
 		ImVec2(0.0f, Ui::Scaled(280.0f))))
 	{
 		return;
 	}
+
+	if (building)
+		ImGui::TableSetupColumn("Pack", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(38.0f));
 
 	ImGui::TableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(30.0f));
 	ImGui::TableSetupColumn("Source", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
@@ -584,6 +838,16 @@ void MusicPanel::DrawBrowse()
 
 		ImGui::PushID(index);
 		ImGui::TableNextRow();
+
+		if (building)
+		{
+			ImGui::TableNextColumn();
+
+			bool inPack = SoundpackBuilder::Holds(id);
+
+			if (ImGui::Checkbox("##pack", &inPack))
+				SoundpackBuilder::Toggle(id);
+		}
 
 		ImGui::TableNextColumn();
 
@@ -819,6 +1083,45 @@ bool MusicPanel::DrawCharacterCombo(const char* label, int& chara)
 		changed = true;
 	}
 
+	return changed;
+}
+
+bool MusicPanel::DrawSceneCombo(int& scene)
+{
+	char current[224] = {};
+	DescribeScene(scene, current, sizeof(current));
+
+	ImGui::SetNextItemWidth(-1.0f);
+
+	bool changed = false;
+
+	if (!ImGui::BeginCombo("##scene", current))
+		return false;
+
+	for (int id = 0; id < BgmTable::kSlotCount; ++id)
+	{
+		if (!IsScene(id))
+			continue;
+
+		char text[224] = {};
+		DescribeScene(id, text, sizeof(text));
+
+		const bool selected = id == scene;
+
+		ImGui::PushID(id);
+
+		if (ImGui::Selectable(text, selected))
+		{
+			scene = id;
+			changed = true;
+		}
+
+		ComboNav::KeepSelectedInView(selected);
+
+		ImGui::PopID();
+	}
+
+	ImGui::EndCombo();
 	return changed;
 }
 

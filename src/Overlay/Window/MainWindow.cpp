@@ -25,7 +25,8 @@
 #include "Game/BgmControl.h"
 #include "Network/PlayerCount.h"
 #include "Game/BgmNames.h"
-#include "Game/VisualThemes.h"
+#include "Screens/ScreenDirector.h"
+#include "Screens/ScreenTheme.h"
 #include "Overlay/UiText.h"
 #include "Overlay/WindowManager.h"
 #include "Palette/PaletteChoice.h"
@@ -134,6 +135,8 @@ void MainWindow::Draw()
 	ImGui::Separator();
 	DrawMusicSection();
 	ImGui::Separator();
+	DrawThemeSection();
+	ImGui::Separator();
 	DrawConfigSection();
 }
 
@@ -164,6 +167,36 @@ void MainWindow::DrawMusicSection()
 		strncpy_s(playing, "silence", _TRUNCATE);
 
 	UiText::Muted("Playing: %s", playing);
+}
+
+void MainWindow::DrawThemeSection()
+{
+	if (ScreenDirector::kOnHold)
+		return;
+
+	if (!ImGui::CollapsingHeader("Theme"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Theme) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close theme" : "Open theme"))
+		window->Toggle();
+
+	ImGui::TextWrapped("A theme draws another French-Bread game's screens over UNI2's, leaving "
+		"every UNI2 option where it is.");
+
+	const ScreenTheme::Theme* const theme = ScreenTheme::Active();
+
+	if (theme == nullptr)
+	{
+		UiText::Muted("Using the game's own screens.");
+		return;
+	}
+
+	UiText::Good("Applied: %s", theme->name.c_str());
+	UiText::Muted("%s", ScreenDirector::StatusText());
 }
 
 void MainWindow::DrawReplaySection()

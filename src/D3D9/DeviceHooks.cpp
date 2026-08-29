@@ -6,18 +6,21 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "D3D9/PresentTuning.h"
-#include "Game/VisualThemes.h"
 #include "D3D9/Post/SceneUpscale.h"
 #include "D3D9/SceneScale.h"
 #include "D3D9/Post/PostChain.h"
 #include "Game/GameState.h"
 #include "Game/KeyboardSeat.h"
 #include "Game/ReplayFiles.h"
+#include "Game/CharaSelectProbe.h"
+#include "Game/SceneWatch.h"
 #include "Game/PotatoMode.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
+#include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
 #include "Game/SoundpackTransfer.h"
+#include "Game/UserMusic.h"
 #include "Network/NetplayTick.h"
 #include "Game/ReplayState.h"
 #include "Hooks/HookManager.h"
@@ -35,6 +38,7 @@
 #include "Palette/PaletteIdentity.h"
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteTexture.h"
+#include "Screens/ScreenDirector.h"
 #include "Overlay/FrameMeterHud.h"
 #include "Training/PlayerControl.h"
 #include "Overlay/WindowManager.h"
@@ -107,6 +111,7 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 
 		WindowManager::GetInstance().OnDeviceLost();
 		FrozenFrame::OnDeviceLost();
+		ScreenDirector::OnDeviceLost();
 		FrameMeterHud::OnDeviceLost();
 		PaletteTexture::OnDeviceLost();
 		PostChain::OnDeviceLost();
@@ -295,6 +300,12 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 {
 	InterlockedIncrement(&g_presentCount);
 
+	if (!ScreenDirector::kOnHold)
+	{
+		SceneWatch::OnFrame();
+		CharaSelectProbe::OnFrame();
+	}
+
 	MemoryMap::InvalidateEffectSlotCache();
 
 	if (device == g_device)
@@ -308,6 +319,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			NetplayTick::Update();
 			OstImport::Update();
 			SoundpackTransfer::Update();
+
+			if (UserMusic::ConsumeChanged())
+				MusicRefresh::Reindex();
 		}
 
 		{
@@ -330,6 +344,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 		{
 			Profiler::Scope scope(Profiler::Section_PresentMeterHud);
+			ScreenDirector::Render(device);
 			FrameMeterHud::Render(device);
 		}
 
@@ -372,7 +387,6 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	SceneScale::OnFrame();
 	SceneUpscale::OnPresent();
-	VisualThemes::OnFrame();
 
 	InputProbe::OnFrame();
 	StageColor::OnFrame();

@@ -161,7 +161,7 @@ bool CreateModDirectories()
 
 	return MakeDirectory(root + "\\Assets") && MakeDirectory(root + "\\Palettes") &&
 		MakeDirectory(root + "\\Downloads") && MakeDirectory(root + "\\Scripts") &&
-		MakeDirectory(root + "\\Shaders");
+		MakeDirectory(root + "\\Screens") && MakeDirectory(root + "\\Shaders");
 }
 
 bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t minimumSize)

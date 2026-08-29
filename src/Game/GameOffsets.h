@@ -428,6 +428,7 @@ namespace GameOffsets
 	constexpr uintptr_t kSceneResultB = 0x5978d4;
 
 	constexpr uint32_t kSceneMenu = 3;
+	constexpr uint32_t kSceneCharaSelect = 24;
 	constexpr uint32_t kSceneReplayList = 46;
 
 	constexpr uintptr_t kReplayListLoaded = 0x3b49d60;

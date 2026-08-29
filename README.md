@@ -241,8 +241,20 @@ so anything you turn off is never picked.
 of this screen. Rules can be exported and imported as well, and importing adds to your list instead
 of replacing it.
 
-Your own music works too: drop `.ogg` files into a folder under `UNI2-IM/Music` and they turn up in
-the list beside everything else.
+**Add music** takes your own. Press **Import music** and pick an MP3, OGG or WAV, or drop files into
+`UNI2-IM/Music` yourself - loose or a folder per pack - and they turn up in Browse beside everything
+else. The game will open a loose file only when it is OGG Vorbis, so an MP3 or a WAV is re-encoded
+on the way in. The tab lists every file it found and says plainly why anything was skipped, which is
+usually an `.ogg` that turned out to hold Opus rather than Vorbis. A name too long for the game's 31
+character slot field no longer costs you the track.
+
+Each of your tracks gets a **Loop from** point there too, in seconds, the same thing every soundpack
+track carries. Leave it at 0 and the whole song repeats, intro and all; set it past the intro and it
+loops the way the game's own music does.
+
+**New soundpack**, at the top of Browse, builds one of your own: tick the tracks you want in the
+**Pack** column, choose which screen each one plays on, and save - it lands beside the packs that
+ship with the mod and travels with Export.
 
 ### Performance
 

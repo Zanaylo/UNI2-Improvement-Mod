@@ -2,6 +2,9 @@
 
 #include "Core/AsyncFileDialog.h"
 #include "Game/BgmRules.h"
+#include "Game/UserMusic.h"
+
+#include <vector>
 
 class MusicPanel
 {
@@ -11,10 +14,18 @@ public:
 private:
 	void DrawStatus();
 	void DrawSoundpacks();
+	void DrawPackBuilder();
+	void DrawPackDraft();
+	void DrawPackDraftTable(int count);
+	void DrawMyMusic();
+	void RefreshMusicList();
+	void DrawMyMusicTable();
 	void DrawGetOst();
 	void DrawTransfer();
 	void DrawShuffle();
 	void DrawBrowse();
+	void DrawTrackCount();
+	void DrawTrackTable();
 	void DrawRules();
 	void DrawRuleEditor();
 
@@ -23,6 +34,7 @@ private:
 
 	bool DrawTrackCombo(const char* label, int& bgm);
 	bool DrawCharacterCombo(const char* label, int& chara);
+	bool DrawSceneCombo(int& scene);
 
 	BgmRules::Rule m_draft = { BgmRules::Kind_Matchup, 0, 1, 91, true, true };
 	char m_search[64] = {};
@@ -30,7 +42,13 @@ private:
 	AsyncFileDialog m_exportDialog;
 	AsyncFileDialog m_importDialog;
 	AsyncFileDialog m_ostDialog;
+	AsyncFileDialog m_musicDialog;
 	AsyncFileDialog m_rulesExportDialog;
 	AsyncFileDialog m_rulesImportDialog;
+	std::vector<UserMusic::Entry> m_music;
+	int m_musicVersion = -1;
+	char m_musicPack[32] = "My Music";
+	char m_musicStatus[224] = {};
+	char m_packStatus[224] = {};
 	int m_source = 0;
 };

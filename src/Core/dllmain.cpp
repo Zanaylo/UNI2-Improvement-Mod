@@ -15,7 +15,8 @@
 #include "D3D9/Post/ShaderPack.h"
 #include "Game/BgmControl.h"
 #include "Game/ModFiles.h"
-#include "Game/VisualThemes.h"
+#include "Screens/ScreenDirector.h"
+#include "Screens/ScreenTheme.h"
 #include "Game/CharaTracker.h"
 #include "Game/EngineQuality.h"
 #include "Game/KeyboardSeat.h"
@@ -260,7 +261,8 @@ DWORD WINAPI InitThread(LPVOID)
 	}
 
 	ModFiles::Initialize();
-	VisualThemes::Initialize();
+	if (!ScreenDirector::kOnHold)
+		ScreenTheme::Reload();
 
 	RunStage("input entry point", Stage_InputEntry);
 

@@ -3,9 +3,7 @@
 #include "Core/ZipArchive.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/BgmLibrary.h"
-#include "Game/BgmThemes.h"
-#include "Game/ModFiles.h"
+#include "Game/MusicRefresh.h"
 
 #include <Windows.h>
 
@@ -26,7 +24,7 @@ const char* const kReadme =
 	"  UNI2-IM/Mods/Bgm/          the tracks and the slot table the game reads at boot\r\n"
 	"  UNI2-IM/Mods/grpdat/CSel/  the game's own BGM picker list\r\n"
 	"  UNI2-IM/library/           the mod's catalogue - titles, loop points, slot numbers\r\n"
-	"  UNI2-IM/Music/             loose folders of your own music, one folder per pack\r\n"
+	"  UNI2-IM/Music/             your own music - MP3, OGG or WAV, loose or a folder per pack\r\n"
 	"  UNI2-IM/Soundpacks/        the packs you can pick in the overlay\r\n"
 	"\r\n"
 	"You need the mod installed first; this is only the music.\r\n"
@@ -194,9 +192,7 @@ void SoundpackTransfer::Update()
 	if (InterlockedCompareExchange(&g_finished, 0, 1) != 1)
 		return;
 
-	ModFiles::Rescan();
-	BgmLibrary::Load();
-	BgmThemes::Reload();
+	MusicRefresh::Rescan();
 }
 
 bool SoundpackTransfer::IsBusy()
