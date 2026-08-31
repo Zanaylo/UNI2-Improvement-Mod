@@ -5,6 +5,7 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "Hooks/HookManager.h"
+#include "Network/OnlineSafety.h"
 
 #include <Windows.h>
 
@@ -73,7 +74,8 @@ int __fastcall HookedOnLobbyChatUpdate(void* self, void* edx, void* param)
 	TryReadMemory(&user, reinterpret_cast<uint8_t*>(param) + GameOffsets::kLobbyChatUpdateUser,
 		sizeof(user));
 
-	const bool rewrite = g_fixEnabled && NeedsRewrite(static_cast<int>(flags));
+	const bool rewrite = g_fixEnabled && OnlineSafety::MayWriteRoomState() &&
+		NeedsRewrite(static_cast<int>(flags));
 
 	Record(user, static_cast<int>(flags), rewrite);
 

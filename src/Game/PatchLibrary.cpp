@@ -576,6 +576,16 @@ bool PatchLibrary::Remove(int index)
 	return true;
 }
 
+void PatchLibrary::Describe(int index, const std::string& note, const SYSTEMTIME& released)
+{
+	if (index < 0 || index >= Count())
+		return;
+
+	g_patches[index]->note = note;
+
+	SetDate(index, released);
+}
+
 void PatchLibrary::SetDate(int index, const SYSTEMTIME& released)
 {
 	if (index < 0 || index >= Count())
@@ -595,6 +605,20 @@ int PatchLibrary::IndexOfId(const char* id)
 	for (int i = 0; i < Count(); ++i)
 	{
 		if (g_patches[i]->id == id)
+			return i;
+	}
+
+	return -1;
+}
+
+int PatchLibrary::IndexOfSource(const char* folder)
+{
+	if (folder == nullptr || folder[0] == 0)
+		return -1;
+
+	for (int i = 0; i < Count(); ++i)
+	{
+		if (_stricmp(g_patches[i]->source.c_str(), folder) == 0)
 			return i;
 	}
 

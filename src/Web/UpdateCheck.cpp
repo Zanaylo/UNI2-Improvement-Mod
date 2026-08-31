@@ -5,133 +5,105 @@
 #include "Core/logger.h"
 
 #include <Windows.h>
-#include <wininet.h>
 
+#include <atomic>
 #include <cstdio>
-#include <cstring>
+#include <mutex>
 #include <string>
-
-#pragma comment(lib, "wininet.lib")
 
 namespace {
 
-constexpr int kParts = 3;
-constexpr DWORD kBufferBytes = 4096;
+constexpr int kNotesLength = 2048;
 
-char g_latest[32] = {};
-volatile LONG g_newer = 0;
-volatile LONG g_dismissed = 0;
+std::mutex g_lock;
+GitHubRelease::Release g_release;
 
-std::string Download(const wchar_t* url)
+std::atomic<bool> g_checking{ false };
+std::atomic<bool> g_answered{ false };
+std::atomic<bool> g_newer{ false };
+std::atomic<bool> g_dismissed{ false };
+
+char g_version[32] = {};
+char g_page[256] = UNI2_IM_RELEASE_PAGE;
+char g_notes[kNotesLength] = {};
+char g_status[256] = "not checked yet";
+
+void Publish(const GitHubRelease::Release& release, bool newer)
 {
-	const HINTERNET session = InternetOpenW(L"UNI2-Improvement-Mod",
-		INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
+	std::lock_guard<std::mutex> guard(g_lock);
 
-	if (session == nullptr)
-		return std::string();
+	g_release = release;
 
-	const HINTERNET address = InternetOpenUrlW(session, url, nullptr, 0,
-		INTERNET_FLAG_PRAGMA_NOCACHE | INTERNET_FLAG_NO_UI | INTERNET_FLAG_SECURE, 0);
+	strncpy_s(g_version, release.version.c_str(), _TRUNCATE);
+	strncpy_s(g_page, release.page.empty() ? UNI2_IM_RELEASE_PAGE : release.page.c_str(),
+		_TRUNCATE);
+	strncpy_s(g_notes, release.notes.c_str(), _TRUNCATE);
 
-	if (address == nullptr)
-	{
-		InternetCloseHandle(session);
-		return std::string();
-	}
+	if (newer)
+		sprintf_s(g_status, "%s is out, this is %s", release.version.c_str(), UNI2_IM_VERSION);
+	else
+		strncpy_s(g_status, "this is the latest release", _TRUNCATE);
 
-	std::string received;
-	char buffer[kBufferBytes] = {};
-	DWORD read = 0;
-
-	while (InternetReadFile(address, buffer, kBufferBytes, &read) && read != 0)
-		received.append(buffer, read);
-
-	InternetCloseHandle(address);
-	InternetCloseHandle(session);
-
-	return received;
+	g_newer.store(newer);
 }
 
-bool ReadTagName(const std::string& body, char* out, int size)
+void Fail(const char* error)
 {
-	const size_t at = body.find("\"tag_name\"");
+	std::lock_guard<std::mutex> guard(g_lock);
 
-	if (at == std::string::npos)
-		return false;
-
-	const size_t open = body.find('"', body.find(':', at));
-
-	if (open == std::string::npos)
-		return false;
-
-	const size_t close = body.find('"', open + 1);
-
-	if (close == std::string::npos || close - open <= 1)
-		return false;
-
-	std::string tag = body.substr(open + 1, close - open - 1);
-
-	if (!tag.empty() && (tag[0] == 'v' || tag[0] == 'V'))
-		tag.erase(0, 1);
-
-	strncpy_s(out, size, tag.c_str(), _TRUNCATE);
-	return out[0] != '\0';
-}
-
-void ReadParts(const char* version, int* out)
-{
-	for (int i = 0; i < kParts; ++i)
-		out[i] = 0;
-
-	sscanf_s(version, "%d.%d.%d", &out[0], &out[1], &out[2]);
-}
-
-bool IsNewer(const char* latest, const char* mine)
-{
-	int theirs[kParts] = {};
-	int ours[kParts] = {};
-
-	ReadParts(latest, theirs);
-	ReadParts(mine, ours);
-
-	for (int i = 0; i < kParts; ++i)
-	{
-		if (theirs[i] != ours[i])
-			return theirs[i] > ours[i];
-	}
-
-	return false;
+	sprintf_s(g_status, "the check did not answer - %.180s", error);
+	g_newer.store(false);
 }
 
 DWORD WINAPI Run(LPVOID)
 {
-	const std::string body = Download(UNI2_IM_RELEASE_API);
+	GitHubRelease::Release release;
+	std::string error;
 
-	if (body.empty())
+	if (!GitHubRelease::FetchLatest(release, error))
 	{
-		LOG("update check: nothing came back");
-		return 0;
+		Fail(error.c_str());
+		LOG("update check: %s", error.c_str());
+	}
+	else if (release.draft)
+	{
+		Fail("the newest release is still a draft");
+	}
+	else
+	{
+		const bool newer = GitHubRelease::IsNewerThanRunning(release.version);
+
+		Publish(release, newer);
+
+		LOG("update check: %s is the latest, this is %s%s", release.version.c_str(),
+			UNI2_IM_VERSION, newer ? " - an update is available" : "");
 	}
 
-	char latest[sizeof(g_latest)] = {};
-
-	if (!ReadTagName(body, latest, sizeof(latest)))
-	{
-		LOG("update check: no tag in the answer");
-		return 0;
-	}
-
-	strncpy_s(g_latest, latest, _TRUNCATE);
-
-	if (!IsNewer(latest, UNI2_IM_VERSION))
-	{
-		LOG("update check: %s is the latest, this is %s", latest, UNI2_IM_VERSION);
-		return 0;
-	}
-
-	InterlockedExchange(&g_newer, 1);
-	LOG("update check: %s is out, this is %s", latest, UNI2_IM_VERSION);
+	g_answered.store(true);
+	g_checking.store(false);
 	return 0;
+}
+
+void Launch()
+{
+	if (g_checking.exchange(true))
+		return;
+
+	{
+		std::lock_guard<std::mutex> guard(g_lock);
+		strncpy_s(g_status, "asking GitHub", _TRUNCATE);
+	}
+
+	const HANDLE thread = CreateThread(nullptr, 0, &Run, nullptr, 0, nullptr);
+
+	if (thread != nullptr)
+	{
+		CloseHandle(thread);
+		return;
+	}
+
+	g_checking.store(false);
+	Fail("a thread could not be started");
 }
 
 }
@@ -141,33 +113,67 @@ void UpdateCheck::Start()
 	if (!g_modVals.checkForUpdates)
 		return;
 
-	const HANDLE thread = CreateThread(nullptr, 0, &Run, nullptr, 0, nullptr);
+	Launch();
+}
 
-	if (thread != nullptr)
-		CloseHandle(thread);
+void UpdateCheck::Refresh()
+{
+	g_dismissed.store(false);
+	Launch();
+}
+
+bool UpdateCheck::IsChecking()
+{
+	return g_checking.load();
 }
 
 bool UpdateCheck::HasNewer()
 {
-	return InterlockedCompareExchange(&g_newer, 0, 0) != 0;
+	return g_newer.load();
+}
+
+bool UpdateCheck::HasAnswer()
+{
+	return g_answered.load();
 }
 
 const char* UpdateCheck::GetLatestVersion()
 {
-	return g_latest;
+	return g_version;
 }
 
 const char* UpdateCheck::GetReleaseUrl()
 {
-	return UNI2_IM_RELEASE_PAGE;
+	return g_page;
+}
+
+const char* UpdateCheck::GetReleaseNotes()
+{
+	return g_notes;
+}
+
+const char* UpdateCheck::GetStatusText()
+{
+	return g_status;
+}
+
+bool UpdateCheck::CopyRelease(GitHubRelease::Release& out)
+{
+	std::lock_guard<std::mutex> guard(g_lock);
+
+	if (g_release.tag.empty())
+		return false;
+
+	out = g_release;
+	return true;
 }
 
 void UpdateCheck::Dismiss()
 {
-	InterlockedExchange(&g_dismissed, 1);
+	g_dismissed.store(true);
 }
 
 bool UpdateCheck::WasDismissed()
 {
-	return InterlockedCompareExchange(&g_dismissed, 0, 0) != 0;
+	return g_dismissed.load();
 }

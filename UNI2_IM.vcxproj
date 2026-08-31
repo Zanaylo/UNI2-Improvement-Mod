@@ -116,6 +116,15 @@
 
   <ItemGroup>
     <ClCompile Include="src\Core\dllmain.cpp" />
+    <ClCompile Include="src\Game\BundledPack.cpp" />
+    <ClCompile Include="src\Core\Json.cpp" />
+    <ClCompile Include="src\Web\Http.cpp" />
+    <ClCompile Include="src\Web\Job.cpp" />
+    <ClCompile Include="src\Web\GitHubRelease.cpp" />
+    <ClCompile Include="src\Web\UpdateInstall.cpp" />
+    <ClCompile Include="src\Game\BasePals.cpp" />
+    <ClCompile Include="src\Game\PatchPacks.cpp" />
+    <ClCompile Include="src\Network\OnlineSafety.cpp" />
     <ClCompile Include="src\Core\CrashContext.cpp" />
     <ClCompile Include="src\Game\BgmTable.cpp" />
     <ClCompile Include="src\Game\AudioFile.cpp" />
@@ -298,6 +307,15 @@
 
   <ItemGroup>
     <ClInclude Include="src\Core\Settings.h" />
+    <ClInclude Include="src\Game\BundledPack.h" />
+    <ClInclude Include="src\Core\Json.h" />
+    <ClInclude Include="src\Web\Http.h" />
+    <ClInclude Include="src\Web\Job.h" />
+    <ClInclude Include="src\Web\GitHubRelease.h" />
+    <ClInclude Include="src\Web\UpdateInstall.h" />
+    <ClInclude Include="src\Game\BasePals.h" />
+    <ClInclude Include="src\Game\PatchPacks.h" />
+    <ClInclude Include="src\Network\OnlineSafety.h" />
     <ClInclude Include="src\Core\CrashContext.h" />
     <ClInclude Include="src\Game\BgmTable.h" />
     <ClInclude Include="src\Game\AudioFile.h" />
@@ -588,6 +606,30 @@
     <None Include="resource\shaders\upscale_lanczos.hlsl" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ResourceCompile Include="resource\UNI2_IM.rc" />
+  </ItemGroup>
+
+  <Target Name="SyncBasePals" BeforeTargets="PrepareForBuild"
+          Condition="'$(DesignTimeBuild)'!='true'">
+    <ItemGroup>
+      <BasePalImage Include="$(ProjectDir)resource\basepals\chr*.png" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(ProjectDir)resource\basepals.rc" Overwrite="true"
+                      WriteOnlyWhenDifferent="true"
+                      Lines="@(BasePalImage-&gt;'%(Filename) RCDATA &quot;basepals\\%(Filename)%(Extension)&quot;')" />
+  </Target>
+
+  <Target Name="SyncPatchPacks" BeforeTargets="PrepareForBuild"
+          Condition="'$(DesignTimeBuild)'!='true'">
+    <ItemGroup>
+      <PatchPackFile Include="$(ProjectDir)resource\patches\*.pack" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(ProjectDir)resource\packs.rc" Overwrite="true"
+                      WriteOnlyWhenDifferent="true"
+                      Lines="@(PatchPackFile-&gt;'&quot;%(Filename)&quot; PATCHPACK &quot;patches\\%(Filename)%(Extension)&quot;')" />
+  </Target>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 
@@ -620,6 +662,7 @@
       <Compiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
       <Includes ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
       <Nones ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Resources ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="false" />
       <OutputFile ParameterType="System.String" Required="true" />
     </ParameterGroup>
     <Task>
@@ -636,6 +679,7 @@ public class SyncFilters : Task
     public ITaskItem[] Compiles { get; set; }
     public ITaskItem[] Includes { get; set; }
     public ITaskItem[] Nones { get; set; }
+    public ITaskItem[] Resources { get; set; }
     public string OutputFile { get; set; }
 
     const char Sep = (char)92;
@@ -740,6 +784,7 @@ public class SyncFilters : Task
         Group(body, "ClCompile", Compiles, folders);
         Group(body, "ClInclude", Includes, folders);
         Group(body, "None", Nones, folders);
+        Group(body, "ResourceCompile", Resources, folders);
 
         var text = new StringBuilder();
         text.Append("<?xml version=" + Quote + "1.0" + Quote + " encoding=" + Quote + "utf-8" + Quote + "?>" + Nl);
@@ -777,6 +822,7 @@ public class SyncFilters : Task
   <Target Name="SyncProjectFilters" BeforeTargets="PrepareForBuild"
           Condition="'$(SyncFilters)'!='false' And '$(DesignTimeBuild)'!='true'">
     <SyncFilters Compiles="@(ClCompile)" Includes="@(ClInclude)" Nones="@(None)"
+                 Resources="@(ResourceCompile)"
                  OutputFile="$(MSBuildProjectFullPath).filters" />
   </Target>
 </Project>

@@ -2,6 +2,7 @@
 
 #include "Core/logger.h"
 #include "Core/info.h"
+#include "Network/OnlineSafety.h"
 #include "Network/RoomPing.h"
 #include "Network/SteamInterfaces.h"
 
@@ -114,6 +115,9 @@ void ModPresence::Update()
 		g_lobby = lobby;
 	}
 
+	if (!OnlineSafety::MayWriteRoomState())
+		return;
+
 	const DWORD now = GetTickCount();
 
 	Publish(now);
@@ -149,6 +153,20 @@ uint64_t ModPresence::MemberAt(int index)
 		return 0;
 
 	return g_members[index].id;
+}
+
+bool ModPresence::PeerHasMod(uint64_t id)
+{
+	if (id == 0)
+		return false;
+
+	for (int i = 0; i < g_roomSize; ++i)
+	{
+		if (g_members[i].id == id)
+			return g_members[i].hasMod;
+	}
+
+	return false;
 }
 
 const char* ModPresence::VersionAt(int index)

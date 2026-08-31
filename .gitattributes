@@ -11,3 +11,19 @@ src/Game/FrameDataTable.cpp linguist-generated=true -diff
 src/Game/EffectTable.cpp linguist-generated=true -diff
 src/Game/CharaTables.cpp linguist-generated=true -diff
 src/Game/GameTables.cpp linguist-generated=true -diff
+
+# Written by the SyncBasePals target from the contents of resource/basepals. Drop a chrNNN.png in
+# that folder and the next build rewrites this. Machine output, same rule as the rest.
+resource/basepals.rc linguist-generated=true -diff
+
+# The palette editor's reference renders, compiled into the DLL as RCDATA.
+resource/basepals/*.png binary
+
+# Built by tools/pack_patches.py from the archived game builds and compiled into the DLL as
+# PATCHPACK. Machine output, and large - never read its diff.
+resource/patches/*.pack binary linguist-generated=true -diff
+
+# Written by the SyncPatchPacks target from the contents of resource/patches.
+resource/packs.rc linguist-generated=true -diff
+
+resource/*.ico binary

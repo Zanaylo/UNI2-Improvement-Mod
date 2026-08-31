@@ -46,6 +46,12 @@ float g_rollbacksPerSecond = 0.0f;
 
 char g_status[128] = "no netplay";
 
+constexpr int kStatsEveryFrames = 20;
+
+int g_statsCountdown = 1;
+GgpoNetworkStats g_lastStats = {};
+bool g_haveStats = false;
+
 bool ReadByteAt(uintptr_t rva, uint8_t& out)
 {
 	return TryReadMemory(&out, reinterpret_cast<const void*>(RvaToAddress(rva)), sizeof(out));
@@ -93,6 +99,11 @@ bool QueryNetworkStats(GgpoNetworkStats& out)
 
 	if (!g_modVals.netplayDiagnostics)
 		return false;
+
+	if (--g_statsCountdown > 0)
+		return false;
+
+	g_statsCountdown = kStatsEveryFrames;
 
 	if (!SteamNetwork::HasRecentPeerTraffic(3000))
 		return false;
@@ -168,6 +179,8 @@ void OnNetplayStarted()
 	g_startCount = 0;
 	g_startArmed = true;
 	g_rateAnchorRollbacks = 0;
+	g_haveStats = false;
+	g_statsCountdown = 1;
 	QueryPerformanceCounter(&g_rateAnchor);
 	LOG("RollbackStats: netplay started, capturing the first %d frames",
 		RollbackStats::kStartSamples);
@@ -221,8 +234,17 @@ void RollbackStats::Update()
 	g_lastTick = now;
 
 	GgpoNetworkStats stats = {};
+
 	if (QueryNetworkStats(stats))
 	{
+		g_lastStats = stats;
+		g_haveStats = true;
+	}
+
+	if (g_haveStats)
+	{
+		stats = g_lastStats;
+
 		sample.ping = stats.ping;
 		sample.localFramesBehind = stats.localFramesBehind;
 		sample.remoteFramesBehind = stats.remoteFramesBehind;

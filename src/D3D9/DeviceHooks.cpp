@@ -20,6 +20,7 @@
 #include "Game/BalanceRules.h"
 #include "Game/GameRestart.h"
 #include "Game/GamePatches.h"
+#include "Game/PatchPacks.h"
 #include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
 #include "Game/SoundpackTransfer.h"
@@ -31,6 +32,7 @@
 #include "Training/StageColor.h"
 #include "D3D9/FrozenFrame.h"
 #include "Network/PaletteShare.h"
+#include "Web/UpdateInstall.h"
 #include "Palette/PaletteBinder.h"
 #include "Palette/PaletteDrawProbe.h"
 #include "Palette/PaletteSeat.h"
@@ -320,6 +322,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			OnlineState::Update();
 			NetplayTick::Update();
 			GamePatches::Update();
+			PatchPacks::OnFrame();
+			UpdateInstall::OnFrame();
 			BalanceRules::OnFrame();
 			GameRestart::OnFrame();
 			OstImport::Update();

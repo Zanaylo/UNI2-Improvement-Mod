@@ -4,6 +4,8 @@
 // and nothing is installed - a window offers the release page and that is all.
 SETTING_INT(checkForUpdates,        "Mod",      "CheckForUpdates",      1)
 
+SETTING_INT(settingsRevision,       "Mod",      "SettingsRevision",     2)
+
 SETTING_STRING(toggleOverlayKey,    "Keybinds", "ToggleOverlay",        "F1")
 SETTING_STRING(toggleHitboxKey,     "Keybinds", "ToggleHitboxOverlay",  "F2")
 SETTING_STRING(toggleFrameMeterKey, "Keybinds", "ToggleFrameMeter",     "F3")
@@ -54,7 +56,6 @@ SETTING_INT(stepRepeatIntervalMs,   "Training", "StepRepeatIntervalMs", 90)
 // wrong field of the recorder object breaks the game's own playback - find it with the training
 // globals diff in the Memory debug window before setting it.
 SETTING_INT(recordFrameCounterRva,  "Training", "RecordFrameCounterRva", 0)
-
 
 // PlaceAutomatically keeps the meter centred near the bottom of whatever resolution the game runs
 // at and ignores the position below. Off, the position is the top-left corner in pixels - and -1 on
@@ -432,6 +433,8 @@ SETTING_INT(keyboardSeatRouteSides, "Input",    "KeyboardSeatRouteSides", 1)
 // the backlog is what the Export all button is for.
 SETTING_INT(replayAutoExport,       "Replays",  "AutoExport",           1)
 
+SETTING_INT(onlineSafety,           "Netplay",  "SafeOnline",           1)
+
 // The room roster removes a member only on an exact Left, so Disconnected, Kicked and Banned all
 // leave a ghost behind. On, those are routed to the same handler the game uses for Left.
 SETTING_INT(roomRosterFix,          "Netplay",  "RoomRosterFix",        1)
@@ -442,5 +445,9 @@ SETTING_INT(republishPingLocation,  "Netplay",  "RepublishPingLocation", 1)
 
 // Asks GGPO for ping and frame advantage once a frame. Off, the Netplay window still shows the
 // game's own rollback and frame counters, which are plain reads and touch no session object.
-SETTING_INT(netplayDiagnostics,     "Netplay",  "Diagnostics",          1)
+SETTING_INT(netplayDiagnostics,     "Netplay",  "Diagnostics",          0)
+
+SETTING_INT(sharePalettes,          "Netplay",  "SharePalettes",        1)
+
+SETTING_INT(unloadPatchOnline,      "Netplay",  "UnloadPatchOnline",    1)
 

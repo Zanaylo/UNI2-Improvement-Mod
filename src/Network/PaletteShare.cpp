@@ -5,6 +5,7 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
+#include "Network/ModPresence.h"
 #include "Network/SteamNetwork.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteChoice.h"
@@ -66,7 +67,8 @@ struct PacketV3
 constexpr int kSendDelayFrames = 120;
 
 constexpr int kResendFrames = 180;
-constexpr int kResends = 3;
+constexpr int kResendsKnown = 3;
+constexpr int kResendsUnknown = 1;
 
 constexpr int kSettleFrames = 30;
 
@@ -138,6 +140,11 @@ void UpdateStatus()
 		SteamNetwork::IsReady() ? "Steam ready" : "no Steam",
 		g_sentCount, g_receivedCount,
 		SteamNetwork::HasPeer() ? "" : ", no peer yet");
+}
+
+int Resends()
+{
+	return ModPresence::PeerHasMod(SteamNetwork::GetPeer()) ? kResendsKnown : kResendsUnknown;
 }
 
 int ReadOwnSide()
@@ -219,6 +226,12 @@ void WornName(int player, char* out, int size)
 
 void SendOurs()
 {
+	if (!g_modVals.sharePalettes)
+	{
+		PaletteTrace::Note("send skipped, SharePalettes is off");
+		return;
+	}
+
 	const int own = OwnPlayer();
 
 	if (own < 0)
@@ -289,7 +302,7 @@ void SendOurs()
 	++g_sentCount;
 
 	PaletteTrace::Note("sent '%s' chara %d from seat %d with %s, send %d of %d", packet.name,
-		packet.chara, own, packet.hasEffect ? "effects" : "no effects", g_sent, kResends);
+		packet.chara, own, packet.hasEffect ? "effects" : "no effects", g_sent, Resends());
 
 	LOG("PaletteShare: sent '%s' for character %d on side %d", packet.name, packet.chara, own);
 }
@@ -562,7 +575,9 @@ void PaletteShare::OnFrame()
 		++g_resends;
 	}
 
-	if (g_sent < kResends && g_frames >= kSendDelayFrames + g_sent * kResendFrames)
+	const int resends = Resends();
+
+	if (g_sent < resends && g_frames >= kSendDelayFrames + g_sent * kResendFrames)
 	{
 		++g_sent;
 		SendOurs();
@@ -578,8 +593,8 @@ void PaletteShare::GetDiagnostics(Diagnostics& out)
 	out.ownSide = OwnPlayer();
 	out.framesInMatch = g_frames;
 	out.sendsDone = g_sent;
-	out.sendsAllowed = kResends;
-	out.nextSendFrame = g_sent < kResends ? kSendDelayFrames + g_sent * kResendFrames : -1;
+	out.sendsAllowed = Resends();
+	out.nextSendFrame = g_sent < out.sendsAllowed ? kSendDelayFrames + g_sent * kResendFrames : -1;
 	out.sent = g_sentCount;
 	out.received = g_receivedCount;
 	out.matchPeer = g_matchPeer;

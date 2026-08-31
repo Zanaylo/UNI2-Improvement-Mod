@@ -3,6 +3,7 @@
 #include "Core/Settings.h"
 #include "Core/interfaces.h"
 #include "Core/utils.h"
+#include "Game/BasePals.h"
 #include "Game/CharaTables.h"
 #include "Game/ColorPartTable.h"
 #include "Game/EffectTable.h"
@@ -902,6 +903,34 @@ void PaletteWindow::DrawFiles(int player)
 			"or reorder colours.");
 	}
 
+	ImGui::SameLine();
+
+	const bool exporting = m_pngExportDialog[player].IsRunning();
+	const bool hasBase = BasePals::Has(m_chara[player]);
+
+	ImGui::BeginDisabled(exporting || !hasBase);
+
+	if (ImGui::Button(exporting ? "Exporting..." : "Export PNG..."))
+	{
+		char suggested[96] = {};
+		sprintf_s(suggested, "%s.png", m_name[player][0] != '\0'
+			? m_name[player]
+			: CharaTables::Name(m_chara[player]));
+
+		m_pngExportDialog[player].BeginSave("Export this palette as a picture",
+			"PNG images\0*.png\0", suggested);
+	}
+
+	ImGui::EndDisabled();
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip(hasBase
+			? "Paints these colours onto this character's reference sheet and writes it wherever "
+			  "you choose."
+			: "This character has no reference sheet in this build.");
+	}
+
 	if (!nameOk && m_name[player][0] != '\0')
 		ImGui::TextDisabled("that name cannot be a filename");
 	else if (m_status[player][0] != '\0')
@@ -1109,11 +1138,25 @@ void PaletteWindow::CompleteImportPng(int player, const std::string& path)
 
 void PaletteWindow::CompleteExportPng(int player, const std::string& path)
 {
+	const uint8_t* base = nullptr;
+	size_t size = 0;
+
+	if (!BasePals::Get(m_chara[player], base, size))
+	{
+		sprintf_s(m_status[player], "no reference sheet for this character");
+		return;
+	}
+
+	std::string target = path;
+
+	if (target.size() < 4 || _stricmp(target.c_str() + target.size() - 4, ".png") != 0)
+		target += ".png";
+
 	std::string error;
 
-	if (!PngPalette::Write(path, m_composed[player], error))
+	if (!PngPalette::Recolour(target, base, size, m_composed[player], error))
 	{
-		sprintf_s(m_status[player], "%s", error.c_str());
+		sprintf_s(m_status[player], "%.120s", error.c_str());
 		return;
 	}
 

@@ -29,6 +29,8 @@ public:
 
 	LRESULT HandleWindowMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam, bool& outHandled);
 
+	void OpenUpdateNotifier();
+
 private:
 	WindowManager() = default;
 	~WindowManager() = default;

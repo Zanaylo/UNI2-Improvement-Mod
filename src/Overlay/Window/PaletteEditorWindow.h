@@ -19,6 +19,7 @@ private:
 	void Pull();
 	void Push();
 	void Save();
+	void CurrentColours(uint8_t* out) const;
 	void LoadCreator();
 	void Flash();
 	void StartFlash();

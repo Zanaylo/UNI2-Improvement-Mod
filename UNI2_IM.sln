@@ -1,8 +1,10 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.4.11626.88
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UNI2_IM", "UNI2_IM.vcxproj", "{8F3C1A42-5D9B-4E67-9A21-7C4E0B5D8E13}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UNI2IMUpdater", "UNI2IMUpdater.vcxproj", "{2B7F4E91-6C3D-4A58-9E10-3D5A7B21C4F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,6 +16,10 @@ Global
 		{8F3C1A42-5D9B-4E67-9A21-7C4E0B5D8E13}.Debug|Win32.Build.0 = Debug|Win32
 		{8F3C1A42-5D9B-4E67-9A21-7C4E0B5D8E13}.Release|Win32.ActiveCfg = Release|Win32
 		{8F3C1A42-5D9B-4E67-9A21-7C4E0B5D8E13}.Release|Win32.Build.0 = Release|Win32
+		{2B7F4E91-6C3D-4A58-9E10-3D5A7B21C4F6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2B7F4E91-6C3D-4A58-9E10-3D5A7B21C4F6}.Debug|Win32.Build.0 = Debug|Win32
+		{2B7F4E91-6C3D-4A58-9E10-3D5A7B21C4F6}.Release|Win32.ActiveCfg = Release|Win32
+		{2B7F4E91-6C3D-4A58-9E10-3D5A7B21C4F6}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

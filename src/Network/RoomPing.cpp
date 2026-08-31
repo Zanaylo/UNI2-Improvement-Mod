@@ -3,6 +3,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
+#include "Network/OnlineSafety.h"
 #include "Network/SteamInterfaces.h"
 
 #include <Windows.h>
@@ -74,6 +75,9 @@ bool RoomPing::Initialize()
 void RoomPing::Update()
 {
 	if (!g_initialized || !g_enabled)
+		return;
+
+	if (!OnlineSafety::MayWriteRoomState())
 		return;
 
 	const uint64_t lobby = ReadLobbyId();

@@ -49,6 +49,8 @@ namespace GamePatches
 
 	const char* WhyActive();
 
+	bool UnloadedForOnline();
+
 	bool TakeAnnouncement(std::string& out);
 
 	Answer Resolve(const char* path, std::string& out);
@@ -59,6 +61,7 @@ namespace GamePatches
 	bool Import(const std::string& folder, const std::string& name, char* status, int statusSize);
 
 	void SetDate(int index, const SYSTEMTIME& released);
+	void Describe(int index, const std::string& note, const SYSTEMTIME& released);
 	bool Forget(int index);
 
 	std::string Root();

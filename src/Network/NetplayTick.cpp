@@ -5,6 +5,7 @@
 #include "Game/OpponentLog.h"
 #include "Network/RollbackStats.h"
 #include "Network/ModPresence.h"
+#include "Network/OnlineSafety.h"
 #include "Network/PlayerCount.h"
 #include "Network/RoomPing.h"
 #include "Network/RoomRoster.h"
@@ -45,6 +46,8 @@ void NetplayTick::Update()
 
 	if (!SteamNetwork::IsReady())
 		SteamNetwork::Initialize();
+
+	OnlineSafety::Update();
 
 	RollbackStats::Update();
 	RoomPing::Update();

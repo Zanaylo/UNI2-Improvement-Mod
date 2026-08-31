@@ -30,6 +30,8 @@
 #include "Screens/ScreenTheme.h"
 #include "Overlay/UiText.h"
 #include "Overlay/WindowManager.h"
+#include "Web/UpdateCheck.h"
+#include "Web/UpdateInstall.h"
 #include "Palette/PaletteChoice.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteLibrary.h"
@@ -1757,8 +1759,25 @@ void MainWindow::DrawConfigGeneralTab()
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Asks GitHub once, on a thread of its own, whether a newer release exists. "
-			"Nothing is downloaded and nothing is installed.");
+			"Nothing is downloaded until you ask for it.");
 	}
+
+	ImGui::BeginDisabled(UpdateCheck::IsChecking() || UpdateInstall::IsBusy());
+
+	if (ImGui::Button("Check now"))
+		UpdateCheck::Refresh();
+
+	ImGui::EndDisabled();
+
+	if (UpdateCheck::HasNewer())
+	{
+		ImGui::SameLine();
+
+		if (ImGui::Button("Show the update"))
+			WindowManager::GetInstance().OpenUpdateNotifier();
+	}
+
+	UiText::Muted("%s", UpdateCheck::GetStatusText());
 
 	if (ImGui::Checkbox("Keep the hitboxes and the meter up in the game's pause",
 		&g_modVals.drawWhilePaused))

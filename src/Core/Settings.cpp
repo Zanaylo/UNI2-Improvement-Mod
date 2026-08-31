@@ -24,6 +24,8 @@ namespace {
 
 const char* const kIniFileName = "UNI2_IM.ini";
 
+constexpr int kSettingsRevision = 2;
+
 int ClampRange(int value, int lowest, int highest)
 {
 	if (value < lowest)
@@ -223,6 +225,22 @@ int CompleteIniFile(const std::string& path)
 	return added;
 }
 
+void MigrateIni(int from, const std::string& path)
+{
+	if (from < 2)
+	{
+		WritePrivateProfileStringA("Netplay", "Diagnostics", "0", path.c_str());
+		LOG("Settings: [Netplay] Diagnostics was turned off - it reaches into the netcode and is "
+			"a diagnostic, not a feature");
+	}
+
+	char revision[16] = {};
+	sprintf_s(revision, "%d", kSettingsRevision);
+	WritePrivateProfileStringA("Mod", "SettingsRevision", revision, path.c_str());
+
+	LOG("Settings: brought the ini up from revision %d to %d", from, kSettingsRevision);
+}
+
 void WriteDefaultIni(const std::string& path)
 {
 	if (WriteShippedIni(path))
@@ -302,8 +320,10 @@ void Settings::SaveFloat(const char* section, const char* key, float value)
 bool Settings::LoadSettingsFile()
 {
 	const std::string path = GetIniPath();
+	const bool fresh = GetFileAttributesA(path.c_str()) == INVALID_FILE_ATTRIBUTES;
+	const int revision = fresh ? kSettingsRevision : ReadIniInt("Mod", "SettingsRevision", 0, path);
 
-	if (GetFileAttributesA(path.c_str()) == INVALID_FILE_ATTRIBUTES)
+	if (fresh)
 	{
 		LOG("Settings file not found, writing defaults to %s", path.c_str());
 		WriteDefaultIni(path);
@@ -313,6 +333,9 @@ bool Settings::LoadSettingsFile()
 		const int added = CompleteIniFile(path);
 		if (added > 0)
 			LOG("Completed the ini with %d missing key%s", added, added == 1 ? "" : "s");
+
+		if (revision < kSettingsRevision)
+			MigrateIni(revision, path);
 	}
 
 #define SETTING_STRING(member, section, key, defaultValue) \
@@ -512,9 +535,12 @@ void Settings::ApplySettings()
 
 	g_modVals.notifications = g_settings.notifications != 0;
 
+	g_modVals.onlineSafety = g_settings.onlineSafety != 0;
 	g_modVals.roomRosterFix = g_settings.roomRosterFix != 0;
 	g_modVals.republishPingLocation = g_settings.republishPingLocation != 0;
 	g_modVals.netplayDiagnostics = g_settings.netplayDiagnostics != 0;
+	g_modVals.sharePalettes = g_settings.sharePalettes != 0;
+	g_modVals.unloadPatchOnline = g_settings.unloadPatchOnline != 0;
 
 	g_modVals.memoryDebugEnabled = g_settings.memoryDebugEnabled != 0;
 	g_modVals.profilerEnabled = g_settings.profilerEnabled != 0;

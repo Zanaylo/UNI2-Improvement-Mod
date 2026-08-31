@@ -76,9 +76,12 @@ struct ModValues
 
 	bool replayAutoExport;
 
+	bool onlineSafety;
 	bool roomRosterFix;
 	bool republishPingLocation;
 	bool netplayDiagnostics;
+	bool sharePalettes;
+	bool unloadPatchOnline;
 
 	int presentWidth;
 	int presentHeight;

@@ -299,17 +299,24 @@ void WindowManager::ObserveFocus(UINT message, WPARAM wParam)
 		ProcessTuning::Reassert();
 }
 
-void WindowManager::AnnounceUpdate()
+void WindowManager::OpenUpdateNotifier()
 {
-	if (m_updateAnnounced || m_container == nullptr || !UpdateCheck::HasNewer())
+	if (m_container == nullptr)
 		return;
-
-	m_updateAnnounced = true;
 
 	IWindow* const window = m_container->GetWindow(WindowType_UpdateNotifier);
 
 	if (window != nullptr)
 		window->Open();
+}
+
+void WindowManager::AnnounceUpdate()
+{
+	if (m_updateAnnounced || !UpdateCheck::HasNewer())
+		return;
+
+	m_updateAnnounced = true;
+	OpenUpdateNotifier();
 }
 
 void WindowManager::AnnouncePatch()

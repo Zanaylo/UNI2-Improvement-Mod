@@ -162,6 +162,82 @@ void FillFromPalette(const uint8_t* palette, int entries, uint8_t* outRgba)
 
 }
 
+namespace {
+
+bool WriteWholeFile(const std::string& path, const uint8_t* data, size_t size,
+	std::string& outError)
+{
+	FILE* out = nullptr;
+
+	if (fopen_s(&out, path.c_str(), "wb") != 0 || out == nullptr)
+	{
+		outError = "could not create the file";
+		return false;
+	}
+
+	const bool ok = fwrite(data, 1, size, out) == size;
+	fclose(out);
+
+	if (!ok)
+		outError = "could not write the file";
+
+	return ok;
+}
+
+}
+
+bool PngPalette::Recolour(const std::string& path, const uint8_t* basePng, size_t baseSize,
+	const uint8_t* rgba, std::string& outError)
+{
+	if (basePng == nullptr || rgba == nullptr || baseSize < sizeof(kSignature) ||
+		memcmp(basePng, kSignature, sizeof(kSignature)) != 0)
+	{
+		outError = "the base image is not a PNG";
+		return false;
+	}
+
+	std::vector<uint8_t> file(basePng, basePng + baseSize);
+
+	size_t at = sizeof(kSignature);
+
+	while (at + 12 <= file.size())
+	{
+		const uint32_t length = ReadBigEndian32(file.data() + at);
+		const size_t chunkData = at + 8;
+
+		if (chunkData + length + 4 > file.size())
+			break;
+
+		if (memcmp(file.data() + at + 4, "PLTE", 4) != 0)
+		{
+			at = chunkData + length + 4;
+			continue;
+		}
+
+		const int entries = static_cast<int>(length / 3) < kEntries
+			? static_cast<int>(length / 3) : kEntries;
+
+		for (int i = 1; i < entries; ++i)
+		{
+			file[chunkData + i * 3 + 0] = rgba[i * 4 + 0];
+			file[chunkData + i * 3 + 1] = rgba[i * 4 + 1];
+			file[chunkData + i * 3 + 2] = rgba[i * 4 + 2];
+		}
+
+		const uint32_t crc = Crc32(file.data() + at + 4, 4 + length);
+
+		file[chunkData + length + 0] = static_cast<uint8_t>(crc >> 24);
+		file[chunkData + length + 1] = static_cast<uint8_t>(crc >> 16);
+		file[chunkData + length + 2] = static_cast<uint8_t>(crc >> 8);
+		file[chunkData + length + 3] = static_cast<uint8_t>(crc);
+
+		return WriteWholeFile(path, file.data(), file.size(), outError);
+	}
+
+	outError = "the base image has no palette to replace";
+	return false;
+}
+
 bool PngPalette::Read(const std::string& path, uint8_t* outRgba, std::string& outError)
 {
 	std::vector<uint8_t> data;

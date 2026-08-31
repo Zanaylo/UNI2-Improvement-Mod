@@ -97,7 +97,20 @@ bool ReadWhole(const std::string& path, std::vector<uint8_t>& out)
 	return read == out.size();
 }
 
-bool MakeFolders(const std::string& path)
+bool SafeName(const std::string& name)
+{
+	if (name.empty() || name[0] == '/' || name[0] == '\\')
+		return false;
+
+	if (name.find("..") != std::string::npos)
+		return false;
+
+	return name.find(':') == std::string::npos;
+}
+
+}
+
+bool ZipArchive::MakeFolders(const std::string& path)
 {
 	for (size_t at = 0; at < path.size(); ++at)
 	{
@@ -111,19 +124,6 @@ bool MakeFolders(const std::string& path)
 	}
 
 	return true;
-}
-
-bool SafeName(const std::string& name)
-{
-	if (name.empty() || name[0] == '/' || name[0] == '\\')
-		return false;
-
-	if (name.find("..") != std::string::npos)
-		return false;
-
-	return name.find(':') == std::string::npos;
-}
-
 }
 
 bool ZipArchive::Writer::Open(const std::string& path)
@@ -259,104 +259,252 @@ bool ZipArchive::Writer::Close()
 
 namespace {
 
-bool FindCentral(const std::vector<uint8_t>& blob, uint32_t& outOffset, uint16_t& outCount)
+constexpr long kDirectoryTail = 66000;
+
+}
+
+ZipArchive::Source::~Source()
 {
-	if (blob.size() < 22)
+	Close();
+}
+
+void ZipArchive::Source::Close()
+{
+	m_entries.clear();
+	m_size = 0;
+	m_data = nullptr;
+
+	if (m_file == nullptr)
+		return;
+
+	fclose(static_cast<FILE*>(m_file));
+	m_file = nullptr;
+}
+
+bool ZipArchive::Source::ReadAt(long offset, void* destination, size_t size)
+{
+	if (offset < 0 || size == 0)
 		return false;
 
-	const size_t limit = blob.size() > 66000 ? blob.size() - 66000 : 0;
+	if (offset + static_cast<long>(size) > m_size)
+		return false;
 
-	for (size_t at = blob.size() - 22; ; --at)
+	if (m_data != nullptr)
 	{
-		if (Read32(blob.data() + at) == kEndSignature)
-		{
-			outCount = Read16(blob.data() + at + 10);
-			outOffset = Read32(blob.data() + at + 16);
-			return outOffset < blob.size();
-		}
-
-		if (at == limit)
-			break;
+		memcpy(destination, m_data + offset, size);
+		return true;
 	}
 
-	return false;
+	if (m_file == nullptr)
+		return false;
+
+	FILE* const handle = static_cast<FILE*>(m_file);
+
+	if (fseek(handle, offset, SEEK_SET) != 0)
+		return false;
+
+	return fread(destination, 1, size, handle) == size;
 }
 
-}
-
-bool ZipArchive::List(const std::string& path, std::vector<std::string>& outNames)
+bool ZipArchive::Source::OpenMemory(const uint8_t* data, size_t size)
 {
-	std::vector<uint8_t> blob;
+	Close();
 
-	if (!ReadWhole(path, blob))
+	if (data == nullptr || size == 0)
 		return false;
 
-	uint32_t at = 0;
-	uint16_t count = 0;
+	m_data = data;
+	m_size = static_cast<long>(size);
 
-	if (!FindCentral(blob, at, count))
-		return false;
-
-	for (uint16_t i = 0; i < count && at + 46 <= blob.size(); ++i)
+	if (!ReadDirectory())
 	{
-		if (Read32(blob.data() + at) != kCentralSignature)
-			break;
-
-		const uint16_t nameLength = Read16(blob.data() + at + 28);
-		const uint16_t extra = Read16(blob.data() + at + 30);
-		const uint16_t comment = Read16(blob.data() + at + 32);
-
-		if (at + 46 + nameLength > blob.size())
-			break;
-
-		outNames.push_back(std::string(reinterpret_cast<const char*>(blob.data() + at + 46),
-			nameLength));
-
-		at += 46 + nameLength + extra + comment;
+		Close();
+		return false;
 	}
 
 	return true;
 }
 
-bool ZipArchive::Extract(const std::string& path, const std::string& intoFolder, int& outFiles,
-	char* status, int statusSize)
+bool ZipArchive::Source::ReadDirectory()
 {
-	outFiles = 0;
+	if (m_size < 22)
+		return false;
 
-	std::vector<uint8_t> blob;
+	const long window = m_size < kDirectoryTail ? m_size : kDirectoryTail;
 
-	if (!ReadWhole(path, blob))
+	std::vector<uint8_t> tail(static_cast<size_t>(window));
+
+	if (!ReadAt(m_size - window, tail.data(), tail.size()))
+		return false;
+
+	for (long at = window - 22; at >= 0; --at)
 	{
-		strncpy_s(status, statusSize, "the file could not be read", _TRUNCATE);
+		if (Read32(tail.data() + at) != kEndSignature)
+			continue;
+
+		const uint32_t count = Read16(tail.data() + at + 10);
+		const uint32_t length = Read32(tail.data() + at + 12);
+		const uint32_t offset = Read32(tail.data() + at + 16);
+
+		if (length == 0 || offset >= static_cast<uint32_t>(m_size))
+			return false;
+
+		std::vector<uint8_t> directory(length);
+
+		if (!ReadAt(static_cast<long>(offset), directory.data(), directory.size()))
+			return false;
+
+		size_t walk = 0;
+
+		for (uint32_t i = 0; i < count && walk + 46 <= directory.size(); ++i)
+		{
+			if (Read32(directory.data() + walk) != kCentralSignature)
+				break;
+
+			const uint16_t nameLength = Read16(directory.data() + walk + 28);
+
+			if (walk + 46 + nameLength > directory.size())
+				break;
+
+			Record record = {};
+			record.method = Read16(directory.data() + walk + 10);
+			record.stored = Read32(directory.data() + walk + 20);
+			record.plain = Read32(directory.data() + walk + 24);
+			record.local = Read32(directory.data() + walk + 42);
+			record.name.assign(reinterpret_cast<const char*>(directory.data() + walk + 46),
+				nameLength);
+
+			m_entries.push_back(record);
+
+			walk += 46 + nameLength + Read16(directory.data() + walk + 30) +
+				Read16(directory.data() + walk + 32);
+		}
+
+		return !m_entries.empty();
+	}
+
+	return false;
+}
+
+bool ZipArchive::Source::Open(const std::string& path)
+{
+	Close();
+
+	FILE* handle = nullptr;
+
+	if (fopen_s(&handle, path.c_str(), "rb") != 0 || handle == nullptr)
+		return false;
+
+	m_file = handle;
+
+	if (fseek(handle, 0, SEEK_END) != 0)
+	{
+		Close();
 		return false;
 	}
 
-	uint32_t at = 0;
-	uint16_t count = 0;
+	m_size = ftell(handle);
 
-	if (!FindCentral(blob, at, count))
+	if (m_size <= 0 || !ReadDirectory())
 	{
-		strncpy_s(status, statusSize, "that is not a zip", _TRUNCATE);
+		Close();
+		return false;
+	}
+
+	return true;
+}
+
+const std::string& ZipArchive::Source::Name(int index) const
+{
+	static const std::string empty;
+
+	if (index < 0 || index >= Count())
+		return empty;
+
+	return m_entries[index].name;
+}
+
+int ZipArchive::Source::Find(const std::string& name) const
+{
+	for (int i = 0; i < Count(); ++i)
+	{
+		if (m_entries[i].name == name)
+			return i;
+	}
+
+	return -1;
+}
+
+bool ZipArchive::Source::Read(int index, std::vector<uint8_t>& out)
+{
+	out.clear();
+
+	if (index < 0 || index >= Count())
+		return false;
+
+	const Record& record = m_entries[index];
+
+	uint8_t header[30] = {};
+
+	if (!ReadAt(static_cast<long>(record.local), header, sizeof(header)) ||
+		Read32(header) != kLocalSignature)
+	{
+		return false;
+	}
+
+	const long start = static_cast<long>(record.local) + 30 + Read16(header + 26) +
+		Read16(header + 28);
+
+	if (record.method == kStored)
+	{
+		out.resize(record.stored);
+
+		return record.stored == 0 || ReadAt(start, out.data(), out.size());
+	}
+
+	if (record.method != kDeflated)
+		return false;
+
+	std::vector<uint8_t> stored(record.stored);
+
+	if (record.stored != 0 && !ReadAt(start, stored.data(), stored.size()))
+		return false;
+
+	return Deflate::Inflate(stored.data(), stored.size(), out, record.plain);
+}
+
+bool ZipArchive::List(const std::string& path, std::vector<std::string>& outNames)
+{
+	Source source;
+
+	if (!source.Open(path))
+		return false;
+
+	for (int i = 0; i < source.Count(); ++i)
+		outNames.push_back(source.Name(i));
+
+	return true;
+}
+
+bool ZipArchive::Extract(const std::string& path, const std::string& intoFolder, int& outFiles,
+	char* status, int statusSize, Progress* progress)
+{
+	outFiles = 0;
+
+	Source source;
+
+	if (!source.Open(path))
+	{
+		strncpy_s(status, statusSize, "that is not a zip, or it could not be read", _TRUNCATE);
 		return false;
 	}
 
 	int refused = 0;
+	std::vector<uint8_t> data;
 
-	for (uint16_t i = 0; i < count && at + 46 <= blob.size(); ++i)
+	for (int i = 0; i < source.Count(); ++i)
 	{
-		if (Read32(blob.data() + at) != kCentralSignature)
-			break;
-
-		const uint16_t method = Read16(blob.data() + at + 10);
-		const uint32_t stored = Read32(blob.data() + at + 20);
-		const uint32_t plain = Read32(blob.data() + at + 24);
-		const uint16_t nameLength = Read16(blob.data() + at + 28);
-		const uint16_t extra = Read16(blob.data() + at + 30);
-		const uint16_t comment = Read16(blob.data() + at + 32);
-		const uint32_t local = Read32(blob.data() + at + 42);
-
-		std::string name(reinterpret_cast<const char*>(blob.data() + at + 46), nameLength);
-		at += 46 + nameLength + extra + comment;
+		std::string name = source.Name(i);
 
 		if (name.empty() || name.back() == '/' || name.back() == '\\')
 			continue;
@@ -367,31 +515,8 @@ bool ZipArchive::Extract(const std::string& path, const std::string& intoFolder,
 			continue;
 		}
 
-		if (local + 30 > blob.size() || Read32(blob.data() + local) != kLocalSignature)
+		if (!source.Read(i, data))
 			continue;
-
-		const uint16_t localName = Read16(blob.data() + local + 26);
-		const uint16_t localExtra = Read16(blob.data() + local + 28);
-		const size_t start = local + 30 + localName + localExtra;
-
-		if (start + stored > blob.size())
-			continue;
-
-		std::vector<uint8_t> data;
-
-		if (method == kStored)
-		{
-			data.assign(blob.begin() + start, blob.begin() + start + stored);
-		}
-		else if (method == kDeflated)
-		{
-			if (!Deflate::Inflate(blob.data() + start, stored, data, plain))
-				continue;
-		}
-		else
-		{
-			continue;
-		}
 
 		std::string target = intoFolder;
 
@@ -417,6 +542,12 @@ bool ZipArchive::Extract(const std::string& path, const std::string& intoFolder,
 
 		fclose(handle);
 		++outFiles;
+
+		if (progress != nullptr && !progress->OnEntry(i + 1, source.Count()))
+		{
+			strncpy_s(status, statusSize, "cancelled", _TRUNCATE);
+			return false;
+		}
 	}
 
 	if (refused > 0)

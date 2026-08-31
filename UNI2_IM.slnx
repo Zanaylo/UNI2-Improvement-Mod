@@ -3,4 +3,5 @@
     <Platform Name="Win32" />
   </Configurations>
   <Project Path="UNI2_IM.vcxproj" Id="8f3c1a42-5d9b-4e67-9a21-7c4e0b5d8e13" />
+  <Project Path="UNI2IMUpdater.vcxproj" Id="2b7f4e91-6c3d-4a58-9e10-3d5a7b21c4f6" />
 </Solution>

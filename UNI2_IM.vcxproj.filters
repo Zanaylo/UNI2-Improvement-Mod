@@ -75,6 +75,33 @@
     <ClCompile Include="src\Core\dllmain.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\BundledPack.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Json.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Web\Http.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Web\Job.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Web\GitHubRelease.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Web\UpdateInstall.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BasePals.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PatchPacks.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\OnlineSafety.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\CrashContext.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -713,6 +740,33 @@
     <ClInclude Include="src\Core\Settings.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\BundledPack.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Json.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Web\Http.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Web\Job.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Web\GitHubRelease.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Web\UpdateInstall.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BasePals.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PatchPacks.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\OnlineSafety.h">
+      <Filter>Network</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\CrashContext.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -1336,5 +1390,10 @@
     <None Include="resource\shaders\upscale_lanczos.hlsl">
       <Filter>Resources\shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="resource\UNI2_IM.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

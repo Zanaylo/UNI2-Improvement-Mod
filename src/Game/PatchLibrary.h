@@ -42,8 +42,10 @@ namespace PatchLibrary
 	bool Add(const std::string& folder, const std::string& name, char* status, int statusSize);
 	bool Remove(int index);
 	void SetDate(int index, const SYSTEMTIME& released);
+	void Describe(int index, const std::string& note, const SYSTEMTIME& released);
 
 	int IndexOfId(const char* id);
+	int IndexOfSource(const char* folder);
 	int Newest(const SYSTEMTIME& when);
 
 	int VersionOf(const std::string& name);

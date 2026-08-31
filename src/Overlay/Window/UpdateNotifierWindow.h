@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Overlay/Window/IWindow.h"
+#include "Web/UpdateInstall.h"
 
 class UpdateNotifierWindow : public IWindow
 {
@@ -11,4 +12,8 @@ protected:
 	void BeforeDraw() override;
 	void Draw() override;
 	bool GrowsToFitContent() const override { return true; }
+
+private:
+	void DrawInstall();
+	void DrawProgress(const UpdateInstall::Snapshot& snapshot);
 };

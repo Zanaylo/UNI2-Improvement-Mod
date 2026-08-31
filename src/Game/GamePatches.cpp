@@ -1,5 +1,6 @@
 #include "Game/GamePatches.h"
 
+#include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Game/BalanceRules.h"
 #include "Game/BgmControl.h"
@@ -29,6 +30,7 @@ bool g_replayHeld = false;
 bool g_sawPlayback = false;
 bool g_loaded = false;
 bool g_atNetworkMenu = false;
+bool g_heldForOnline = false;
 
 const char* g_reason = "your pick";
 std::string g_announcement;
@@ -112,7 +114,7 @@ void Announce()
 		: std::string("Replay on the installed game"));
 }
 
-void WarnAtNetworkMenu()
+void GuardOnline()
 {
 	const bool here = BgmControl::GetLastRequested() == GameOffsets::kBgmNetworkMenu ||
 		OnlineState::IsOnline() || OnlineState::HasSession();
@@ -123,17 +125,38 @@ void WarnAtNetworkMenu()
 	g_atNetworkMenu = here;
 
 	if (!here)
+	{
+		if (g_heldForOnline)
+			Say("The patch stays unloaded until the game is restarted.");
+
 		return;
+	}
 
 	const GamePatches::Patch* const patch = PatchLibrary::Get(g_active);
 
 	if (patch == nullptr)
 		return;
 
-	Say(patch->name + " is loaded - anybody on the current game will desync. "
-		"Reload into the installed game before a ranked or player match.");
+	if (!g_modVals.unloadPatchOnline)
+	{
+		Say(patch->name + " is loaded - anybody on the current game will desync. "
+			"Reload into the installed game before a ranked or player match.");
 
-	LOG("GamePatches: the network menu opened while %s is loaded", patch->name.c_str());
+		LOG("GamePatches: the network menu opened while %s is loaded", patch->name.c_str());
+		return;
+	}
+
+	const std::string name = patch->name;
+
+	g_heldForOnline = true;
+	g_reason = "unloaded for online";
+	ApplyInstalled();
+
+	Say(name + " was unloaded - the game reads the installed build from here on. The tables it "
+		"already read at startup are still the patch's, so restart before a ranked or player "
+		"match.");
+
+	LOG("GamePatches: %s was unloaded because the game went online", name.c_str());
 }
 
 void RebuildTables()
@@ -148,6 +171,9 @@ void RebuildTables()
 
 void ApplyIndex(int index)
 {
+	if (g_heldForOnline)
+		index = -1;
+
 	if (index == g_active && !Drifted(index))
 		return;
 
@@ -250,6 +276,7 @@ void GamePatches::ApplyForReset(int index)
 {
 	const Patch* const patch = PatchLibrary::Get(index);
 
+	g_heldForOnline = false;
 	g_chosen = patch != nullptr ? index : -1;
 	g_bootId = patch != nullptr ? patch->id : std::string();
 	g_replayHeld = false;
@@ -336,6 +363,11 @@ const char* GamePatches::WhyActive()
 	return g_reason;
 }
 
+bool GamePatches::UnloadedForOnline()
+{
+	return g_heldForOnline;
+}
+
 bool GamePatches::TakeAnnouncement(std::string& out)
 {
 	AcquireSRWLockExclusive(&g_lock);
@@ -393,8 +425,8 @@ void GamePatches::Update()
 		return;
 
 	ReleaseReplayHold();
+	GuardOnline();
 	ApplyIndex(Desired());
-	WarnAtNetworkMenu();
 }
 
 void GamePatches::Choose(int index)
@@ -483,6 +515,17 @@ void GamePatches::SetDate(int index, const SYSTEMTIME& released)
 	const std::string id = chosen != nullptr ? chosen->id : std::string();
 
 	PatchLibrary::SetDate(index, released);
+
+	g_chosen = PatchLibrary::IndexOfId(id.c_str());
+	ApplyIndex(Desired());
+}
+
+void GamePatches::Describe(int index, const std::string& note, const SYSTEMTIME& released)
+{
+	const Patch* const chosen = PatchLibrary::Get(g_chosen);
+	const std::string id = chosen != nullptr ? chosen->id : std::string();
+
+	PatchLibrary::Describe(index, note, released);
 
 	g_chosen = PatchLibrary::IndexOfId(id.c_str());
 	ApplyIndex(Desired());

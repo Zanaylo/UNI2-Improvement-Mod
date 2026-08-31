@@ -245,6 +245,20 @@ void PaletteEditorWindow::LoadCreator()
 		Settings::GetIniPath().c_str());
 }
 
+void PaletteEditorWindow::CurrentColours(uint8_t* out) const
+{
+	const int texture = PaletteTexture::FindForPlayer(m_player);
+	const int row = Row();
+
+	if (texture >= 0 && row >= 0 &&
+		PaletteTexture::ReadRowAsRgba(texture, static_cast<unsigned>(row), out))
+	{
+		return;
+	}
+
+	memcpy(out, m_colors, PaletteFile::kBytes);
+}
+
 void PaletteEditorWindow::Save()
 {
 	const int chara = PaletteManager::GetCharaNumber(m_player);
@@ -266,21 +280,10 @@ void PaletteEditorWindow::Save()
 	uint8_t character[PaletteFile::kBytes] = {};
 	uint8_t effect[PaletteFile::kBytes] = {};
 
-	const int characterTexture = PaletteTexture::FindForPlayer(m_player);
-	const int characterRow = Row();
-
-	bool haveCharacter = characterTexture >= 0 && characterRow >= 0 &&
-		PaletteTexture::ReadRowAsRgba(characterTexture, static_cast<unsigned>(characterRow),
-			character);
+	CurrentColours(character);
 
 	EffectPaint::GetBlock(m_player, effect);
 	const bool haveEffect = EffectPaint::GetEditedCount(m_player) > 0;
-
-	if (!haveCharacter)
-	{
-		memcpy(character, m_colors, sizeof(character));
-		haveCharacter = true;
-	}
 
 	if (PaletteFile::Save(path, character, info, haveEffect ? effect : nullptr))
 	{

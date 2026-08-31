@@ -418,7 +418,8 @@ understands, and keys added by a new version turn up in it on the next launch.
 | Key | Default | What it does |
 |---|---|---|
 | `DinputDllWrapper` | empty | Full path to another `dinput8.dll` to chain-load. Empty uses the system one. |
-| `CheckForUpdates` | `1` | Asks GitHub once, on a thread of its own, whether a newer release exists. Nothing is downloaded or installed. |
+| `CheckForUpdates` | `1` | Asks GitHub once, on a thread of its own, whether a newer release exists. Nothing is downloaded until you press **Update now**. |
+| `SettingsRevision` | `2` | Which release's defaults this file was last brought up to. A lower number lets the mod correct a setting whose old default turned out to be unsafe. Never edit it by hand. |
 
 ### `[Keybinds]`
 
@@ -498,6 +499,17 @@ XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back
 | `GroupByPart` | `1` | Group palette entries the way the game's own colour screen does - hair, skin, and so on. |
 | `FlashEntry` | `1` | Picking an entry darkens everything else and blinks that entry on the character. |
 | `FilterJunk` | `1` | Hide the entries that are not really colours: the black padding, the green the unused slots are filled with, and anything repeating an entry above it. |
+
+### `[Netplay]`
+
+| Key | Default | What it does |
+|---|---|---|
+| `SafeOnline` | `1` | While a netplay session is up the mod writes nothing anybody else receives and calls nothing the netcode owns. Everything below still runs in a room. Off, each switch decides for itself again - which is what the mid-match disconnects were traced to. |
+| `RoomRosterFix` | `1` | The game removes a room member only on an exact `Left`, so `Disconnected`, `Kicked` and `Banned` leave a ghost behind. On, those are routed to the handler the game uses for `Left`. `SafeOnline` holds it back once a session is up, because a blip Steam reports as `Disconnected` would otherwise take the opponent out of the room mid-match. |
+| `RepublishPingLocation` | `1` | Republishes your Steam ping location into the room every 30 s. The game publishes it once, on join, which is why rejoining "resets" the ping. Held back during a session. |
+| `Diagnostics` | `0` | Asks GGPO for ping and frame advantage by calling a method on the game's own backend from the render thread - the netcode thread's object. Off by default for that reason, and throttled to once every twenty frames when on. The rollback and frame counters work either way; those are plain reads. |
+| `SharePalettes` | `1` | Sends your palette to the other player over the mod's own Steam channel. It shares a connection with the rollback traffic, so it is sent once when the opponent is not known to be running the mod and three times when they are. |
+| `UnloadPatchOnline` | `1` | A patch is battle data the other side does not have. On, going online unloads it and says so, which turns a desync into a restart. Off, the mod only warns. |
 
 ### `[Video]`
 

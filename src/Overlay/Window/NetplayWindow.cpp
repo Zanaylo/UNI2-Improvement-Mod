@@ -8,6 +8,7 @@
 #include "Game/SteamNames.h"
 #include "Network/ModPresence.h"
 #include "Network/RoomPing.h"
+#include "Network/OnlineSafety.h"
 #include "Network/RoomRoster.h"
 #include "Overlay/UiScale.h"
 #include "Overlay/UiText.h"
@@ -150,8 +151,15 @@ void NetplayWindow::DrawRollbackTab()
 		Settings::SaveInt("Netplay", "Diagnostics", diagnostics ? 1 : 0);
 	}
 
-	UiText::Help("Off, the rollback and frame counters still work - those are plain reads of the "
-		"game's own globals and touch no session object.");
+	UiText::Help("Off by default, and off is the safe answer: the call lands on the netcode "
+		"thread's own object from the render thread. Off, the rollback and frame counters still "
+		"work - those are plain reads of the game's own globals and touch no session object.");
+
+	if (g_modVals.netplayDiagnostics)
+	{
+		UiText::Warn("On. If a match drops or the room breaks, turn this off first and say whether "
+			"it stopped.");
+	}
 
 	ImGui::Separator();
 
@@ -244,6 +252,27 @@ void NetplayWindow::DrawStartCapture()
 
 void NetplayWindow::DrawRoomTab()
 {
+	ImGui::TextUnformatted("While a match is connected");
+	UiText::Help("Everything on this tab writes something the other people in the room receive, or "
+		"reads an object the netcode owns. On, none of it runs once a session is up - that is what "
+		"the mid-match disconnects were traced to. Off, each switch below decides for itself.");
+
+	bool guarded = OnlineSafety::IsGuarded();
+
+	if (ImGui::Checkbox("Hold the mod back during a session", &guarded))
+	{
+		OnlineSafety::SetGuarded(guarded);
+		g_modVals.onlineSafety = guarded;
+		Settings::SaveInt("Netplay", "SafeOnline", guarded ? 1 : 0);
+	}
+
+	if (OnlineSafety::InSession())
+		UiText::Warn("%s", OnlineSafety::GetStatusText());
+	else
+		UiText::Muted("%s", OnlineSafety::GetStatusText());
+
+	ImGui::Separator();
+
 	ImGui::TextUnformatted("Ghost members");
 	UiText::Help("The game removes a member only on an exact Left. Disconnected, Kicked and Banned "
 		"are ignored, so an alt-F4 or a kick leaves the member in the room forever. This routes "
