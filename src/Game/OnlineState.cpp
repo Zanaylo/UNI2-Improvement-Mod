@@ -126,6 +126,11 @@ bool OnlineState::IsOnline()
 	return mode == kAmbiguousBattleMode;
 }
 
+bool OnlineState::HasSession()
+{
+	return g_lastPointer != 0 && g_lastKind >= 0;
+}
+
 bool OnlineState::IsSpectating()
 {
 	return g_lastKind == kBackendSpectator;

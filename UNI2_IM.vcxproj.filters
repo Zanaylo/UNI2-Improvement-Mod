@@ -90,6 +90,24 @@
     <ClCompile Include="src\Game\MusicRefresh.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\FileIndex.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BalanceRules.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\DataSearchPath.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\GamePatches.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\PatchLibrary.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\PatchWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\UserMusic.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -288,6 +306,9 @@
     <ClCompile Include="src\Game\Camera.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\GameRestart.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\GameState.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -391,6 +412,9 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\PatParts.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ScriptReload.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\SaveData.cpp">
@@ -561,6 +585,9 @@
     <ClCompile Include="src\Game\PotatoMode.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\ReplayArchive.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\ReplayFiles.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -700,6 +727,24 @@
     </ClInclude>
     <ClInclude Include="src\Game\MusicRefresh.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\FileIndex.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BalanceRules.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\DataSearchPath.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GamePatches.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PatchLibrary.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\PatchWindow.h">
+      <Filter>Overlay\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\UserMusic.h">
       <Filter>Game</Filter>
@@ -911,6 +956,9 @@
     <ClInclude Include="src\Game\PatParts.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\ScriptReload.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\SaveData.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -960,6 +1008,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Camera.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GameRestart.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\GameState.h">
@@ -1206,6 +1257,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\PotatoMode.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ReplayArchive.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\ReplayFiles.h">

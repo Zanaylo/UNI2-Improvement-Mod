@@ -2,6 +2,7 @@
 
 #include "Core/AsyncFileDialog.h"
 #include "Game/BgmRules.h"
+#include "Game/BgmThemes.h"
 #include "Game/UserMusic.h"
 
 #include <vector>
@@ -14,25 +15,35 @@ public:
 private:
 	void DrawStatus();
 	void DrawSoundpacks();
+	bool DrawSoundpackRow(const BgmThemes::Theme& theme, bool isActive);
+	int DrawSoundpackTable(int count, int active);
+	void DrawSoundpackControls(int active);
 	void DrawPackBuilder();
 	void DrawPackDraft();
 	void DrawPackDraftTable(int count);
 	void DrawMyMusic();
 	void RefreshMusicList();
+	void DrawMyMusicRow(const UserMusic::Entry& entry);
 	void DrawMyMusicTable();
 	void DrawGetOst();
 	void DrawTransfer();
 	void DrawShuffle();
 	void DrawBrowse();
 	void DrawTrackCount();
+	void SetUpTrackColumns(bool building);
+	void DrawTrackRow(int id, const char* name, bool building, bool playing);
 	void DrawTrackTable();
 	void DrawRules();
+	void DrawRuleTransfer();
+	bool DrawRuleRow(int index, const BgmRules::Rule& stored);
+	int DrawRuleTable(int count);
 	void DrawRuleEditor();
 
 	void DrawSourceFilter();
 	bool PassesFilter(int id, const char* name) const;
 
-	bool DrawTrackCombo(const char* label, int& bgm);
+	bool DrawTrackCombo(const char* label, int& bgm, bool sceneOnly = false);
+	bool DrawTrackComboList(bool sceneOnly, int& bgm);
 	bool DrawCharacterCombo(const char* label, int& chara);
 	bool DrawSceneCombo(int& scene);
 

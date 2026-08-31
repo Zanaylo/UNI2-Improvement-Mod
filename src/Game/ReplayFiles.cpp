@@ -4,7 +4,11 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
+#include "Game/GamePatches.h"
+#include "Game/GameRestart.h"
+#include "Game/SceneWatch.h"
 #include "Game/GameState.h"
+#include "Game/ReplayArchive.h"
 #include "Game/SteamNames.h"
 #include "Hooks/HookManager.h"
 
@@ -38,7 +42,10 @@ constexpr int kExportsPerPass = 2;
 
 constexpr int kSettleFrames = 180;
 
-constexpr int kLaunchFrames = 600;
+constexpr int kLaunchFrames = 3600;
+
+constexpr int kQueueFrames = 3600;
+constexpr int kQueueSettleFrames = 90;
 
 constexpr size_t kFileNameChars = 32;
 
@@ -78,6 +85,7 @@ std::vector<std::string> g_files;
 bool g_filesValid = false;
 
 int g_used = -1;
+int g_usedAccount = -1;
 int g_version = 0;
 
 std::vector<uint8_t> g_disk;
@@ -92,6 +100,18 @@ typedef void(*SampleKeyboardFn)();
 SampleKeyboardFn oSampleKeyboard = nullptr;
 
 volatile LONG g_playbackRequest = 0;
+enum QueuePhase
+{
+	Queue_None,
+	Queue_WaitStart,
+	Queue_WaitLoaded,
+	Queue_WaitSettle
+};
+
+std::string g_queuedPath;
+QueuePhase g_queuedPhase = Queue_None;
+int g_queuedWait = 0;
+int g_queuedSettle = 0;
 std::vector<uint8_t> g_playbackRecord;
 
 enum Session
@@ -127,59 +147,54 @@ uint8_t* MemoryImage()
 	return IsReadableMemory(buffer, ReplayFiles::kRecordSize) ? buffer : nullptr;
 }
 
+int g_account = -1;
+
+int Browsing()
+{
+	const int own = ReplayArchive::OwnIndex();
+
+	if (g_account < 0 || g_account >= ReplayArchive::Count())
+		return own;
+
+	return g_account;
+}
+
+bool OnOwn()
+{
+	return Browsing() == ReplayArchive::OwnIndex();
+}
+
+struct HoldOwn
+{
+	HoldOwn() : m_previous(g_account) { g_account = ReplayArchive::OwnIndex(); }
+	~HoldOwn() { g_account = m_previous; }
+
+	int m_previous;
+};
+
 std::string RepDataPath(uint64_t* outStamp = nullptr)
 {
 	if (outStamp != nullptr)
 		*outStamp = 0;
 
-	char exePath[MAX_PATH] = {};
-	if (GetModuleFileNameA(nullptr, exePath, MAX_PATH) == 0)
+	const ReplayArchive::Account* const own = ReplayArchive::Get(ReplayArchive::OwnIndex());
+
+	if (own == nullptr)
 		return std::string();
-
-	std::string folder(exePath);
-	const size_t slash = folder.find_last_of("\\/");
-	if (slash == std::string::npos)
-		return std::string();
-
-	folder = folder.substr(0, slash + 1) + "Save\\";
-
-	WIN32_FIND_DATAA find = {};
-	const HANDLE handle = FindFirstFileA((folder + "*").c_str(), &find);
-	if (handle == INVALID_HANDLE_VALUE)
-		return std::string();
-
-	std::string best;
-	uint64_t newest = 0;
-
-	do
-	{
-		if ((find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 || find.cFileName[0] == '.')
-			continue;
-
-		const std::string candidate = folder + find.cFileName + "\\REP-DATA";
-
-		WIN32_FILE_ATTRIBUTE_DATA attributes = {};
-		if (!GetFileAttributesExA(candidate.c_str(), GetFileExInfoStandard, &attributes))
-			continue;
-
-		const uint64_t stamp =
-			(static_cast<uint64_t>(attributes.ftLastWriteTime.dwHighDateTime) << 32) |
-			attributes.ftLastWriteTime.dwLowDateTime;
-
-		if (stamp > newest)
-		{
-			newest = stamp;
-			best = candidate;
-		}
-	}
-	while (FindNextFileA(handle, &find));
-
-	FindClose(handle);
 
 	if (outStamp != nullptr)
-		*outStamp = newest;
+	{
+		WIN32_FILE_ATTRIBUTE_DATA attributes = {};
 
-	return best;
+		if (GetFileAttributesExA(own->path.c_str(), GetFileExInfoStandard, &attributes))
+		{
+			*outStamp =
+				(static_cast<uint64_t>(attributes.ftLastWriteTime.dwHighDateTime) << 32) |
+				attributes.ftLastWriteTime.dwLowDateTime;
+		}
+	}
+
+	return own->path;
 }
 
 bool LoadDisk()
@@ -225,6 +240,17 @@ bool ReadSlotAt(int slot, size_t offset, void* out, size_t bytes)
 		return false;
 
 	const size_t at = static_cast<size_t>(slot) * ReplayFiles::kRecordSize + offset;
+
+	if (!OnOwn())
+	{
+		const uint8_t* const image = ReplayArchive::Image(Browsing());
+
+		if (image == nullptr)
+			return false;
+
+		memcpy(out, image + at, bytes);
+		return true;
+	}
 
 	if (uint8_t* const memory = MemoryImage())
 		return TryReadMemory(out, memory + at, bytes);
@@ -449,9 +475,10 @@ bool WriteRepData()
 
 void RefreshStats()
 {
-	if (g_used >= 0)
+	if (g_used >= 0 && g_usedAccount == Browsing())
 		return;
 
+	g_usedAccount = Browsing();
 	g_used = 0;
 	g_version = 0;
 
@@ -478,12 +505,54 @@ void RefreshStats()
 
 bool ReplayFiles::IsAvailable()
 {
+	if (!OnOwn())
+		return ReplayArchive::Image(Browsing()) != nullptr;
+
 	return MemoryImage() != nullptr || LoadDisk();
 }
 
 bool ReplayFiles::IsLive()
 {
-	return MemoryImage() != nullptr;
+	return OnOwn() && MemoryImage() != nullptr;
+}
+
+int ReplayFiles::AccountCount()
+{
+	return ReplayArchive::Count();
+}
+
+int ReplayFiles::SelectedAccount()
+{
+	return Browsing();
+}
+
+bool ReplayFiles::IsOwnAccount()
+{
+	return OnOwn();
+}
+
+std::string ReplayFiles::AccountLabel(int index)
+{
+	const ReplayArchive::Account* const account = ReplayArchive::Get(index);
+
+	if (account == nullptr)
+		return std::string();
+
+	char text[96] = {};
+	sprintf_s(text, "%s%s - %d replays", account->id.c_str(), account->own ? " (this account)" : "",
+		ReplayArchive::Used(index));
+
+	return text;
+}
+
+void ReplayFiles::SelectAccount(int index)
+{
+	if (index < 0 || index >= ReplayArchive::Count() || index == g_account)
+		return;
+
+	g_account = index;
+
+	LOG("replay files: browsing save folder %s", AccountLabel(index).c_str());
 }
 
 bool ReplayFiles::ReadInfo(int slot, Info& out)
@@ -618,6 +687,12 @@ void ReplayFiles::Refresh()
 	g_diskTried = false;
 	g_diskStamp = 0;
 	g_disk.clear();
+
+	const ReplayArchive::Account* const browsing = ReplayArchive::Get(Browsing());
+	const std::string keep = browsing != nullptr ? browsing->path : std::string();
+
+	ReplayArchive::Forget();
+	g_account = ReplayArchive::IndexOfPath(keep);
 }
 
 std::string ReplayFiles::Export(int slot)
@@ -722,6 +797,8 @@ int ReplayFiles::ExportAll(std::string& outError)
 
 int ReplayFiles::FindFreeSlot()
 {
+	const HoldOwn own;
+
 	int oldest = -1;
 	uint64_t oldestKey = ~0ull;
 
@@ -822,6 +899,8 @@ bool ReplayFiles::ReadRecordFile(const std::string& path, std::vector<uint8_t>& 
 bool ReplayFiles::Import(const std::string& path, std::string& outError)
 {
 	outError.clear();
+
+	const HoldOwn own;
 
 	if (!IsAvailable())
 	{
@@ -955,6 +1034,21 @@ std::string Matchup(const std::vector<uint8_t>& record, const std::string names[
 
 }
 
+namespace {
+
+void MatchPatchToRecord(const std::vector<uint8_t>& record)
+{
+	if (record.size() < kOffTime + sizeof(SYSTEMTIME))
+		return;
+
+	SYSTEMTIME when = {};
+	memcpy(&when, record.data() + kOffTime, sizeof(when));
+
+	GamePatches::OnReplayStarting(when);
+}
+
+}
+
 bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError)
 {
 	outError.clear();
@@ -975,6 +1069,40 @@ bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError
 
 	if (!BuildRecord(record, outError))
 		return false;
+
+	MatchPatchToRecord(record);
+
+	const int wanted = GamePatches::ReplayWanted();
+
+	if (wanted >= 0 && !GamePatches::TablesAgreeWith(wanted))
+	{
+		const GamePatches::Patch* const target = GamePatches::Get(wanted);
+		const char* const name = target != nullptr ? target->name.c_str() : "another build";
+
+		if (!GameRestart::CanSoftReset())
+		{
+			outError = std::string("this replay is from ") + name +
+				" and the game started on something else - reload into it first";
+			return false;
+		}
+
+		GamePatches::ApplyForReset(wanted);
+
+		if (!GameRestart::SoftReset())
+		{
+			outError = GameRestart::StatusText();
+			return false;
+		}
+
+		g_queuedPath = path;
+		g_queuedPhase = Queue_WaitStart;
+		g_queuedWait = kQueueFrames;
+		g_queuedSettle = 0;
+
+		_snprintf_s(g_status, _TRUNCATE, "loading %s for this replay, it starts on its own", name);
+		LOG("replay files: %s", g_status);
+		return true;
+	}
 
 	_snprintf_s(g_status, _TRUNCATE, "playing %s", Matchup(record, names).c_str());
 
@@ -1049,6 +1177,15 @@ void StartedPlaying()
 	g_session = Session_Playing;
 }
 
+void GaveUpWaiting()
+{
+	g_session = Session_After;
+	g_settleFrames = kSettleFrames;
+
+	LOG("replay files: no match started within the wait, still rescuing the screen and the input");
+	LOG("replay files: %s", ReplayFiles::DescribeInputState());
+}
+
 void StoppedPlaying()
 {
 	g_session = Session_After;
@@ -1083,7 +1220,7 @@ void AdvanceSession()
 		if (inMatch)
 			StartedPlaying();
 		else if (--g_settleFrames <= 0)
-			EndSession();
+			GaveUpWaiting();
 		break;
 
 	case Session_Playing:
@@ -1111,9 +1248,71 @@ void AdvanceSession()
 
 }
 
+namespace {
+
+void PumpQueued()
+{
+	if (g_queuedPhase == Queue_None || GameRestart::IsPending())
+		return;
+
+	if (--g_queuedWait <= 0)
+	{
+		g_queuedPath.clear();
+		g_queuedPhase = Queue_None;
+
+		LOG("replay files: the queued replay never became startable, press it again");
+		return;
+	}
+
+	const uint32_t start = SceneWatch::First();
+	const uint32_t scene = SceneWatch::Current();
+
+	if (g_queuedPhase == Queue_WaitStart)
+	{
+		if (scene == start)
+			g_queuedPhase = Queue_WaitLoaded;
+
+		return;
+	}
+
+	if (g_queuedPhase == Queue_WaitLoaded)
+	{
+		if (scene == start)
+			return;
+
+		g_queuedPhase = Queue_WaitSettle;
+		g_queuedSettle = 0;
+
+		LOG("replay files: the start screen is done, waiting for somewhere to play from");
+		return;
+	}
+
+	if (!ReplayFiles::CanPlay())
+	{
+		g_queuedSettle = 0;
+		return;
+	}
+
+	if (++g_queuedSettle < kQueueSettleFrames)
+		return;
+
+	const std::string path = g_queuedPath;
+
+	g_queuedPath.clear();
+	g_queuedPhase = Queue_None;
+
+	std::string error;
+
+	if (!ReplayFiles::RequestPlayback(path, error))
+		LOG("replay files: the queued replay would not start - %s", error.c_str());
+}
+
+}
+
 void ReplayFiles::OnGameFrame()
 {
 	AdvanceSession();
+	PumpQueued();
 
 	if (InterlockedExchange(&g_playbackRequest, 0) == 0)
 		return;
@@ -1201,6 +1400,8 @@ void ReplayFiles::Update()
 		return;
 
 	countdown = 60;
+
+	const HoldOwn own;
 
 	if (!SourceIsCurrent())
 		return;

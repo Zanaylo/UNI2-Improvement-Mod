@@ -27,6 +27,12 @@ namespace ReplayFiles
 
 	bool IsLive();
 
+	int AccountCount();
+	int SelectedAccount();
+	bool IsOwnAccount();
+	std::string AccountLabel(int index);
+	void SelectAccount(int index);
+
 	bool ReadInfo(int slot, Info& out);
 	int CountUsed();
 

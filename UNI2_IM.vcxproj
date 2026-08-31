@@ -121,6 +121,12 @@
     <ClCompile Include="src\Game\AudioFile.cpp" />
     <ClCompile Include="src\Game\OggWriter.cpp" />
     <ClCompile Include="src\Game\MusicRefresh.cpp" />
+    <ClCompile Include="src\Core\FileIndex.cpp" />
+    <ClCompile Include="src\Game\BalanceRules.cpp" />
+    <ClCompile Include="src\Game\DataSearchPath.cpp" />
+    <ClCompile Include="src\Game\GamePatches.cpp" />
+    <ClCompile Include="src\Game\PatchLibrary.cpp" />
+    <ClCompile Include="src\Overlay\Window\PatchWindow.cpp" />
     <ClCompile Include="src\Game\UserMusic.cpp" />
     <ClCompile Include="src\Game\SoundpackBuilder.cpp" />
     <ClCompile Include="src\Game\BgmLibrary.cpp" />
@@ -187,6 +193,7 @@
     <ClCompile Include="src\Game\CharaTracker.cpp" />
     <ClCompile Include="src\Game\HitboxData.cpp" />
     <ClCompile Include="src\Game\Camera.cpp" />
+    <ClCompile Include="src\Game\GameRestart.cpp" />
     <ClCompile Include="src\Game\GameState.cpp" />
     <ClCompile Include="src\Game\OnlineState.cpp" />
     <ClCompile Include="src\Game\MemoryScanner.cpp" />
@@ -222,6 +229,7 @@
     <ClCompile Include="src\Game\PngPalette.cpp" />
     <ClCompile Include="src\Game\CgImage.cpp" />
     <ClCompile Include="src\Game\PatParts.cpp" />
+    <ClCompile Include="src\Game\ScriptReload.cpp" />
     <ClCompile Include="src\Game\SaveData.cpp" />
     <ClCompile Include="src\Game\SceneWatch.cpp" />
     <ClCompile Include="src\Game\CharaSelectProbe.cpp" />
@@ -278,6 +286,7 @@
     <ClCompile Include="src\Game\Improvements.cpp" />
     <ClCompile Include="src\Game\KeyboardSeat.cpp" />
     <ClCompile Include="src\Game\PotatoMode.cpp" />
+    <ClCompile Include="src\Game\ReplayArchive.cpp" />
     <ClCompile Include="src\Game\ReplayFiles.cpp" />
     <ClCompile Include="src\Game\PresentSize.cpp" />
     <ClCompile Include="src\Game\PumpWait.cpp" />
@@ -294,6 +303,12 @@
     <ClInclude Include="src\Game\AudioFile.h" />
     <ClInclude Include="src\Game\OggWriter.h" />
     <ClInclude Include="src\Game\MusicRefresh.h" />
+    <ClInclude Include="src\Core\FileIndex.h" />
+    <ClInclude Include="src\Game\BalanceRules.h" />
+    <ClInclude Include="src\Game\DataSearchPath.h" />
+    <ClInclude Include="src\Game\GamePatches.h" />
+    <ClInclude Include="src\Game\PatchLibrary.h" />
+    <ClInclude Include="src\Overlay\Window\PatchWindow.h" />
     <ClInclude Include="src\Game\UserMusic.h" />
     <ClInclude Include="src\Game\SoundpackBuilder.h" />
     <ClInclude Include="src\Game\BgmLibrary.h" />
@@ -364,6 +379,7 @@
     <ClInclude Include="src\Game\PngPalette.h" />
     <ClInclude Include="src\Game\CgImage.h" />
     <ClInclude Include="src\Game\PatParts.h" />
+    <ClInclude Include="src\Game\ScriptReload.h" />
     <ClInclude Include="src\Game\SaveData.h" />
     <ClInclude Include="src\Game\SceneWatch.h" />
     <ClInclude Include="src\Game\CharaSelectProbe.h" />
@@ -381,6 +397,7 @@
     <ClInclude Include="src\Game\CharaTracker.h" />
     <ClInclude Include="src\Game\HitboxData.h" />
     <ClInclude Include="src\Game\Camera.h" />
+    <ClInclude Include="src\Game\GameRestart.h" />
     <ClInclude Include="src\Game\GameState.h" />
     <ClInclude Include="src\Game\OnlineState.h" />
     <ClInclude Include="src\Game\MemoryScanner.h" />
@@ -463,6 +480,7 @@
     <ClInclude Include="src\Game\Improvements.h" />
     <ClInclude Include="src\Game\KeyboardSeat.h" />
     <ClInclude Include="src\Game\PotatoMode.h" />
+    <ClInclude Include="src\Game\ReplayArchive.h" />
     <ClInclude Include="src\Game\ReplayFiles.h" />
     <ClInclude Include="src\Game\PresentSize.h" />
     <ClInclude Include="src\Game\PumpWait.h" />

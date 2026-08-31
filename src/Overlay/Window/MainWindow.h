@@ -33,9 +33,12 @@ private:
 	void DrawConfigGeneralTab();
 	void DrawKeybindsTab();
 	void DrawKeyboardTab();
+	void DrawReplayPatchWarning();
+	void DrawReplayAccounts();
 	void DrawReplaySection();
 	void DrawPlayerCount();
 	void DrawMusicSection();
+	void DrawPatchSection();
 	void DrawThemeSection();
 	void DrawCustomSection();
 	void DrawPalettesTab();

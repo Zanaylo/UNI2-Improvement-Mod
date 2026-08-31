@@ -22,6 +22,7 @@
 #include "Overlay/ComboNav.h"
 #include "Overlay/NotificationBar.h"
 #include "Overlay/Window/HitboxOverlay.h"
+#include "Game/GamePatches.h"
 #include "Game/BgmControl.h"
 #include "Network/PlayerCount.h"
 #include "Game/BgmNames.h"
@@ -135,6 +136,8 @@ void MainWindow::Draw()
 	ImGui::Separator();
 	DrawMusicSection();
 	ImGui::Separator();
+	DrawPatchSection();
+	ImGui::Separator();
 	DrawThemeSection();
 	ImGui::Separator();
 	DrawConfigSection();
@@ -169,6 +172,32 @@ void MainWindow::DrawMusicSection()
 	UiText::Muted("Playing: %s", playing);
 }
 
+void MainWindow::DrawPatchSection()
+{
+	if (!ImGui::CollapsingHeader("Game patches"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Patches) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close patches" : "Open patches"))
+		window->Toggle();
+
+	ImGui::TextWrapped("Play the game's battle data from an older build, so a replay recorded on "
+		"it runs against the logic it was made under instead of today's.");
+
+	const GamePatches::Patch* const active = GamePatches::Get(GamePatches::ActiveIndex());
+
+	if (active == nullptr)
+	{
+		UiText::Muted("Playing the installed game.");
+		return;
+	}
+
+	UiText::Good("Playing %s.", active->name.c_str());
+}
+
 void MainWindow::DrawThemeSection()
 {
 	if (ScreenDirector::kOnHold)
@@ -199,6 +228,57 @@ void MainWindow::DrawThemeSection()
 	UiText::Muted("%s", ScreenDirector::StatusText());
 }
 
+void MainWindow::DrawReplayPatchWarning()
+{
+	const int wanted = GamePatches::ReplayWanted();
+
+	if (wanted < 0 || GamePatches::TablesAgreeWith(wanted))
+		return;
+
+	const GamePatches::Patch* const needs = GamePatches::Get(wanted);
+
+	if (needs == nullptr)
+		return;
+
+	UiText::Muted("The last replay wanted %s. Start Replay loads it and plays on its own.",
+		needs->name.c_str());
+}
+
+void MainWindow::DrawReplayAccounts()
+{
+	const int accounts = ReplayFiles::AccountCount();
+
+	if (accounts < 2)
+		return;
+
+	const int selected = ReplayFiles::SelectedAccount();
+
+	Ui::SetItemWidth(300.0f);
+
+	if (ImGui::BeginCombo("Save folder", ReplayFiles::AccountLabel(selected).c_str()))
+	{
+		for (int i = 0; i < accounts; ++i)
+		{
+			if (ImGui::Selectable(ReplayFiles::AccountLabel(i).c_str(), i == selected))
+				ReplayFiles::SelectAccount(i);
+		}
+
+		ImGui::EndCombo();
+	}
+
+	UiText::Help("The install carries more than one Steam account's saves. Export all reads the one "
+		"picked here. An account that is not yours is read only - loading a file into the replay "
+		"list always writes to your own.");
+
+	if (!ReplayFiles::IsOwnAccount())
+	{
+		UiText::Warn("Reading another account's replays. Nothing is written to it, and new matches "
+			"still save to yours.");
+	}
+
+	ImGui::Spacing();
+}
+
 void MainWindow::DrawReplaySection()
 {
 	if (!ImGui::CollapsingHeader("Replays"))
@@ -221,6 +301,9 @@ void MainWindow::DrawReplaySection()
 		ReplayFiles::SetAutoExport(automatic);
 		Settings::SaveInt("Replays", "AutoExport", automatic ? 1 : 0);
 	}
+
+	DrawReplayPatchWarning();
+	DrawReplayAccounts();
 
 	ImGui::BeginDisabled(!readable);
 

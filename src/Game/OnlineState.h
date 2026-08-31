@@ -10,6 +10,11 @@ namespace OnlineState
 	bool IsOnline();
 	bool IsDetectionReady();
 
+	// True the moment the game builds a netplay backend, before a packet has moved. IsOnline waits
+	// for peer traffic, which is too late for anything that has to be off before battle data loads.
+	// Measured null through every offline session on this machine - training, replays and menus.
+	bool HasSession();
+
 	// Watching somebody else's match. The game builds a spectator backend for it, so this is the
 	// session's own answer rather than an inference from who is holding a pad.
 	bool IsSpectating();

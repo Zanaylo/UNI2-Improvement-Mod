@@ -17,6 +17,9 @@
 #include "Game/PotatoMode.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
+#include "Game/BalanceRules.h"
+#include "Game/GameRestart.h"
+#include "Game/GamePatches.h"
 #include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
 #include "Game/SoundpackTransfer.h"
@@ -300,11 +303,10 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 {
 	InterlockedIncrement(&g_presentCount);
 
+	SceneWatch::OnFrame();
+
 	if (!ScreenDirector::kOnHold)
-	{
-		SceneWatch::OnFrame();
 		CharaSelectProbe::OnFrame();
-	}
 
 	MemoryMap::InvalidateEffectSlotCache();
 
@@ -317,6 +319,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			Profiler::Scope scope(Profiler::Section_PresentOnline);
 			OnlineState::Update();
 			NetplayTick::Update();
+			GamePatches::Update();
+			BalanceRules::OnFrame();
+			GameRestart::OnFrame();
 			OstImport::Update();
 			SoundpackTransfer::Update();
 

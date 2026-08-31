@@ -1,7 +1,9 @@
 #include "Game/ModFiles.h"
 
+#include "Core/FileIndex.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/GamePatches.h"
 #include "Game/UserMusic.h"
 #include "Hooks/HookManager.h"
 
@@ -10,7 +12,6 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
-#include <unordered_map>
 
 namespace {
 
@@ -21,7 +22,7 @@ using GetFileAttributesA_t = DWORD(WINAPI*)(LPCSTR);
 CreateFileA_t oCreateFileA = nullptr;
 GetFileAttributesA_t oGetFileAttributesA = nullptr;
 
-std::unordered_map<std::string, std::string> g_files;
+FileIndex g_files;
 SRWLOCK g_filesLock = SRWLOCK_INIT;
 std::string g_root;
 std::string g_gameRoot;
@@ -39,27 +40,12 @@ constexpr const char* kLanguageRoots[] = {
 	"___korean", "___spanish", "___s_chinese", "___t_chinese"
 };
 
-std::string Lower(const char* text, size_t length)
-{
-	std::string out(text, length);
-
-	for (char& c : out)
-	{
-		if (c == '/')
-			c = '\\';
-		else
-			c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
-	}
-
-	return out;
-}
-
 std::string Normalise(const char* path)
 {
 	if (path == nullptr || path[0] == 0)
 		return std::string();
 
-	std::string key = Lower(path, strlen(path));
+	std::string key = FileIndex::Key(path, strlen(path));
 
 	if (!g_gameRoot.empty() && key.compare(0, g_gameRoot.size(), g_gameRoot) == 0)
 		key.erase(0, g_gameRoot.size());
@@ -115,10 +101,10 @@ const std::string* FindAcrossLanguages(const std::string& generic)
 
 	for (const char* root : kLanguageRoots)
 	{
-		const auto found = g_files.find(std::string(root) + "\\" + generic);
+		const std::string* const found = g_files.Find(std::string(root) + "\\" + generic);
 
-		if (found != g_files.end())
-			return &found->second;
+		if (found != nullptr)
+			return found;
 	}
 
 	return nullptr;
@@ -144,7 +130,7 @@ bool Lookup(const char* path, std::string& out)
 
 	AcquireSRWLockShared(&g_filesLock);
 
-	if (g_files.empty())
+	if (g_files.Count() == 0)
 	{
 		ReleaseSRWLockShared(&g_filesLock);
 		return false;
@@ -155,11 +141,7 @@ bool Lookup(const char* path, std::string& out)
 	if (localised)
 		RecordLanguageRoot(key);
 
-	const std::string* replacement = nullptr;
-	const auto exact = g_files.find(key);
-
-	if (exact != g_files.end())
-		replacement = &exact->second;
+	const std::string* replacement = g_files.Find(key);
 
 	if (replacement == nullptr && localised)
 	{
@@ -170,12 +152,7 @@ bool Lookup(const char* path, std::string& out)
 			replacement = FindAcrossLanguages(generic);
 
 			if (replacement == nullptr)
-			{
-				const auto plain = g_files.find(generic);
-
-				if (plain != g_files.end())
-					replacement = &plain->second;
-			}
+				replacement = g_files.Find(generic);
 		}
 	}
 
@@ -196,12 +173,25 @@ bool Lookup(const char* path, std::string& out)
 	return true;
 }
 
+bool Redirect(const char* path, std::string& out)
+{
+	const GamePatches::Answer answer = GamePatches::Resolve(path, out);
+
+	if (answer == GamePatches::Answer_Found)
+		return true;
+
+	if (answer == GamePatches::Answer_Missing)
+		return false;
+
+	return Lookup(path, out);
+}
+
 HANDLE WINAPI HookedCreateFileA(LPCSTR fileName, DWORD access, DWORD share,
 	LPSECURITY_ATTRIBUTES security, DWORD creation, DWORD flags, HANDLE templateFile)
 {
 	std::string replacement;
 
-	if ((access & GENERIC_WRITE) == 0 && Lookup(fileName, replacement))
+	if ((access & GENERIC_WRITE) == 0 && Redirect(fileName, replacement))
 	{
 		return oCreateFileA(replacement.c_str(), access, share, security, creation, flags,
 			templateFile);
@@ -214,76 +204,47 @@ DWORD WINAPI HookedGetFileAttributesA(LPCSTR fileName)
 {
 	std::string replacement;
 
-	if (Lookup(fileName, replacement))
+	if (Redirect(fileName, replacement))
 		return oGetFileAttributesA(replacement.c_str());
 
 	return oGetFileAttributesA(fileName);
 }
 
-using FileMap = std::unordered_map<std::string, std::string>;
-
-void Index(FileMap& into, const std::string& folder, const std::string& prefix)
-{
-	WIN32_FIND_DATAA found = {};
-	const HANDLE search = FindFirstFileA((folder + "\\*").c_str(), &found);
-
-	if (search == INVALID_HANDLE_VALUE)
-		return;
-
-	do
-	{
-		if (found.cFileName[0] == '.')
-			continue;
-
-		const std::string relative = prefix.empty() ? found.cFileName : prefix + found.cFileName;
-
-		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-		{
-			Index(into, folder + "\\" + found.cFileName, relative + "\\");
-			continue;
-		}
-
-		into[Lower(relative.c_str(), relative.size())] = folder + "\\" + found.cFileName;
-	}
-	while (FindNextFileA(search, &found) != 0);
-
-	FindClose(search);
-}
-
-void IndexUserMusic(FileMap& into)
+void IndexUserMusic(FileIndex& into)
 {
 	for (const UserMusic::Entry& entry : UserMusic::Snapshot())
 	{
 		if (entry.status != UserMusic::Status_Ready)
 			continue;
 
-		const std::string name = "Bgm\\" + entry.slotName + ".ogg";
-		into[Lower(name.c_str(), name.size())] = entry.playPath;
+		into.Add(FileIndex::Key("Bgm\\" + entry.slotName + ".ogg"), entry.playPath);
 	}
+}
+
+bool AnyLocalised(const FileIndex& index)
+{
+	for (const auto& entry : index.Entries())
+	{
+		if (entry.first.compare(0, 3, "___") == 0)
+			return true;
+	}
+
+	return false;
 }
 
 void Rebuild()
 {
-	FileMap built;
+	FileIndex built;
 
-	Index(built, g_root, std::string());
+	built.Walk(g_root);
 	IndexUserMusic(built);
 
-	bool localised = false;
+	const bool localised = AnyLocalised(built);
 
-	for (const auto& entry : built)
-	{
-		if (entry.first.compare(0, 3, "___") != 0)
-			continue;
-
-		localised = true;
-		break;
-	}
-
-	sprintf_s(g_status, "%d file(s) override the game", static_cast<int>(built.size()));
+	sprintf_s(g_status, "%d file(s) override the game", built.Count());
 
 	AcquireSRWLockExclusive(&g_filesLock);
-	g_files.swap(built);
+	g_files.Swap(built);
 	g_hasLanguageEntries = localised;
 	ReleaseSRWLockExclusive(&g_filesLock);
 }
@@ -293,7 +254,7 @@ void Rebuild()
 bool ModFiles::Initialize()
 {
 	g_root = GetModRootPath("Mods");
-	g_gameRoot = Lower(GetModDirectory().c_str(), GetModDirectory().size());
+	g_gameRoot = FileIndex::Key(GetModDirectory().c_str(), GetModDirectory().size());
 
 	if (!g_gameRoot.empty() && g_gameRoot.back() != '\\')
 		g_gameRoot.push_back('\\');
@@ -313,7 +274,7 @@ bool ModFiles::Initialize()
 	if (!create || !attributes)
 	{
 		AcquireSRWLockExclusive(&g_filesLock);
-		g_files.clear();
+		g_files.Clear();
 		ReleaseSRWLockExclusive(&g_filesLock);
 
 		strncpy_s(g_status, "the file hooks could not be installed", _TRUNCATE);
@@ -336,7 +297,7 @@ void ModFiles::Rescan()
 int ModFiles::Count()
 {
 	AcquireSRWLockShared(&g_filesLock);
-	const int count = static_cast<int>(g_files.size());
+	const int count = g_files.Count();
 	ReleaseSRWLockShared(&g_filesLock);
 	return count;
 }

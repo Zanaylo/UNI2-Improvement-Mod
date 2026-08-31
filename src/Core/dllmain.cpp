@@ -13,7 +13,9 @@
 #include "D3D9/D3D9Wrapper.h"
 #include "D3D9/SceneScale.h"
 #include "D3D9/Post/ShaderPack.h"
+#include "Game/BalanceRules.h"
 #include "Game/BgmControl.h"
+#include "Game/GamePatches.h"
 #include "Game/ModFiles.h"
 #include "Screens/ScreenDirector.h"
 #include "Screens/ScreenTheme.h"
@@ -207,6 +209,7 @@ void Stage_GameHooks()
 		PaletteDrawProbe::Install();
 	KeyboardSeat::Initialize();
 	ReplayFiles::Initialize();
+	BalanceRules::Install();
 	BgmControl::Initialize();
 	PumpWait::Apply();
 	KeyboardSeat::ApplySaved();
@@ -261,6 +264,7 @@ DWORD WINAPI InitThread(LPVOID)
 	}
 
 	ModFiles::Initialize();
+	GamePatches::ApplyRemembered();
 	if (!ScreenDirector::kOnHold)
 		ScreenTheme::Reload();
 

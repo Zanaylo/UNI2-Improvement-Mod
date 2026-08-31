@@ -13,6 +13,7 @@ enum WindowType
 	WindowType_Performance,
 	WindowType_Netplay,
 	WindowType_Music,
+	WindowType_Patches,
 	WindowType_Theme,
 	WindowType_Debug,
 	WindowType_UpdateNotifier,

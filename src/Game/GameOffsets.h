@@ -577,6 +577,26 @@ namespace GameOffsets
 
 	constexpr uintptr_t kFnBgmPlay = 0xd6d20;
 	constexpr uintptr_t kFnBgmStop = 0xd6b10;
+	constexpr uintptr_t kSearchPathBase = 0x3b42eb0;
+	constexpr size_t kSearchPathStride = 0x104;
+	constexpr int kSearchPathCount = 4;
+	constexpr uintptr_t kSearchPathEnabled = 0x59669c;
+	constexpr uintptr_t kSearchPathGateWrite[2] = { 0x43be42, 0x43c194 };
+	constexpr size_t kSearchPathGateWriteSize = 5;
+
+	constexpr uintptr_t kFnMinGuaranteedDamage = 0x12e040;
+	constexpr uintptr_t kCharaHoseiMin = 0x222;
+	constexpr uintptr_t kCharaHoseiBaseMin = 0x223;
+
+	constexpr uintptr_t kFnLoadBattleScript = 0x499a30;
+	constexpr uintptr_t kBattleScriptContext = 0x3b2d618;
+	constexpr uintptr_t kBattleInitPath = 0x553ea4;
+	constexpr uintptr_t kBattleInitRoot = 0x553f04;
+	constexpr uintptr_t kBattleStdPath = 0x553e7c;
+	constexpr uintptr_t kBattleStdRoot = 0x553e94;
+	constexpr uintptr_t kComBasePath = 0x5464a0;
+	constexpr uintptr_t kComBaseRoot = 0x5464b4;
+
 	constexpr uintptr_t kFnBgmCurrent = 0xd6cd0;
 	constexpr uintptr_t kFnBgmStart = 0xd6c20;
 	constexpr uintptr_t kFnBgmPause = 0xd6b90;
@@ -586,6 +606,7 @@ namespace GameOffsets
 	constexpr uintptr_t kBgmCurrentId = 0x595e14;
 	constexpr uintptr_t kBgmPlayer = 0x641ac0;
 	constexpr uintptr_t kBgmSuppressed = 0x641b4c;
+	constexpr int kBgmNetworkMenu = 41;
 	constexpr uintptr_t kBgmTableBase = 0x822b60;
 	constexpr size_t kBgmTableStride = 0x40;
 	constexpr int kBgmSlotCount = 200;

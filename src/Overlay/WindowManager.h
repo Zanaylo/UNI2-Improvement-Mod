@@ -37,6 +37,7 @@ private:
 
 	void HandleHotkeys();
 	void AnnounceUpdate();
+	void AnnouncePatch();
 	void ScaleToBackBuffer();
 	bool GetBackBufferScale(float& outX, float& outY) const;
 	LPARAM ScaleMousePosition(LPARAM lParam) const;

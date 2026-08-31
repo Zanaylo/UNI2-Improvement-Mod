@@ -135,6 +135,22 @@ bool IsScene(int id)
 	return id >= 0 && id < 100 && BgmTable::IsPresent(id);
 }
 
+void DescribeEntry(int id, bool sceneOnly, char* out, int size)
+{
+	if (sceneOnly)
+	{
+		DescribeScene(id, out, size);
+		return;
+	}
+
+	DescribeTrack(id, out, size);
+}
+
+bool IsSelectable(int id, bool sceneOnly)
+{
+	return sceneOnly ? IsScene(id) : BgmCatalog::IsListed(id);
+}
+
 int StepListed(int from, int steps, bool sceneOnly)
 {
 	std::vector<int> pool;
@@ -283,11 +299,51 @@ void MusicPanel::DrawSoundpacks()
 		"replace rules and nothing else, so switching is instant and rules you added yourself are "
 		"left alone.");
 
+	const int apply = DrawSoundpackTable(count, active);
+
+	DrawSoundpackControls(active);
+
+	if (apply >= 0)
+		BgmThemes::Apply(apply);
+}
+
+bool MusicPanel::DrawSoundpackRow(const BgmThemes::Theme& theme, bool isActive)
+{
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+
+	if (isActive)
+		UiText::Good("%s", theme.name);
+	else
+		ImGui::TextUnformatted(theme.name);
+
+	if (theme.notes[0] != 0)
+		UiText::Muted("%s", theme.notes);
+
+	ImGui::TableNextColumn();
+
+	if (theme.readyCount == theme.entryCount)
+		ImGui::Text("%d", theme.entryCount);
+	else
+		UiText::Warn("%d of %d", theme.readyCount, theme.entryCount);
+
+	ImGui::TableNextColumn();
+
+	ImGui::BeginDisabled(theme.readyCount == 0);
+
+	const bool apply = ImGui::SmallButton(isActive ? "Reapply" : "Apply");
+
+	ImGui::EndDisabled();
+	return apply;
+}
+
+int MusicPanel::DrawSoundpackTable(int count, int active)
+{
 	if (!ImGui::BeginTable("##bgmthemes", 3,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
 		ImGuiTableFlags_ScrollY, ImVec2(0.0f, Ui::Scaled(140.0f))))
 	{
-		return;
+		return -1;
 	}
 
 	ImGui::TableSetupColumn("Soundpack");
@@ -300,42 +356,24 @@ void MusicPanel::DrawSoundpacks()
 	for (int i = 0; i < count; ++i)
 	{
 		const BgmThemes::Theme* theme = BgmThemes::Get(i);
+
 		if (theme == nullptr)
 			continue;
 
 		ImGui::PushID(i);
-		ImGui::TableNextRow();
 
-		ImGui::TableNextColumn();
-
-		if (i == active)
-			UiText::Good("%s", theme->name);
-		else
-			ImGui::TextUnformatted(theme->name);
-
-		if (theme->notes[0] != 0)
-			UiText::Muted("%s", theme->notes);
-
-		ImGui::TableNextColumn();
-
-		if (theme->readyCount == theme->entryCount)
-			ImGui::Text("%d", theme->entryCount);
-		else
-			UiText::Warn("%d of %d", theme->readyCount, theme->entryCount);
-
-		ImGui::TableNextColumn();
-
-		ImGui::BeginDisabled(theme->readyCount == 0);
-
-		if (ImGui::SmallButton(i == active ? "Reapply" : "Apply"))
+		if (DrawSoundpackRow(*theme, i == active))
 			apply = i;
 
-		ImGui::EndDisabled();
 		ImGui::PopID();
 	}
 
 	ImGui::EndTable();
+	return apply;
+}
 
+void MusicPanel::DrawSoundpackControls(int active)
+{
 	if (ImGui::Button("Rescan folder"))
 		MusicRefresh::Rescan();
 
@@ -348,13 +386,13 @@ void MusicPanel::DrawSoundpacks()
 
 	ImGui::EndDisabled();
 
-	if (ModFiles::Count() > 0)
-		UiText::Muted("Mods folder: %s, %d read so far", ModFiles::StatusText(), ModFiles::Hits());
-	else
+	if (ModFiles::Count() == 0)
+	{
 		UiText::Warn("Mods folder: %s", ModFiles::StatusText());
+		return;
+	}
 
-	if (apply >= 0)
-		BgmThemes::Apply(apply);
+	UiText::Muted("Mods folder: %s, %d read so far", ModFiles::StatusText(), ModFiles::Hits());
 }
 
 void MusicPanel::DrawPackBuilder()
@@ -523,9 +561,44 @@ void MusicPanel::RefreshMusicList()
 		UiText::Warn("Converting %d file(s)...", pending);
 }
 
+void MusicPanel::DrawMyMusicRow(const UserMusic::Entry& entry)
+{
+	ImGui::TableNextRow();
+
+	ImGui::TableNextColumn();
+	UiText::Muted("%s", entry.pack.c_str());
+
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(entry.fileName.c_str());
+
+	ImGui::TableNextColumn();
+
+	if (entry.status == UserMusic::Status_Ready)
+		UiText::Good("plays");
+	else if (entry.status == UserMusic::Status_Converting)
+		UiText::Warn("working");
+	else
+		UiText::Warn("skipped");
+
+	ImGui::TableNextColumn();
+
+	float loop = static_cast<float>(entry.loopPos);
+
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::InputFloat("##loop", &loop, 0.0f, 0.0f, "%.3f");
+
+	if (ImGui::IsItemDeactivatedAfterEdit())
+	{
+		UserMusic::SetLoopPoint(entry.slotName, loop);
+		BgmLibrary::Load();
+	}
+
+	ImGui::TableNextColumn();
+	UiText::Muted("%s", entry.note.c_str());
+}
+
 void MusicPanel::DrawMyMusicTable()
 {
-
 	UiText::Help("Loop from is where the track restarts when it reaches the end, in seconds. Leave "
 		"it at 0 and the whole thing repeats, intro and all; set it past the intro and the loop "
 		"sounds like the game's own music. This is what a soundpack track carries as its loop "
@@ -551,40 +624,7 @@ void MusicPanel::DrawMyMusicTable()
 	for (const UserMusic::Entry& entry : m_music)
 	{
 		ImGui::PushID(row++);
-		ImGui::TableNextRow();
-
-		ImGui::TableNextColumn();
-		UiText::Muted("%s", entry.pack.c_str());
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(entry.fileName.c_str());
-
-		ImGui::TableNextColumn();
-
-		if (entry.status == UserMusic::Status_Ready)
-			UiText::Good("plays");
-		else if (entry.status == UserMusic::Status_Converting)
-			UiText::Warn("working");
-		else
-			UiText::Warn("skipped");
-
-		ImGui::TableNextColumn();
-
-		float loop = static_cast<float>(entry.loopPos);
-
-		ImGui::SetNextItemWidth(-1.0f);
-
-		ImGui::InputFloat("##loop", &loop, 0.0f, 0.0f, "%.3f");
-
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			UserMusic::SetLoopPoint(entry.slotName, loop);
-			BgmLibrary::Load();
-		}
-
-		ImGui::TableNextColumn();
-		UiText::Muted("%s", entry.note.c_str());
-
+		DrawMyMusicRow(entry);
 		ImGui::PopID();
 	}
 
@@ -796,17 +836,8 @@ void MusicPanel::DrawTrackCount()
 	UiText::Muted("%d of %d tracks", shown, total);
 }
 
-void MusicPanel::DrawTrackTable()
+void MusicPanel::SetUpTrackColumns(bool building)
 {
-	const bool building = SoundpackBuilder::IsOpen();
-
-	if (!ImGui::BeginTable(building ? "##bgmtrackspack" : "##bgmtracks", building ? 7 : 6,
-		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
-		ImVec2(0.0f, Ui::Scaled(280.0f))))
-	{
-		return;
-	}
-
 	if (building)
 		ImGui::TableSetupColumn("Pack", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(38.0f));
 
@@ -818,6 +849,65 @@ void MusicPanel::DrawTrackTable()
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
+}
+
+void MusicPanel::DrawTrackRow(int id, const char* name, bool building, bool playing)
+{
+	ImGui::TableNextRow();
+
+	if (building)
+	{
+		ImGui::TableNextColumn();
+
+		bool inPack = SoundpackBuilder::Holds(id);
+
+		if (ImGui::Checkbox("##pack", &inPack))
+			SoundpackBuilder::Toggle(id);
+	}
+
+	ImGui::TableNextColumn();
+
+	bool allowed = BgmCatalog::IsAllowed(id);
+
+	if (ImGui::Checkbox("##on", &allowed))
+		BgmCatalog::SetAllowed(id, allowed);
+
+	ImGui::TableNextColumn();
+	UiText::Muted("%s", SourceTag(id));
+
+	ImGui::TableNextColumn();
+
+	if (playing)
+		UiText::Good("%s", name);
+	else if (allowed)
+		ImGui::TextUnformatted(name);
+	else
+		UiText::Muted("%s", name);
+
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(BgmLibrary::IsLibraryId(id) ? "-" : BgmTable::DescribeSlot(id));
+
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(BgmLibrary::Loops(id) ? "yes" : "no");
+
+	ImGui::TableNextColumn();
+
+	if (ImGui::SmallButton("Play"))
+		BgmControl::Play(id);
+}
+
+void MusicPanel::DrawTrackTable()
+{
+	const bool building = SoundpackBuilder::IsOpen();
+
+	if (!ImGui::BeginTable(building ? "##bgmtrackspack" : "##bgmtracks", building ? 7 : 6,
+		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
+		ImVec2(0.0f, Ui::Scaled(280.0f))))
+	{
+		return;
+	}
+
+	SetUpTrackColumns(building);
 
 	const int playing = BgmControl::Current();
 
@@ -837,48 +927,7 @@ void MusicPanel::DrawTrackTable()
 			continue;
 
 		ImGui::PushID(index);
-		ImGui::TableNextRow();
-
-		if (building)
-		{
-			ImGui::TableNextColumn();
-
-			bool inPack = SoundpackBuilder::Holds(id);
-
-			if (ImGui::Checkbox("##pack", &inPack))
-				SoundpackBuilder::Toggle(id);
-		}
-
-		ImGui::TableNextColumn();
-
-		bool allowed = BgmCatalog::IsAllowed(id);
-
-		if (ImGui::Checkbox("##on", &allowed))
-			BgmCatalog::SetAllowed(id, allowed);
-
-		ImGui::TableNextColumn();
-		UiText::Muted("%s", SourceTag(id));
-
-		ImGui::TableNextColumn();
-
-		if (id == playing)
-			UiText::Good("%s", name);
-		else if (allowed)
-			ImGui::TextUnformatted(name);
-		else
-			UiText::Muted("%s", name);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(BgmLibrary::IsLibraryId(id) ? "-" : BgmTable::DescribeSlot(id));
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(BgmLibrary::Loops(id) ? "yes" : "no");
-
-		ImGui::TableNextColumn();
-
-		if (ImGui::SmallButton("Play"))
-			BgmControl::Play(id);
-
+		DrawTrackRow(id, name, building, id == playing);
 		ImGui::PopID();
 	}
 
@@ -899,6 +948,28 @@ void MusicPanel::DrawRules()
 		"battle; a Replace rule can take over any screen. Off means the game plays what it "
 		"normally would. The randomizer in Browse overrides all of this while it is on.");
 
+	DrawRuleTransfer();
+
+	const int count = BgmRules::Count();
+
+	if (count == 0)
+	{
+		UiText::Muted("No rules yet. The game ships exactly three matchup themes; this is the same "
+			"idea without the limit.");
+		return;
+	}
+
+	const int removeIndex = DrawRuleTable(count);
+
+	if (removeIndex < 0)
+		return;
+
+	BgmRules::Remove(removeIndex);
+	BgmRules::Save();
+}
+
+void MusicPanel::DrawRuleTransfer()
+{
 	ImGui::BeginDisabled(BgmRules::Count() == 0);
 
 	if (ImGui::SmallButton("Export rules"))
@@ -922,21 +993,49 @@ void MusicPanel::DrawRules()
 
 	if (m_rulesImportDialog.TakeResult(rulesPath))
 		BgmRules::ImportFrom(rulesPath.c_str());
+}
 
-	const int count = BgmRules::Count();
+bool MusicPanel::DrawRuleRow(int index, const BgmRules::Rule& stored)
+{
+	BgmRules::Rule rule = stored;
 
-	if (count == 0)
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+
+	if (ImGui::Checkbox("##on", &rule.enabled))
 	{
-		UiText::Muted("No rules yet. The game ships exactly three matchup themes; this is the same "
-			"idea without the limit.");
-		return;
+		BgmRules::Update(index, rule);
+		BgmRules::Save();
 	}
 
+	ImGui::TableNextColumn();
+
+	if (rule.fromTheme)
+		UiText::Muted("Theme");
+	else
+		ImGui::TextUnformatted(BgmRules::KindName(rule.kind));
+
+	ImGui::TableNextColumn();
+	char text[512] = {};
+	DescribeRule(rule, text, sizeof(text));
+	ImGui::TextUnformatted(text);
+
+	ImGui::TableNextColumn();
+
+	if (ImGui::SmallButton("Preview"))
+		BgmControl::Play(rule.bgm);
+
+	ImGui::SameLine();
+	return ImGui::SmallButton("Remove");
+}
+
+int MusicPanel::DrawRuleTable(int count)
+{
 	if (!ImGui::BeginTable("##bgmrules", 4,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
 		ImGuiTableFlags_ScrollY, ImVec2(0.0f, Ui::Scaled(180.0f))))
 	{
-		return;
+		return -1;
 	}
 
 	ImGui::TableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(34.0f));
@@ -950,51 +1049,20 @@ void MusicPanel::DrawRules()
 	for (int i = 0; i < count; ++i)
 	{
 		const BgmRules::Rule* stored = BgmRules::Get(i);
+
 		if (stored == nullptr)
 			continue;
 
-		BgmRules::Rule rule = *stored;
-
 		ImGui::PushID(i);
-		ImGui::TableNextRow();
 
-		ImGui::TableNextColumn();
-		if (ImGui::Checkbox("##on", &rule.enabled))
-		{
-			BgmRules::Update(i, rule);
-			BgmRules::Save();
-		}
-
-		ImGui::TableNextColumn();
-
-		if (rule.fromTheme)
-			UiText::Muted("Theme");
-		else
-			ImGui::TextUnformatted(BgmRules::KindName(rule.kind));
-
-		ImGui::TableNextColumn();
-		char text[512] = {};
-		DescribeRule(rule, text, sizeof(text));
-		ImGui::TextUnformatted(text);
-
-		ImGui::TableNextColumn();
-		if (ImGui::SmallButton("Preview"))
-			BgmControl::Play(rule.bgm);
-
-		ImGui::SameLine();
-		if (ImGui::SmallButton("Remove"))
+		if (DrawRuleRow(i, *stored))
 			removeIndex = i;
 
 		ImGui::PopID();
 	}
 
 	ImGui::EndTable();
-
-	if (removeIndex < 0)
-		return;
-
-	BgmRules::Remove(removeIndex);
-	BgmRules::Save();
+	return removeIndex;
 }
 
 void MusicPanel::DrawRuleEditor()
@@ -1021,7 +1089,7 @@ void MusicPanel::DrawRuleEditor()
 		UiText::Help("Every screen with music is in this list: character select, the main menu, "
 			"the network menu, the VS screen, win demo, continue, game over, the story tracks and "
 			"every battle theme.");
-		DrawTrackCombo("Replace", m_draft.a);
+		DrawTrackCombo("Replace", m_draft.a, true);
 	}
 
 	DrawTrackCombo("Play", m_draft.bgm);
@@ -1125,19 +1193,61 @@ bool MusicPanel::DrawSceneCombo(int& scene)
 	return changed;
 }
 
-bool MusicPanel::DrawTrackCombo(const char* label, int& bgm)
+bool MusicPanel::DrawTrackComboList(bool sceneOnly, int& bgm)
 {
-	const bool replaceSource = strcmp(label, "Replace") == 0;
+	if (ImGui::IsWindowAppearing())
+	{
+		m_pick[0] = 0;
+		ImGui::SetKeyboardFocusHere();
+	}
 
-	if (replaceSource ? !IsScene(bgm) : !BgmCatalog::IsListed(bgm))
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::InputTextWithHint("##pick", "Search", m_pick, IM_ARRAYSIZE(m_pick));
+
+	ImGui::Separator();
+
+	const int total = sceneOnly ? BgmTable::kSlotCount : BgmCatalog::Count();
+
+	bool changed = false;
+
+	for (int index = 0; index < total; ++index)
+	{
+		const int id = BgmCatalog::IdAt(index);
+
+		if (!IsSelectable(id, sceneOnly))
+			continue;
+
+		char text[224] = {};
+		DescribeEntry(id, sceneOnly, text, sizeof(text));
+
+		if (!Matches(text, m_pick))
+			continue;
+
+		const bool selected = id == bgm;
+
+		ImGui::PushID(index);
+
+		if (ImGui::Selectable(text, selected))
+		{
+			bgm = id;
+			changed = true;
+		}
+
+		ComboNav::KeepSelectedInView(selected);
+
+		ImGui::PopID();
+	}
+
+	return changed;
+}
+
+bool MusicPanel::DrawTrackCombo(const char* label, int& bgm, bool sceneOnly)
+{
+	if (!IsSelectable(bgm, sceneOnly))
 		bgm = 1;
 
 	char current[224] = {};
-
-	if (replaceSource)
-		DescribeScene(bgm, current, sizeof(current));
-	else
-		DescribeTrack(bgm, current, sizeof(current));
+	DescribeEntry(bgm, sceneOnly, current, sizeof(current));
 
 	Ui::SetItemWidth(kComboWidth * 1.6f);
 
@@ -1145,66 +1255,20 @@ bool MusicPanel::DrawTrackCombo(const char* label, int& bgm)
 
 	if (ImGui::BeginCombo(label, current))
 	{
-		if (ImGui::IsWindowAppearing())
-		{
-			m_pick[0] = 0;
-			ImGui::SetKeyboardFocusHere();
-		}
-
-		ImGui::SetNextItemWidth(-1.0f);
-		ImGui::InputTextWithHint("##pick", "Search", m_pick, IM_ARRAYSIZE(m_pick));
-
-		ImGui::Separator();
-
-		const int total = replaceSource ? BgmTable::kSlotCount : BgmCatalog::Count();
-
-		for (int index = 0; index < total; ++index)
-		{
-			const int id = BgmCatalog::IdAt(index);
-
-			if (replaceSource ? !IsScene(id) : !BgmCatalog::IsListed(id))
-				continue;
-
-			char text[224] = {};
-
-			if (replaceSource)
-				DescribeScene(id, text, sizeof(text));
-			else
-				DescribeTrack(id, text, sizeof(text));
-
-			if (!Matches(text, m_pick))
-				continue;
-
-			const bool selected = id == bgm;
-
-			ImGui::PushID(index);
-
-			if (ImGui::Selectable(text, selected))
-			{
-				bgm = id;
-				changed = true;
-			}
-
-			ComboNav::KeepSelectedInView(selected);
-
-			ImGui::PopID();
-		}
-
+		changed = DrawTrackComboList(sceneOnly, bgm);
 		ImGui::EndCombo();
 	}
 
 	const int steps = ComboNav::WheelSteps();
 
-	if (steps != 0)
-	{
-		const int next = StepListed(bgm, steps, replaceSource);
+	if (steps == 0)
+		return changed;
 
-		if (next != bgm)
-		{
-			bgm = next;
-			changed = true;
-		}
-	}
+	const int next = StepListed(bgm, steps, sceneOnly);
 
-	return changed;
+	if (next == bgm)
+		return changed;
+
+	bgm = next;
+	return true;
 }

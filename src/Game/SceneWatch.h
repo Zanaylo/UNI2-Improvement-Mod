@@ -14,6 +14,7 @@ namespace SceneWatch
 	void OnFrame();
 
 	uint32_t Current();
+	uint32_t First();
 	uint32_t Raw();
 	unsigned HeldFrames();
 

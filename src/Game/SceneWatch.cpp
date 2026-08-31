@@ -13,6 +13,7 @@ constexpr int kMaxLogged = 48;
 
 uint32_t g_raw = SceneWatch::kNone;
 uint32_t g_settled = SceneWatch::kNone;
+uint32_t g_first = SceneWatch::kNone;
 uint32_t g_candidate = SceneWatch::kNone;
 unsigned g_held = 0;
 int g_logged = 0;
@@ -45,6 +46,9 @@ void SceneWatch::OnFrame()
 	const uint32_t previous = g_settled;
 	g_settled = scene;
 
+	if (g_first == SceneWatch::kNone)
+		g_first = scene;
+
 	sprintf_s(g_status, "scene %u", scene);
 
 	if (g_logged >= kMaxLogged)
@@ -57,6 +61,11 @@ void SceneWatch::OnFrame()
 uint32_t SceneWatch::Current()
 {
 	return g_settled;
+}
+
+uint32_t SceneWatch::First()
+{
+	return g_first;
 }
 
 uint32_t SceneWatch::Raw()

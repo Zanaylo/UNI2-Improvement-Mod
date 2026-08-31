@@ -10,6 +10,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/DeviceHooks.h"
+#include "Game/GamePatches.h"
 #include "Game/OnlineState.h"
 #include "Hooks/InputProbe.h"
 #include "Overlay/FrameMeterHud.h"
@@ -311,6 +312,14 @@ void WindowManager::AnnounceUpdate()
 		window->Open();
 }
 
+void WindowManager::AnnouncePatch()
+{
+	std::string patch;
+
+	if (GamePatches::TakeAnnouncement(patch))
+		NotificationBar::Add("%s", patch.c_str());
+}
+
 void WindowManager::HandleHotkeys()
 {
 	if (m_container == nullptr)
@@ -464,6 +473,7 @@ void WindowManager::Render()
 
 	HandleHotkeys();
 	AnnounceUpdate();
+	AnnouncePatch();
 
 	m_overlayActive = m_container != nullptr && m_container->AnyWindowOpen();
 
