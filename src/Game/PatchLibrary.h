@@ -8,6 +8,7 @@
 
 #include <Windows.h>
 
+
 namespace PatchLibrary
 {
 	struct Coverage
@@ -40,6 +41,13 @@ namespace PatchLibrary
 	Patch* Get(int index);
 
 	bool Add(const std::string& folder, const std::string& name, char* status, int statusSize);
+
+	std::unique_ptr<Patch> Prepare(const std::string& folder, const std::string& name,
+		char* status, int statusSize);
+	bool Adopt(std::unique_ptr<Patch> patch, const std::string& note,
+		const SYSTEMTIME& released, char* status, int statusSize);
+	void Save();
+
 	bool Remove(int index);
 	void SetDate(int index, const SYSTEMTIME& released);
 	void Describe(int index, const std::string& note, const SYSTEMTIME& released);

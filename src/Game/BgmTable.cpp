@@ -21,7 +21,6 @@ struct SlotName
 	int last;
 	const char* text;
 };
-//Foi o que deu para achar.
 constexpr SlotName kSlotNames[] = {
 	{ 1, 27, "Character battle theme" },
 	{ 40, 40, "Main menu" },
@@ -124,10 +123,37 @@ bool BgmTable::Bind(int id, const Entry& entry)
 	TryWriteMemory(reinterpret_cast<void*>(record + GameOffsets::kBgmLoopPos), &loopPos,
 		sizeof(loopPos));
 	TryWriteDword(reinterpret_cast<void*>(record + GameOffsets::kBgmVolume),
-		static_cast<uint32_t>(entry.volume > 0 ? entry.volume : 10000));
+		static_cast<uint32_t>(entry.volume >= 0 ? entry.volume : 10000));
 	TryWriteDword(reinterpret_cast<void*>(record + GameOffsets::kBgmNoRecording), 0);
 
 	return TryWriteDword(reinterpret_cast<void*>(record + GameOffsets::kBgmPresent), 1);
+}
+
+bool BgmTable::GetVolume(int id, int& out)
+{
+	const uintptr_t record = RecordAddress(id);
+
+	if (record == 0)
+		return false;
+
+	uint32_t volume = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(record + GameOffsets::kBgmVolume), volume))
+		return false;
+
+	out = static_cast<int>(volume);
+	return true;
+}
+
+bool BgmTable::SetVolume(int id, int volume)
+{
+	const uintptr_t record = RecordAddress(id);
+
+	if (record == 0 || volume < 0)
+		return false;
+
+	return TryWriteDword(reinterpret_cast<void*>(record + GameOffsets::kBgmVolume),
+		static_cast<uint32_t>(volume));
 }
 
 bool BgmTable::IsPresent(int id)

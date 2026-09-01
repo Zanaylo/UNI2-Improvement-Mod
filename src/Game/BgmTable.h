@@ -18,6 +18,9 @@ namespace BgmTable
 
 	bool Bind(int id, const Entry& entry);
 
+	bool GetVolume(int id, int& out);
+	bool SetVolume(int id, int volume);
+
 	bool IsPresent(int id);
 
 	int CollectPresent(int* outIds, int maxIds);

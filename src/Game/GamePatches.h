@@ -2,6 +2,7 @@
 
 #include "Game/PatchLibrary.h"
 
+#include <memory>
 #include <string>
 
 #include <Windows.h>
@@ -59,6 +60,10 @@ namespace GamePatches
 	int FilesMissing();
 
 	bool Import(const std::string& folder, const std::string& name, char* status, int statusSize);
+
+	bool AdoptImport(std::unique_ptr<PatchLibrary::Patch> patch, const std::string& note,
+		const SYSTEMTIME& released, char* status, int statusSize);
+	void FinishImport();
 
 	void SetDate(int index, const SYSTEMTIME& released);
 	void Describe(int index, const std::string& note, const SYSTEMTIME& released);

@@ -48,6 +48,10 @@ namespace GameOffsets
 	constexpr uintptr_t kScaleY = 0x55c0d0;
 	constexpr uintptr_t kScreenMatrix = 0x83a938;
 
+	constexpr uintptr_t kCameraObject = 0x83a580;
+	constexpr uintptr_t kCameraQuakeList = 0x15c;
+	constexpr uintptr_t kFnCameraQuake = 0x134b80;
+
 	constexpr uintptr_t kPlayerDataPattern = 0x1c;
 	constexpr uintptr_t kPlayerDataFrameIndex = 0x20;
 	constexpr uintptr_t kPlayerDataFrameFlag = 0x24;
@@ -618,6 +622,15 @@ namespace GameOffsets
 	constexpr uintptr_t kBgmNoRecording = 0x1c;
 	constexpr uintptr_t kBgmFile = 0x20;
 	constexpr int kBgmFileMax = 32;
+
+	constexpr uintptr_t kBgmTrackVolume = 0x595e08;
+	constexpr uintptr_t kBgmBaseVolume = 0x595e0c;
+	constexpr uintptr_t kFnBgmSetVolume = 0xd6600;
+	constexpr uintptr_t kFnStreamSetVolume = 0xb2f60;
+
+	constexpr uintptr_t kFnMenuBgmChoose = 0x2cecb0;
+	constexpr uintptr_t kFnBgmSeek = 0xb2270;
+	constexpr uintptr_t kMenuBgmRemembered = 0x599f48;
 
 	constexpr uintptr_t kNetplayActive = 0x5969a0;
 	constexpr uintptr_t kNetplayFrame = 0x5969a4;

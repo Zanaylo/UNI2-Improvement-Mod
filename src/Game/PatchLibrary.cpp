@@ -501,20 +501,20 @@ PatchLibrary::Patch* PatchLibrary::Get(int index)
 	return g_patches[index].get();
 }
 
-bool PatchLibrary::Add(const std::string& folder, const std::string& name, char* status,
-	int statusSize)
+std::unique_ptr<PatchLibrary::Patch> PatchLibrary::Prepare(const std::string& folder,
+	const std::string& name, char* status, int statusSize)
 {
 	if (folder.empty() || !FolderExists(folder))
 	{
 		strncpy_s(status, statusSize, "that folder is not there", _TRUNCATE);
-		return false;
+		return nullptr;
 	}
 
 	if (!LooksLikeData(folder))
 	{
 		strncpy_s(status, statusSize, "that does not look like a game data folder - it should hold "
 			"BaseData.HA6 and the character folders, or a data folder that does", _TRUNCATE);
-		return false;
+		return nullptr;
 	}
 
 	const std::string id = SafeId(name);
@@ -522,13 +522,7 @@ bool PatchLibrary::Add(const std::string& folder, const std::string& name, char*
 	if (id.empty())
 	{
 		strncpy_s(status, statusSize, "give the patch a name", _TRUNCATE);
-		return false;
-	}
-
-	if (IndexOfId(id.c_str()) >= 0)
-	{
-		sprintf_s(status, statusSize, "%s is already on the list", id.c_str());
-		return false;
+		return nullptr;
 	}
 
 	auto patch = std::make_unique<Patch>();
@@ -545,17 +539,58 @@ bool PatchLibrary::Add(const std::string& folder, const std::string& name, char*
 	{
 		strncpy_s(status, statusSize, "nothing in that folder answers a path the game asks for",
 			_TRUNCATE);
-		return false;
+		return nullptr;
 	}
 
 	sprintf_s(status, statusSize, "added %s - %d file(s), %d of %d characters. Set its date.",
 		id.c_str(), patch->coverage.files, patch->coverage.characters,
 		patch->coverage.charactersWanted);
 
+	return patch;
+}
+
+bool PatchLibrary::Adopt(std::unique_ptr<Patch> patch, const std::string& note,
+	const SYSTEMTIME& released, char* status, int statusSize)
+{
+	if (patch == nullptr)
+		return false;
+
+	if (IndexOfId(patch->id.c_str()) >= 0)
+	{
+		sprintf_s(status, statusSize, "%s is already on the list", patch->id.c_str());
+		return false;
+	}
+
+	patch->note = note;
+
+	if (released.wYear != 0)
+		patch->released = released;
+
 	g_patches.push_back(std::move(patch));
+	return true;
+}
+
+void PatchLibrary::Save()
+{
 	SortByDate();
 	WriteAll();
 	Summarise();
+}
+
+bool PatchLibrary::Add(const std::string& folder, const std::string& name, char* status,
+	int statusSize)
+{
+	std::unique_ptr<Patch> patch = Prepare(folder, name, status, statusSize);
+
+	if (patch == nullptr)
+		return false;
+
+	SYSTEMTIME none = {};
+
+	if (!Adopt(std::move(patch), std::string(), none, status, statusSize))
+		return false;
+
+	Save();
 
 	LOG("PatchLibrary: %s", status);
 	return true;

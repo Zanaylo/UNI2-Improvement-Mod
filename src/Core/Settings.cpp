@@ -11,6 +11,7 @@
 #include "Game/KeyboardSeat.h"
 #include "Game/PotatoMode.h"
 #include "Game/ReplayFiles.h"
+#include "Game/ScreenShake.h"
 #include "Training/FrameMeter.h"
 #include "Training/StageColor.h"
 
@@ -518,6 +519,11 @@ void Settings::ApplySettings()
 	g_modVals.disableCharacterFilter = g_settings.disableCharacterFilter != 0;
 
 	g_modVals.simpleStage = flatStage;
+
+	g_modVals.screenShake = ClampRange(g_settings.screenShake, 0, ScreenShake::kFullPercent);
+	ScreenShake::SetIntensity(g_modVals.screenShake);
+
+	g_modVals.keepMenuMusic = g_settings.keepMenuMusic != 0;
 
 	g_modVals.potatoMode = g_settings.potatoMode;
 	if (g_modVals.potatoMode < 0 || g_modVals.potatoMode >= PotatoMode::Level_COUNT)

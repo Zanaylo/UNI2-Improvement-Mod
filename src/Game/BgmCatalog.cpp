@@ -27,19 +27,6 @@ std::string IniPath()
 	return GetModRootPath("bgm.ini");
 }
 
-std::string RefOf(int id)
-{
-	char buffer[64] = {};
-	BgmLibrary::FormatRef(id, buffer, sizeof(buffer));
-
-	std::string ref = buffer;
-
-	for (char& c : ref)
-		c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
-
-	return ref;
-}
-
 uint32_t NextRandom()
 {
 	if (g_seed == 0)
@@ -83,15 +70,15 @@ bool BgmCatalog::IsListed(int id)
 
 bool BgmCatalog::IsAllowed(int id)
 {
-	return g_refused.empty() || g_refused.find(RefOf(id)) == g_refused.end();
+	return g_refused.empty() || g_refused.find(BgmLibrary::RefKey(id)) == g_refused.end();
 }
 
 void BgmCatalog::SetAllowed(int id, bool allowed)
 {
 	if (allowed)
-		g_refused.erase(RefOf(id));
+		g_refused.erase(BgmLibrary::RefKey(id));
 	else if (static_cast<int>(g_refused.size()) < kMaxRefused)
-		g_refused.insert(RefOf(id));
+		g_refused.insert(BgmLibrary::RefKey(id));
 
 	Save();
 }
@@ -108,7 +95,7 @@ void BgmCatalog::SetAllAllowed(bool allowed)
 			const int id = IdAt(index);
 
 			if (IsListed(id))
-				g_refused.insert(RefOf(id));
+				g_refused.insert(BgmLibrary::RefKey(id));
 		}
 	}
 

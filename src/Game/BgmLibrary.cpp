@@ -7,6 +7,7 @@
 
 #include <Windows.h>
 
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -365,6 +366,19 @@ void BgmLibrary::FormatRef(int id, char* out, int size)
 	}
 
 	sprintf_s(out, size, "%d", id);
+}
+
+std::string BgmLibrary::RefKey(int id)
+{
+	char buffer[64] = {};
+	FormatRef(id, buffer, sizeof(buffer));
+
+	std::string key = buffer;
+
+	for (char& character : key)
+		character = static_cast<char>(tolower(static_cast<unsigned char>(character)));
+
+	return key;
 }
 
 int BgmLibrary::SlotOf(int id)

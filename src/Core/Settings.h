@@ -112,6 +112,8 @@ struct ModValues
 	bool disableBackBufferAa;
 	bool disableCharacterFilter;
 	bool simpleStage;
+	int screenShake;
+	bool keepMenuMusic;
 	int potatoMode;
 
 	float uiScale;

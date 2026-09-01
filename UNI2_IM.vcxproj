@@ -127,11 +127,13 @@
     <ClCompile Include="src\Network\OnlineSafety.cpp" />
     <ClCompile Include="src\Core\CrashContext.cpp" />
     <ClCompile Include="src\Game\BgmTable.cpp" />
+    <ClCompile Include="src\Game\BgmVolume.cpp" />
     <ClCompile Include="src\Game\AudioFile.cpp" />
     <ClCompile Include="src\Game\OggWriter.cpp" />
     <ClCompile Include="src\Game\MusicRefresh.cpp" />
     <ClCompile Include="src\Core\FileIndex.cpp" />
     <ClCompile Include="src\Game\BalanceRules.cpp" />
+    <ClCompile Include="src\Game\ScreenShake.cpp" />
     <ClCompile Include="src\Game\DataSearchPath.cpp" />
     <ClCompile Include="src\Game\GamePatches.cpp" />
     <ClCompile Include="src\Game\PatchLibrary.cpp" />
@@ -290,7 +292,9 @@
     <ClCompile Include="src\D3D9\Post\UpscaleFilter.cpp" />
     <ClCompile Include="src\D3D9\Post\PostOptions.cpp" />
     <ClCompile Include="src\D3D9\Post\PostChain.cpp" />
+    <ClCompile Include="src\D3D9\Post\BundledShaders.cpp" />
     <ClCompile Include="src\D3D9\Post\ShaderPack.cpp" />
+    <ClCompile Include="src\D3D9\Post\ShaderSource.cpp" />
     <ClCompile Include="src\Game\EngineQuality.cpp" />
     <ClCompile Include="src\Game\Improvements.cpp" />
     <ClCompile Include="src\Game\KeyboardSeat.cpp" />
@@ -318,11 +322,13 @@
     <ClInclude Include="src\Network\OnlineSafety.h" />
     <ClInclude Include="src\Core\CrashContext.h" />
     <ClInclude Include="src\Game\BgmTable.h" />
+    <ClInclude Include="src\Game\BgmVolume.h" />
     <ClInclude Include="src\Game\AudioFile.h" />
     <ClInclude Include="src\Game\OggWriter.h" />
     <ClInclude Include="src\Game\MusicRefresh.h" />
     <ClInclude Include="src\Core\FileIndex.h" />
     <ClInclude Include="src\Game\BalanceRules.h" />
+    <ClInclude Include="src\Game\ScreenShake.h" />
     <ClInclude Include="src\Game\DataSearchPath.h" />
     <ClInclude Include="src\Game\GamePatches.h" />
     <ClInclude Include="src\Game\PatchLibrary.h" />
@@ -484,7 +490,9 @@
     <ClInclude Include="src\D3D9\Post\UpscaleFilter.h" />
     <ClInclude Include="src\D3D9\Post\PostOptions.h" />
     <ClInclude Include="src\D3D9\Post\PostChain.h" />
+    <ClInclude Include="src\D3D9\Post\BundledShaders.h" />
     <ClInclude Include="src\D3D9\Post\ShaderPack.h" />
+    <ClInclude Include="src\D3D9\Post\ShaderSource.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\BicubicShader.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\LanczosShader.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\FxaaShader.h" />
@@ -604,6 +612,24 @@
     <None Include="resource\shaders\sharpen.hlsl" />
     <None Include="resource\shaders\upscale_bicubic.hlsl" />
     <None Include="resource\shaders\upscale_lanczos.hlsl" />
+    <None Include="resource\shaders\examples\01_passthrough.hlsl" />
+    <None Include="resource\shaders\examples\02_grayscale.hlsl" />
+    <None Include="resource\shaders\examples\03_sepia.hlsl" />
+    <None Include="resource\shaders\examples\04_invert.hlsl" />
+    <None Include="resource\shaders\examples\05_posterize.hlsl" />
+    <None Include="resource\shaders\examples\06_pixelate.hlsl" />
+    <None Include="resource\shaders\examples\07_chromatic.hlsl" />
+    <None Include="resource\shaders\examples\08_film_grain.hlsl" />
+    <None Include="resource\shaders\examples\09_vhs.hlsl" />
+    <None Include="resource\shaders\examples\10_lcd_grid.hlsl" />
+    <None Include="resource\shaders\examples\11_outline.hlsl" />
+    <None Include="resource\shaders\examples\12_crt.hlsl" />
+    <None Include="resource\shaders\examples\13_reshade_tonemap.fx" />
+    <None Include="resource\shaders\examples\14_slang_scanlines.slang" />
+    <None Include="resource\shaders\examples\15_shadertoy_ripple.glsl" />
+    <None Include="resource\shaders\examples\16_bleach_bypass.ps" />
+    <None Include="resource\shaders\examples\17_dot_matrix.frag" />
+    <None Include="resource\shaders\examples\18_bloom_glow.fsh" />
   </ItemGroup>
 
   <ItemGroup>
@@ -618,6 +644,23 @@
     <WriteLinesToFile File="$(ProjectDir)resource\basepals.rc" Overwrite="true"
                       WriteOnlyWhenDifferent="true"
                       Lines="@(BasePalImage-&gt;'%(Filename) RCDATA &quot;basepals\\%(Filename)%(Extension)&quot;')" />
+  </Target>
+
+  <!-- The example shaders ship as resources from whatever is in the folder, so a file dropped in
+       is bundled without touching anything. The None items above are only what Solution Explorer
+       files under Resources\shaders\examples - a wildcard there lands them at the project root
+       instead - so the build warns when the two lists disagree rather than letting it rot. -->
+  <Target Name="SyncShaderExamples" BeforeTargets="PrepareForBuild"
+          Condition="'$(DesignTimeBuild)'!='true'">
+    <ItemGroup>
+      <ShaderExampleFile Include="$(ProjectDir)resource\shaders\examples\*.hlsl;$(ProjectDir)resource\shaders\examples\*.ps;$(ProjectDir)resource\shaders\examples\*.fx;$(ProjectDir)resource\shaders\examples\*.slang;$(ProjectDir)resource\shaders\examples\*.glsl;$(ProjectDir)resource\shaders\examples\*.frag;$(ProjectDir)resource\shaders\examples\*.fsh" />
+      <ShaderExampleUnlisted Include="@(ShaderExampleFile)" Exclude="@(None->'%(FullPath)')" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(ProjectDir)resource\shaderexamples.rc" Overwrite="true"
+                      WriteOnlyWhenDifferent="true"
+                      Lines="@(ShaderExampleFile-&gt;'&quot;%(Filename)%(Extension)&quot; SHADEREXAMPLE &quot;shaders\\examples\\%(Filename)%(Extension)&quot;')" />
+    <Warning Condition="'@(ShaderExampleUnlisted)'!=''"
+             Text="Shader example(s) not listed as &lt;None&gt; in UNI2_IM.vcxproj, so they will not show under Resources\shaders\examples: @(ShaderExampleUnlisted->'%(Filename)%(Extension)', ', ')" />
   </Target>
 
   <Target Name="SyncPatchPacks" BeforeTargets="PrepareForBuild"

@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <utility>
 #include <vector>
@@ -40,7 +41,6 @@ std::mutex g_lock;
 std::vector<Pack> g_packs;
 bool g_listed = false;
 
-std::atomic<bool> g_registerWanted{ false };
 std::atomic<int> g_busy{ -1 };
 
 constexpr int kSettleFrames = 300;
@@ -335,14 +335,6 @@ bool Unpack(ZipArchive::Source& source, const std::string& root, Web::Job& job)
 		return false;
 	}
 
-	std::vector<uint8_t> manifest;
-
-	if (!source.Read(source.Find("pack.ini"), manifest) || !WriteBlob(root, "pack.ini", manifest))
-	{
-		job.SetError("the pack has no pack.ini, so nothing could be listed");
-		return false;
-	}
-
 	const int total = source.Count();
 	std::vector<uint8_t> data;
 	int written = 0;
@@ -387,6 +379,87 @@ bool Unpack(ZipArchive::Source& source, const std::string& root, Web::Job& job)
 	return written > 0;
 }
 
+struct Entry
+{
+	std::string folder;
+	std::string name;
+	std::string note;
+	SYSTEMTIME released;
+};
+
+struct Prepared
+{
+	std::unique_ptr<PatchLibrary::Patch> patch;
+	std::string note;
+	SYSTEMTIME released;
+};
+
+std::vector<Prepared> g_prepared;
+std::string g_pendingPack;
+int g_addedCount = 0;
+int g_alreadyCount = 0;
+
+void ReadManifest(const std::vector<uint8_t>& blob, std::vector<Entry>& out)
+{
+	IniText ini;
+	ini.Parse(std::string(reinterpret_cast<const char*>(blob.data()), blob.size()));
+
+	int count = ini.Number("Pack", "Count");
+
+	if (count > kMaxEntries)
+		count = kMaxEntries;
+
+	for (int i = 0; i < count; ++i)
+	{
+		const std::string section = SectionName(i);
+
+		Entry entry;
+		entry.folder = ini.Read(section, "Folder");
+		entry.name = ini.Read(section, "Name");
+		entry.note = ini.Read(section, "Note");
+		entry.released = ParseDate(ini.Read(section, "Released"));
+
+		if (entry.folder.empty() || entry.name.empty())
+			continue;
+
+		out.push_back(entry);
+	}
+}
+
+void PrepareAll(const std::vector<Entry>& entries, const std::string& root, Web::Job& job)
+{
+	std::vector<Prepared> prepared;
+
+	for (size_t i = 0; i < entries.size(); ++i)
+	{
+		const Entry& entry = entries[i];
+		const std::string path = Combine(root, entry.folder);
+
+		job.OnProgress(static_cast<uint64_t>(i), static_cast<uint64_t>(entries.size()));
+
+		if (!Exists(path))
+			continue;
+
+		char status[256] = {};
+
+		Prepared ready;
+		ready.patch = PatchLibrary::Prepare(path, entry.name, status, sizeof(status));
+
+		if (ready.patch == nullptr)
+		{
+			LOG("PatchPacks: %s was not indexed - %s", entry.name.c_str(), status);
+			continue;
+		}
+
+		ready.note = entry.note;
+		ready.released = entry.released;
+
+		prepared.push_back(std::move(ready));
+	}
+
+	g_prepared.swap(prepared);
+}
+
 bool InstallJob(Web::Job& job)
 {
 	Pack pack;
@@ -421,6 +494,23 @@ bool InstallJob(Web::Job& job)
 		return false;
 	}
 
+	std::vector<uint8_t> manifest;
+
+	if (!source.Read(source.Find("pack.ini"), manifest))
+	{
+		job.SetError("the pack has no pack.ini, so nothing could be listed");
+		return false;
+	}
+
+	std::vector<Entry> entries;
+	ReadManifest(manifest, entries);
+
+	if (entries.empty())
+	{
+		job.SetError("the pack lists no patches");
+		return false;
+	}
+
 	job.SetStep("unpacking");
 
 	if (!Unpack(source, root, job))
@@ -428,129 +518,60 @@ bool InstallJob(Web::Job& job)
 
 	source.Close();
 
-	job.SetStep("adding the patches");
-	job.SetIndeterminate();
+	job.SetStep("reading the patch folders");
 
-	g_registerWanted.store(true);
+	PrepareAll(entries, root, job);
+
+	g_pendingPack = pack.id;
 	return true;
 }
 
-struct Entry
+void WriteMarker()
 {
-	std::string folder;
-	std::string name;
-	std::string note;
-	SYSTEMTIME released;
-};
+	FILE* marker = nullptr;
 
-std::vector<Entry> g_pending;
-std::string g_pendingPack;
-int g_addedCount = 0;
-int g_alreadyCount = 0;
+	if (fopen_s(&marker, MarkerPath(g_pendingPack).c_str(), "wb") != 0 || marker == nullptr)
+		return;
 
-bool BeginRegister()
+	fwrite(g_pendingPack.c_str(), 1, g_pendingPack.size(), marker);
+	fclose(marker);
+}
+
+void AdoptPrepared()
 {
-	g_pending.clear();
 	g_addedCount = 0;
 	g_alreadyCount = 0;
 
-	Pack pack;
-
-	if (!CopyPack(g_busy.load(), pack))
-		return false;
-
-	g_pendingPack = pack.id;
-
-	std::vector<uint8_t> manifest;
-
-	if (!ReadWholeFile(Combine(PatchLibrary::Root(), "pack.ini"), manifest))
+	for (Prepared& ready : g_prepared)
 	{
-		Say("the pack carries no pack.ini, so nothing could be listed");
-		LOG("PatchPacks: %s", g_status);
-		return false;
-	}
+		char status[256] = {};
 
-	IniText ini;
-	ini.Parse(std::string(reinterpret_cast<const char*>(manifest.data()), manifest.size()));
-
-	int count = ini.Number("Pack", "Count");
-
-	if (count > kMaxEntries)
-		count = kMaxEntries;
-
-	for (int i = 0; i < count; ++i)
-	{
-		const std::string section = SectionName(i);
-
-		Entry entry;
-		entry.folder = ini.Read(section, "Folder");
-		entry.name = ini.Read(section, "Name");
-		entry.note = ini.Read(section, "Note");
-		entry.released = ParseDate(ini.Read(section, "Released"));
-
-		if (entry.folder.empty() || entry.name.empty())
+		if (GamePatches::AdoptImport(std::move(ready.patch), ready.note, ready.released, status,
+			sizeof(status)))
+		{
+			++g_addedCount;
 			continue;
+		}
 
-		g_pending.push_back(entry);
-	}
-
-	return !g_pending.empty();
-}
-
-void RegisterOne(const Entry& entry)
-{
-	const std::string path = Combine(PatchLibrary::Root(), entry.folder);
-
-	if (!Exists(path))
-		return;
-
-	if (PatchLibrary::IndexOfSource(path.c_str()) >= 0)
-	{
 		++g_alreadyCount;
-		return;
 	}
 
-	char status[256] = {};
+	g_prepared.clear();
 
-	if (!GamePatches::Import(path, entry.name, status, sizeof(status)))
-	{
-		LOG("PatchPacks: %s was not added - %s", entry.name.c_str(), status);
-		return;
-	}
-
-	const int at = PatchLibrary::IndexOfSource(path.c_str());
-
-	if (at >= 0)
-		GamePatches::Describe(at, entry.note, entry.released);
-
-	++g_addedCount;
-}
-
-void EndRegister()
-{
-	DeleteFileA(Combine(PatchLibrary::Root(), "pack.ini").c_str());
+	GamePatches::FinishImport();
 
 	if (g_addedCount > 0 || g_alreadyCount > 0)
-	{
-		FILE* marker = nullptr;
-
-		if (fopen_s(&marker, MarkerPath(g_pendingPack).c_str(), "wb") == 0 && marker != nullptr)
-		{
-			fwrite(g_pendingPack.c_str(), 1, g_pendingPack.size(), marker);
-			fclose(marker);
-		}
-	}
+		WriteMarker();
 
 	Say("%d patch(es) added, %d already on the list", g_addedCount, g_alreadyCount);
 	LOG("PatchPacks: %s", g_status);
 
-	g_pending.clear();
 	MarkInstalled();
 }
 
 bool Busy()
 {
-	return g_install.IsRunning() || g_registerWanted.load() || !g_pending.empty();
+	return g_install.IsRunning();
 }
 
 void StartMissing()
@@ -598,50 +619,37 @@ void PatchPacks::OnFrame()
 {
 	bool succeeded = false;
 
-	if (g_install.TakeCompletion(succeeded) && !succeeded)
+	if (g_install.TakeCompletion(succeeded))
 	{
-		g_registerWanted.store(false);
-		g_busy.store(-1);
-		g_autoDone = true;
-		LOG("PatchPacks: the built-in patches could not be added - %s", g_status);
-	}
-
-	if (GameState::IsInMatch())
-		return;
-
-	if (!g_autoDone && !Busy())
-	{
-		if (g_settle < kSettleFrames)
+		if (succeeded)
 		{
-			++g_settle;
-			return;
+			AdoptPrepared();
+		}
+		else
+		{
+			Web::Job::Status status = {};
+			g_install.Read(status);
+
+			g_prepared.clear();
+			Say("the built-in patches could not be added - %s", status.error);
+			LOG("PatchPacks: %s", g_status);
 		}
 
-		StartMissing();
-		return;
-	}
-
-	if (g_registerWanted.exchange(false) && !BeginRegister())
-	{
 		g_busy.store(-1);
 		g_autoDone = true;
+		return;
 	}
 
-	if (g_pending.empty())
+	if (g_autoDone || Busy() || GameState::IsInMatch())
 		return;
 
-	const Entry entry = g_pending.front();
-	g_pending.erase(g_pending.begin());
-
-	Say("adding %s, %d left", entry.name.c_str(), static_cast<int>(g_pending.size()));
-	RegisterOne(entry);
-
-	if (!g_pending.empty())
+	if (g_settle < kSettleFrames)
+	{
+		++g_settle;
 		return;
+	}
 
-	EndRegister();
-	g_busy.store(-1);
-	g_autoDone = true;
+	StartMissing();
 }
 
 const char* PatchPacks::StatusText()

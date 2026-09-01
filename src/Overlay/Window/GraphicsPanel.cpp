@@ -12,6 +12,7 @@
 #include "Game/EngineQuality.h"
 #include "Game/Improvements.h"
 #include "Game/PotatoMode.h"
+#include "Overlay/ComboNav.h"
 #include "Overlay/OverlayFont.h"
 #include "Overlay/UiText.h"
 #include "Training/StageColor.h"
@@ -214,23 +215,45 @@ void DrawShaderPacks()
 		if (ImGui::Selectable("Off", selected < 0))
 			ShaderPack::Select(-1);
 
+		ComboNav::KeepSelectedInView(selected < 0);
+
 		for (int i = 0; i < ShaderPack::Count(); ++i)
 		{
-			if (ImGui::Selectable(ShaderPack::GetName(i), i == selected))
+			const bool chosen = i == selected;
+
+			ImGui::PushID(i);
+
+			if (ImGui::Selectable(ShaderPack::GetName(i), chosen))
 				ShaderPack::Select(i);
+
+			ComboNav::KeepSelectedInView(chosen);
+
+			ImGui::PopID();
 		}
 
 		ImGui::EndCombo();
 	}
+
+	const int steps = ComboNav::WheelSteps();
+	const int target = selected + steps;
+
+	if (steps != 0 && target >= -1 && target < ShaderPack::Count())
+		ShaderPack::Select(target);
 
 	ImGui::SameLine();
 
 	if (ImGui::Button("Rescan"))
 		ShaderPack::Refresh();
 
-	Help("Drop a .hlsl in the Shaders folder beside the ini and pick it here. It is compiled when "
-		"you select it and runs last in the chain. The folder has a README with the entry point "
-		"and the constants the mod binds.\n\n"
+	Help("Drop a shader in the Shaders folder beside the ini and pick it here. It is compiled when "
+		"you select it and runs last in the chain, over the finished frame.\n\n"
+		"Taken: .hlsl and .ps as they are, a ReShade .fx, and libretro or Shadertoy GLSL as .slang, "
+		".glsl, .frag or .fsh. Everything but HLSL is translated on the way in and the translation "
+		"is written to the Translated folder, so a shader that comes out wrong can be read and "
+		"fixed there.\n\n"
+		"It is one pass and nothing else: a shader that needs a second pass, a lookup texture, the "
+		"depth buffer or the previous frame will translate and then be wrong. The folder's README "
+		"has the bindings and what each format is given.\n\n"
 		"Compiling needs d3dcompiler_47.dll, which ships with Windows and with Proton.");
 
 	Muted("%s", ShaderPack::GetStatusText());

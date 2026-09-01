@@ -509,6 +509,23 @@ bool GamePatches::Import(const std::string& folder, const std::string& name, cha
 	return true;
 }
 
+bool GamePatches::AdoptImport(std::unique_ptr<PatchLibrary::Patch> patch,
+	const std::string& note, const SYSTEMTIME& released, char* status, int statusSize)
+{
+	if (!g_loaded)
+		Load();
+
+	return PatchLibrary::Adopt(std::move(patch), note, released, status, statusSize);
+}
+
+void GamePatches::FinishImport()
+{
+	PatchLibrary::Save();
+
+	g_chosen = PatchLibrary::IndexOfId(PatchLibrary::RememberedActive().c_str());
+	ApplyIndex(Desired());
+}
+
 void GamePatches::SetDate(int index, const SYSTEMTIME& released)
 {
 	const Patch* const chosen = PatchLibrary::Get(g_chosen);

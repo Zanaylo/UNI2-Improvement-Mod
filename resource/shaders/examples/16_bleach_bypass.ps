@@ -1,0 +1,32 @@
+// UNI2-Improvement-Mod shader pack: Bleach bypass
+//
+// The same HLSL as the .hlsl examples - .ps is only a second extension for it, because a lot of
+// loose pixel shaders on the internet are named that way. Nothing about this file is translated.
+
+#define STRENGTH 0.55f // 0 = untouched, 1 = the full silver retention look
+#define CONTRAST 1.20f // applied after the mix
+
+sampler2D Frame : register(s0);
+float4 FrameSize : register(c0);
+float4 FrameTime : register(c1);
+
+float3 Overlay(float3 base, float3 blend)
+{
+    float3 low = 2.0f * base * blend;
+    float3 high = 1.0f - 2.0f * (1.0f - base) * (1.0f - blend);
+
+    return lerp(low, high, step(0.5f, base));
+}
+
+float4 main(float2 uv : TEXCOORD0) : COLOR0
+{
+    float3 colour = tex2D(Frame, uv).rgb;
+    float luma = dot(colour, float3(0.2126f, 0.7152f, 0.0722f));
+
+    float3 bleached = Overlay(colour, luma.xxx);
+    float3 mixed = lerp(colour, bleached, STRENGTH);
+
+    mixed = (mixed - 0.5f) * CONTRAST + 0.5f;
+
+    return float4(saturate(mixed), 1.0f);
+}

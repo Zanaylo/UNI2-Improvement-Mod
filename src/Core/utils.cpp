@@ -5,6 +5,7 @@
 #include <Psapi.h>
 #include <ShlObj.h>
 #include <cstdio>
+#include <cctype>
 #include <cstring>
 
 #pragma comment(lib, "Psapi.lib")
@@ -187,6 +188,22 @@ bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t mi
 	return read == out.size();
 }
 
+std::string ResourceFileName(const char* name)
+{
+	if (name == nullptr)
+		return std::string();
+
+	std::string text = name;
+
+	if (text.size() >= 2 && text.front() == '"' && text.back() == '"')
+		text = text.substr(1, text.size() - 2);
+
+	for (char& character : text)
+		character = static_cast<char>(tolower(static_cast<unsigned char>(character)));
+
+	return text;
+}
+
 uintptr_t GetGameBaseAddress()
 {
 	ResolveGameModule();
@@ -324,16 +341,12 @@ bool TryWriteUnaligned(void* address, uint32_t value)
 	}
 }
 
-// The edge is sampled even while the overlay owns the keyboard, so a key held down through a text
-// field does not read as a fresh press the moment the field lets go.
 bool IsHotkeyPressed(int virtualKey)
 {
-	if (virtualKey == 0)
+	if (virtualKey <= 0 || virtualKey > 255)
 		return false;
 
 	static bool previousState[256] = {};
-	if (virtualKey < 0 || virtualKey > 255)
-		return false;
 
 	const bool isDown = (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 	const bool wasDown = previousState[virtualKey];

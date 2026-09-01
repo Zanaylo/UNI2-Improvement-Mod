@@ -1,6 +1,3 @@
-// Mod paths, game module resolution and the SEH guarded memory reads everything else goes through.
-// TryRead*/TryWrite* refuse unaligned addresses; TryRead/WriteUnaligned exist for packed game buffers.
-
 #pragma once
 
 #include <Windows.h>
@@ -25,6 +22,8 @@ std::string GetModShaderPath(const std::string& fileName = std::string());
 bool CreateModDirectories();
 
 bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t minimumSize = 0);
+
+std::string ResourceFileName(const char* name);
 
 uintptr_t GetGameBaseAddress();
 size_t GetGameModuleSize();

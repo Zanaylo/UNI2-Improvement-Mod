@@ -1,24 +1,24 @@
-#include "Game/BundledPack.h"
+#include "D3D9/Post/BundledShaders.h"
 
 #include "Core/utils.h"
 
 #include <Windows.h>
 
-#include <cstring>
+#include <string>
 #include <vector>
 
 namespace {
 
-constexpr const char* kType = "PATCHPACK";
+constexpr const char* kType = "SHADEREXAMPLE";
 
 struct Found
 {
-	std::string id;
+	std::string name;
 	const uint8_t* data;
 	size_t size;
 };
 
-std::vector<Found> g_packs;
+std::vector<Found> g_shaders;
 bool g_scanned = false;
 
 BOOL CALLBACK OnResource(HMODULE module, LPCSTR, LPSTR name, LONG_PTR)
@@ -43,11 +43,11 @@ BOOL CALLBACK OnResource(HMODULE module, LPCSTR, LPSTR name, LONG_PTR)
 		return TRUE;
 
 	Found entry;
-	entry.id = ResourceFileName(name);
+	entry.name = ResourceFileName(name);
 	entry.data = static_cast<const uint8_t*>(data);
 	entry.size = size;
 
-	g_packs.push_back(entry);
+	g_shaders.push_back(entry);
 	return TRUE;
 }
 
@@ -68,14 +68,22 @@ void Scan()
 
 }
 
-int BundledPack::Count()
+int BundledShaders::Count()
 {
 	Scan();
 
-	return static_cast<int>(g_packs.size());
+	return static_cast<int>(g_shaders.size());
 }
 
-bool BundledPack::Get(int index, const uint8_t*& outData, size_t& outSize)
+const char* BundledShaders::Name(int index)
+{
+	if (index < 0 || index >= Count())
+		return "";
+
+	return g_shaders[index].name.c_str();
+}
+
+bool BundledShaders::Get(int index, const uint8_t*& outData, size_t& outSize)
 {
 	outData = nullptr;
 	outSize = 0;
@@ -83,29 +91,7 @@ bool BundledPack::Get(int index, const uint8_t*& outData, size_t& outSize)
 	if (index < 0 || index >= Count())
 		return false;
 
-	outData = g_packs[index].data;
-	outSize = g_packs[index].size;
+	outData = g_shaders[index].data;
+	outSize = g_shaders[index].size;
 	return true;
-}
-
-int BundledPack::Find(const char* id)
-{
-	if (id == nullptr || id[0] == 0)
-		return -1;
-
-	for (int i = 0; i < Count(); ++i)
-	{
-		if (_stricmp(g_packs[i].id.c_str(), id) == 0)
-			return i;
-	}
-
-	return -1;
-}
-
-const char* BundledPack::Id(int index)
-{
-	if (index < 0 || index >= Count())
-		return "";
-
-	return g_packs[index].id.c_str();
 }

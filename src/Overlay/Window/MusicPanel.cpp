@@ -5,6 +5,7 @@
 #include "Game/BgmLibrary.h"
 #include "Game/BgmNames.h"
 #include "Game/BgmTable.h"
+#include "Game/BgmVolume.h"
 #include "Game/BgmThemes.h"
 #include "Game/CharaTables.h"
 #include "Game/ModFiles.h"
@@ -20,6 +21,7 @@
 #include <imgui.h>
 
 #include <cctype>
+#include <cfloat>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -804,6 +806,25 @@ void MusicPanel::DrawBrowse()
 	UiText::Muted("Play starts a track and holds it. The game gets its music back when you press "
 		"Stop.");
 
+	UiText::Help("Volume is remembered per track in bgm.ini and takes effect the moment you let go "
+		"of the slider. The engine can only hold a track back, never push it past the level it "
+		"was recorded at - so to hear one track better, raise the game's own BGM volume and pull "
+		"the ones that are then too loud down here.");
+
+	if (BgmVolume::CustomCount() > 0)
+	{
+		ImGui::SameLine();
+
+		if (ImGui::SmallButton("Reset volumes"))
+		{
+			BgmVolume::ResetAll();
+			BgmControl::RefreshVolume();
+		}
+
+		ImGui::SameLine();
+		UiText::Muted("%d track(s) held back", BgmVolume::CustomCount());
+	}
+
 	DrawTrackTable();
 }
 
@@ -846,6 +867,7 @@ void MusicPanel::SetUpTrackColumns(bool building)
 	ImGui::TableSetupColumn("Track");
 	ImGui::TableSetupColumn("Where it plays", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
 	ImGui::TableSetupColumn("Loop", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
+	ImGui::TableSetupColumn("Volume", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
@@ -891,16 +913,35 @@ void MusicPanel::DrawTrackRow(int id, const char* name, bool building, bool play
 	ImGui::TextUnformatted(BgmLibrary::Loops(id) ? "yes" : "no");
 
 	ImGui::TableNextColumn();
+	DrawTrackVolume(id);
+
+	ImGui::TableNextColumn();
 
 	if (ImGui::SmallButton("Play"))
 		BgmControl::Play(id);
+}
+
+void MusicPanel::DrawTrackVolume(int id)
+{
+	int percent = BgmVolume::Get(id);
+
+	ImGui::SetNextItemWidth(-FLT_MIN);
+
+	if (ImGui::SliderInt("##volume", &percent, 0, BgmVolume::kFullPercent, "%d%%"))
+	{
+		BgmVolume::Set(id, percent);
+		BgmControl::RefreshVolume();
+	}
+
+	if (ImGui::IsItemDeactivatedAfterEdit())
+		BgmVolume::Save();
 }
 
 void MusicPanel::DrawTrackTable()
 {
 	const bool building = SoundpackBuilder::IsOpen();
 
-	if (!ImGui::BeginTable(building ? "##bgmtrackspack" : "##bgmtracks", building ? 7 : 6,
+	if (!ImGui::BeginTable(building ? "##bgmtrackspack" : "##bgmtracks", building ? 8 : 7,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY,
 		ImVec2(0.0f, Ui::Scaled(280.0f))))
 	{

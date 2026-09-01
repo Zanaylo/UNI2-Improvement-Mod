@@ -26,6 +26,7 @@
 #include "Game/UiAssets.h"
 #include "Game/PotatoMode.h"
 #include "Game/PumpWait.h"
+#include "Game/ScreenShake.h"
 #include "Game/MemoryMap.h"
 #include "Training/FrameStepper.h"
 #include "Training/PlayerControl.h"
@@ -210,6 +211,7 @@ void Stage_GameHooks()
 	KeyboardSeat::Initialize();
 	ReplayFiles::Initialize();
 	BalanceRules::Install();
+	ScreenShake::Install();
 	BgmControl::Initialize();
 	PumpWait::Apply();
 	KeyboardSeat::ApplySaved();

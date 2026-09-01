@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace BgmLibrary
 {
 	constexpr int kFirstId = 1000;
@@ -35,6 +37,7 @@ namespace BgmLibrary
 
 	int ParseRef(const char* text);
 	void FormatRef(int id, char* out, int size);
+	std::string RefKey(int id);
 
 	int SlotOf(int id);
 	bool IsMirroredSlot(int slot);

@@ -33,3 +33,5 @@ END
 #include "basepals.rc"
 
 #include "packs.rc"
+
+#include "shaderexamples.rc"

@@ -15,6 +15,7 @@
 #include "Game/GameTables.h"
 #include "Game/KeyboardSeat.h"
 #include "Game/ReplayFiles.h"
+#include "Game/ScreenShake.h"
 #include "Game/SteamNames.h"
 #include "Game/OnlineState.h"
 #include "Network/PaletteShare.h"
@@ -138,6 +139,8 @@ void MainWindow::Draw()
 	ImGui::Separator();
 	DrawMusicSection();
 	ImGui::Separator();
+	DrawPerformanceSection();
+	ImGui::Separator();
 	DrawPatchSection();
 	ImGui::Separator();
 	DrawThemeSection();
@@ -166,12 +169,46 @@ void MainWindow::DrawMusicSection()
 		return;
 	}
 
+	if (ImGui::Checkbox("Keep the menu music playing", &g_modVals.keepMenuMusic))
+		Settings::SaveInt("Music", "KeepMenuMusic", g_modVals.keepMenuMusic ? 1 : 0);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("The game's menu music chooser rebuilds the track from the start unless "
+			"it is still running when you come back, and a trip into Options, Customize or Gallery "
+			"always pauses it first - so it always restarts. On, the mod holds the paused track "
+			"for the chooser and resumes it, and the music carries across those screens. Off is "
+			"the game's own behaviour.");
+	}
+
 	char playing[224] = {};
 
 	if (!BgmNames::Describe(BgmControl::Current(), playing, sizeof(playing)))
 		strncpy_s(playing, "silence", _TRUNCATE);
 
 	UiText::Muted("Playing: %s", playing);
+}
+
+void MainWindow::DrawPerformanceSection()
+{
+	if (!ImGui::CollapsingHeader("Performance"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Performance) : nullptr;
+
+	if (window == nullptr)
+	{
+		UiText::Warn("The performance editor could not be created.");
+		return;
+	}
+
+	if (ImGui::Button(window->IsOpen() ? "Close performance editor" : "Open performance editor"))
+		window->Toggle();
+
+	ImGui::TextWrapped("Frame pacing, POTATO MODE and where the time in each frame goes, with the "
+		"knobs for all three, live in that window.");
 }
 
 void MainWindow::DrawPatchSection()
@@ -1800,6 +1837,37 @@ void MainWindow::DrawConfigGeneralTab()
 		ImGui::SetTooltip("Stops the game from seeing the mouse at all, so clicking the overlay can "
 			"never disturb it.\nSaved to the ini as soon as it changes.");
 
+	int shake = ScreenShake::GetIntensity();
+
+	ImGui::BeginDisabled(!ScreenShake::IsAvailable());
+
+	Ui::SetItemWidth(160.0f);
+
+	if (ImGui::SliderInt("Screen shake strength", &shake, 0, ScreenShake::kFullPercent,
+		"%d%%"))
+		ScreenShake::SetIntensity(shake);
+
+	if (ImGui::IsItemDeactivatedAfterEdit())
+	{
+		g_modVals.screenShake = ScreenShake::GetIntensity();
+		Settings::SaveInt("Video", "ScreenShake", g_modVals.screenShake);
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Every shake in the game - Wald's walk, the heavy hits, the cutscenes - "
+			"is one call asking the camera to quake, and the slot it fills carries a percentage "
+			"the engine multiplies the amplitude by. This rescales that, so a shake keeps its "
+			"shape, its length and its timing and only moves less. 100%% is the game's own; 0 "
+			"answers the call with a duration of zero, which is how the engine cancels a shake "
+			"itself.");
+	}
+
+	ImGui::EndDisabled();
+
+	if (!ScreenShake::IsAvailable())
+		UiText::Warn("%s", ScreenShake::StatusText());
+
 	GraphicsPanel::DrawOverlayAppearance();
 
 	ImGui::SeparatorText("Holding the next-frame key");
@@ -1827,20 +1895,6 @@ void MainWindow::DrawConfigGeneralTab()
 			"once a frame, so the real spacing rounds to whole frames: at 60 Hz anything from 34 to "
 			"49 ms steps every third one.",
 			1000 / (g_modVals.stepRepeatIntervalMs > 0 ? g_modVals.stepRepeatIntervalMs : 1));
-	}
-
-	if (WindowContainer* const container = WindowManager::GetInstance().GetContainer())
-	{
-		IWindow* const performance = container->GetWindow(WindowType_Performance);
-
-		if (performance != nullptr && ImGui::Button("Performance View"))
-			performance->Open();
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("Frame pacing, POTATO MODE, and where the time in each frame goes. "
-				"Close it from its own title bar.");
-		}
 	}
 
 }

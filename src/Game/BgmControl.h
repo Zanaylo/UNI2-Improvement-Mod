@@ -13,6 +13,7 @@ namespace BgmControl
 	int PinnedId();
 
 	int Current();
+	void RefreshVolume();
 	bool IsSuppressed();
 
 	void WriteCrashReport();

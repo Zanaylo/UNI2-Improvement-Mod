@@ -61,6 +61,9 @@
     <Filter Include="Resources\shaders">
       <UniqueIdentifier>{7a716d8f-e0df-bf90-1165-208b79f5f236}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resources\shaders\examples">
+      <UniqueIdentifier>{8b4ad20e-0a6d-ef4b-5734-d563fe44c8b7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Screens">
       <UniqueIdentifier>{6ceeb9f1-e249-f966-98b7-ed74094ff428}</UniqueIdentifier>
     </Filter>
@@ -108,6 +111,9 @@
     <ClCompile Include="src\Game\BgmTable.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\BgmVolume.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\AudioFile.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -121,6 +127,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\BalanceRules.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\ScreenShake.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\DataSearchPath.cpp">
@@ -597,7 +606,13 @@
     <ClCompile Include="src\D3D9\Post\PostChain.cpp">
       <Filter>D3D9\Post</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\Post\BundledShaders.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
     <ClCompile Include="src\D3D9\Post\ShaderPack.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\ShaderSource.cpp">
       <Filter>D3D9\Post</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\EngineQuality.cpp">
@@ -773,6 +788,9 @@
     <ClInclude Include="src\Game\BgmTable.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\BgmVolume.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\AudioFile.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -786,6 +804,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\BalanceRules.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ScreenShake.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\DataSearchPath.h">
@@ -1271,7 +1292,13 @@
     <ClInclude Include="src\D3D9\Post\PostChain.h">
       <Filter>D3D9\Post</Filter>
     </ClInclude>
+    <ClInclude Include="src\D3D9\Post\BundledShaders.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
     <ClInclude Include="src\D3D9\Post\ShaderPack.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\ShaderSource.h">
       <Filter>D3D9\Post</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Post\Shaders\BicubicShader.h">
@@ -1389,6 +1416,60 @@
     </None>
     <None Include="resource\shaders\upscale_lanczos.hlsl">
       <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\examples\01_passthrough.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\02_grayscale.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\03_sepia.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\04_invert.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\05_posterize.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\06_pixelate.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\07_chromatic.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\08_film_grain.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\09_vhs.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\10_lcd_grid.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\11_outline.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\12_crt.hlsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\13_reshade_tonemap.fx">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\14_slang_scanlines.slang">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\15_shadertoy_ripple.glsl">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\16_bleach_bypass.ps">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\17_dot_matrix.frag">
+      <Filter>Resources\shaders\examples</Filter>
+    </None>
+    <None Include="resource\shaders\examples\18_bloom_glow.fsh">
+      <Filter>Resources\shaders\examples</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

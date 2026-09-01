@@ -48,7 +48,7 @@ WindowContainer::WindowContainer()
 
 	m_windows[WindowType_Palette] = std::make_unique<PaletteWindow>("Palette", true);
 
-	m_windows[WindowType_Performance] = std::make_unique<PerformanceWindow>("Performance", true);
+	m_windows[WindowType_Performance] = std::make_unique<PerformanceWindow>("Performance editor", true);
 
 	m_windows[WindowType_Netplay] = std::make_unique<NetplayWindow>("Netplay", true);
 

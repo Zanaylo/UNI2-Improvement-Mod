@@ -32,6 +32,7 @@ private:
 	void DrawTrackCount();
 	void SetUpTrackColumns(bool building);
 	void DrawTrackRow(int id, const char* name, bool building, bool playing);
+	void DrawTrackVolume(int id);
 	void DrawTrackTable();
 	void DrawRules();
 	void DrawRuleTransfer();
