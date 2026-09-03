@@ -23,7 +23,7 @@ private:
 	void DrawGrid(int player, const unsigned char* entries, int count);
 	void DrawSwatches(int player, int chara);
 	void DrawGroupedSwatches(int player, int chara, int parts);
-	void DrawFlatSwatches(int player);
+	void DrawFlatSwatches(int player, int chara);
 	void DrawPicker(int player);
 	void DrawEffects(int player);
 	void DrawFiles(int player);
@@ -79,7 +79,7 @@ private:
 	void LoadCreator();
 	void Bare(int player);
 	void SelectFile(int player, const char* file);
-	bool IsJunk(int player, int entry) const;
+	bool IsJunk(int player, int chara, int entry) const;
 
 	int m_flashFrames = 0;
 	int m_flashPlayer = -1;

@@ -902,9 +902,9 @@ void PerformanceWindow::DrawPotatoTab()
 	ImGui::Spacing();
 
 	Muted("The drawing size takes effect the next time the game builds its display - restart it, or "
-		"touch any video option in its own menu. Everything else is immediate. Windowed and "
-		"borderless only: in exclusive fullscreen the game has to name a mode your monitor really "
-		"has, and choosing one for you is not the mod's business.");
+		"touch any video option in its own menu. Everything else is immediate. In exclusive "
+		"fullscreen the back buffer has to name a mode your monitor really has, so the size is "
+		"rounded up to the smallest listed one that fits - a 4:3 mode will letterbox or stretch.");
 
 	ImGui::Spacing();
 
@@ -1020,15 +1020,26 @@ void PerformanceWindow::DrawPotatoState()
 
 	if (g_modVals.presentWidth > 0 && g_modVals.presentHeight > 0)
 	{
-		const bool inForce = present.BackBufferWidth ==
-			static_cast<unsigned>(g_modVals.presentWidth) &&
-			present.BackBufferHeight == static_cast<unsigned>(g_modVals.presentHeight);
+		const unsigned askedWidth = static_cast<unsigned>(g_modVals.presentWidth);
+		const unsigned askedHeight = static_cast<unsigned>(g_modVals.presentHeight);
 
-		if (inForce)
+		const bool exact = present.BackBufferWidth == askedWidth &&
+			present.BackBufferHeight == askedHeight;
+
+		const bool rounded = !present.Windowed && !exact &&
+			present.BackBufferWidth >= askedWidth && present.BackBufferHeight >= askedHeight;
+
+		if (exact)
 		{
 			ImGui::TextColored(kGoodColour, "Drawing at %ux%u and %s it to the window",
 				present.BackBufferWidth, present.BackBufferHeight,
 				DeviceHooks::GetOverlayScale() > 1.0f ? "fitting" : "stretching");
+		}
+		else if (rounded)
+		{
+			ImGui::TextColored(kGoodColour, "Drawing at %ux%u - the smallest mode your monitor "
+				"lists at or above the %dx%d asked for", present.BackBufferWidth,
+				present.BackBufferHeight, g_modVals.presentWidth, g_modVals.presentHeight);
 		}
 		else
 		{
@@ -1045,7 +1056,10 @@ void PerformanceWindow::DrawPotatoState()
 	}
 
 	if (!present.Windowed)
-		Warn("Exclusive fullscreen - the drawing size is left alone here.");
+	{
+		Muted("Exclusive fullscreen: the size names a real display mode, so your monitor changes "
+			"mode rather than the picture being stretched inside a window.");
+	}
 
 	ImGui::Text("Back buffer multisampling %s",
 		present.MultiSampleType == D3DMULTISAMPLE_NONE ? "off" : "on");

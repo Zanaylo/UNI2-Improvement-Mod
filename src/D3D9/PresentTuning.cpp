@@ -26,59 +26,87 @@ bool VsyncIsOn(const D3DPRESENT_PARAMETERS& parameters)
 	return parameters.PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
 }
 
-bool RateIsListed(IDirect3D9* d3d9, UINT adapter, const D3DPRESENT_PARAMETERS& parameters, UINT rate)
+template <typename Visit>
+void ForEachMode(IDirect3D9* d3d9, UINT adapter, D3DFORMAT format, Visit visit)
 {
-	if (d3d9 == nullptr || parameters.BackBufferFormat == D3DFMT_UNKNOWN)
-		return false;
+	if (d3d9 == nullptr || format == D3DFMT_UNKNOWN)
+		return;
 
-	const UINT modeCount = d3d9->GetAdapterModeCount(adapter, parameters.BackBufferFormat);
+	const UINT modeCount = d3d9->GetAdapterModeCount(adapter, format);
 
 	for (UINT i = 0; i < modeCount; ++i)
 	{
 		D3DDISPLAYMODE mode = {};
-		if (FAILED(d3d9->EnumAdapterModes(adapter, parameters.BackBufferFormat, i, &mode)))
-			continue;
 
+		if (SUCCEEDED(d3d9->EnumAdapterModes(adapter, format, i, &mode)))
+			visit(mode);
+	}
+}
+
+bool RateIsListed(IDirect3D9* d3d9, UINT adapter, const D3DPRESENT_PARAMETERS& parameters, UINT rate)
+{
+	bool listed = false;
+
+	ForEachMode(d3d9, adapter, parameters.BackBufferFormat, [&](const D3DDISPLAYMODE& mode)
+	{
 		if (mode.Width == parameters.BackBufferWidth && mode.Height == parameters.BackBufferHeight &&
 			mode.RefreshRate == rate)
 		{
-			return true;
+			listed = true;
 		}
-	}
+	});
 
-	return false;
+	return listed;
 }
 
 
 UINT HighestMultipleOfSixty(IDirect3D9* d3d9, UINT adapter,
 	const D3DPRESENT_PARAMETERS& parameters, UINT ceiling)
 {
-	if (d3d9 == nullptr || parameters.BackBufferFormat == D3DFMT_UNKNOWN)
-		return 0;
-
-	const UINT modeCount = d3d9->GetAdapterModeCount(adapter, parameters.BackBufferFormat);
 	UINT best = 0;
 
-	for (UINT i = 0; i < modeCount; ++i)
+	ForEachMode(d3d9, adapter, parameters.BackBufferFormat, [&](const D3DDISPLAYMODE& mode)
 	{
-		D3DDISPLAYMODE mode = {};
-		if (FAILED(d3d9->EnumAdapterModes(adapter, parameters.BackBufferFormat, i, &mode)))
-			continue;
-
 		if (mode.Width != parameters.BackBufferWidth || mode.Height != parameters.BackBufferHeight)
-			continue;
+			return;
 
 		if (mode.RefreshRate == 0 || mode.RefreshRate % kTickRateHz != 0)
-			continue;
+			return;
 
 		if (ceiling != 0 && mode.RefreshRate > ceiling)
-			continue;
+			return;
 
 		if (mode.RefreshRate > best)
 			best = mode.RefreshRate;
-	}
+	});
 
 	return best;
+}
+
+bool SmallestListedAtLeast(IDirect3D9* d3d9, UINT adapter, D3DFORMAT format, UINT& width,
+	UINT& height)
+{
+	const UINT wantWidth = width;
+	const UINT wantHeight = height;
+
+	UINT bestPixels = 0;
+
+	ForEachMode(d3d9, adapter, format, [&](const D3DDISPLAYMODE& mode)
+	{
+		if (mode.Width < wantWidth || mode.Height < wantHeight)
+			return;
+
+		const UINT pixels = mode.Width * mode.Height;
+
+		if (bestPixels != 0 && pixels >= bestPixels)
+			return;
+
+		bestPixels = pixels;
+		width = mode.Width;
+		height = mode.Height;
+	});
+
+	return bestPixels != 0;
 }
 
 UINT ChooseRefreshRate(IDirect3D9* d3d9, UINT adapter, const D3DPRESENT_PARAMETERS& parameters)
@@ -135,13 +163,35 @@ void RewriteMultiSample(D3DPRESENT_PARAMETERS& parameters)
 }
 
 
-void RewriteBackBufferSize(D3DPRESENT_PARAMETERS& parameters)
+void RewriteBackBufferSize(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
 {
-	if (g_modVals.presentWidth <= 0 || g_modVals.presentHeight <= 0 || !parameters.Windowed)
+	if (g_modVals.presentWidth <= 0 || g_modVals.presentHeight <= 0)
 		return;
 
-	const UINT width = static_cast<UINT>(g_modVals.presentWidth);
-	const UINT height = static_cast<UINT>(g_modVals.presentHeight);
+	UINT width = static_cast<UINT>(g_modVals.presentWidth);
+	UINT height = static_cast<UINT>(g_modVals.presentHeight);
+
+	if (!parameters.Windowed)
+	{
+		if (width >= parameters.BackBufferWidth && height >= parameters.BackBufferHeight)
+			return;
+
+		const UINT askedWidth = width;
+		const UINT askedHeight = height;
+
+		if (!SmallestListedAtLeast(d3d9, adapter, parameters.BackBufferFormat, width, height))
+		{
+			LOG("[PresentTuning] %ux%u is not a mode this adapter lists and nor is anything "
+				"larger, so the drawing size is left alone", askedWidth, askedHeight);
+			return;
+		}
+
+		if (width != askedWidth || height != askedHeight)
+		{
+			LOG("[PresentTuning] %ux%u is not a mode this adapter lists, using %ux%u",
+				askedWidth, askedHeight, width, height);
+		}
+	}
 
 	if (width == parameters.BackBufferWidth && height == parameters.BackBufferHeight)
 		return;
@@ -156,7 +206,7 @@ void RewriteBackBufferSize(D3DPRESENT_PARAMETERS& parameters)
 void Rewrite(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
 {
 	RewriteMultiSample(parameters);
-	RewriteBackBufferSize(parameters);
+	RewriteBackBufferSize(d3d9, adapter, parameters);
 
 	if (parameters.Windowed)
 	{
@@ -193,7 +243,7 @@ void PresentTuning::Apply(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS&
 		Decide(Compat::SafeMode() ? "safe mode - the host owns the presentation"
 			: "off - the game own parameters");
 		RewriteMultiSample(parameters);
-		RewriteBackBufferSize(parameters);
+		RewriteBackBufferSize(d3d9, adapter, parameters);
 		return;
 	}
 
@@ -205,26 +255,32 @@ void PresentTuning::Apply(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS& param
 	if (device == nullptr)
 		return;
 
+	IDirect3D9* d3d9 = nullptr;
+	UINT adapter = D3DADAPTER_DEFAULT;
+
+	if (FAILED(device->GetDirect3D(&d3d9)))
+		d3d9 = nullptr;
+
+	if (d3d9 != nullptr)
+	{
+		D3DDEVICE_CREATION_PARAMETERS creation = {};
+
+		if (SUCCEEDED(device->GetCreationParameters(&creation)))
+			adapter = creation.AdapterOrdinal;
+	}
+
 	if (!g_modVals.displayTuning || Compat::SafeMode())
 	{
 		RewriteMultiSample(parameters);
-		RewriteBackBufferSize(parameters);
-		return;
+		RewriteBackBufferSize(d3d9, adapter, parameters);
 	}
-
-	IDirect3D9* d3d9 = nullptr;
-	if (FAILED(device->GetDirect3D(&d3d9)) || d3d9 == nullptr)
+	else
 	{
-		Rewrite(nullptr, D3DADAPTER_DEFAULT, parameters);
-		return;
+		Rewrite(d3d9, adapter, parameters);
 	}
 
-	D3DDEVICE_CREATION_PARAMETERS creation = {};
-	const UINT adapter = SUCCEEDED(device->GetCreationParameters(&creation)) ? creation.AdapterOrdinal
-		: D3DADAPTER_DEFAULT;
-
-	Rewrite(d3d9, adapter, parameters);
-	d3d9->Release();
+	if (d3d9 != nullptr)
+		d3d9->Release();
 }
 
 const char* PresentTuning::GetLastDecision()

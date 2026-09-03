@@ -44,6 +44,8 @@
 #include "Training/FrameStepper.h"
 #include "Training/DummyScript.h"
 #include "Training/PlayerControl.h"
+#include "Game/ExtraStages.h"
+#include "Game/SoundPacks.h"
 #include "Training/StageColor.h"
 
 #include <Windows.h>
@@ -139,6 +141,8 @@ void MainWindow::Draw()
 	ImGui::Separator();
 	DrawMusicSection();
 	ImGui::Separator();
+	DrawSoundSection();
+	ImGui::Separator();
 	DrawPerformanceSection();
 	ImGui::Separator();
 	DrawPatchSection();
@@ -187,6 +191,24 @@ void MainWindow::DrawMusicSection()
 		strncpy_s(playing, "silence", _TRUNCATE);
 
 	UiText::Muted("Playing: %s", playing);
+}
+
+void MainWindow::DrawSoundSection()
+{
+	if (!ImGui::CollapsingHeader("Voices and sound"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Sound) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close voices" : "Open voices"))
+		window->Toggle();
+
+	ImGui::TextWrapped("Give one character another game's voice, or replace the shared sound "
+		"effects, without touching anybody else. Packs are folders you can zip and send on.");
+
+	UiText::Muted("%s", SoundPacks::StatusText());
 }
 
 void MainWindow::DrawPerformanceSection()
@@ -635,8 +657,9 @@ void MainWindow::DrawPaletteOptions()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Hides the entries that are not really colours: the black padding, the "
-			"green the unused slots are filled with, and anything that repeats an entry above it.");
+		ImGui::SetTooltip("Hides the entries no pixel of this character ever uses, read off its own "
+			"sprite sheet, and the green the unused slots are filled with. Anything the game's own "
+			"colour screen offers stays, however ordinary it looks.");
 	}
 
 	if (ImGui::Checkbox("See the other player's colours", &g_modVals.showOnlinePalettes))
@@ -1315,6 +1338,54 @@ void MainWindow::DrawAutoPauseControls()
 		FrameMeter::SetAutoPause(config);
 }
 
+void MainWindow::DrawExtraStageControls()
+{
+	ImGui::TextUnformatted("Extra stages");
+
+	if (!ExtraStages::Ready())
+	{
+		ImGui::TextDisabled("Reading the game's stage list...");
+		return;
+	}
+
+	if (ExtraStages::Count() == 0)
+	{
+		ImGui::TextDisabled("This build hides no stage.");
+		return;
+	}
+
+	for (int i = 0; i < ExtraStages::Count(); ++i)
+	{
+		const ExtraStages::Stage* const stage = ExtraStages::Get(i);
+
+		if (stage == nullptr)
+			continue;
+
+		ImGui::PushID(stage->number);
+
+		bool unlocked = stage->unlocked;
+		char label[128] = {};
+
+		sprintf_s(label, "%s##%d", stage->name.empty() ? "unnamed" : stage->name.c_str(),
+			stage->number);
+
+		if (ImGui::Checkbox(label, &unlocked))
+			ExtraStages::SetUnlocked(stage->number, unlocked);
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Stage %d, bg\\%s. The game builds it and leaves it off every "
+				"list; the load path never reads those flags, so it plays like any other.",
+				stage->number, stage->folder.c_str());
+		}
+
+		ImGui::PopID();
+	}
+
+	ImGui::TextDisabled("The game decides its stage list when you open the screen, so leave and "
+		"come back if one is missing.");
+}
+
 void MainWindow::DrawExtrasControls()
 {
 	FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
@@ -1341,6 +1412,9 @@ void MainWindow::DrawExtrasControls()
 
 	ImGui::Separator();
 	DrawStageColourControls();
+
+	ImGui::Separator();
+	DrawExtraStageControls();
 
 	ImGui::TreePop();
 

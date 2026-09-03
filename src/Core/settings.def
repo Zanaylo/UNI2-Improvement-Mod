@@ -162,9 +162,9 @@ SETTING_INT(showlegacypalettes,     "Palette",  "ShowLegacyTab",        0)
 SETTING_INT(paletteGroupByPart,     "Palette",  "GroupByPart",          1)
 SETTING_INT(paletteFlashEntry,      "Palette",  "FlashEntry",           1)
 
-// Hide the entries that are not really colours: the pure black padding, the pure green the unused
-// slots are filled with, and any entry that repeats one already above it. On by default, because a
-// character's palette is mostly those and none of them is editable in any useful sense.
+// Hide the entries no pixel of this character ever indexes, read off its own chrNNN.cg, plus the
+// pure green the unused slots are filled with. On by default. An entry the game's own colour screen
+// offers is never hidden, and nor is anything for a character the table does not cover.
 SETTING_INT(paletteFilterJunk,      "Palette",  "FilterJunk",           1)
 
 // The stage replaced by a flat colour, for keying a capture. The colour is 0xRRGGBB; the default is
@@ -182,8 +182,7 @@ SETTING_INT(screenShake,            "Video",    "ScreenShake",          100)
 // Keep the menu music playing across Options, Customize and Gallery instead of letting it start
 // again. The game's menu BGM chooser (RVA 0x2cecb0) rebuilds the stream unless the music is still
 // running with the same id, and a scene change pauses it first, so the rebuild is guaranteed. On,
-// the mod reports the paused stream as running so the chooser keeps it, then resumes it. Off is
-// the game's own behaviour. See OFFSETS.md.
+// the mod reports the paused stream as running so the chooser keeps it, then resumes it.
 SETTING_INT(keepMenuMusic,          "Music",    "KeepMenuMusic",        1)
 
 // Hold 1 ms timer resolution and reassert it when the window regains focus. The game asks once at

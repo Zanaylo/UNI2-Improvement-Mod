@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace AudioFile
 {
@@ -13,7 +15,18 @@ namespace AudioFile
 		Format_Mp3,
 	};
 
+	struct Pcm
+	{
+		std::vector<short> samples;
+		int channels;
+		int rate;
+	};
+
 	Format Identify(const std::string& path);
+	Format IdentifyBytes(const uint8_t* data, int size);
+
+	bool Decode(const std::string& path, Pcm& out, char* status, int statusSize);
+	bool DecodeBytes(const std::vector<uint8_t>& bytes, Pcm& out, char* status, int statusSize);
 
 	const char* FormatName(Format format);
 	const char* WhyItCannotPlay(Format format);

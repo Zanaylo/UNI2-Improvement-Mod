@@ -47,6 +47,9 @@ void FileIndex::Walk(const std::string& folder)
 
 void FileIndex::Walk(const std::string& folder, FileIndexNaming& naming)
 {
+	if (folder.empty())
+		return;
+
 	std::string root;
 
 	if (!naming.Folder(folder, std::string(), root))

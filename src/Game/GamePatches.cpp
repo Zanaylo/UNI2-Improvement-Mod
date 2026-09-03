@@ -48,6 +48,9 @@ void Take(int index, const std::string& prefix)
 
 bool ApplyPatch(int index)
 {
+	for (int i = 0; i <= index; ++i)
+		PatchLibrary::EnsureIndexed(i);
+
 	const GamePatches::Patch* const patch = PatchLibrary::Get(index);
 
 	if (patch == nullptr || !patch->present || patch->coverage.files == 0)

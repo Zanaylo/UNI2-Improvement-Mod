@@ -27,7 +27,7 @@ private:
 	int Row() const;
 
 	bool ActiveTarget(int& outTexture, int& outRow) const;
-	bool IsUsed(int entry) const;
+	bool IsUsed(int chara, int entry) const;
 	void DrawSwatches(const unsigned char* entries, int count);
 
 	void Select(int player, bool effects);

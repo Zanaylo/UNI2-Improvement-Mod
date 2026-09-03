@@ -3,7 +3,9 @@
 #include "Core/FileIndex.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/DataSearchPath.h"
 #include "Game/GamePatches.h"
+#include "Game/SoundPacks.h"
 #include "Game/UserMusic.h"
 #include "Hooks/HookManager.h"
 
@@ -26,14 +28,18 @@ FileIndex g_files;
 SRWLOCK g_filesLock = SRWLOCK_INIT;
 std::string g_root;
 std::string g_gameRoot;
+std::string g_probeRoot;
 char g_status[160] = "not started";
 volatile long g_hits = 0;
 volatile long g_misses = 0;
+volatile long g_soundHits = 0;
 bool g_hasLanguageEntries = false;
 char g_languageRoot[32] = {};
 
 constexpr long kLoggedRedirects = 16;
 constexpr long kLoggedMisses = 16;
+
+constexpr const char* kProbeFolder = "Ask";
 
 constexpr const char* kLanguageRoots[] = {
 	"___st", "___english", "___french", "___german", "___italian",
@@ -49,6 +55,9 @@ std::string Normalise(const char* path)
 
 	if (!g_gameRoot.empty() && key.compare(0, g_gameRoot.size(), g_gameRoot) == 0)
 		key.erase(0, g_gameRoot.size());
+
+	if (!g_probeRoot.empty() && key.compare(0, g_probeRoot.size(), g_probeRoot) == 0)
+		key.erase(0, g_probeRoot.size());
 
 	while (key.compare(0, 2, ".\\") == 0)
 		key.erase(0, 2);
@@ -112,13 +121,16 @@ const std::string* FindAcrossLanguages(const std::string& generic)
 
 void NoteMiss(const char* path, const std::string& key)
 {
-	if (key.size() < 4 || key.compare(key.size() - 4, 4, ".pat") != 0)
+	const bool theme = key.size() > 4 && key.compare(key.size() - 4, 4, ".pat") == 0;
+	const bool sound = key.compare(0, 3, "se\\") == 0;
+
+	if (!theme && !sound)
 		return;
 
 	if (InterlockedIncrement(&g_misses) > kLoggedMisses)
 		return;
 
-	LOG("ModFiles: the game opened %s and no theme file answered it", path);
+	LOG("ModFiles: the game opened %s and nothing of ours answered it", path);
 }
 
 bool Lookup(const char* path, std::string& out)
@@ -167,8 +179,13 @@ bool Lookup(const char* path, std::string& out)
 		return false;
 	}
 
-	if (InterlockedIncrement(&g_hits) <= kLoggedRedirects)
+	const bool sound = key.compare(0, 3, "se\\") == 0;
+
+	if (InterlockedIncrement(&g_hits) <= kLoggedRedirects ||
+		(sound && InterlockedIncrement(&g_soundHits) <= kLoggedRedirects))
+	{
 		LOG("ModFiles: %s -> %s", path, out.c_str());
+	}
 
 	return true;
 }
@@ -221,6 +238,12 @@ void IndexUserMusic(FileIndex& into)
 	}
 }
 
+void IndexSoundPacks(FileIndex& into)
+{
+	for (const SoundPacks::Entry& entry : SoundPacks::Snapshot())
+		into.Add(entry.key, entry.path);
+}
+
 bool AnyLocalised(const FileIndex& index)
 {
 	for (const auto& entry : index.Entries())
@@ -232,12 +255,27 @@ bool AnyLocalised(const FileIndex& index)
 	return false;
 }
 
+void ClaimSearchPath(int count)
+{
+	if (count == 0)
+	{
+		DataSearchPath::ReleaseOverrides();
+		return;
+	}
+
+	if (!DataSearchPath::IsSupported())
+		return;
+
+	DataSearchPath::PointOverrides(GetModRootPath(kProbeFolder));
+}
+
 void Rebuild()
 {
 	FileIndex built;
 
 	built.Walk(g_root);
 	IndexUserMusic(built);
+	IndexSoundPacks(built);
 
 	const bool localised = AnyLocalised(built);
 
@@ -246,7 +284,10 @@ void Rebuild()
 	AcquireSRWLockExclusive(&g_filesLock);
 	g_files.Swap(built);
 	g_hasLanguageEntries = localised;
+	const int count = g_files.Count();
 	ReleaseSRWLockExclusive(&g_filesLock);
+
+	ClaimSearchPath(count);
 }
 
 }
@@ -259,10 +300,21 @@ bool ModFiles::Initialize()
 	if (!g_gameRoot.empty() && g_gameRoot.back() != '\\')
 		g_gameRoot.push_back('\\');
 
+	g_probeRoot = FileIndex::Key(GetModRootPath(kProbeFolder));
+
+	if (!g_probeRoot.empty() && g_probeRoot.compare(0, g_gameRoot.size(), g_gameRoot) == 0)
+		g_probeRoot.erase(0, g_gameRoot.size());
+
+	if (!g_probeRoot.empty() && g_probeRoot.back() != '\\')
+		g_probeRoot.push_back('\\');
+
 	if (GetFileAttributesA(g_root.c_str()) == INVALID_FILE_ATTRIBUTES)
 		CreateDirectoryA(g_root.c_str(), nullptr);
 
+	DataSearchPath::LogSlots("as the game left them");
+
 	UserMusic::Scan();
+	SoundPacks::Scan();
 	Rebuild();
 
 	const bool create = HookManager::CreateApiHook("kernel32.dll", "CreateFileA",

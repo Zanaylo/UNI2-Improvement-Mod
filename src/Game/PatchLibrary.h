@@ -31,6 +31,7 @@ namespace PatchLibrary
 		SYSTEMTIME released;
 		int version;
 		bool present;
+		bool indexed;
 		Coverage coverage;
 		FileIndex files;
 	};
@@ -39,6 +40,8 @@ namespace PatchLibrary
 
 	int Count();
 	Patch* Get(int index);
+	void EnsureIndexed(int index);
+	int NextUnindexed();
 
 	bool Add(const std::string& folder, const std::string& name, char* status, int statusSize);
 

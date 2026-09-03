@@ -1,5 +1,6 @@
 #include "Game/DataSearchPath.h"
 
+#include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 
@@ -10,14 +11,25 @@
 
 namespace {
 
-char* Slot()
+constexpr int kPatchSlot = 0;
+
+char* SlotAt(int index)
 {
-	const uintptr_t address = RvaToAddress(GameOffsets::kSearchPathBase);
+	if (index < 0 || index >= GameOffsets::kSearchPathCount)
+		return nullptr;
+
+	const uintptr_t address = RvaToAddress(GameOffsets::kSearchPathBase +
+		index * GameOffsets::kSearchPathStride);
 
 	if (!IsAddressInGameModule(address))
 		return nullptr;
 
 	return reinterpret_cast<char*>(address);
+}
+
+char* Slot()
+{
+	return SlotAt(kPatchSlot);
 }
 
 unsigned char* Gate()
@@ -38,9 +50,9 @@ std::string Separated(const std::string& prefix)
 	return prefix + "\\";
 }
 
-bool WriteSlot(const std::string& prefix)
+bool WriteSlotAt(int index, const std::string& prefix)
 {
-	char* const slot = Slot();
+	char* const slot = SlotAt(index);
 
 	if (slot == nullptr || prefix.size() >= GameOffsets::kSearchPathStride)
 		return false;
@@ -93,14 +105,64 @@ bool RestoreOriginal()
 	return true;
 }
 
+std::string g_overridePrefix;
+int g_overrideSlot = -1;
+
+int FreeSlot()
+{
+	for (int index = GameOffsets::kSearchPathCount - 1; index > kPatchSlot; --index)
+	{
+		const char* const slot = SlotAt(index);
+
+		if (slot != nullptr && slot[0] == '\0')
+			return index;
+	}
+
+	return -1;
+}
+
 uint8_t g_gateWriteOriginal[2][GameOffsets::kSearchPathGateWriteSize] = {};
 bool g_gateWriteSaved = false;
 bool g_gateWriteSilenced = false;
+
+constexpr unsigned kOwnerPatch = 1;
+constexpr unsigned kOwnerOverrides = 2;
+
+unsigned g_silenceOwners = 0;
+
+bool ClobberSitesAreKnown()
+{
+	const uintptr_t gate = RvaToAddress(GameOffsets::kSearchPathEnabled);
+
+	uint8_t expected[GameOffsets::kSearchPathGateWriteSize] = { 0xa2 };
+	const uint32_t address = static_cast<uint32_t>(gate);
+	memcpy(expected + 1, &address, sizeof(address));
+
+	for (const uintptr_t rva : GameOffsets::kSearchPathGateWrite)
+	{
+		const uintptr_t site = RvaToAddress(rva);
+
+		if (!IsAddressInGameModule(site))
+			return false;
+
+		if (memcmp(reinterpret_cast<const void*>(site), expected, sizeof(expected)) != 0)
+			return false;
+	}
+
+	return true;
+}
 
 void SilenceGateClobber(bool silence)
 {
 	if (silence == g_gateWriteSilenced)
 		return;
+
+	if (silence && !g_gateWriteSaved && !ClobberSitesAreKnown())
+	{
+		LOG("DataSearchPath: the gate writes are not where this build was measured; leaving the "
+			"code alone");
+		return;
+	}
 
 	for (int i = 0; i < 2; ++i)
 	{
@@ -133,6 +195,16 @@ void SilenceGateClobber(bool silence)
 	g_gateWriteSilenced = silence;
 }
 
+void ClaimSilence(unsigned owner, bool claim)
+{
+	if (claim)
+		g_silenceOwners |= owner;
+	else
+		g_silenceOwners &= ~owner;
+
+	SilenceGateClobber(g_silenceOwners != 0);
+}
+
 bool WriteGate(bool on)
 {
 	unsigned char* const gate = Gate();
@@ -160,18 +232,97 @@ bool DataSearchPath::IsSupported()
 bool DataSearchPath::Point(const std::string& prefix)
 {
 	SaveOriginal();
-	SilenceGateClobber(true);
-	return WriteSlot(Separated(prefix)) && WriteGate(true);
+	ClaimSilence(kOwnerPatch, true);
+	return WriteSlotAt(kPatchSlot, Separated(prefix)) && WriteGate(true);
 }
 
 bool DataSearchPath::Release()
 {
-	SilenceGateClobber(false);
+	ClaimSilence(kOwnerPatch, false);
 
 	if (!g_originalSaved)
 		return true;
 
-	return RestoreOriginal() && WriteGate(g_gateOriginal != 0);
+	return RestoreOriginal() && WriteGate(g_gateOriginal != 0 || !g_overridePrefix.empty());
+}
+
+bool DataSearchPath::PointOverrides(const std::string& prefix)
+{
+	const std::string separated = Separated(prefix);
+
+	if (separated.empty())
+		return false;
+
+	if (g_overridePrefix == separated && g_overrideSlot >= 0)
+		return true;
+
+	const int slot = g_overrideSlot >= 0 ? g_overrideSlot : FreeSlot();
+
+	if (slot < 0)
+	{
+		LOG("DataSearchPath: every search path slot is the game's; leaving them alone");
+		return false;
+	}
+
+	g_overrideSlot = slot;
+	g_overridePrefix = separated;
+	ClaimSilence(kOwnerOverrides, true);
+
+	const bool ok = WriteSlotAt(slot, separated) && WriteGate(true);
+
+	LOG("DataSearchPath: slot %d now looks in %s for an overridden file", slot, separated.c_str());
+
+	return ok;
+}
+
+bool DataSearchPath::ReleaseOverrides()
+{
+	if (g_overridePrefix.empty() || g_overrideSlot < 0)
+		return true;
+
+	const int slot = g_overrideSlot;
+
+	g_overridePrefix.clear();
+	g_overrideSlot = -1;
+	ClaimSilence(kOwnerOverrides, false);
+
+	return WriteSlotAt(slot, std::string());
+}
+
+void DataSearchPath::Assert()
+{
+	if (g_overridePrefix.empty() || g_overrideSlot < 0)
+		return;
+
+	const char* const slot = SlotAt(g_overrideSlot);
+	const unsigned char* const gate = Gate();
+
+	if (slot == nullptr || gate == nullptr)
+		return;
+
+	if (_stricmp(slot, g_overridePrefix.c_str()) != 0)
+		WriteSlotAt(g_overrideSlot, g_overridePrefix);
+
+	if (*gate == 0)
+		WriteGate(true);
+}
+
+void DataSearchPath::LogSlots(const char* when)
+{
+	const unsigned char* const gate = Gate();
+
+	for (int index = 0; index < GameOffsets::kSearchPathCount; ++index)
+	{
+		const char* const slot = SlotAt(index);
+
+		if (slot == nullptr)
+			continue;
+
+		LOG("DataSearchPath: %s, slot %d = '%s'", when, index, slot);
+	}
+
+	if (gate != nullptr)
+		LOG("DataSearchPath: %s, the gate is %d", when, static_cast<int>(*gate));
 }
 
 bool DataSearchPath::PointsAt(const std::string& prefix)

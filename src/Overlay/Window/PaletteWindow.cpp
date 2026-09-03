@@ -9,8 +9,10 @@
 #include "Game/EffectTable.h"
 #include "Game/PartColourTable.h"
 #include "Game/GameTables.h"
+#include "Game/OfferedEntries.h"
 #include "Game/PngPalette.h"
 #include "Game/StockPalettes.h"
+#include "Game/UsedEntryTable.h"
 #include "Overlay/ComboNav.h"
 #include "Network/PaletteShare.h"
 #include "Palette/EffectOwner.h"
@@ -225,7 +227,7 @@ void PaletteWindow::DrawSwatches(int player, int chara)
 	if (g_modVals.paletteGroupByPart && parts > 0)
 		DrawGroupedSwatches(player, chara, parts);
 	else
-		DrawFlatSwatches(player);
+		DrawFlatSwatches(player, chara);
 
 	ImGui::EndChild();
 }
@@ -259,7 +261,7 @@ void PaletteWindow::DrawGroupedSwatches(int player, int chara, int parts)
 
 	for (int i = 1; i < LivePalette::kColours; ++i)
 	{
-		if (!covered[i] && !IsJunk(player, i))
+		if (!covered[i] && !IsJunk(player, chara, i))
 			rest[restCount++] = static_cast<unsigned char>(i);
 	}
 
@@ -275,35 +277,33 @@ void PaletteWindow::DrawGroupedSwatches(int player, int chara, int parts)
 }
 
 
-bool PaletteWindow::IsJunk(int player, int entry) const
+bool PaletteWindow::IsJunk(int player, int chara, int entry) const
 {
 	if (!g_modVals.paletteFilterJunk)
 		return false;
 
-	const uint8_t* const colours = m_colours[player].baseline;
-	const uint8_t* const colour = colours + entry * 4;
-
+	const uint8_t* const colour = m_colours[player].baseline + entry * 4;
 
 	if (colour[0] == 0 && colour[1] == 255 && colour[2] == 0)
 		return true;
 
-	for (int i = 1; i < entry; ++i)
-	{
-		if (memcmp(colours + i * 4, colour, 3) == 0)
-			return true;
-	}
+	if (UsedEntryTable::IsUsed(chara, entry))
+		return false;
 
-	return false;
+	return !PartColourTable::IsPartEntry(chara, entry);
 }
 
-void PaletteWindow::DrawFlatSwatches(int player)
+void PaletteWindow::DrawFlatSwatches(int player, int chara)
 {
+	bool offered[LivePalette::kColours] = {};
+	OfferedEntries::Fill(chara, offered, LivePalette::kColours);
+
 	unsigned char flat[LivePalette::kColours] = {};
 	int count = 0;
 
 	for (int i = 1; i < LivePalette::kColours; ++i)
 	{
-		if (!IsJunk(player, i))
+		if (offered[i] || !IsJunk(player, chara, i))
 			flat[count++] = static_cast<unsigned char>(i);
 	}
 

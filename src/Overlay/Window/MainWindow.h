@@ -28,6 +28,7 @@ private:
 	void DrawScriptTab(int player);
 	void DrawTimingControls();
 	void DrawExtrasControls();
+	void DrawExtraStageControls();
 	void PersistAutoPause();
 	void DrawConfigSection();
 	void DrawConfigGeneralTab();
@@ -38,6 +39,7 @@ private:
 	void DrawReplaySection();
 	void DrawPlayerCount();
 	void DrawMusicSection();
+	void DrawSoundSection();
 	void DrawPerformanceSection();
 	void DrawPatchSection();
 	void DrawThemeSection();

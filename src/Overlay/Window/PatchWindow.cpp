@@ -72,6 +72,8 @@ void PatchWindow::Draw()
 		return;
 	}
 
+	PatchLibrary::EnsureIndexed(PatchLibrary::NextUnindexed());
+
 	DrawActive();
 	ImGui::Separator();
 	DrawTable();
@@ -153,6 +155,12 @@ void PatchWindow::DrawRestart()
 
 void PatchWindow::DrawCoverage(const GamePatches::Patch& patch)
 {
+	if (!patch.indexed)
+	{
+		UiText::Muted("Reading the folder...");
+		return;
+	}
+
 	const GamePatches::Coverage& coverage = patch.coverage;
 
 	UiText::Muted("%d file(s), %d of %d characters.", coverage.files, coverage.characters,

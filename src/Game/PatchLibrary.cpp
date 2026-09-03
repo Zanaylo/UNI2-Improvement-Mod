@@ -253,17 +253,25 @@ void Measure(PatchLibrary::Patch& patch)
 	}
 }
 
-void Index(PatchLibrary::Patch& patch)
+void Probe(PatchLibrary::Patch& patch)
 {
 	patch.files.Clear();
 	patch.coverage = {};
+	patch.indexed = false;
 	patch.present = FolderExists(patch.source);
 
-	if (!patch.present)
-	{
-		LOG("PatchLibrary: '%s' is not at %s any more", patch.name.c_str(), patch.source.c_str());
+	if (patch.present)
 		return;
-	}
+
+	LOG("PatchLibrary: '%s' is not at %s any more", patch.name.c_str(), patch.source.c_str());
+}
+
+void Index(PatchLibrary::Patch& patch)
+{
+	if (patch.indexed || !patch.present)
+		return;
+
+	patch.indexed = true;
 
 	PatchNaming naming;
 	patch.files.Walk(patch.source, naming);
@@ -413,11 +421,11 @@ void Summarise()
 
 	for (const auto& patch : g_patches)
 	{
-		if (patch->present && patch->coverage.files > 0)
+		if (patch->present)
 			++ready;
 	}
 
-	sprintf_s(g_status, "%d patch(es) listed, %d carrying data",
+	sprintf_s(g_status, "%d patch(es) listed, %d on disk",
 		static_cast<int>(g_patches.size()), ready);
 
 	LOG("PatchLibrary: %s", g_status);
@@ -454,7 +462,7 @@ void LoadPatch(int index)
 	if (patch->version == 0)
 		patch->version = PatchLibrary::VersionOf(patch->name);
 
-	Index(*patch);
+	Probe(*patch);
 	g_patches.push_back(std::move(patch));
 }
 
@@ -501,6 +509,29 @@ PatchLibrary::Patch* PatchLibrary::Get(int index)
 	return g_patches[index].get();
 }
 
+void PatchLibrary::EnsureIndexed(int index)
+{
+	Patch* const patch = Get(index);
+
+	if (patch == nullptr)
+		return;
+
+	Index(*patch);
+}
+
+int PatchLibrary::NextUnindexed()
+{
+	for (int i = 0; i < Count(); ++i)
+	{
+		const Patch* const patch = Get(i);
+
+		if (patch != nullptr && patch->present && !patch->indexed)
+			return i;
+	}
+
+	return -1;
+}
+
 std::unique_ptr<PatchLibrary::Patch> PatchLibrary::Prepare(const std::string& folder,
 	const std::string& name, char* status, int statusSize)
 {
@@ -533,6 +564,7 @@ std::unique_ptr<PatchLibrary::Patch> PatchLibrary::Prepare(const std::string& fo
 	patch->version = VersionOf(name);
 	GetSystemTime(&patch->released);
 
+	Probe(*patch);
 	Index(*patch);
 
 	if (patch->coverage.files == 0)

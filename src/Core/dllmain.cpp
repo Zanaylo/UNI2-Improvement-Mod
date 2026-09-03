@@ -3,6 +3,7 @@
 #include "Core/ProcessTuning.h"
 #include "Core/Hotkeys.h"
 #include "Core/Settings.h"
+#include "Core/SoundOutput.h"
 #include "Web/UpdateCheck.h"
 #include "Core/crashdump.h"
 #include "Core/info.h"
@@ -45,6 +46,10 @@
 #include <mutex>
 
 namespace {
+
+constexpr DWORD kSlowStageMs = 50;
+constexpr int kDeviceWaitTicks = 50;
+constexpr DWORD kDeviceWaitStepMs = 100;
 
 using DirectInput8Create_t = HRESULT(WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
 
@@ -131,6 +136,8 @@ using StageFn = void (*)();
 
 void RunStage(const char* name, StageFn stage)
 {
+	const DWORD started = GetTickCount();
+
 	__try
 	{
 		stage();
@@ -138,6 +145,11 @@ void RunStage(const char* name, StageFn stage)
 	__except (LogStageFault(name, GetExceptionCode()))
 	{
 	}
+
+	const DWORD elapsed = GetTickCount() - started;
+
+	if (elapsed >= kSlowStageMs)
+		LOG("stage '%s' took %lu ms", name, static_cast<unsigned long>(elapsed));
 }
 
 void Stage_Settings()
@@ -227,6 +239,33 @@ void Stage_Netplay()
 	NetplayTick::Initialize();
 }
 
+void Stage_FileOverrides()
+{
+	ModFiles::Initialize();
+	GamePatches::ApplyRemembered();
+
+	if (ScreenDirector::kOnHold)
+		return;
+
+	ScreenTheme::Reload();
+}
+
+void WarnIfTheDeviceWasMissed()
+{
+	if (D3D9Proxy::IsActive() || D3D9Wrapper::SawDirect3D9())
+		return;
+
+	for (int i = 0; i < kDeviceWaitTicks && !D3D9Wrapper::SawDirect3D9(); ++i)
+		Sleep(kDeviceWaitStepMs);
+
+	if (D3D9Wrapper::SawDirect3D9())
+		return;
+
+	LOG("The overlay will not appear this run: the game built its Direct3D device before the mod "
+		"hooked Direct3DCreate9, so there is nothing left to hook. Rename dinput8.dll to d3d9.dll, "
+		"which cannot lose this race, and report this log.");
+}
+
 void Stage_InputHooks()
 {
 	InputHooks::InstallHooks();
@@ -265,14 +304,9 @@ DWORD WINAPI InitThread(LPVOID)
 		return 0;
 	}
 
-	ModFiles::Initialize();
-	GamePatches::ApplyRemembered();
-	if (!ScreenDirector::kOnHold)
-		ScreenTheme::Reload();
-
-	RunStage("input entry point", Stage_InputEntry);
-
 	RunStage("d3d9 hooks", Stage_D3D9);
+	RunStage("input entry point", Stage_InputEntry);
+	RunStage("file overrides", Stage_FileOverrides);
 	RunStage("game hooks", Stage_GameHooks);
 	RunStage("palette share", Stage_PaletteShare);
 	RunStage("netplay", Stage_Netplay);
@@ -282,6 +316,8 @@ DWORD WINAPI InitThread(LPVOID)
 	HookManager::StartIntegrityWatchdog();
 
 	LOG("Initialization finished");
+
+	WarnIfTheDeviceWasMissed();
 	return 0;
 }
 
@@ -354,6 +390,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 			break;
 		}
 
+		SoundOutput::Stop();
 		WindowManager::GetInstance().Shutdown();
 		HookManager::Shutdown();
 

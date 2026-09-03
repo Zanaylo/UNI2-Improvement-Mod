@@ -75,7 +75,7 @@
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>resource\dinput8.def</ModuleDefinitionFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <AdditionalDependencies>d3d9.lib;dbghelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d9.lib;dbghelp.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
@@ -139,6 +139,16 @@
     <ClCompile Include="src\Game\PatchLibrary.cpp" />
     <ClCompile Include="src\Overlay\Window\PatchWindow.cpp" />
     <ClCompile Include="src\Game\UserMusic.cpp" />
+    <ClCompile Include="src\Game\SeListFile.cpp" />
+    <ClCompile Include="src\Game\SoundPacks.cpp" />
+    <ClCompile Include="src\Game\CharaSounds.cpp" />
+    <ClCompile Include="src\Game\GameArchive.cpp" />
+    <ClCompile Include="src\Game\SeList.cpp" />
+    <ClCompile Include="src\Game\VoiceImport.cpp" />
+    <ClCompile Include="src\Game\VoiceMap.cpp" />
+    <ClCompile Include="src\Game\OggReader.cpp" />
+    <ClCompile Include="src\Game\SoundsReadme.cpp" />
+    <ClCompile Include="src\Core\SoundOutput.cpp" />
     <ClCompile Include="src\Game\SoundpackBuilder.cpp" />
     <ClCompile Include="src\Game\BgmLibrary.cpp" />
     <ClCompile Include="src\Game\ModFiles.cpp" />
@@ -164,6 +174,7 @@
     <ClCompile Include="src\Overlay\Window\NetplayWindow.cpp" />
     <ClCompile Include="src\Overlay\Window\MusicPanel.cpp" />
     <ClCompile Include="src\Overlay\Window\MusicWindow.cpp" />
+    <ClCompile Include="src\Overlay\Window\SoundWindow.cpp" />
     <ClCompile Include="src\Overlay\Window\ThemeWindow.cpp" />
     <ClCompile Include="src\Core\Settings.cpp" />
     <ClCompile Include="src\Core\logger.cpp" />
@@ -229,6 +240,7 @@
     <ClCompile Include="src\Palette\PaletteReport.cpp" />
     <ClCompile Include="src\Palette\PaletteTrace.cpp" />
     <ClCompile Include="src\Game\CharaTables.cpp" />
+    <ClCompile Include="src\Game\OfferedEntries.cpp" />
     <ClCompile Include="src\Game\PartColourTable.cpp" />
     <ClCompile Include="src\Game\EffectTable.cpp" />
     <ClCompile Include="src\Game\PartName.cpp" />
@@ -253,6 +265,7 @@
     <ClCompile Include="src\Screens\ScreenDirector.cpp" />
     <ClCompile Include="src\Game\ColorPartTable.cpp" />
     <ClCompile Include="src\Game\StockPalettes.cpp" />
+    <ClCompile Include="src\Game\UsedEntryTable.cpp" />
     <ClCompile Include="src\Game\FrameDataTable.cpp" />
     <ClCompile Include="src\Game\GameTables.cpp" />
     <ClCompile Include="src\Game\PlayerState.cpp" />
@@ -296,6 +309,7 @@
     <ClCompile Include="src\D3D9\Post\ShaderPack.cpp" />
     <ClCompile Include="src\D3D9\Post\ShaderSource.cpp" />
     <ClCompile Include="src\Game\EngineQuality.cpp" />
+    <ClCompile Include="src\Game\ExtraStages.cpp" />
     <ClCompile Include="src\Game\Improvements.cpp" />
     <ClCompile Include="src\Game\KeyboardSeat.cpp" />
     <ClCompile Include="src\Game\PotatoMode.cpp" />
@@ -334,6 +348,17 @@
     <ClInclude Include="src\Game\PatchLibrary.h" />
     <ClInclude Include="src\Overlay\Window\PatchWindow.h" />
     <ClInclude Include="src\Game\UserMusic.h" />
+    <ClInclude Include="src\Game\SeListFile.h" />
+    <ClInclude Include="src\Game\SoundPacks.h" />
+    <ClInclude Include="src\Game\CharaSounds.h" />
+    <ClInclude Include="src\Game\GameArchive.h" />
+    <ClInclude Include="src\Game\SeList.h" />
+    <ClInclude Include="src\Game\VoiceImport.h" />
+    <ClInclude Include="src\Game\VoiceMap.h" />
+    <ClInclude Include="src\Game\OggReader.h" />
+    <ClInclude Include="src\Game\PcmSink.h" />
+    <ClInclude Include="src\Game\SoundsReadme.h" />
+    <ClInclude Include="src\Core\SoundOutput.h" />
     <ClInclude Include="src\Game\SoundpackBuilder.h" />
     <ClInclude Include="src\Game\BgmLibrary.h" />
     <ClInclude Include="src\Game\ModFiles.h" />
@@ -359,6 +384,7 @@
     <ClInclude Include="src\Overlay\Window\NetplayWindow.h" />
     <ClInclude Include="src\Overlay\Window\MusicPanel.h" />
     <ClInclude Include="src\Overlay\Window\MusicWindow.h" />
+    <ClInclude Include="src\Overlay\Window\SoundWindow.h" />
     <ClInclude Include="src\Overlay\Window\ThemeWindow.h" />
     <ClInclude Include="src\Core\settings.def" />
     <ClInclude Include="src\Core\logger.h" />
@@ -416,6 +442,7 @@
     <ClInclude Include="src\Screens\ScreenDirector.h" />
     <ClInclude Include="src\Game\ColorPartTable.h" />
     <ClInclude Include="src\Game\StockPalettes.h" />
+    <ClInclude Include="src\Game\UsedEntryTable.h" />
     <ClInclude Include="src\Overlay\Window\DebugWindow.h" />
     <ClInclude Include="src\Game\MemoryMap.h" />
     <ClInclude Include="src\Game\CharaTracker.h" />
@@ -446,6 +473,7 @@
     <ClInclude Include="src\Palette\PaletteReport.h" />
     <ClInclude Include="src\Palette\PaletteTrace.h" />
     <ClInclude Include="src\Game\CharaTables.h" />
+    <ClInclude Include="src\Game\OfferedEntries.h" />
     <ClInclude Include="src\Game\PartColourTable.h" />
     <ClInclude Include="src\Game\EffectTable.h" />
     <ClInclude Include="src\Game\PartName.h" />
@@ -503,6 +531,7 @@
     <ClInclude Include="src\D3D9\Post\Shaders\BloomMixShader.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\SharpenShader.h" />
     <ClInclude Include="src\Game\EngineQuality.h" />
+    <ClInclude Include="src\Game\ExtraStages.h" />
     <ClInclude Include="src\Game\Improvements.h" />
     <ClInclude Include="src\Game\KeyboardSeat.h" />
     <ClInclude Include="src\Game\PotatoMode.h" />
@@ -589,6 +618,9 @@
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <ClCompile Include="depends\vorbis\vorbis\smallft.c">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\synthesis.c">
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <ClCompile Include="depends\vorbis\vorbis\vorbisenc.c">

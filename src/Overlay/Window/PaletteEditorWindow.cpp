@@ -6,7 +6,9 @@
 #include "Core/utils.h"
 #include "Game/GameState.h"
 #include "Game/GameTables.h"
+#include "Game/OfferedEntries.h"
 #include "Game/PartColourTable.h"
+#include "Game/UsedEntryTable.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteMemory.h"
@@ -88,23 +90,17 @@ void PaletteEditorWindow::BeforeDraw()
 	ImGui::SetNextWindowSize(Ui::Scaled(680.0f, 640.0f), ImGuiCond_FirstUseEver);
 }
 
-bool PaletteEditorWindow::IsUsed(int entry) const
+bool PaletteEditorWindow::IsUsed(int chara, int entry) const
 {
-	const uint8_t* color = m_pristine + entry * 4;
-
-	if (color[0] == 0 && color[1] == 0 && color[2] == 0)
-		return false;
+	const uint8_t* const color = m_pristine + entry * 4;
 
 	if (color[0] == 0 && color[1] == 255 && color[2] == 0)
 		return false;
 
-	for (int i = 0; i < entry; ++i)
-	{
-		if (memcmp(m_pristine + i * 4, color, 3) == 0)
-			return false;
-	}
+	if (UsedEntryTable::IsUsed(chara, entry))
+		return true;
 
-	return true;
+	return PartColourTable::IsPartEntry(chara, entry);
 }
 
 void PaletteEditorWindow::DrawSwatches(const unsigned char* entries, int count)
@@ -560,7 +556,7 @@ void PaletteEditorWindow::DrawCharacterColors()
 
 		for (int i = 0; i < PaletteFile::kColors; ++i)
 		{
-			if (!covered[i] && IsUsed(i))
+			if (!covered[i] && IsUsed(chara, i))
 				rest[restCount++] = static_cast<unsigned char>(i);
 		}
 
@@ -573,12 +569,15 @@ void PaletteEditorWindow::DrawCharacterColors()
 	}
 	else
 	{
+		bool offered[PaletteFile::kColors] = {};
+		OfferedEntries::Fill(chara, offered, PaletteFile::kColors);
+
 		unsigned char flat[PaletteFile::kColors] = {};
 		int count = 0;
 
 		for (int i = 0; i < PaletteFile::kColors; ++i)
 		{
-			if (!m_hideUnused || IsUsed(i))
+			if (!m_hideUnused || offered[i] || IsUsed(chara, i))
 				flat[count++] = static_cast<unsigned char>(i);
 		}
 

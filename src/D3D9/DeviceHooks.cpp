@@ -4,6 +4,7 @@
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/CharaSounds.h"
 #include "Game/GameOffsets.h"
 #include "D3D9/PresentTuning.h"
 #include "D3D9/Post/SceneUpscale.h"
@@ -19,16 +20,21 @@
 #include "Game/OnlineState.h"
 #include "Game/BalanceRules.h"
 #include "Game/GameRestart.h"
+#include "Game/DataSearchPath.h"
 #include "Game/GamePatches.h"
 #include "Game/PatchPacks.h"
 #include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
+#include "Game/VoiceImport.h"
 #include "Game/SoundpackTransfer.h"
 #include "Game/UserMusic.h"
 #include "Network/NetplayTick.h"
 #include "Game/ReplayState.h"
 #include "Hooks/HookManager.h"
 #include "Hooks/InputProbe.h"
+#include "Game/ExtraStages.h"
+#include "Game/SoundPacks.h"
+#include "Game/ModFiles.h"
 #include "Training/StageColor.h"
 #include "D3D9/FrozenFrame.h"
 #include "Network/PaletteShare.h"
@@ -322,15 +328,25 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			OnlineState::Update();
 			NetplayTick::Update();
 			GamePatches::Update();
+			DataSearchPath::Assert();
 			PatchPacks::OnFrame();
 			UpdateInstall::OnFrame();
 			BalanceRules::OnFrame();
 			GameRestart::OnFrame();
 			OstImport::Update();
+			VoiceImport::Update();
 			SoundpackTransfer::Update();
 
 			if (UserMusic::ConsumeChanged())
 				MusicRefresh::Reindex();
+
+			CharaSounds::Update();
+
+			if (SoundPacks::ConsumeScanRequest())
+				SoundPacks::Scan();
+
+			if (SoundPacks::ConsumeChanged())
+				ModFiles::Rescan();
 		}
 
 		{
@@ -399,6 +415,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	InputProbe::OnFrame();
 	StageColor::OnFrame();
+	ExtraStages::OnFrame();
 	PotatoMode::OnFrame();
 
 	HRESULT result = D3D_OK;

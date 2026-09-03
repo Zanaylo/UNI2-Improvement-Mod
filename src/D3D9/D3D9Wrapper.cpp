@@ -78,6 +78,48 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 	return result;
 }
 
+bool HookCreateDeviceFrom(IDirect3D9* d3d9)
+{
+	if (d3d9 == nullptr || g_createDeviceHooked)
+		return g_createDeviceHooked;
+
+	if (!HookManager::Initialize())
+		return false;
+
+	void** const vtable = *reinterpret_cast<void***>(d3d9);
+
+	if (!HookManager::CreateAndEnableHook(vtable[kCreateDeviceIndex], &HookedCreateDevice,
+		reinterpret_cast<void**>(&oCreateDevice), "IDirect3D9::CreateDevice"))
+	{
+		return false;
+	}
+
+	g_createDeviceHooked = true;
+	return true;
+}
+
+void HookCreateDeviceThroughProbe()
+{
+	if (g_createDeviceHooked || oDirect3DCreate9 == nullptr)
+		return;
+
+	IDirect3D9* const probe = oDirect3DCreate9(D3D_SDK_VERSION);
+
+	if (probe == nullptr)
+	{
+		LOG("No probe Direct3D9 object, so a missed Direct3DCreate9 stays unrecoverable");
+		return;
+	}
+
+	if (HookCreateDeviceFrom(probe))
+	{
+		LOG("CreateDevice hooked through a probe object: a missed Direct3DCreate9 no longer "
+			"costs the overlay");
+	}
+
+	probe->Release();
+}
+
 IDirect3D9* WINAPI HookedDirect3DCreate9(UINT sdkVersion)
 {
 	IDirect3D9* d3d9 = oDirect3DCreate9(sdkVersion);
@@ -95,22 +137,12 @@ void D3D9Wrapper::OnDirect3D9Created(IDirect3D9* d3d9)
 	if (d3d9 != nullptr)
 		g_seenD3D9 = d3d9;
 
-	if (d3d9 == nullptr || g_createDeviceHooked)
-		return;
+	HookCreateDeviceFrom(d3d9);
+}
 
-	if (!HookManager::Initialize())
-		return;
-
-	void** vtable = *reinterpret_cast<void***>(d3d9);
-	void* target = vtable[kCreateDeviceIndex];
-
-	if (!HookManager::CreateAndEnableHook(target, &HookedCreateDevice,
-		reinterpret_cast<void**>(&oCreateDevice), "IDirect3D9::CreateDevice"))
-	{
-		return;
-	}
-
-	g_createDeviceHooked = true;
+bool D3D9Wrapper::SawDirect3D9()
+{
+	return g_seenD3D9 != nullptr;
 }
 
 bool D3D9Wrapper::InstallHooks()
@@ -148,5 +180,9 @@ bool D3D9Wrapper::InstallHooks()
 		return false;
 	}
 
-	return HookManager::EnableAllHooks();
+	if (!HookManager::EnableAllHooks())
+		return false;
+
+	HookCreateDeviceThroughProbe();
+	return true;
 }

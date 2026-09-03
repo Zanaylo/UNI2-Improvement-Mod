@@ -147,6 +147,36 @@
     <ClCompile Include="src\Game\UserMusic.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\SeListFile.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SoundPacks.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\CharaSounds.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\GameArchive.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SeList.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\VoiceImport.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\VoiceMap.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\OggReader.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SoundsReadme.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\SoundOutput.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\SoundpackBuilder.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -220,6 +250,9 @@
       <Filter>Overlay\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Window\MusicWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\SoundWindow.cpp">
       <Filter>Overlay\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Window\ThemeWindow.cpp">
@@ -417,6 +450,9 @@
     <ClCompile Include="src\Game\CharaTables.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\OfferedEntries.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\PartColourTable.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -487,6 +523,9 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\StockPalettes.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\UsedEntryTable.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\FrameDataTable.cpp">
@@ -618,6 +657,9 @@
     <ClCompile Include="src\Game\EngineQuality.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\ExtraStages.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Improvements.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -744,6 +786,9 @@
     <ClCompile Include="depends\vorbis\vorbis\smallft.c">
       <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
+    <ClCompile Include="depends\vorbis\vorbis\synthesis.c">
+      <Filter>Dependencies\Vorbis</Filter>
+    </ClCompile>
     <ClCompile Include="depends\vorbis\vorbis\vorbisenc.c">
       <Filter>Dependencies\Vorbis</Filter>
     </ClCompile>
@@ -824,6 +869,39 @@
     <ClInclude Include="src\Game\UserMusic.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\SeListFile.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SoundPacks.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\CharaSounds.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\GameArchive.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SeList.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\VoiceImport.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\VoiceMap.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OggReader.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PcmSink.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SoundsReadme.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\SoundOutput.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\SoundpackBuilder.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -897,6 +975,9 @@
       <Filter>Overlay\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Window\MusicWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\SoundWindow.h">
       <Filter>Overlay\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Window\ThemeWindow.h">
@@ -1070,6 +1151,9 @@
     <ClInclude Include="src\Game\StockPalettes.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\UsedEntryTable.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Overlay\Window\DebugWindow.h">
       <Filter>Overlay\Window</Filter>
     </ClInclude>
@@ -1158,6 +1242,9 @@
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\CharaTables.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OfferedEntries.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\PartColourTable.h">
@@ -1329,6 +1416,9 @@
       <Filter>D3D9\Post\Shaders</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\EngineQuality.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\ExtraStages.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Improvements.h">
