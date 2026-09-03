@@ -1,17 +1,17 @@
-These pages are the GitHub wiki, kept here so they travel with the source.
+These pages are the GitHub wiki, kept here so they travel with the source. This folder is the one
+to edit; the wiki is published from it.
 
-To publish them, clone the wiki repository and copy this folder into it:
+To publish, copy the pages into the wiki clone and push:
 
 ```
-git clone https://github.com/Zanaylo/UNI2-Improvement-Mod.wiki.git
-copy wiki\*.md UNI2-Improvement-Mod.wiki\
-cd UNI2-Improvement-Mod.wiki
-git add .
-git commit -m "wiki"
-git push
+copy wiki\*.md ..\UNI2-Improvement-Mod.wiki\
+del ..\UNI2-Improvement-Mod.wiki\README-first.md
+cd ..\UNI2-Improvement-Mod.wiki
+git add . && git commit -m "Wiki" && git push
 ```
 
-The wiki has to be created once from the repository's Wiki tab before that clone works.
+The clone comes from `https://github.com/Zanaylo/UNI2-Improvement-Mod.wiki.git`, and the wiki has to
+exist once from the repository's Wiki tab before that works.
 
-`Home.md` is the landing page. A page called `Installing.md` is linked as `[Installing](Installing)`,
-without the extension. Delete this file before pushing; it is not a wiki page.
+`Home.md` is the landing page and `_Sidebar.md` shows on every page. A page called `Installing.md`
+is linked as `[Installing](Installing)`, without the extension. This file is not a wiki page.

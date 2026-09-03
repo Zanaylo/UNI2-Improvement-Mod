@@ -1,12 +1,15 @@
 # Installing
 
-Copy `dinput8.dll` next to `uni2.exe`:
+Extract the release zip next to `uni2.exe`:
 
 ```
 <Steam>\steamapps\common\UNDER NIGHT IN-BIRTH II Sys Celes\
 ```
 
-Press **F1** in game for the overlay. To uninstall, delete `dinput8.dll`.
+It holds two files. `dinput8.dll` is the mod. `UNI2IMUpdater.exe` is what installs later versions
+for you; it does nothing on its own, and the mod works without it.
+
+Press **F1** in game for the overlay. To uninstall, delete both files.
 
 `UNI2_IM.ini` is written with defaults the first time the mod runs, in the `UNI2-IM` folder next to
 the DLL. It repairs itself from then on: every run, any key or whole section the file is missing is

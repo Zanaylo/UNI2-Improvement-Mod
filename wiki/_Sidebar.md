@@ -28,6 +28,7 @@
 [Performance](Performance)
 [POTATO MODE](POTATO-MODE)
 [Improvements](Improvements)
+[Patches](Patches)
 
 **Project**
 

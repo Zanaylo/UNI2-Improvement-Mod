@@ -31,6 +31,7 @@ Training and quality-of-life mod for **UNDER NIGHT IN-BIRTH II Sys:Celes**.
 - [Performance](Performance)
 - [POTATO MODE](POTATO-MODE)
 - [Improvements](Improvements) — fixes and options for the game itself
+- [Patches](Patches) — play an older balance version
 
 ## Other languages
 

@@ -19,17 +19,27 @@ O que roda online é cosmético e apenas de leitura: as paletas personalizadas, 
 jogo pela Steam em vez de passar pelo netcode e não têm como afetar a partida, e as opções de
 desempenho, que só mudam como o quadro chega ao seu monitor.
 
+**O seletor de patch é a exceção, e é só offline.** Um patch muda o que o jogo simula. As tabelas
+de golpes e as constantes de sistema dele são lidas uma vez, quando o jogo abre, e ficam a sessão
+inteira — então se você abriu o jogo num patch, você continua nele no online, esteja em que menu
+estiver. Só funciona contra um oponente que escolheu o mesmo patch. **Não use em ranked, nem em
+qualquer outra partida contra quem não escolheu - vai dessincronizar.** Reinicie no jogo
+instalado antes de jogar com alguém.
+
 Se você encontrar aqui algo que dê vantagem numa partida de verdade, isso é um bug. Reporte.
 
 ## Instalando
 
-Copie `dinput8.dll` para a pasta do `uni2.exe`:
+Extraia o zip da release na pasta do `uni2.exe`:
 
 ```
 <Steam>\steamapps\common\UNDER NIGHT IN-BIRTH II Sys Celes\
 ```
 
-**F1** no jogo abre a interface. Para desinstalar, apague `dinput8.dll`.
+São dois arquivos. O `dinput8.dll` é o mod. O `UNI2IMUpdater.exe` é o que instala as versões
+seguintes para você; sozinho ele não faz nada, e o mod funciona sem ele.
+
+**F1** no jogo abre a interface. Para desinstalar, apague os dois arquivos.
 
 O `UNI2_IM.ini` é criado com os padrões na primeira vez que o mod roda, na pasta `UNI2-IM` ao lado
 da DLL. A partir daí ele se conserta sozinho: a cada execução, toda chave ou seção que estiver

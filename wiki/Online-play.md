@@ -12,6 +12,13 @@ What does run online is cosmetic and read-only: the custom palettes, which trave
 over Steam rather than through the netcode and cannot affect the match, and the performance options,
 which only change how the frame reaches your monitor.
 
+**The [patch selector](Patches) is the exception, and it is offline only.** A patch changes what the game
+simulates. Its move tables and system constants are read once when the game starts and stay for
+the whole session, so if you booted into a patch you are still on it online, whatever menu you
+are in. It only works against an opponent who picked the same patch. **Do not use it in ranked,
+or in any other match against somebody who did not - it will desync.** Restart on the installed
+game before playing anybody.
+
 If you find something here that gives an edge in a real match, that is a bug. Report it.
 
 ---

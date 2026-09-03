@@ -13,16 +13,28 @@ renderer. Inspired by, and architecturally indebted to,
 
 ## Install
 
-1. Download `dinput8.dll` from the [releases page](https://github.com/Zanaylo/UNI2-Improvement-Mod/releases).
+1. Download the zip from the [releases page](https://github.com/Zanaylo/UNI2-Improvement-Mod/releases).
 2. In Steam, right click the game → **Manage** → **Browse local files**.
-3. Drop `dinput8.dll` in that folder, next to `uni2.exe`.
+3. Extract the zip into that folder, next to `uni2.exe`. You get `dinput8.dll` and
+   `UNI2IMUpdater.exe`.
 4. Start the game and press **F1**.
 
-To uninstall, delete `dinput8.dll`. Nothing else is touched.
+`UNI2IMUpdater.exe` is what installs later versions for you. It does nothing on its own.
 
-On Linux or Steam Deck the file has to be named `d3d9.dll` instead, and Proton needs one launch
-option. On Windows, RivaTuner and MSI Afterburner have to be told to leave `uni2.exe` alone. Both
-are in [Installing](https://github.com/Zanaylo/UNI2-Improvement-Mod/wiki/Installing).
+To uninstall, delete both files. Nothing else is touched.
+
+**Linux and Steam Deck.** The same two files, plus one launch option. Right click the game →
+**Properties** → **Launch options**, and put this line in exactly as written:
+
+```
+WINEDLLOVERRIDES="dinput8=n,b" %command%
+```
+
+Nothing is renamed. Without that line Wine never loads the DLL, which is what "the mod does nothing
+on Linux" means.
+
+On Windows, RivaTuner and MSI Afterburner have to be told to leave `uni2.exe` alone. That and the
+rest are in [Installing](https://github.com/Zanaylo/UNI2-Improvement-Mod/wiki/Installing).
 
 ## What it does
 
@@ -53,6 +65,11 @@ Every setting is in the ini beside the DLL and is documented on
 Every tool that can alter the simulation is hard-gated to offline modes: while the game has sent a
 packet to an opponent in the last three seconds, they refuse to run. What does run online is
 cosmetic and read-only.
+
+**The patch selector is the exception, and it is offline only.** A patch is loaded when the game
+starts and stays for the whole session, so it is still live online. It only works against an
+opponent who picked the same patch. **Do not use it in ranked, or against anybody who did not - it
+will desync.** Restart on the installed game before playing anyone.
 
 If you find something here that gives an edge in a real match, that is a bug. Report it.
 [More](https://github.com/Zanaylo/UNI2-Improvement-Mod/wiki/Online-play).
