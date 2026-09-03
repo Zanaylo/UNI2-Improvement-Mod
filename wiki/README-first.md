@@ -1,17 +1,14 @@
-These pages are the GitHub wiki, kept here so they travel with the source. This folder is the one
-to edit; the wiki is published from it.
+These pages are the GitHub wiki. This folder is the source; the wiki is a copy of it.
 
-To publish, copy the pages into the wiki clone and push:
+Edit here and commit. `.github/workflows/wiki.yml` publishes the folder to the wiki on every push to
+`main` that touches `wiki/`, under the same commit message. Nothing to run by hand.
 
-```
-copy wiki\*.md ..\UNI2-Improvement-Mod.wiki\
-del ..\UNI2-Improvement-Mod.wiki\README-first.md
-cd ..\UNI2-Improvement-Mod.wiki
-git add . && git commit -m "Wiki" && git push
-```
-
-The clone comes from `https://github.com/Zanaylo/UNI2-Improvement-Mod.wiki.git`, and the wiki has to
-exist once from the repository's Wiki tab before that works.
+A page edited in GitHub's web editor is overwritten by the next publish, and a page deleted here is
+deleted there. Edit in this folder, not on the site.
 
 `Home.md` is the landing page and `_Sidebar.md` shows on every page. A page called `Installing.md`
-is linked as `[Installing](Installing)`, without the extension. This file is not a wiki page.
+is linked as `[Installing](Installing)`, without the extension. This file is not a wiki page and is
+not copied.
+
+To publish by hand - the workflow off, or before the first push - the **Actions** tab has **Wiki**
+with a **Run workflow** button.
