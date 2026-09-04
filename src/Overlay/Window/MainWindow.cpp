@@ -1,4 +1,4 @@
-#include "Overlay/UiScale.h"
+﻿#include "Overlay/UiScale.h"
 #include "Overlay/Window/MainWindow.h"
 
 #include "Overlay/Window/GraphicsPanel.h"
@@ -44,7 +44,7 @@
 #include "Training/FrameStepper.h"
 #include "Training/DummyScript.h"
 #include "Training/PlayerControl.h"
-#include "Game/ExtraStages.h"
+#include "Game/StageImport.h"
 #include "Game/SoundPacks.h"
 #include "Training/StageColor.h"
 
@@ -148,6 +148,8 @@ void MainWindow::Draw()
 	DrawPatchSection();
 	ImGui::Separator();
 	DrawThemeSection();
+	ImGui::Separator();
+	DrawStagesSection();
 	ImGui::Separator();
 	DrawConfigSection();
 }
@@ -1338,54 +1340,6 @@ void MainWindow::DrawAutoPauseControls()
 		FrameMeter::SetAutoPause(config);
 }
 
-void MainWindow::DrawExtraStageControls()
-{
-	ImGui::TextUnformatted("Extra stages");
-
-	if (!ExtraStages::Ready())
-	{
-		ImGui::TextDisabled("Reading the game's stage list...");
-		return;
-	}
-
-	if (ExtraStages::Count() == 0)
-	{
-		ImGui::TextDisabled("This build hides no stage.");
-		return;
-	}
-
-	for (int i = 0; i < ExtraStages::Count(); ++i)
-	{
-		const ExtraStages::Stage* const stage = ExtraStages::Get(i);
-
-		if (stage == nullptr)
-			continue;
-
-		ImGui::PushID(stage->number);
-
-		bool unlocked = stage->unlocked;
-		char label[128] = {};
-
-		sprintf_s(label, "%s##%d", stage->name.empty() ? "unnamed" : stage->name.c_str(),
-			stage->number);
-
-		if (ImGui::Checkbox(label, &unlocked))
-			ExtraStages::SetUnlocked(stage->number, unlocked);
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("Stage %d, bg\\%s. The game builds it and leaves it off every "
-				"list; the load path never reads those flags, so it plays like any other.",
-				stage->number, stage->folder.c_str());
-		}
-
-		ImGui::PopID();
-	}
-
-	ImGui::TextDisabled("The game decides its stage list when you open the screen, so leave and "
-		"come back if one is missing.");
-}
-
 void MainWindow::DrawExtrasControls()
 {
 	FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
@@ -1412,9 +1366,6 @@ void MainWindow::DrawExtrasControls()
 
 	ImGui::Separator();
 	DrawStageColourControls();
-
-	ImGui::Separator();
-	DrawExtraStageControls();
 
 	ImGui::TreePop();
 
@@ -1821,6 +1772,28 @@ void MainWindow::DrawKeyboardTab()
 
 	if (OnlineState::IsOnline())
 		ImGui::TextDisabled("Online: the sides are left alone until the match ends.");
+}
+
+void MainWindow::DrawStagesSection()
+{
+	if (!ImGui::CollapsingHeader("Stages"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Stages) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close stages" : "Open stages"))
+		window->Toggle();
+
+	ImGui::TextWrapped("The two stages the game hides from its own lists, and stages taken out of "
+		"another French-Bread game you own and installed as stages of their own.");
+
+	if (StageImport::PortCount() > 0)
+		UiText::Good("%d stage(s) ported.", StageImport::PortCount());
+
+	if (StageImport::NeedsRestart())
+		UiText::Warn("A port is waiting on a restart.");
 }
 
 void MainWindow::DrawConfigSection()

@@ -1,4 +1,4 @@
-#include "D3D9/DeviceHooks.h"
+﻿#include "D3D9/DeviceHooks.h"
 
 #include "Core/Profiler.h"
 #include "Core/interfaces.h"
@@ -25,6 +25,7 @@
 #include "Game/PatchPacks.h"
 #include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
+#include "Game/StageImport.h"
 #include "Game/VoiceImport.h"
 #include "Game/SoundpackTransfer.h"
 #include "Game/UserMusic.h"
@@ -334,6 +335,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			BalanceRules::OnFrame();
 			GameRestart::OnFrame();
 			OstImport::Update();
+			StageImport::Update();
 			VoiceImport::Update();
 			SoundpackTransfer::Update();
 

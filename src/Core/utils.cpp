@@ -1,4 +1,4 @@
-#include "Core/utils.h"
+﻿#include "Core/utils.h"
 
 #include "Core/KeyboardCapture.h"
 
@@ -147,6 +147,27 @@ std::string GetModDownloadPath(const std::string& fileName)
 std::string GetModLogPath(const std::string& fileName)
 {
 	return GetModRootPath("Logs\\") + fileName;
+}
+
+bool CreateDirectoryTree(const std::string& folder)
+{
+	for (size_t at = folder.find('\\', 3); at != std::string::npos;
+		at = folder.find('\\', at + 1))
+	{
+		MakeDirectory(folder.substr(0, at));
+	}
+
+	return MakeDirectory(folder);
+}
+
+uint32_t ReadLittle32(const std::vector<uint8_t>& blob, size_t at)
+{
+	uint32_t value = 0;
+
+	if (at + sizeof(value) <= blob.size())
+		memcpy(&value, blob.data() + at, sizeof(value));
+
+	return value;
 }
 
 bool CreateModDirectories()

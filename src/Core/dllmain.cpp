@@ -18,6 +18,8 @@
 #include "Game/BgmControl.h"
 #include "Game/GamePatches.h"
 #include "Game/ModFiles.h"
+#include "Game/StageImport.h"
+#include "Game/StageObjects.h"
 #include "Screens/ScreenDirector.h"
 #include "Screens/ScreenTheme.h"
 #include "Game/CharaTracker.h"
@@ -224,6 +226,7 @@ void Stage_GameHooks()
 	ReplayFiles::Initialize();
 	BalanceRules::Install();
 	ScreenShake::Install();
+	StageObjects::Initialize();
 	BgmControl::Initialize();
 	PumpWait::Apply();
 	KeyboardSeat::ApplySaved();
@@ -242,6 +245,7 @@ void Stage_Netplay()
 void Stage_FileOverrides()
 {
 	ModFiles::Initialize();
+	StageImport::Initialize();
 	GamePatches::ApplyRemembered();
 
 	if (ScreenDirector::kOnHold)

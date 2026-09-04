@@ -2,6 +2,7 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/BgmControl.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
 #include "Game/OnlineState.h"
@@ -29,6 +30,8 @@ bool Poke(uintptr_t rva, uint32_t value)
 
 bool RequestScene(uint32_t scene)
 {
+	BgmControl::Stop();
+
 	return Poke(GameOffsets::kSceneResultA, 0) &&
 		Poke(GameOffsets::kSceneResultB, 0) &&
 		Poke(GameOffsets::kSceneId, scene) &&

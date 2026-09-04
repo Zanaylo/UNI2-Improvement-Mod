@@ -195,6 +195,8 @@ namespace GameOffsets
 
 	constexpr uintptr_t kBgStageDrawn = 0x644944;
 
+	constexpr uintptr_t kFnLoadStageObjectPat = 0x201d20;
+
 	constexpr uintptr_t kBgRecordTable = 0x6447b0;
 	constexpr uintptr_t kBgRecordNameField = 0x20;
 	constexpr uintptr_t kBgRecordSelectDisable = 0x60;

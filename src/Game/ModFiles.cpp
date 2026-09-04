@@ -12,6 +12,7 @@
 #include <Windows.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 
@@ -20,9 +21,14 @@ namespace {
 using CreateFileA_t = HANDLE(WINAPI*)(LPCSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD,
 	HANDLE);
 using GetFileAttributesA_t = DWORD(WINAPI*)(LPCSTR);
+using CreateFileW_t = HANDLE(WINAPI*)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD,
+	HANDLE);
+using GetFileAttributesW_t = DWORD(WINAPI*)(LPCWSTR);
 
 CreateFileA_t oCreateFileA = nullptr;
 GetFileAttributesA_t oGetFileAttributesA = nullptr;
+CreateFileW_t oCreateFileW = nullptr;
+GetFileAttributesW_t oGetFileAttributesW = nullptr;
 
 FileIndex g_files;
 SRWLOCK g_filesLock = SRWLOCK_INIT;
@@ -33,11 +39,15 @@ char g_status[160] = "not started";
 volatile long g_hits = 0;
 volatile long g_misses = 0;
 volatile long g_soundHits = 0;
+volatile long g_stageLines = 0;
+volatile long g_indexed = 0;
 bool g_hasLanguageEntries = false;
 char g_languageRoot[32] = {};
 
 constexpr long kLoggedRedirects = 16;
 constexpr long kLoggedMisses = 16;
+constexpr long kLoggedStages = 400;
+constexpr int kFirstPortedStage = 28;
 
 constexpr const char* kProbeFolder = "Ask";
 
@@ -119,8 +129,32 @@ const std::string* FindAcrossLanguages(const std::string& generic)
 	return nullptr;
 }
 
+bool NoteStage(const char* path, const std::string& key, const char* answer)
+{
+	const size_t at = key.compare(0, 3, "bg\\") == 0 ? 0 : key.find("\\bg\\");
+
+	if (at == std::string::npos)
+		return false;
+
+	const size_t stage = at == 0 ? 3 : at + 4;
+
+	if (key.compare(stage, 2, "bg") != 0 || atoi(key.c_str() + stage + 2) < kFirstPortedStage)
+		return true;
+
+	if (key.find('.', key.rfind('\\') + 1) == std::string::npos)
+		return true;
+
+	if (InterlockedIncrement(&g_stageLines) <= kLoggedStages)
+		LOG("ModFiles: stage file %s - %s", path, answer);
+
+	return true;
+}
+
 void NoteMiss(const char* path, const std::string& key)
 {
+	if (NoteStage(path, key, "nothing of ours answered it"))
+		return;
+
 	const bool theme = key.size() > 4 && key.compare(key.size() - 4, 4, ".pat") == 0;
 	const bool sound = key.compare(0, 3, "se\\") == 0;
 
@@ -181,6 +215,9 @@ bool Lookup(const char* path, std::string& out)
 
 	const bool sound = key.compare(0, 3, "se\\") == 0;
 
+	if (NoteStage(path, key, out.c_str()))
+		return true;
+
 	if (InterlockedIncrement(&g_hits) <= kLoggedRedirects ||
 		(sound && InterlockedIncrement(&g_soundHits) <= kLoggedRedirects))
 	{
@@ -225,6 +262,61 @@ DWORD WINAPI HookedGetFileAttributesA(LPCSTR fileName)
 		return oGetFileAttributesA(replacement.c_str());
 
 	return oGetFileAttributesA(fileName);
+}
+
+bool Narrow(LPCWSTR wide, std::string& out)
+{
+	if (InterlockedCompareExchange(&g_indexed, 0, 0) == 0 || wide == nullptr)
+		return false;
+
+	const int length = WideCharToMultiByte(CP_ACP, 0, wide, -1, nullptr, 0, nullptr, nullptr);
+
+	if (length <= 1 || length > MAX_PATH * 4)
+		return false;
+
+	out.resize(static_cast<size_t>(length) - 1);
+
+	return WideCharToMultiByte(CP_ACP, 0, wide, -1, &out[0], length, nullptr, nullptr) == length;
+}
+
+std::wstring Widen(const std::string& narrow)
+{
+	const int length = MultiByteToWideChar(CP_ACP, 0, narrow.c_str(), -1, nullptr, 0);
+
+	if (length <= 1)
+		return std::wstring();
+
+	std::wstring out(static_cast<size_t>(length) - 1, L'\0');
+	MultiByteToWideChar(CP_ACP, 0, narrow.c_str(), -1, &out[0], length);
+
+	return out;
+}
+
+HANDLE WINAPI HookedCreateFileW(LPCWSTR fileName, DWORD access, DWORD share,
+	LPSECURITY_ATTRIBUTES security, DWORD creation, DWORD flags, HANDLE templateFile)
+{
+	std::string asked;
+	std::string replacement;
+
+	if ((access & GENERIC_WRITE) == 0 && Narrow(fileName, asked) &&
+		Redirect(asked.c_str(), replacement))
+	{
+		return oCreateFileW(Widen(replacement).c_str(), access, share, security, creation, flags,
+			templateFile);
+	}
+
+	return oCreateFileW(fileName, access, share, security, creation, flags, templateFile);
+}
+
+DWORD WINAPI HookedGetFileAttributesW(LPCWSTR fileName)
+{
+	std::string asked;
+	std::string replacement;
+
+	if (Narrow(fileName, asked) && Redirect(asked.c_str(), replacement))
+		return oGetFileAttributesW(Widen(replacement).c_str());
+
+	return oGetFileAttributesW(fileName);
 }
 
 void IndexUserMusic(FileIndex& into)
@@ -287,6 +379,8 @@ void Rebuild()
 	const int count = g_files.Count();
 	ReleaseSRWLockExclusive(&g_filesLock);
 
+	InterlockedExchange(&g_indexed, count);
+
 	ClaimSearchPath(count);
 }
 
@@ -322,6 +416,15 @@ bool ModFiles::Initialize()
 
 	const bool attributes = HookManager::CreateApiHook("kernel32.dll", "GetFileAttributesA",
 		&HookedGetFileAttributesA, reinterpret_cast<void**>(&oGetFileAttributesA));
+
+	const bool createWide = HookManager::CreateApiHook("kernel32.dll", "CreateFileW",
+		&HookedCreateFileW, reinterpret_cast<void**>(&oCreateFileW));
+
+	const bool attributesWide = HookManager::CreateApiHook("kernel32.dll", "GetFileAttributesW",
+		&HookedGetFileAttributesW, reinterpret_cast<void**>(&oGetFileAttributesW));
+
+	if (!createWide || !attributesWide)
+		LOG("ModFiles: the wide file hooks could not be installed, ANSI only");
 
 	if (!create || !attributes)
 	{

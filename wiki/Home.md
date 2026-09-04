@@ -2,8 +2,8 @@
 
 Training and quality-of-life mod for **UNDER NIGHT IN-BIRTH II Sys:Celes**.
 
-- [Installing](Installing) — including Linux, Steam Deck and the RivaTuner conflict
-- [A note on online play](Online-play)
+- [Installing](Installing) — Linux, Steam Deck and the RivaTuner conflict
+- [Online play](Online-play) — read this before going online on a patch
 - [The ini file](The-ini-file) — every setting
 - [Building](Building) · [Layout](Layout) · [Credits](Credits)
 
@@ -23,14 +23,14 @@ Training and quality-of-life mod for **UNDER NIGHT IN-BIRTH II Sys:Celes**.
 - [BGM selector](BGM-selector)
 - [Player Card](Player-Card)
 - [Shaders](Shaders)
-- [Extra stages](Extra-stages)
+- [Stages](Stages) — the hidden two, and ports from MBTL and UNI
 
 ## The rest
 
 - [Overlay](Overlay)
 - [Performance](Performance)
 - [POTATO MODE](POTATO-MODE)
-- [Improvements](Improvements) — fixes and options for the game itself
+- [Improvements](Improvements)
 - [Patches](Patches) — play an older balance version
 
 ## Other languages

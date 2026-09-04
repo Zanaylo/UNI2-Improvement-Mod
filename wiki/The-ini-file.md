@@ -1,9 +1,9 @@
 # The ini file
 
-`UNI2_IM.ini` sits in the `UNI2-IM` folder next to the DLL, and the mod completes it on every run:
-a missing key or section is appended with its default, an edited one is left exactly as it is, and
-the whole file can be deleted to start over. So the file always lists every setting this build
-understands, and keys added by a new version turn up in it on the next launch.
+`UNI2_IM.ini` sits in the `UNI2-IM` folder next to the DLL. The mod completes it on every run: a
+missing key or section is appended with its default, an edited one is left alone, and deleting the
+whole file starts over. So the file always lists every setting this build understands, and keys
+added by a new version show up on the next launch.
 
 ## `[Mod]`
 
@@ -126,8 +126,8 @@ XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back
 
 ## `[Graphics]`
 
-Set `PotatoMode` and leave the rest alone: it is a preset over the keys under it, and turning it off
-puts them back. They are here for taking one of them further than a preset does.
+Set `PotatoMode` and leave the rest alone. It is a preset over the keys under it, and turning it off
+puts them back. They are here for taking one of them further than the preset does.
 
 | Key | Default | What it does |
 |---|---|---|
@@ -150,8 +150,8 @@ puts them back. They are here for taking one of them further than a preset does.
 | `LookDither` | `0` | A pixel of noise under the banding a gradient picks up on an 8 bit back buffer. |
 | `ShaderPack` | empty | The user shader that runs last in the chain, by file name, out of `UNI2-IM/Shaders` (`.hlsl`, `.ps`, `.fx`, `.slang`, `.glsl`, `.frag`, `.fsh`). Needs `d3dcompiler_47.dll`, which ships with Windows and with Proton. |
 
-`PresentWidth` and `PresentHeight` are **derived** from `PotatoMode` + `PotatoHeight` + `Supersample`
-and rewritten whenever any of those change; they are what actually reaches Direct3D.
+`PresentWidth` and `PresentHeight` are **derived** from `PotatoMode` + `PotatoHeight` +
+`Supersample` and rewritten whenever any of those change. They are what reaches Direct3D.
 | `SimpleStage` | `0` | Draw the empty stage instead of the built one. Deliberately not part of any POTATO MODE level. |
 
 ## `[Overlay]`
@@ -174,12 +174,21 @@ and rewritten whenever any of those change; they are what actually reaches Direc
 | `Profiler` | `0` | Frame interval and per-section timing, shown in the Performance window's Metrics tab. |
 | `MeterTrace` | `0` | The frame meter's diagnostic capture and its CSV. |
 
-`Logging = 1` is what turns logging on, and nothing is written without it. It is the first thing to
-ask for when someone reports that the mod does nothing: the log records the startup trail, every
-hook the mod installed and where, and anything that faulted.
+`Logging = 1` turns logging on. Nothing is written without it. Ask for it first when someone reports
+the mod does nothing: the log has the startup trail, every hook the mod installed and where, and
+anything that faulted.
 
 ## `[Compat]`
 
 | Key | Default | What it does |
 |---|---|---|
 | `WineSafeMode` | `-1` | `-1` automatic - on under Wine/Proton, off on Windows. `1` forces it on, `0` forces it off. On, the mod leaves the host's presentation and scheduling alone: no fullscreen refresh rewriting, no power throttling opt-out, no `Sleep` substitution. Set `0` on Linux to find out whether one of those three is what is misbehaving. |
+
+## `[Extras]` and `[Stages]`
+
+Written by the [Stages](Stages) window, not meant to be edited by hand.
+
+| Key | What it holds |
+|---|---|
+| `[Extras] UnlockedStages` | The hidden stage numbers you ticked, comma separated. |
+| `[Stages] StageNN` | One ported stage: source game, its folder there, and the name shown in the picker. |

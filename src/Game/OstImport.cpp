@@ -7,6 +7,8 @@
 #include "Game/ModFiles.h"
 #include "Game/BgmThemes.h"
 #include "Game/DataArchive.h"
+#include "Game/FbGameFolder.h"
+#include "Game/MbtlCipher.h"
 #include "Game/OstPac.h"
 #include "Game/OstUniNames.h"
 
@@ -49,7 +51,6 @@ struct OstMbtlEntry
 #include "Game/OstMbtlTracks.inc"
 #include "Game/OstMbtlIndex.inc"
 #include "Game/OstMbaaTracks.inc"
-#include "Game/OstMbtlKey.inc"
 
 constexpr int kFirstSlot = 100;
 constexpr int kLastSlot = 198;
@@ -625,24 +626,6 @@ bool ImportUni(const std::string& folder)
 		kUniScenes, static_cast<int>(sizeof(kUniScenes) / sizeof(kUniScenes[0])));
 }
 
-void MbtlDecrypt(std::vector<uint8_t>& data)
-{
-	if (data.size() < 2)
-		return;
-
-	data[0] ^= 0xa5;
-	data[1] ^= 0x18;
-
-	const uint32_t a = static_cast<uint32_t>(data[0]) ^ 0xac;
-	uint32_t b = a ^ data[1] ^ 0x76381;
-
-	for (size_t i = data.size() - 1; i > 1; --i)
-	{
-		data[i] ^= kMbtlKey[a ^ (b & 0x3ff)];
-		++b;
-	}
-}
-
 bool MbtlRead(const std::string& archive, const char* name, std::vector<uint8_t>& out)
 {
 	out.clear();
@@ -676,7 +659,7 @@ bool MbtlRead(const std::string& archive, const char* name, std::vector<uint8_t>
 			return false;
 		}
 
-		MbtlDecrypt(out);
+		MbtlCipher::Decrypt(out);
 		return true;
 	}
 
@@ -869,36 +852,12 @@ DWORD WINAPI Worker(void* parameter)
 
 OstImport::Source OstImport::Detect(const char* folder)
 {
-	if (folder == nullptr || folder[0] == 0)
-		return Source_None;
-
-	const std::string root = folder;
-
-	if (Exists(Combine(root, "MBAA.exe")) && Exists(Combine(root, "0001.p")))
-		return Source_MBAA;
-
-	if (Exists(Combine(root, "MBTL.exe")))
-		return Source_MBTL;
-
-	if (Exists(Combine(root, "UNIst.exe")) || Exists(Combine(root, "UNIclr.exe")))
-		return Source_UNI;
-
-	return Source_None;
+	return static_cast<Source>(FbGameFolder::Detect(folder));
 }
 
 const char* OstImport::SourceName(Source source)
 {
-	switch (source)
-	{
-	case Source_UNI:
-		return "UNDER NIGHT IN-BIRTH";
-	case Source_MBTL:
-		return "MELTY BLOOD: TYPE LUMINA";
-	case Source_MBAA:
-		return "MELTY BLOOD Actress Again Current Code";
-	default:
-		return "nothing the mod knows";
-	}
+	return FbGameFolder::Name(static_cast<FbGameFolder::Game>(source));
 }
 
 bool OstImport::IsSupported(Source source)

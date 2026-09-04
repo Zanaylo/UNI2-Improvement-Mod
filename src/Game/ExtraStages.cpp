@@ -4,6 +4,7 @@
 #include "Core/TextEncoding.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/BgListOverride.h"
 #include "Game/GameOffsets.h"
 
 #include <algorithm>
@@ -18,6 +19,9 @@ namespace {
 constexpr int kSettleFrames = 60;
 constexpr int kFirstStage = 1;
 constexpr int kFlagCount = 3;
+
+constexpr int kDebugStage = 99;
+constexpr const char* kDebugName = "Debug Stage";
 
 constexpr uintptr_t kFlagFields[kFlagCount] = {
 	GameOffsets::kBgRecordSelectDisable,
@@ -77,6 +81,30 @@ std::string ReadText(uintptr_t record, uintptr_t field, size_t maxBytes)
 	TextEncoding::ShiftJisToUtf8(raw.data(), maxBytes, out);
 
 	return out;
+}
+
+std::string Readable(uintptr_t record, int number)
+{
+	const std::string drawn = ReadText(record, GameOffsets::kBgRecordNameField,
+		GameOffsets::kBgRecordSelectDisable - GameOffsets::kBgRecordNameField);
+
+	const bool token = drawn.empty() || drawn.front() == '<' ||
+		drawn.find_first_not_of("0123456789") == std::string::npos;
+
+	std::string authored;
+
+	if (!token || !BgListOverride::OwnName(number, authored))
+		return drawn;
+
+	std::string out;
+	TextEncoding::ShiftJisToUtf8(authored.c_str(), authored.size(), out);
+
+	return out.empty() ? drawn : out;
+}
+
+std::string InEnglish(int number)
+{
+	return number == kDebugStage ? kDebugName : std::string();
 }
 
 const Held* HeldFor(int number)
@@ -160,8 +188,7 @@ void Discover()
 		ExtraStages::Stage stage = {};
 		stage.number = number;
 		stage.folder = ReadText(record, 0, GameOffsets::kBgRecordNameField);
-		stage.name = ReadText(record, GameOffsets::kBgRecordNameField,
-			GameOffsets::kBgRecordSelectDisable - GameOffsets::kBgRecordNameField);
+		stage.name = Readable(record, number);
 		stage.unlocked = Lists(saved, number);
 
 		g_held.push_back(held);
@@ -176,6 +203,12 @@ void Settle()
 
 	Discover();
 	g_ready = true;
+
+	for (const ExtraStages::Stage& stage : g_stages)
+	{
+		if (stage.unlocked && !BgListOverride::IsListed(stage.number))
+			BgListOverride::Show(stage.number, true, InEnglish(stage.number));
+	}
 
 	sprintf_s(g_status, "%d stage(s) the game builds and hides",
 		static_cast<int>(g_stages.size()));
@@ -238,6 +271,8 @@ void ExtraStages::SetUnlocked(int number, bool unlocked)
 	found->unlocked = unlocked;
 	Write(number, unlocked);
 	Save();
+
+	BgListOverride::Show(number, unlocked, InEnglish(number));
 
 	LOG("ExtraStages: stage %d '%s' %s", found->number, found->name.c_str(),
 		unlocked ? "unlocked" : "hidden again");

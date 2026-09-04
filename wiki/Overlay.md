@@ -1,8 +1,10 @@
 # Overlay
 
-**F1**. Everything lives in one window with three sections - Training, Custom and Config - plus
-separate windows for the hitbox viewer, the frame meter legend, Player Control and Performance.
+Press **F1**.
 
-While you are typing into any text field the keyboard belongs to the overlay and the game is handed
-nothing, and the same is true while a keybind is being captured. A key still held when a field lets
-go is masked until you release it, so nothing comes out as a move.
+One window with three sections: Training, Custom and Config. The hitbox viewer, the frame meter
+legend, Player Control, Performance, Music, Stages and the rest open as windows of their own.
+
+While you type in a text field the keyboard goes to the overlay and the game gets nothing. Same
+while a keybind is being captured. A key still held when the field lets go stays masked until you
+release it, so it never comes out as a move.

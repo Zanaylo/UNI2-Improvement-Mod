@@ -139,6 +139,9 @@ void HoldPosition()
 	if (!g_modVals.keepMenuMusic || ReadGlobal(GameOffsets::kBgmPlayer) == 0)
 		return;
 
+	if (GameState::IsInMatch())
+		return;
+
 	if (!LoadedFile(g_positionFile, sizeof(g_positionFile)))
 		return;
 
@@ -292,10 +295,14 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 		g_menuTrack = id;
 	else if (g_modVals.keepMenuMusic && g_menuTrack >= 0 && g_menuTrack != id)
 	{
-		LOG("BgmControl: the menu chooser asked for %d, following the menu's own %d instead", id,
-			g_menuTrack);
+		const bool ownTrack = BgmTable::IsPresent(id);
 
-		asked = g_menuTrack;
+		LOG("BgmControl: the menu chooser asked for %d while the menu had %d, slot %s", id,
+			g_menuTrack, ownTrack ? "has a track of its own - following it"
+			: "is empty - keeping the menu's");
+
+		if (!ownTrack)
+			asked = g_menuTrack;
 	}
 
 	const int left = GameState::GetLoadedCharacter(0);
@@ -560,6 +567,7 @@ void BgmControl::Stop()
 {
 	g_pinned = -1;
 	g_playing = -1;
+	g_positionHeld = false;
 
 	BgmVolume::SetCurrent(-1, -1);
 

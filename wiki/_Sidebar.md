@@ -20,7 +20,7 @@
 [BGM selector](BGM-selector)
 [Player Card](Player-Card)
 [Shaders](Shaders)
-[Extra stages](Extra-stages)
+[Stages](Stages)
 
 **The rest**
 

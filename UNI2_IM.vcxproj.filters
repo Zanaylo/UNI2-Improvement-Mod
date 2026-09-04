@@ -189,6 +189,33 @@
     <ClCompile Include="src\Game\OstImport.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\BgListOverride.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\FbGameFolder.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\MbtlCipher.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StageArchive.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StageImport.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StageThumb.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StageObjects.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\StagesPanel.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\StagesWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\OstPac.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -913,6 +940,33 @@
     </ClInclude>
     <ClInclude Include="src\Game\OstImport.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgListOverride.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\FbGameFolder.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\MbtlCipher.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StageArchive.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StageImport.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StageThumb.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StageObjects.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\StagesPanel.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\StagesWindow.h">
+      <Filter>Overlay\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\OstPac.h">
       <Filter>Game</Filter>

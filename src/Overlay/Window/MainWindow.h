@@ -28,7 +28,6 @@ private:
 	void DrawScriptTab(int player);
 	void DrawTimingControls();
 	void DrawExtrasControls();
-	void DrawExtraStageControls();
 	void PersistAutoPause();
 	void DrawConfigSection();
 	void DrawConfigGeneralTab();
@@ -43,6 +42,7 @@ private:
 	void DrawPerformanceSection();
 	void DrawPatchSection();
 	void DrawThemeSection();
+	void DrawStagesSection();
 	void DrawCustomSection();
 	void DrawPalettesTab();
 	void CaptureBind();

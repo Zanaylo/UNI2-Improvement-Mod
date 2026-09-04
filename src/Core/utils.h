@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <Windows.h>
 #include <cstdint>
@@ -21,7 +21,11 @@ std::string GetModShaderPath(const std::string& fileName = std::string());
 
 bool CreateModDirectories();
 
+bool CreateDirectoryTree(const std::string& folder);
+
 bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t minimumSize = 0);
+
+uint32_t ReadLittle32(const std::vector<uint8_t>& blob, size_t at);
 
 std::string ResourceFileName(const char* name);
 

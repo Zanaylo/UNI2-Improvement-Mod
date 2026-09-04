@@ -10,6 +10,7 @@
 #include "Overlay/Window/PaletteWindow.h"
 #include "Overlay/Window/MusicWindow.h"
 #include "Overlay/Window/SoundWindow.h"
+#include "Overlay/Window/StagesWindow.h"
 #include "Overlay/Window/PatchWindow.h"
 #include "Overlay/Window/NetplayWindow.h"
 #include "Overlay/Window/PerformanceWindow.h"
@@ -58,6 +59,8 @@ WindowContainer::WindowContainer()
 	m_windows[WindowType_Sound] = std::make_unique<SoundWindow>("Voices and sound", true);
 
 	m_windows[WindowType_Patches] = std::make_unique<PatchWindow>("Game patches", true);
+
+	m_windows[WindowType_Stages] = std::make_unique<StagesWindow>("Stages", true);
 
 	if (!ScreenDirector::kOnHold)
 		m_windows[WindowType_Theme] = std::make_unique<ThemeWindow>("Theme", true);
