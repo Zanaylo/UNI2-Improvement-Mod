@@ -192,7 +192,22 @@
     <ClCompile Include="src\Game\BgListOverride.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\BgObjectFix.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgGrade.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgShaderText.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\FbGameFolder.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\FbxAscii.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\FbxToFbxEx.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\MbtlCipher.cpp">
@@ -208,6 +223,9 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\StageObjects.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StageCards.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Window\StagesPanel.cpp">
@@ -944,7 +962,22 @@
     <ClInclude Include="src\Game\BgListOverride.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\BgObjectFix.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgGrade.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgShaderText.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\FbGameFolder.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\FbxAscii.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\FbxToFbxEx.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\MbtlCipher.h">
@@ -960,6 +993,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\StageObjects.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StageCards.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Window\StagesPanel.h">

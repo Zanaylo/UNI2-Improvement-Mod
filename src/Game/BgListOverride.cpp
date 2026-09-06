@@ -346,6 +346,21 @@ bool BgListOverride::IsListed(int number)
 	return std::find(numbers.begin(), numbers.end(), number) != numbers.end();
 }
 
+bool BgListOverride::SelectOrder(std::vector<int>& out)
+{
+	out.clear();
+
+	std::string list;
+
+	if (!Read(kList, list))
+		return false;
+
+	size_t first = 0;
+	size_t last = 0;
+
+	return ListedNumbers(list, out, first, last);
+}
+
 bool BgListOverride::NeedsRestart()
 {
 	return g_restart;

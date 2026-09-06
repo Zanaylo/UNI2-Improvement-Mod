@@ -17,6 +17,9 @@ namespace ExtraStages
 	int Count();
 	const Stage* Get(int index);
 
+	int StageCount();
+	const Stage* StageAt(int index);
+
 	void SetUnlocked(int number, bool unlocked);
 
 	bool Ready();

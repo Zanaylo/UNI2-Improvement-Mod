@@ -20,6 +20,7 @@
 #include "Game/ModFiles.h"
 #include "Game/StageImport.h"
 #include "Game/StageObjects.h"
+#include "Game/StageCards.h"
 #include "Screens/ScreenDirector.h"
 #include "Screens/ScreenTheme.h"
 #include "Game/CharaTracker.h"
@@ -227,6 +228,7 @@ void Stage_GameHooks()
 	BalanceRules::Install();
 	ScreenShake::Install();
 	StageObjects::Initialize();
+	StageCards::Initialize();
 	BgmControl::Initialize();
 	PumpWait::Apply();
 	KeyboardSeat::ApplySaved();

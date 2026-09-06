@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -15,9 +16,25 @@ namespace {
 
 constexpr int kMaxSessionLogs = 20;
 
+constexpr size_t kLineBytes = 2048;
+
 FILE* g_logFile = nullptr;
 std::mutex g_logMutex;
 std::string g_sessionStamp;
+
+char g_lastLine[kLineBytes] = {};
+unsigned long g_repeats = 0;
+
+void FlushRepeats()
+{
+	if (g_repeats == 0)
+		return;
+
+	fprintf(g_logFile, "             (the line above repeated %lu more time%s)\n", g_repeats,
+		g_repeats == 1 ? "" : "s");
+
+	g_repeats = 0;
+}
 
 bool LoggingEnabledInIni()
 {
@@ -105,8 +122,11 @@ void CloseLogger()
 	if (g_logFile == nullptr)
 		return;
 
+	FlushRepeats();
+
 	fclose(g_logFile);
 	g_logFile = nullptr;
+	g_lastLine[0] = 0;
 }
 
 void WriteLog(const char* format, ...)
@@ -115,15 +135,27 @@ void WriteLog(const char* format, ...)
 	if (g_logFile == nullptr)
 		return;
 
+	char line[kLineBytes] = {};
+
+	va_list args;
+	va_start(args, format);
+	vsnprintf(line, sizeof(line), format, args);
+	va_end(args);
+
+	if (strcmp(line, g_lastLine) == 0)
+	{
+		++g_repeats;
+		return;
+	}
+
+	FlushRepeats();
+	strncpy_s(g_lastLine, line, _TRUNCATE);
+
 	SYSTEMTIME time = {};
 	GetLocalTime(&time);
 	fprintf(g_logFile, "[%02d:%02d:%02d.%03d] ", time.wHour, time.wMinute, time.wSecond, time.wMilliseconds);
 
-	va_list args;
-	va_start(args, format);
-	vfprintf(g_logFile, format, args);
-	va_end(args);
-
+	fputs(line, g_logFile);
 	fputc('\n', g_logFile);
 	fflush(g_logFile);
 }
@@ -133,6 +165,9 @@ void WriteLogRaw(const char* format, ...)
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	if (g_logFile == nullptr)
 		return;
+
+	FlushRepeats();
+	g_lastLine[0] = 0;
 
 	fputs("             ", g_logFile);
 
@@ -150,6 +185,9 @@ void LogSection(const char* name)
 	std::lock_guard<std::mutex> lock(g_logMutex);
 	if (g_logFile == nullptr)
 		return;
+
+	FlushRepeats();
+	g_lastLine[0] = 0;
 
 	fprintf(g_logFile, "\n----- %s -----\n", name);
 	fflush(g_logFile);

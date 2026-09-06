@@ -14,6 +14,8 @@ namespace BgListOverride
 
 	bool IsListed(int number);
 
+	bool SelectOrder(std::vector<int>& out);
+
 	bool OwnName(int number, std::string& out);
 
 	bool SetNames(const std::vector<std::pair<int, std::string> >& named);

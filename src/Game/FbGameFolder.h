@@ -8,6 +8,7 @@ namespace FbGameFolder
 		Game_UNI,
 		Game_MBTL,
 		Game_MBAA,
+		Game_DFCI,
 	};
 
 	Game Detect(const char* folder);

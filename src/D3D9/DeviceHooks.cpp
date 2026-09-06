@@ -25,6 +25,8 @@
 #include "Game/PatchPacks.h"
 #include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
+#include "Game/BgGrade.h"
+#include "Game/StageCards.h"
 #include "Game/StageImport.h"
 #include "Game/VoiceImport.h"
 #include "Game/SoundpackTransfer.h"
@@ -336,6 +338,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			GameRestart::OnFrame();
 			OstImport::Update();
 			StageImport::Update();
+			BgGrade::Update();
+			StageCards::OnFrame();
 			VoiceImport::Update();
 			SoundpackTransfer::Update();
 
@@ -486,6 +490,9 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 		LOG("Device hook installation incomplete (reset=%d present=%d)", reset, present);
 		return false;
 	}
+
+	BgGrade::Initialize();
+	BgGrade::Attach(device);
 
 	g_installed = true;
 	LOG("Device hooks installed on device 0x%p, window 0x%p", (void*)device, (void*)g_gameProc.hWndGame);

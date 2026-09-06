@@ -20,8 +20,13 @@ constexpr int kSettleFrames = 60;
 constexpr int kFirstStage = 1;
 constexpr int kFlagCount = 3;
 
-constexpr int kDebugStage = 99;
-constexpr const char* kDebugName = "Debug Stage";
+struct OwnStageName
+{
+	int number;
+	const char* name;
+};
+
+#include "Game/OwnStageNames.inc"
 
 constexpr uintptr_t kFlagFields[kFlagCount] = {
 	GameOffsets::kBgRecordSelectDisable,
@@ -36,6 +41,7 @@ struct Held
 };
 
 std::vector<ExtraStages::Stage> g_stages;
+std::vector<ExtraStages::Stage> g_all;
 std::vector<Held> g_held;
 
 bool g_ready = false;
@@ -83,8 +89,24 @@ std::string ReadText(uintptr_t record, uintptr_t field, size_t maxBytes)
 	return out;
 }
 
+std::string InEnglish(int number)
+{
+	for (const OwnStageName& known : kOwnStageNames)
+	{
+		if (known.number == number)
+			return known.name;
+	}
+
+	return std::string();
+}
+
 std::string Readable(uintptr_t record, int number)
 {
+	const std::string english = InEnglish(number);
+
+	if (!english.empty())
+		return english;
+
 	const std::string drawn = ReadText(record, GameOffsets::kBgRecordNameField,
 		GameOffsets::kBgRecordSelectDisable - GameOffsets::kBgRecordNameField);
 
@@ -100,11 +122,6 @@ std::string Readable(uintptr_t record, int number)
 	TextEncoding::ShiftJisToUtf8(authored.c_str(), authored.size(), out);
 
 	return out.empty() ? drawn : out;
-}
-
-std::string InEnglish(int number)
-{
-	return number == kDebugStage ? kDebugName : std::string();
 }
 
 const Held* HeldFor(int number)
@@ -182,7 +199,7 @@ void Discover()
 		Held held = {};
 		held.number = number;
 
-		if (!ReadFlags(record, held.original) || held.original[0] == 0)
+		if (!ReadFlags(record, held.original))
 			continue;
 
 		ExtraStages::Stage stage = {};
@@ -190,6 +207,12 @@ void Discover()
 		stage.folder = ReadText(record, 0, GameOffsets::kBgRecordNameField);
 		stage.name = Readable(record, number);
 		stage.unlocked = Lists(saved, number);
+
+		if (!stage.folder.empty())
+			g_all.push_back(stage);
+
+		if (held.original[0] == 0)
+			continue;
 
 		g_held.push_back(held);
 		g_stages.push_back(stage);
@@ -245,6 +268,19 @@ void ExtraStages::OnFrame()
 		if (stage.unlocked)
 			Write(stage.number, true);
 	}
+}
+
+int ExtraStages::StageCount()
+{
+	return static_cast<int>(g_all.size());
+}
+
+const ExtraStages::Stage* ExtraStages::StageAt(int index)
+{
+	if (index < 0 || index >= StageCount())
+		return nullptr;
+
+	return &g_all[index];
 }
 
 int ExtraStages::Count()

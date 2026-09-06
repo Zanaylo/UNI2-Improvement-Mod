@@ -36,6 +36,9 @@ FbGameFolder::Game FbGameFolder::Detect(const char* folder)
 	if (Exists(root, "UNIst.exe") || Exists(root, "UNIclr.exe"))
 		return Game_UNI;
 
+	if (Exists(root, "Bgm\\bgm.txt") && (Exists(root, "RingGame.exe") || Exists(root, "eboot.bin")))
+		return Game_DFCI;
+
 	return Game_None;
 }
 
@@ -49,6 +52,8 @@ const char* FbGameFolder::Name(Game game)
 		return "MELTY BLOOD: TYPE LUMINA";
 	case Game_MBAA:
 		return "MELTY BLOOD Actress Again Current Code";
+	case Game_DFCI:
+		return "DENGEKI BUNKO FIGHTING CLIMAX IGNITION";
 	default:
 		return "nothing the mod knows";
 	}

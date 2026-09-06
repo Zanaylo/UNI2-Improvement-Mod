@@ -8,6 +8,7 @@ namespace OstImport
 		Source_UNI,
 		Source_MBTL,
 		Source_MBAA,
+		Source_DFCI,
 	};
 
 	Source Detect(const char* folder);

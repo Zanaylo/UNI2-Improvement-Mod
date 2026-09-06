@@ -33,4 +33,6 @@ namespace StageArchive
 
 	bool Block(const std::string& bgList, const std::string& stage, std::string& out);
 	bool Field(const std::string& block, const char* key, std::string& out);
+
+	int CardIndex(const std::string& bgList, const std::string& stage);
 }

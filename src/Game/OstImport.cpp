@@ -51,6 +51,8 @@ struct OstMbtlEntry
 #include "Game/OstMbtlTracks.inc"
 #include "Game/OstMbtlIndex.inc"
 #include "Game/OstMbaaTracks.inc"
+#include "Game/OstDfciScenes.inc"
+#include "Game/OstDfciTracks.inc"
 
 constexpr int kFirstSlot = 100;
 constexpr int kLastSlot = 198;
@@ -817,6 +819,47 @@ bool ImportMbaa(const std::string& folder)
 		kMbaaScenes, static_cast<int>(sizeof(kMbaaScenes) / sizeof(kMbaaScenes[0])));
 }
 
+bool ImportDfci(const std::string& folder)
+{
+	const std::string bgm = Combine(folder, "Bgm");
+	std::vector<Track> tracks;
+
+	for (const OstTrackEntry& entry : kDfciTracks)
+	{
+		Track track;
+		track.file = entry.file;
+		track.title = entry.title;
+		track.loop = entry.loop;
+		track.loopPos = entry.loopPos;
+		track.slot = -1;
+
+		if (!ReadWhole(Combine(bgm, (std::string(entry.file) + ".ogg").c_str()), track.audio))
+			continue;
+
+		if (track.audio.size() < 4 || memcmp(track.audio.data(), "OggS", 4) != 0)
+			continue;
+
+		tracks.push_back(std::move(track));
+		InterlockedExchange(&g_progress, static_cast<long>(5 + (tracks.size() * 5) / 10));
+	}
+
+	if (tracks.empty())
+	{
+		if (Exists(Combine(bgm, "music_themesong.at9")))
+		{
+			strncpy_s(g_status, "that is the PS4 build - its music is ATRAC9, not Ogg. "
+				"Point at the arcade build instead.", _TRUNCATE);
+			return false;
+		}
+
+		strncpy_s(g_status, "no track in that DFCI install could be read", _TRUNCATE);
+		return false;
+	}
+
+	return InstallTracks(tracks, "DFCI", "dfci_", "DENGEKI BUNKO FIGHTING CLIMAX IGNITION",
+		kDfciScenes, static_cast<int>(sizeof(kDfciScenes) / sizeof(kDfciScenes[0])));
+}
+
 DWORD WINAPI Worker(void* parameter)
 {
 	std::string* folder = static_cast<std::string*>(parameter);
@@ -834,6 +877,10 @@ DWORD WINAPI Worker(void* parameter)
 	else if (source == OstImport::Source_MBTL)
 	{
 		ImportMbtl(*folder);
+	}
+	else if (source == OstImport::Source_DFCI)
+	{
+		ImportDfci(*folder);
 	}
 	else
 	{

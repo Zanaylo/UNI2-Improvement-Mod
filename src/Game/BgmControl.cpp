@@ -41,6 +41,9 @@ BgmPause_t oBgmPause = nullptr;
 BgmStop_t g_stop = nullptr;
 MenuBgm_t oMenuBgm = nullptr;
 
+constexpr int kIdleStartGrace = 4;
+constexpr int kIdleStartPeriod = 30;
+
 bool g_hooked = false;
 bool g_reported = false;
 
@@ -56,6 +59,9 @@ uint64_t g_positionBase = 0;
 float g_positionSeconds = 0.0f;
 char g_positionFile[GameOffsets::kBgmFileMax + 1] = {};
 bool g_positionHeld = false;
+
+int g_idleSlot = -1;
+int g_idleStarts = 0;
 
 char g_status[256] = "not started";
 
@@ -378,6 +384,37 @@ void __fastcall HookedMenuBgm(void* self, void* unused, int scene)
 	HookedBgmStart();
 }
 
+bool StreamIdle()
+{
+	if (ReadGlobal(GameOffsets::kBgmPlayer) != 0)
+		return false;
+
+	return ReadGlobal(GameOffsets::kBgmLoadedFlag) == 0;
+}
+
+bool SkipIdleStart(int slot)
+{
+	if (!StreamIdle())
+	{
+		g_idleSlot = -1;
+		g_idleStarts = 0;
+		return false;
+	}
+
+	if (slot != g_idleSlot)
+	{
+		g_idleSlot = slot;
+		g_idleStarts = 0;
+	}
+
+	++g_idleStarts;
+
+	if (g_idleStarts <= kIdleStartGrace)
+		return false;
+
+	return g_idleStarts % kIdleStartPeriod != 0;
+}
+
 void __cdecl HookedBgmStart()
 {
 	const uint32_t state = ReadGlobal(GameOffsets::kBgmState);
@@ -391,6 +428,9 @@ void __cdecl HookedBgmStart()
 		BgmVolume::ApplyNow();
 		return;
 	}
+
+	if (SkipIdleStart(static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId))))
+		return;
 
 	const bool restored = RestorePosition();
 

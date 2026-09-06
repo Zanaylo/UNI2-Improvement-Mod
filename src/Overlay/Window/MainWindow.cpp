@@ -1792,8 +1792,6 @@ void MainWindow::DrawStagesSection()
 	if (StageImport::PortCount() > 0)
 		UiText::Good("%d stage(s) ported.", StageImport::PortCount());
 
-	if (StageImport::NeedsRestart())
-		UiText::Warn("A port is waiting on a restart.");
 }
 
 void MainWindow::DrawConfigSection()

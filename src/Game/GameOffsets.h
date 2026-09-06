@@ -197,6 +197,15 @@ namespace GameOffsets
 
 	constexpr uintptr_t kFnLoadStageObjectPat = 0x201d20;
 
+	constexpr uintptr_t kFnStageSelectSetup = 0x45c1e0;
+	constexpr uint32_t kSceneStageSelect = 24;
+
+	constexpr uintptr_t kStageSelectCursor = 0x14;
+	constexpr uintptr_t kStageSelectShown = 0x18;
+	constexpr uintptr_t kStageSelectSlide = 0x4c;
+	constexpr uintptr_t kStageSelectSheet00 = 0xa4;
+	constexpr uintptr_t kStageSelectSheet01 = 0xa8;
+
 	constexpr uintptr_t kBgRecordTable = 0x6447b0;
 	constexpr uintptr_t kBgRecordNameField = 0x20;
 	constexpr uintptr_t kBgRecordSelectDisable = 0x60;

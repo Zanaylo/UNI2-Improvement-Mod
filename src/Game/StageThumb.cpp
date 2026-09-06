@@ -4,6 +4,7 @@
 #include "Core/utils.h"
 #include "Game/DataArchive.h"
 #include "Game/MbtlCipher.h"
+#include "Game/StageImport.h"
 
 #include <Windows.h>
 
@@ -39,7 +40,18 @@ constexpr int kMbtlCardY = 50;
 constexpr int kMbtlCardWidth = 96;
 constexpr int kMbtlCardHeight = 230;
 
+constexpr int kDfciColumns = 9;
+constexpr int kDfciCellWidth = 209;
+constexpr int kDfciCellHeight = 145;
+constexpr int kDfciFirstX = 8;
+constexpr int kDfciFirstY = 0;
+constexpr int kDfciPitchX = 224;
+constexpr int kDfciPitchY = 256;
+
+constexpr const char* kDfciSheet = "grpdat\\CSel\\stage_thum00.dds";
+
 constexpr const char* kOurFolder = "CSel";
+constexpr const char* kCardFolder = "Mods\\CSel";
 constexpr const char* kOurSheets[] = { "stage_thumb00.dds", "stage_thumb01.dds" };
 
 constexpr const char* kMbtlArchive = "data010.bin";
@@ -79,6 +91,139 @@ bool Unpack(const std::vector<uint8_t>& blob, Image& out)
 
 	out.pixels.assign(blob.begin() + kDdsHeader, blob.begin() + kDdsHeader + need);
 	return true;
+}
+
+void Rgb565(uint16_t packed, uint8_t* out)
+{
+	out[2] = static_cast<uint8_t>((((packed >> 11) & 0x1f) * 255) / 31);
+	out[1] = static_cast<uint8_t>((((packed >> 5) & 0x3f) * 255) / 63);
+	out[0] = static_cast<uint8_t>(((packed & 0x1f) * 255) / 31);
+}
+
+bool DecodeDxt(const std::vector<uint8_t>& blob, Image& out)
+{
+	if (blob.size() < kDdsHeader || memcmp(blob.data(), "DDS ", 4) != 0)
+		return false;
+
+	const uint32_t flags = ReadLittle32(blob, 80);
+	const uint32_t fourcc = ReadLittle32(blob, 84);
+
+	if ((flags & 4) == 0)
+		return Unpack(blob, out);
+
+	const bool five = fourcc == 0x35545844;
+	const bool one = fourcc == 0x31545844;
+
+	if (!five && !one)
+		return false;
+
+	out.height = static_cast<int>(ReadLittle32(blob, 12));
+	out.width = static_cast<int>(ReadLittle32(blob, 16));
+
+	if (out.width <= 0 || out.height <= 0 || out.width > 8192 || out.height > 8192)
+		return false;
+
+	const int blocksX = (out.width + 3) / 4;
+	const int blocksY = (out.height + 3) / 4;
+	const size_t stride = five ? 16 : 8;
+
+	if (blob.size() < kDdsHeader + static_cast<size_t>(blocksX) * blocksY * stride)
+		return false;
+
+	out.pixels.assign(static_cast<size_t>(out.width) * out.height * 4, 0);
+
+	for (int by = 0; by < blocksY; ++by)
+	{
+		for (int bx = 0; bx < blocksX; ++bx)
+		{
+			const uint8_t* const block = blob.data() + kDdsHeader
+				+ (static_cast<size_t>(by) * blocksX + bx) * stride;
+			const uint8_t* const colour = five ? block + 8 : block;
+
+			uint8_t alpha[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
+			uint64_t alphaBits = 0;
+
+			if (five)
+			{
+				alpha[0] = block[0];
+				alpha[1] = block[1];
+
+				if (alpha[0] > alpha[1])
+				{
+					for (int i = 1; i < 7; ++i)
+						alpha[i + 1] = static_cast<uint8_t>(((7 - i) * alpha[0] + i * alpha[1]) / 7);
+				}
+				else
+				{
+					for (int i = 1; i < 5; ++i)
+						alpha[i + 1] = static_cast<uint8_t>(((5 - i) * alpha[0] + i * alpha[1]) / 5);
+
+					alpha[6] = 0;
+					alpha[7] = 255;
+				}
+
+				for (int i = 0; i < 6; ++i)
+					alphaBits |= static_cast<uint64_t>(block[2 + i]) << (8 * i);
+			}
+
+			const uint16_t c0 = static_cast<uint16_t>(colour[0] | (colour[1] << 8));
+			const uint16_t c1 = static_cast<uint16_t>(colour[2] | (colour[3] << 8));
+
+			uint8_t palette[4][4] = {};
+			Rgb565(c0, palette[0]);
+			Rgb565(c1, palette[1]);
+
+			for (int i = 0; i < 3; ++i)
+			{
+				if (c0 > c1 || five)
+				{
+					palette[2][i] = static_cast<uint8_t>((2 * palette[0][i] + palette[1][i]) / 3);
+					palette[3][i] = static_cast<uint8_t>((palette[0][i] + 2 * palette[1][i]) / 3);
+				}
+				else
+				{
+					palette[2][i] = static_cast<uint8_t>((palette[0][i] + palette[1][i]) / 2);
+					palette[3][i] = 0;
+				}
+			}
+
+			const uint32_t bits = ReadLittle32(blob, static_cast<size_t>(colour - blob.data()) + 4);
+
+			for (int py = 0; py < 4; ++py)
+			{
+				for (int px = 0; px < 4; ++px)
+				{
+					const int x = bx * 4 + px;
+					const int y = by * 4 + py;
+
+					if (x >= out.width || y >= out.height)
+						continue;
+
+					const int i = py * 4 + px;
+					const uint8_t* const src = palette[(bits >> (2 * i)) & 3];
+					uint8_t* const dst = &out.pixels[(static_cast<size_t>(y) * out.width + x) * 4];
+
+					dst[0] = src[0];
+					dst[1] = src[1];
+					dst[2] = src[2];
+					dst[3] = five ? alpha[(alphaBits >> (3 * i)) & 7]
+						: static_cast<uint8_t>((c0 > c1 || ((bits >> (2 * i)) & 3) != 3) ? 255 : 0);
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+bool DfciSheet(const std::string& gameFolder, std::vector<uint8_t>& blob)
+{
+	std::string path = gameFolder;
+
+	if (!path.empty() && path.back() != '\\' && path.back() != '/')
+		path.push_back('\\');
+
+	return ReadWholeFile(path + kDfciSheet, blob) && !blob.empty();
 }
 
 bool OurSheet(int sheet, std::vector<uint8_t>& blob)
@@ -224,9 +369,151 @@ void Blit(const Image& source, int sourceX, int sourceY, int sourceWidth, int so
 	}
 }
 
-bool Paint(const Image& card, int cardX, int cardY, int cardWidth, int cardHeight, int number)
+constexpr int kBackdropShade = 42;
+constexpr int kBlurRadius = 5;
+
+void BoxBlur(std::vector<uint8_t>& pixels, int width, int height)
 {
-	const int cell = number - kOurSecondSheet;
+	std::vector<uint8_t> pass(pixels.size());
+
+	for (int channel = 0; channel < 3; ++channel)
+	{
+		for (int row = 0; row < height; ++row)
+		{
+			for (int column = 0; column < width; ++column)
+			{
+				int total = 0;
+				int count = 0;
+
+				for (int step = -kBlurRadius; step <= kBlurRadius; ++step)
+				{
+					const int at = column + step;
+
+					if (at < 0 || at >= width)
+						continue;
+
+					total += pixels[(static_cast<size_t>(row) * width + at) * 4 + channel];
+					++count;
+				}
+
+				pass[(static_cast<size_t>(row) * width + column) * 4 + channel] =
+					static_cast<uint8_t>(total / count);
+			}
+		}
+
+		for (int column = 0; column < width; ++column)
+		{
+			for (int row = 0; row < height; ++row)
+			{
+				int total = 0;
+				int count = 0;
+
+				for (int step = -kBlurRadius; step <= kBlurRadius; ++step)
+				{
+					const int at = row + step;
+
+					if (at < 0 || at >= height)
+						continue;
+
+					total += pass[(static_cast<size_t>(at) * width + column) * 4 + channel];
+					++count;
+				}
+
+				pixels[(static_cast<size_t>(row) * width + column) * 4 + channel] =
+					static_cast<uint8_t>(total / count);
+			}
+		}
+	}
+}
+
+void BlitCard(const Image& source, int sourceX, int sourceY, int sourceWidth, int sourceHeight,
+	Image& target, int targetX, int targetY)
+{
+	std::vector<uint8_t> cell(static_cast<size_t>(kOurCellWidth) * kOurCellHeight * 4);
+
+	int coverWidth = (sourceHeight * kOurCellWidth) / kOurCellHeight;
+
+	if (coverWidth > sourceWidth || coverWidth < 1)
+		coverWidth = sourceWidth;
+
+	const int coverX = sourceX + (sourceWidth - coverWidth) / 2;
+
+	for (int row = 0; row < kOurCellHeight; ++row)
+	{
+		const int from = sourceY + (row * sourceHeight) / kOurCellHeight;
+
+		for (int column = 0; column < kOurCellWidth; ++column)
+		{
+			const int at = coverX + (column * coverWidth) / kOurCellWidth;
+			const uint8_t* const in = &source.pixels[(static_cast<size_t>(from) * source.width +
+				at) * 4];
+			uint8_t* const out = &cell[(static_cast<size_t>(row) * kOurCellWidth + column) * 4];
+
+			for (int channel = 0; channel < 3; ++channel)
+				out[channel] = static_cast<uint8_t>((in[channel] * kBackdropShade) / 100);
+
+			out[3] = 0xff;
+		}
+	}
+
+	BoxBlur(cell, kOurCellWidth, kOurCellHeight);
+
+	const int fitted = (kOurCellWidth * sourceHeight) / sourceWidth;
+	const int top = (kOurCellHeight - fitted) / 2;
+
+	for (int row = 0; row < fitted; ++row)
+	{
+		const int from = sourceY + (row * sourceHeight) / fitted;
+
+		for (int column = 0; column < kOurCellWidth; ++column)
+		{
+			const int at = sourceX + (column * sourceWidth) / kOurCellWidth;
+			const uint8_t* const in = &source.pixels[(static_cast<size_t>(from) * source.width +
+				at) * 4];
+			uint8_t* const out = &cell[(static_cast<size_t>(top + row) * kOurCellWidth +
+				column) * 4];
+
+			for (int channel = 0; channel < 3; ++channel)
+				out[channel] = in[channel];
+
+			out[3] = 0xff;
+		}
+	}
+
+	for (int row = 0; row < kOurCellHeight; ++row)
+	{
+		memcpy(&target.pixels[(static_cast<size_t>(targetY + row) * target.width + targetX) * 4],
+			&cell[static_cast<size_t>(row) * kOurCellWidth * 4],
+			static_cast<size_t>(kOurCellWidth) * 4);
+	}
+}
+
+void KeepCard(const Image& sheet, int x, int y, int number)
+{
+	std::vector<uint8_t> cell(static_cast<size_t>(kOurCellWidth) * kOurCellHeight * 4);
+
+	for (int row = 0; row < kOurCellHeight; ++row)
+	{
+		memcpy(&cell[static_cast<size_t>(row) * kOurCellWidth * 4],
+			&sheet.pixels[(static_cast<size_t>(y + row) * sheet.width + x) * 4],
+			static_cast<size_t>(kOurCellWidth) * 4);
+	}
+
+	CreateDirectoryTree(GetModRootPath(kCardFolder));
+
+	FILE* handle = nullptr;
+
+	if (fopen_s(&handle, StageThumb::CardPath(number).c_str(), "wb") != 0 || handle == nullptr)
+		return;
+
+	fwrite(cell.data(), 1, cell.size(), handle);
+	fclose(handle);
+}
+
+bool Paint(const Image& card, int cardX, int cardY, int cardWidth, int cardHeight, int number,
+	bool fit = false)
+{
+	const int cell = StageThumb::CellFor(number) - kOurSecondSheet;
 
 	std::vector<uint8_t> blob;
 
@@ -245,23 +532,81 @@ bool Paint(const Image& card, int cardX, int cardY, int cardWidth, int cardHeigh
 	if (x + kOurCellWidth > ours.width || y + kOurCellHeight > ours.height)
 		return false;
 
-	Blit(card, cardX, cardY, cardWidth, cardHeight, ours, x, y);
+	if (fit)
+		BlitCard(card, cardX, cardY, cardWidth, cardHeight, ours, x, y);
+	else
+		Blit(card, cardX, cardY, cardWidth, cardHeight, ours, x, y);
 
 	memcpy(blob.data() + kDdsHeader, ours.pixels.data(), ours.pixels.size());
+	KeepCard(ours, x, y, number);
 
 	return Write(1, blob);
 }
 
 }
 
+int StageThumb::CellFor(int number)
+{
+	if (number < StageImport::kFirstNumber || number > StageImport::kLastNumber)
+		return -1;
+
+	return kFirstCell + (number - kFirstCell) % kCells;
+}
+
+std::string StageThumb::CardPath(int number)
+{
+	char leaf[32] = {};
+	sprintf_s(leaf, "\\card%03d.bin", number);
+
+	return GetModRootPath(kCardFolder) + leaf;
+}
+
+bool StageThumb::HasCard(int number)
+{
+	return GetFileAttributesA(CardPath(number).c_str()) != INVALID_FILE_ATTRIBUTES;
+}
+
 bool StageThumb::Take(FbGameFolder::Game game, const std::string& gameFolder, int sourceCell,
 	int number)
 {
-	if (game != FbGameFolder::Game_MBTL || sourceCell < 0 || number < kFirstCell ||
-		number > kLastCell)
-	{
+	if (sourceCell < 0 || CellFor(number) < 0)
 		return false;
+
+	if (game == FbGameFolder::Game_DFCI)
+	{
+		std::vector<uint8_t> raw;
+
+		if (!DfciSheet(gameFolder, raw))
+		{
+			LOG("StageThumb: that DFCI build has no picker sheet at %s", kDfciSheet);
+			return false;
+		}
+
+		Image sheet;
+
+		if (!DecodeDxt(raw, sheet))
+		{
+			LOG("StageThumb: that DFCI picker sheet is not a DDS the mod can decode");
+			return false;
+		}
+
+		int cardX = 0;
+		int cardY = 0;
+		CellOf(sourceCell, kDfciColumns, kDfciFirstX, kDfciFirstY, kDfciPitchX, kDfciPitchY,
+			cardX, cardY);
+
+		if (cardX + kDfciCellWidth > sheet.width || cardY + kDfciCellHeight > sheet.height)
+			return false;
+
+		if (!Paint(sheet, cardX, cardY, kDfciCellWidth, kDfciCellHeight, number, true))
+			return false;
+
+		LOG("StageThumb: stage %d takes cell %d of DFCI's picker", number, sourceCell);
+		return true;
 	}
+
+	if (game != FbGameFolder::Game_MBTL)
+		return false;
 
 	const bool second = sourceCell >= kMbtlSecondSheet;
 	std::vector<uint8_t> blob;

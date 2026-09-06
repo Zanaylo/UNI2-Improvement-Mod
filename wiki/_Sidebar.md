@@ -21,6 +21,7 @@
 [Player Card](Player-Card)
 [Shaders](Shaders)
 [Stages](Stages)
+[Stage models](Stage-models)
 
 **The rest**
 
