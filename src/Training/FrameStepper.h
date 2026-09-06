@@ -30,6 +30,8 @@ namespace FrameStepper
 	void TogglePaused();
 	void RequestStep(int frames);
 
+	void RequestRepaint();
+
 	FreezeMode GetMode();
 	void SetMode(FreezeMode mode);
 

@@ -358,6 +358,7 @@ void Settings::ApplySettings()
 	g_modVals.toggleOverlayKey = GetVirtualKeyFromName(g_settings.toggleOverlayKey);
 	g_modVals.toggleHitboxKey = GetVirtualKeyFromName(g_settings.toggleHitboxKey);
 	g_modVals.toggleFrameMeterKey = GetVirtualKeyFromName(g_settings.toggleFrameMeterKey);
+	g_modVals.hideHudKey = GetVirtualKeyFromName(g_settings.hideHudKey);
 	g_modVals.freezeFrameKey = GetVirtualKeyFromName(g_settings.freezeFrameKey);
 	g_modVals.stepForwardKey = GetVirtualKeyFromName(g_settings.stepForwardKey);
 	g_modVals.nextPaletteKey = GetVirtualKeyFromName(g_settings.nextPaletteKey);
@@ -367,6 +368,11 @@ void Settings::ApplySettings()
 	g_modVals.checkForUpdates = g_settings.checkForUpdates != 0;
 
 	g_modVals.freezeMode = g_settings.freezeMode == 1 ? 1 : 0;
+	g_modVals.showHealthValues = g_settings.showHealthValues != 0 ? 1 : 0;
+	g_modVals.healthValuesX = g_settings.healthValuesX;
+	g_modVals.healthValuesY = g_settings.healthValuesY;
+	g_modVals.healthValuesScale = g_settings.healthValuesScale;
+	g_modVals.hideBattleHud = g_settings.hideBattleHud != 0 ? 1 : 0;
 	g_modVals.blockGameMouse = g_settings.blockGameMouse != 0;
 	g_modVals.drawWhilePaused = g_settings.drawWhilePaused != 0;
 

@@ -38,6 +38,7 @@ int g_resumeCountdown = 0;
 bool g_steppedSinceLastPresent = false;
 int g_pendingSteps = 0;
 int g_stepSize = 1;
+bool g_repaintRequested = false;
 
 FrameStepper::FreezeMode g_mode = FrameStepper::FreezeMode::TickSuppress;
 
@@ -156,8 +157,27 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 
 	if (freezing)
 	{
+		if (g_pendingSteps <= 0 && g_repaintRequested && StopTime::IsAvailable() &&
+			!FrameMeter::IsSuperFlashRunning() && StopTime::ApplyAll(g_stopTimeFrames))
+		{
+			g_repaintRequested = false;
+			g_stopTimeHeld = true;
+			g_ticksSinceApply = 0;
+			g_steppedSinceLastPresent = true;
+			++g_suppressedFrames;
+
+			{
+				Profiler::Scope scope(Profiler::Section_TickGame);
+				oFrameUpdate(outputByte, unused);
+			}
+
+			Profiler::EndTickFrame();
+			return;
+		}
+
 		if (g_pendingSteps <= 0)
 		{
+			g_repaintRequested = false;
 			++g_suppressedFrames;
 
 			if (outputByte != nullptr)
@@ -322,6 +342,14 @@ void FrameStepper::RequestStep(int frames)
 		return;
 
 	g_pendingSteps += frames > 0 ? frames : 1;
+}
+
+void FrameStepper::RequestRepaint()
+{
+	if (!IsFrozen() || !SuppressesTicks())
+		return;
+
+	g_repaintRequested = true;
 }
 
 FrameStepper::FreezeMode FrameStepper::GetMode()

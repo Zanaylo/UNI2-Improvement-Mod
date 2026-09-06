@@ -15,6 +15,7 @@ namespace Hotkeys
 		Action_StepForward,
 		Action_NextPalette,
 		Action_PreviousPalette,
+		Action_HideHud,
 		Action_Count,
 	};
 

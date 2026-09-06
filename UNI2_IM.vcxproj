@@ -166,6 +166,9 @@
     <ClCompile Include="src\Game\StageThumb.cpp" />
     <ClCompile Include="src\Game\StageObjects.cpp" />
     <ClCompile Include="src\Game\StageCards.cpp" />
+    <ClCompile Include="src\Game\PlayerHealth.cpp" />
+    <ClCompile Include="src\Game\BattleCockpit.cpp" />
+    <ClCompile Include="src\Overlay\HealthReadout.cpp" />
     <ClCompile Include="src\Overlay\Window\StagesPanel.cpp" />
     <ClCompile Include="src\Overlay\Window\StagesWindow.cpp" />
     <ClCompile Include="src\Game\OstPac.cpp" />
@@ -391,6 +394,9 @@
     <ClInclude Include="src\Game\StageThumb.h" />
     <ClInclude Include="src\Game\StageObjects.h" />
     <ClInclude Include="src\Game\StageCards.h" />
+    <ClInclude Include="src\Game\PlayerHealth.h" />
+    <ClInclude Include="src\Game\BattleCockpit.h" />
+    <ClInclude Include="src\Overlay\HealthReadout.h" />
     <ClInclude Include="src\Overlay\Window\StagesPanel.h" />
     <ClInclude Include="src\Overlay\Window\StagesWindow.h" />
     <ClInclude Include="src\Game\OstPac.h" />

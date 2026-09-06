@@ -27,6 +27,7 @@ struct Player
 {
 	int chara = -1;
 	bool tried = false;
+	bool dressedHere = false;
 	unsigned generation = 0;
 	char worn[PaletteFile::kNameLength + 8] = {};
 };
@@ -222,6 +223,7 @@ void Dress(int player, int chara)
 	}
 
 	++g_players[player].generation;
+	g_players[player].dressedHere = true;
 	LOG("palettes: p%d is wearing '%s' again", player, file);
 }
 
@@ -231,6 +233,7 @@ void Undress(int player, int chara)
 
 	entry.chara = chara;
 	entry.tried = false;
+	entry.dressedHere = false;
 
 	PalettePaint::Clear(player);
 	EffectPaint::Clear(player);
@@ -253,7 +256,16 @@ void Follow(int player)
 	if (chara != entry.chara)
 		Undress(player, chara);
 
-	if (entry.tried || !PaletteControl::CanEdit(player))
+	const bool mine = PaletteControl::CanEdit(player);
+
+	if (entry.dressedHere && !mine)
+	{
+		LOG("palettes: p%d turned out not to be ours, so what this machine put on came off", player);
+		Undress(player, chara);
+		return;
+	}
+
+	if (entry.tried || !mine)
 		return;
 
 	entry.tried = true;

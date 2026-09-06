@@ -3,6 +3,8 @@
 #include "Core/Settings.h"
 #include "Core/interfaces.h"
 #include "Core/logger.h"
+#include "D3D9/DeviceHooks.h"
+#include "D3D9/SceneScale.h"
 #include "Game/EngineQuality.h"
 #include "Game/PresentSize.h"
 #include "Game/PumpWait.h"
@@ -29,16 +31,19 @@ constexpr Preset kPresets[PotatoMode::Level_COUNT] = {
 	},
 	{
 		"Balanced",
-		"Draws at 960x540 and stretches that to your window, drops the back buffer's anti-aliasing "
-		"- which a Direct3D 9 texture cannot use anyway - and waits on the frame handshake instead "
-		"of on the clock. Slightly soft.",
+		"Draws at 960x540 and stretches that up, drops the back buffer's anti-aliasing - which a "
+		"Direct3D 9 texture cannot use anyway - and waits on the frame handshake instead of on the "
+		"clock. In exclusive fullscreen the scene targets carry the size instead, because a back "
+		"buffer there can only be a size the monitor lists. Slightly soft.",
 		960, 540, false, true, true, false,
 	},
 	{
 		"Potato",
-		"Draws at the size chosen below and stretches that to your window, whatever size the window "
+		"Draws at the size chosen below and stretches that up, whatever the window or the monitor "
 		"is, and turns off Character Visual Improvements: nine palette lookups per character pixel "
-		"for a blur one screen pixel wide. Visibly soft, and the stage still draws.",
+		"for a blur one screen pixel wide. In exclusive fullscreen the scene targets carry the size, "
+		"since a back buffer there can only be a size the monitor lists. Visibly soft, and the "
+		"stage still draws.",
 		0, 0, true, true, true, true,
 	},
 };
@@ -52,6 +57,59 @@ struct Snapshot
 };
 
 Snapshot g_before = {};
+
+bool g_scaleHeld = false;
+int g_scaleUser = 100;
+int g_scaleWanted = 0;
+
+int ScenePercentFor(int level)
+{
+	if (level == PotatoMode::Level_Balanced)
+		return 75;
+
+	if (level != PotatoMode::Level_Potato)
+		return 100;
+
+	const int percent = PotatoMode::GetHeight() * 100 / 720;
+
+	return percent < 20 ? 20 : percent;
+}
+
+bool ExclusiveFullscreen()
+{
+	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
+
+	return present.BackBufferWidth != 0 && present.Windowed == FALSE;
+}
+
+void FollowDisplayMode()
+{
+	const bool wanted = PotatoMode::IsActive() && ExclusiveFullscreen();
+	const int percent = wanted ? ScenePercentFor(PotatoMode::GetLevel()) : 0;
+
+	if (wanted == g_scaleHeld && percent == g_scaleWanted)
+		return;
+
+	if (wanted)
+	{
+		if (!g_scaleHeld)
+			g_scaleUser = g_modVals.sceneScalePercent;
+
+		g_modVals.sceneScalePercent = percent;
+	}
+	else
+	{
+		g_modVals.sceneScalePercent = g_scaleUser;
+	}
+
+	g_scaleHeld = wanted;
+	g_scaleWanted = percent;
+
+	LOG("[PotatoMode] %s display, scene scale %d%%",
+		wanted ? "exclusive fullscreen" : "windowed or off", g_modVals.sceneScalePercent);
+
+	SceneScale::Apply();
+}
 
 int ClampLevel(int level)
 {
@@ -160,6 +218,7 @@ void PotatoMode::ApplySaved()
 void PotatoMode::OnFrame()
 {
 	EngineQuality::OnFrame();
+	FollowDisplayMode();
 }
 
 int PotatoMode::ClampHeight(int height)

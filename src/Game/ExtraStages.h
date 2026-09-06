@@ -22,6 +22,8 @@ namespace ExtraStages
 
 	void SetUnlocked(int number, bool unlocked);
 
+	int LoadedStage();
+
 	bool Ready();
 	const char* StatusText();
 }

@@ -346,6 +346,17 @@ namespace GameOffsets
 	constexpr uintptr_t kComboViewValue = 0x2c;
 	constexpr uintptr_t kCharaSideIndex = 0x438;
 
+	constexpr uintptr_t kPlayerDataHp = 0x8c;
+	constexpr uintptr_t kPlayerDataHpTrailing = 0x90;
+	constexpr uintptr_t kPlayerDataHpRecord = 0x84c;
+	constexpr uintptr_t kHpRecordFirstSegment = 0x10;
+	constexpr int kHpRecordSegments = 5;
+
+	constexpr uintptr_t kBattleCockpit = 0x6449f0;
+	constexpr uintptr_t kCockpitView = 0x4;
+	constexpr uint32_t kCockpitViewShown = 0;
+	constexpr uint32_t kCockpitViewHidden = 1;
+
 	constexpr uintptr_t kDummyState = 0x1a648e0;
 	constexpr uintptr_t kDummyStateB = 0x1a648e4;
 	constexpr uintptr_t kDummyStateC = 0x1a648e8;

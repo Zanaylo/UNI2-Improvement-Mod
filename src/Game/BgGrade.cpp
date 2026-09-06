@@ -9,6 +9,7 @@
 #include "Game/ModFiles.h"
 #include "Game/StageImport.h"
 #include "Hooks/HookManager.h"
+#include "Training/FrameStepper.h"
 
 #include <Windows.h>
 #include <d3d9.h>
@@ -220,6 +221,7 @@ void BgGrade::Set(int stage, const Grade& grade)
 
 	g_cache[stage] = grade;
 	InterlockedExchange(&g_dirty, 1);
+	FrameStepper::RequestRepaint();
 }
 
 void BgGrade::Forget(int stage)

@@ -296,6 +296,23 @@ const ExtraStages::Stage* ExtraStages::Get(int index)
 	return &g_stages[index];
 }
 
+int ExtraStages::LoadedStage()
+{
+	const uintptr_t address = RvaToAddress(GameOffsets::kBgLoadedIndex);
+
+	if (!IsAddressInGameModule(address))
+		return -1;
+
+	uint32_t value = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(address), value))
+		return -1;
+
+	const int stage = static_cast<int>(value);
+
+	return stage >= 0 && stage < 100 ? stage : -1;
+}
+
 void ExtraStages::SetUnlocked(int number, bool unlocked)
 {
 	const auto found = std::find_if(g_stages.begin(), g_stages.end(),

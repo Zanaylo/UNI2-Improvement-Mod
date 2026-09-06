@@ -13,6 +13,7 @@ SETTING_STRING(freezeFrameKey,      "Keybinds", "FreezeFrame",          "F5")
 SETTING_STRING(stepForwardKey,      "Keybinds", "StepForward",          "F6")
 SETTING_STRING(nextPaletteKey,      "Keybinds", "NextPalette",          "F8")
 SETTING_STRING(prevPaletteKey,      "Keybinds", "PreviousPalette",      "F7")
+SETTING_STRING(hideHudKey,          "Keybinds", "HideHud",              "")
 
 // The fighting game shortcut: hold this and press the bound key. A keyboard bind asks for it by
 // carrying an "Fn+" prefix - "Fn+F8" - and a bind without the prefix is ignored while it is held, so
@@ -29,9 +30,21 @@ SETTING_STRING(padFreezeFrame,      "PadKeybinds", "FreezeFrame",       "X")
 SETTING_STRING(padStepForward,      "PadKeybinds", "StepForward",       "Y")
 SETTING_STRING(padNextPalette,      "PadKeybinds", "NextPalette",       "DPad Right")
 SETTING_STRING(padPrevPalette,      "PadKeybinds", "PreviousPalette",   "DPad Left")
+SETTING_STRING(padHideHud,          "PadKeybinds", "HideHud",           "")
 
 // 0 = Tick stop, 1 = Hitstun Stop. See src/Training/FrameStepper.h for the trade-off between them.
 SETTING_INT(freezeMode,             "Training", "FreezeMode",           0)
+
+// The exact numbers under each health bar. Off online, where knowing to the point whether a combo
+// kills is more than the bars themselves say. The two offsets nudge the text in pixels.
+SETTING_INT(showHealthValues,       "Training", "ShowHealthValues",     0)
+SETTING_INT(healthValuesX,          "Training", "HealthValuesX",        0)
+SETTING_INT(healthValuesY,          "Training", "HealthValuesY",        0)
+SETTING_INT(healthValuesScale,      "Training", "HealthValuesScale",  100)
+
+// The game's own gauge visibility, the field Cockpit_SetView writes. Held while a match runs, so a
+// move that shows the gauges again does not undo it.
+SETTING_INT(hideBattleHud,          "Training", "HideHud",              0)
 
 // Bit field: 1 watch P1, 2 watch P2, 4 stop on attacks, 8 stop on armoured moves. A file written
 // before the triggers existed carries only the player bits and is read as "stop on attacks".

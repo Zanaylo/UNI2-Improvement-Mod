@@ -4,6 +4,7 @@
 #include "Core/ProcessTuning.h"
 #include "Core/info.h"
 #include "Core/Hotkeys.h"
+#include "Game/BattleCockpit.h"
 #include "Core/interfaces.h"
 #include "Core/PadInput.h"
 #include "Core/keycodes.h"
@@ -378,6 +379,9 @@ void WindowManager::HandleHotkeys()
 
 	if (Hotkeys::Pressed(Hotkeys::Action_PreviousPalette))
 		PaletteChoice::Step(PaletteChoice::LocalPlayer(), -1);
+
+	if (Hotkeys::Pressed(Hotkeys::Action_HideHud))
+		BattleCockpit::SetHidden(!BattleCockpit::IsHidden());
 }
 
 

@@ -22,6 +22,7 @@ struct ModValues
 	int stepForwardKey;
 	int nextPaletteKey;
 	int prevPaletteKey;
+	int hideHudKey;
 	int functionKey;
 
 	bool checkForUpdates;
@@ -29,6 +30,12 @@ struct ModValues
 	int freezeMode;
 	bool blockGameMouse;
 	bool drawWhilePaused;
+
+	int showHealthValues;
+	int healthValuesX;
+	int healthValuesY;
+	int healthValuesScale;
+	int hideBattleHud;
 
 	int autoPauseMode;
 	int autoPauseComboStops[4];

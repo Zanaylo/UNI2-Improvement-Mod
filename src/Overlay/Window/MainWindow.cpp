@@ -20,6 +20,8 @@
 #include "Game/OnlineState.h"
 #include "Network/PaletteShare.h"
 #include "Overlay/FrameMeterHud.h"
+#include "Overlay/HealthReadout.h"
+#include "Game/BattleCockpit.h"
 #include "Overlay/ComboNav.h"
 #include "Overlay/NotificationBar.h"
 #include "Overlay/Window/HitboxOverlay.h"
@@ -887,6 +889,26 @@ void MainWindow::DrawHitboxControls()
 
 	ImGui::SameLine();
 	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.toggleFrameMeterKey));
+
+	bool healthVisible = HealthReadout::IsVisible();
+	if (ImGui::Checkbox("Health values", &healthVisible))
+		HealthReadout::SetVisible(healthVisible);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("The exact numbers under each health bar, and what the trailing bar still "
+			"has left to lose. Offline only.");
+	}
+
+	bool hudHidden = BattleCockpit::IsHidden();
+	if (ImGui::Checkbox("Hide the HUD", &hudHidden))
+		BattleCockpit::SetHidden(hudHidden);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Takes the gauges, the timer and the round markers off the screen the way "
+			"the game itself does for a cinematic. The health values above are drawn either way.");
+	}
 }
 
 void MainWindow::DrawHitboxTypeControls()

@@ -126,9 +126,13 @@ bool RetrySteam()
 
 int g_statusStamp = -1;
 
+int ReadOwnSide();
+
 void UpdateStatus()
 {
-	const int stamp = (g_sentCount << 4) | (g_receivedCount << 2) |
+	const int seat = ReadOwnSide();
+
+	const int stamp = (g_sentCount << 6) | (g_receivedCount << 4) | ((seat + 1) << 2) |
 		(SteamNetwork::IsReady() ? 2 : 0) | (SteamNetwork::HasPeer() ? 1 : 0);
 
 	if (stamp == g_statusStamp)
@@ -136,8 +140,15 @@ void UpdateStatus()
 
 	g_statusStamp = stamp;
 
-	sprintf_s(g_status, "%s, sent %d, received %d%s",
-		SteamNetwork::IsReady() ? "Steam ready" : "no Steam",
+	char seatText[32] = {};
+
+	if (seat < 0)
+		strncpy_s(seatText, "seat unreadable - both sides count as yours", _TRUNCATE);
+	else
+		sprintf_s(seatText, "you are p%d", seat + 1);
+
+	sprintf_s(g_status, "%s, %s, sent %d, received %d%s",
+		SteamNetwork::IsReady() ? "Steam ready" : "no Steam", seatText,
 		g_sentCount, g_receivedCount,
 		SteamNetwork::HasPeer() ? "" : ", no peer yet");
 }
@@ -447,6 +458,28 @@ void Receive()
 		HandlePacket(buffer, size, from);
 }
 
+void DropStaleForeign()
+{
+	for (int side = 0; side < 2; ++side)
+	{
+		if (!g_remote[side].valid)
+			continue;
+
+		const int chara = PaletteMemory::GetCharaNumber(side);
+
+		if (chara < 0 || chara == g_remote[side].chara)
+			continue;
+
+		PalettePaint::ClearRemote(side);
+		EffectPaint::ClearRemote(side);
+
+		PaletteTrace::Note("p%d changed character, so '%s' from the other player was dropped",
+			side, g_remote[side].name);
+
+		g_remote[side] = {};
+	}
+}
+
 void ForgetForeign()
 {
 	for (int side = 0; side < 2; ++side)
@@ -531,6 +564,8 @@ void PaletteShare::OnFrame()
 
 	if (!inMatch)
 		return;
+
+	DropStaleForeign();
 
 	++g_frames;
 

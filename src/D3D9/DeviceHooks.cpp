@@ -26,6 +26,7 @@
 #include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
 #include "Game/BgGrade.h"
+#include "Game/BattleCockpit.h"
 #include "Game/StageCards.h"
 #include "Game/StageImport.h"
 #include "Game/VoiceImport.h"
@@ -54,6 +55,7 @@
 #include "Palette/PaletteTexture.h"
 #include "Screens/ScreenDirector.h"
 #include "Overlay/FrameMeterHud.h"
+#include "Overlay/HealthReadout.h"
 #include "Training/PlayerControl.h"
 #include "Overlay/WindowManager.h"
 #include "Training/FrameStepper.h"
@@ -339,6 +341,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			OstImport::Update();
 			StageImport::Update();
 			BgGrade::Update();
+			BattleCockpit::Update();
 			StageCards::OnFrame();
 			VoiceImport::Update();
 			SoundpackTransfer::Update();
@@ -377,6 +380,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			Profiler::Scope scope(Profiler::Section_PresentMeterHud);
 			ScreenDirector::Render(device);
 			FrameMeterHud::Render(device);
+			HealthReadout::Render(device);
 		}
 
 		{

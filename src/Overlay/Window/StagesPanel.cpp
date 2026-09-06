@@ -4,7 +4,6 @@
 #include "Game/ExtraStages.h"
 #include "Game/FbGameFolder.h"
 #include "Game/GameRestart.h"
-#include "Game/StageCards.h"
 #include "Game/StageImport.h"
 #include "Game/StageObjects.h"
 #include "Overlay/UiScale.h"
@@ -27,6 +26,8 @@ constexpr float kActionColumn = 150.0f;
 constexpr float kCheckboxGap = 24.0f;
 constexpr float kPortedHeight = 300.0f;
 constexpr float kGradeColumn = 110.0f;
+
+const ImVec4 kPlayingText(0.45f, 0.90f, 0.50f, 1.0f);
 
 void Megabytes(uint32_t bytes, char* out, size_t size)
 {
@@ -52,8 +53,6 @@ void Gather(std::vector<Listed>& out)
 		if (stage == nullptr)
 			continue;
 
-		// The record table is read once, on the way in, so it still holds the ports that were
-		// installed at startup. Those slots belong to the port list, which is live.
 		if (stage->number >= StageImport::kFirstNumber && stage->number <= StageImport::kLastNumber)
 			continue;
 
@@ -423,16 +422,24 @@ void StagesPanel::DrawPorted()
 	std::vector<Listed> rows;
 	Gather(rows);
 
+	const int playing = ExtraStages::LoadedStage();
+
 	for (const Listed& row : rows)
 	{
 		ImGui::PushID(row.number);
 		ImGui::TableNextRow();
 
+		const bool inMatch = row.number == playing;
+
 		ImGui::TableNextColumn();
 		ImGui::Text("%d", row.number);
 
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(row.name.c_str());
+
+		if (inMatch)
+			ImGui::TextColored(kPlayingText, "%s", row.name.c_str());
+		else
+			ImGui::TextUnformatted(row.name.c_str());
 
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("%s", row.from.c_str());
@@ -485,11 +492,6 @@ void StagesPanel::DrawPorted()
 
 	if (!BgGrade::Reached())
 		UiText::Warn("Colour: %s", BgGrade::StatusText());
-
-	if (StageCards::Reached())
-		UiText::Muted("Cards: %s", StageCards::StatusText());
-	else
-		UiText::Warn("Cards: %s", StageCards::StatusText());
 
 	if (StageObjects::Loads() == 0)
 		return;

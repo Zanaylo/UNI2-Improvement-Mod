@@ -228,6 +228,15 @@
     <ClCompile Include="src\Game\StageCards.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\PlayerHealth.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BattleCockpit.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\HealthReadout.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
     <ClCompile Include="src\Overlay\Window\StagesPanel.cpp">
       <Filter>Overlay\Window</Filter>
     </ClCompile>
@@ -997,6 +1006,15 @@
     </ClInclude>
     <ClInclude Include="src\Game\StageCards.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\PlayerHealth.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BattleCockpit.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\HealthReadout.h">
+      <Filter>Overlay</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Window\StagesPanel.h">
       <Filter>Overlay\Window</Filter>
