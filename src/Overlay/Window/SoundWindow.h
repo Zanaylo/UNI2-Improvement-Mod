@@ -18,6 +18,7 @@ protected:
 private:
 	void DrawReplace();
 	void DrawPacks();
+	void DrawRemovePack();
 	void DrawHowTo();
 
 	void DrawPicker();
@@ -43,6 +44,7 @@ private:
 	std::vector<int> m_visible;
 
 	std::string m_exporting;
+	std::string m_removing;
 	int m_replacing = -1;
 	int m_wanted = -1;
 	int m_chara = 0;

@@ -57,6 +57,8 @@ namespace SoundPacks
 
 	std::vector<Entry> Snapshot();
 
+	bool Remove(const std::string& id, char* status, int statusSize);
+
 	bool Export(const std::string& id, const std::string& target, char* status, int statusSize);
 	bool Import(const std::string& archive, char* status, int statusSize);
 

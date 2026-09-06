@@ -83,8 +83,9 @@ is what makes it a writer and not just a parser.
 
 ## Blender
 
-**`io_scene_fbxex.zip`**, shipped with the mod, is a Blender add-on that reads **and writes**
-`bg.fbx.bin`.
+**`io_scene_fbxex.zip`** is a Blender add-on that reads **and writes** `bg.fbx.bin`. It is not in
+the mod's download - it lives in the source repository, under `resource\blender`, next to a README
+covering the same ground as this page.
 
 **Install the zip, not a loose `.py`.** Blender 4.2 replaced add-ons with extensions, and **Install
 from Disk** wants a zip with a manifest in it - handed a bare script it either does nothing or

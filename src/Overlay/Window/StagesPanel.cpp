@@ -182,6 +182,12 @@ void StagesPanel::Draw()
 			ImGui::EndTabItem();
 		}
 
+		if (ImGui::BeginTabItem("Help"))
+		{
+			DrawHelp();
+			ImGui::EndTabItem();
+		}
+
 		ImGui::EndTabBar();
 	}
 
@@ -240,10 +246,9 @@ void StagesPanel::DrawHidden()
 void StagesPanel::DrawSource()
 {
 	UiText::Muted("Take a stage from another game you own");
-	UiText::Help("Pick the folder that holds MBTL.exe, UNIclr.exe or UNIst.exe. Those games store "
-		"a stage the same way UNI2 does, so the mod reads one out of your own copy and installs it "
-		"as a stage of its own - it does not replace anything the game ships. Nothing is "
-		"downloaded. MBAACC is not offered: its backgrounds are sprite layers, not models.");
+	UiText::Help("Pick the folder holding MBTL.exe, UNIclr.exe, UNIst.exe or DFCI. The stage is "
+		"copied out of your own install into a free stage number. Nothing the game ships is "
+		"replaced and nothing is downloaded. MBAACC is not offered - its backgrounds are 2D.");
 
 	ImGui::BeginDisabled(StageImport::IsBusy());
 
@@ -282,10 +287,9 @@ void StagesPanel::DrawSource()
 void StagesPanel::DrawCustom()
 {
 	UiText::Muted("Install a stage of your own");
-	UiText::Help("A folder holding a stage's own files - `bg.fbx.bin`, its textures, and the "
-		"`stage.txt` the mod writes beside every stage it installs. That is what comes out of "
-		"editing a stage in Blender, and it is also exactly what one of the mod's own stage "
-		"folders looks like, so a folder copied out of Mods\bg and edited goes straight back in.");
+	UiText::Help("Pick a folder holding bg.fbx.bin, its .dds textures and a stage.txt naming the "
+		"stage. That is what Blender produces, and what every installed stage looks like in "
+		"Mods\\bg - copy one out, edit it, bring it back.");
 
 	ImGui::BeginDisabled(StageImport::IsBusy());
 
@@ -500,6 +504,61 @@ void StagesPanel::DrawPorted()
 		UiText::Muted("Object layer: %s", StageObjects::StatusText());
 	else
 		UiText::Warn("Object layer: %s", StageObjects::StatusText());
+}
+
+void StagesPanel::DrawHelp()
+{
+	ImGui::SeparatorText("The two tabs");
+
+	UiText::Muted("Installed Stages is everything you can pick in the game. Add stages is where "
+		"new ones come from.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Adding a stage");
+
+	UiText::Muted("From another French-Bread game you own: MELTY BLOOD: TYPE LUMINA, UNI[st], "
+		"UNI[cl-r] or DFCI. Or import a folder you made in Blender.");
+
+	UiText::Muted("Nothing is downloaded and nothing the game ships is replaced.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("New stages need a restart");
+
+	UiText::Muted("The game reads its stage list once, at startup. A button appears at the bottom "
+		"when a restart is due. Colour is the exception and applies at once.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Lift and Contrast");
+
+	UiText::Muted("Lift is flat light added to the whole stage. Raise it and the stage washes out, "
+		"lower it and the blacks deepen.");
+
+	UiText::Muted("Contrast scales the colour on top of that.");
+
+	UiText::Muted("Both apply immediately, mid-match included. Default puts one stage back, so "
+		"nothing you do here can be lost.");
+
+	UiText::Muted("DFCI ports start on different numbers than the rest. That is deliberate - it is "
+		"what matches their colours to DFCI.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("The list");
+
+	UiText::Muted("A green name is the stage playing right now.");
+	UiText::Muted("Remove only appears on stages you added. The game's own can be recoloured but "
+		"not removed.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Online");
+
+	UiText::Muted("Stages are picture only, so they change nothing about how a match plays and the "
+		"other player does not need yours. Colour is never sent.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Blender");
+
+	UiText::Muted("The add-on that opens and saves a stage is in the mod's source repository, "
+		"under resource\\blender, with a README next to it.");
 }
 
 void StagesPanel::DrawRestart()

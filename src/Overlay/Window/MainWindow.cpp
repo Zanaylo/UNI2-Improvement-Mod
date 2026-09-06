@@ -145,13 +145,13 @@ void MainWindow::Draw()
 	ImGui::Separator();
 	DrawSoundSection();
 	ImGui::Separator();
+	DrawStagesSection();
+	ImGui::Separator();
 	DrawPerformanceSection();
 	ImGui::Separator();
 	DrawPatchSection();
 	ImGui::Separator();
 	DrawThemeSection();
-	ImGui::Separator();
-	DrawStagesSection();
 	ImGui::Separator();
 	DrawConfigSection();
 }

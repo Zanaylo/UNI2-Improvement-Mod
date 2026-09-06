@@ -22,6 +22,7 @@ private:
 	void DrawOffers();
 	void DrawOfferRow(int index);
 	void DrawPorted();
+	void DrawHelp();
 	void DrawRestart();
 
 	void SyncRows();

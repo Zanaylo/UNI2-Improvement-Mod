@@ -9,6 +9,7 @@ namespace VoiceImport
 		Source_None,
 		Source_UniLoose,
 		Source_UniArchive,
+		Source_VoiceMod,
 	};
 
 	Source Detect(const char* folder);

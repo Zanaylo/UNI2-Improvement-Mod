@@ -22,6 +22,7 @@ constexpr const char* kZipFilter = "Sound pack (*.zip)\0*.zip\0All files\0*.*\0"
 constexpr const char* kAudioFilter =
 	"Sound (*.ogg;*.wav;*.mp3)\0*.ogg;*.wav;*.mp3\0All files\0*.*\0";
 constexpr const char* kNewPackPopup = "Make a pack";
+constexpr const char* kRemovePackPopup = "Remove the pack";
 
 const SoundPacks::Pack* PackById(const char* id)
 {
@@ -388,16 +389,19 @@ void SoundWindow::DrawGetVoice()
 
 	ImGui::BeginDisabled(VoiceImport::IsBusy());
 
-	if (ImGui::Button("Get this voice from UNI...") && !m_uni.IsRunning())
-		m_uni.BeginFolder("Pick the UNDER NIGHT IN-BIRTH folder to take the voice from");
+	if (ImGui::Button("Get this voice from UNI or a mod...") && !m_uni.IsRunning())
+		m_uni.BeginFolder("Pick an UNDER NIGHT IN-BIRTH folder or a voice mod folder");
 
 	ImGui::EndDisabled();
 
 	ImGui::SameLine();
-	UiText::Help("Point this at the folder holding UNIclr.exe, UNIst.exe or UNIEL.exe and the mod "
-		"reads that game's voice for the character above out of your own copy, matching each line "
-		"by the text the game itself writes beside it. It lands as a pack of its own, worn by that "
-		"character and nobody else, and running it again replaces what it added.");
+	UiText::Help("Two things fit here. A folder holding UNIclr.exe, UNIst.exe or UNIEL.exe, and "
+		"the mod reads that game's voice for the character above out of your own copy, matching "
+		"each line by the text the game itself writes beside it. Or a voice mod for this game - "
+		"the kind you would drop into the game folder, with an se folder in it - and the mod takes "
+		"that character's sounds out of it instead of you moving files around. Either way it lands "
+		"as a pack of its own, worn by that character and nobody else, and running it again "
+		"replaces what it added.");
 
 	if (VoiceImport::IsBusy())
 	{
@@ -452,6 +456,7 @@ void SoundWindow::DrawReplace()
 void SoundWindow::DrawChooser(const char* label)
 {
 	const char* const current = SoundPacks::ChoiceFor(m_chara);
+	const bool missing = current[0] != '\0' && PackById(current) == nullptr;
 
 	std::vector<const SoundPacks::Pack*> offered;
 
@@ -471,9 +476,12 @@ void SoundWindow::DrawChooser(const char* label)
 			at = static_cast<int>(i) + 1;
 	}
 
+	if (missing)
+		at = -1;
+
 	int picked = at;
 
-	if (ImGui::BeginCombo(label, LabelFor(current)))
+	if (ImGui::BeginCombo(label, missing ? kGame : LabelFor(current)))
 	{
 		if (ImGui::Selectable(kGame, at == 0))
 			picked = 0;
@@ -494,6 +502,36 @@ void SoundWindow::DrawChooser(const char* label)
 
 	SoundPacks::Choose(m_chara, picked == 0 ? std::string() : offered[picked - 1]->id);
 	CharaSounds::Restate();
+}
+
+void SoundWindow::DrawRemovePack()
+{
+	if (!ImGui::BeginPopupModal(kRemovePackPopup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		return;
+
+	ImGui::TextUnformatted("Delete this pack and everything in it?");
+	UiText::Muted("%s", m_removing.c_str());
+	ImGui::Spacing();
+	UiText::Muted("The game's own sounds are not touched. Anyone wearing it goes back to them.");
+	ImGui::Spacing();
+
+	if (ImGui::Button("Delete", Ui::Scaled(110.0f, 0.0f)))
+	{
+		SoundPacks::Remove(m_removing, m_status, sizeof(m_status));
+		m_removing.clear();
+		Reload();
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Cancel", Ui::Scaled(110.0f, 0.0f)))
+	{
+		m_removing.clear();
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::EndPopup();
 }
 
 void SoundWindow::DrawPacks()
@@ -574,6 +612,19 @@ void SoundWindow::DrawPacks()
 			m_exporting = pack->id;
 			m_export.BeginSave("Save the pack", kZipFilter, (pack->id + ".zip").c_str());
 		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Remove"))
+		{
+			m_removing = pack->id;
+			ImGui::OpenPopup(kRemovePackPopup);
+		}
+
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Deletes this pack from the mod. The game's own sounds are untouched.");
+
+		DrawRemovePack();
 
 		ImGui::PopID();
 	}

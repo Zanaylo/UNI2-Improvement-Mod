@@ -411,6 +411,71 @@ void ScanPack(const std::string& folder, const std::string& id, std::vector<Conv
 	g_packs.push_back(pack);
 }
 
+void RemoveTree(const std::string& folder)
+{
+	WIN32_FIND_DATAA found = {};
+	const HANDLE search = FindFirstFileA(FileIndex::Join(folder, "*").c_str(), &found);
+
+	if (search == INVALID_HANDLE_VALUE)
+		return;
+
+	do
+	{
+		if (found.cFileName[0] == '.')
+			continue;
+
+		const std::string child = FileIndex::Join(folder, found.cFileName);
+
+		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+			RemoveTree(child);
+		else
+			DeleteFileA(child.c_str());
+	}
+	while (FindNextFileA(search, &found));
+
+	FindClose(search);
+	RemoveDirectoryA(folder.c_str());
+}
+
+bool Present(const std::string& id)
+{
+	if (id.empty())
+		return true;
+
+	for (const SoundPacks::Pack& pack : g_packs)
+	{
+		if (pack.id == id)
+			return true;
+	}
+
+	return false;
+}
+
+void DropMissingChoices()
+{
+	std::lock_guard<std::mutex> guard(g_lock);
+
+	for (size_t i = 0; i < g_choices.size(); ++i)
+	{
+		if (Present(g_choices[i]))
+			continue;
+
+		LOG("SoundPacks: %s wore '%s', which is not there any more", CharaTables::Name(
+			static_cast<int>(i)), g_choices[i].c_str());
+
+		Settings::SaveString(kSection, CharaKey(static_cast<int>(i)).c_str(), "");
+		g_choices[i].clear();
+	}
+
+	if (Present(g_shared))
+		return;
+
+	LOG("SoundPacks: the shared pack '%s' is not there any more", g_shared.c_str());
+
+	Settings::SaveString(kSection, kSharedKey, "");
+	g_shared.clear();
+}
+
 }
 
 void SoundPacks::Scan()
@@ -457,6 +522,8 @@ void SoundPacks::Scan()
 	}
 
 	LOG("SoundPacks: %s from %s", g_status, root.c_str());
+
+	DropMissingChoices();
 
 	StartWorker(jobs);
 	InterlockedIncrement(&g_revision);
@@ -633,6 +700,39 @@ std::vector<SoundPacks::Entry> SoundPacks::Snapshot()
 	}
 
 	return out;
+}
+
+bool SoundPacks::Remove(const std::string& id, char* status, int statusSize)
+{
+	if (id.empty())
+	{
+		strncpy_s(status, statusSize, "no pack chosen", _TRUNCATE);
+		return false;
+	}
+
+	const std::string folder = FolderOf(id);
+
+	if (GetFileAttributesA(folder.c_str()) == INVALID_FILE_ATTRIBUTES)
+	{
+		sprintf_s(status, statusSize, "'%s' is not on disk any more", id.c_str());
+		Scan();
+		return false;
+	}
+
+	RemoveTree(folder);
+
+	if (GetFileAttributesA(folder.c_str()) != INVALID_FILE_ATTRIBUTES)
+	{
+		sprintf_s(status, statusSize, "'%s' could not be deleted - a file in it may be open",
+			id.c_str());
+		return false;
+	}
+
+	sprintf_s(status, statusSize, "'%s' was deleted", id.c_str());
+	LOG("SoundPacks: %s", status);
+
+	Scan();
+	return true;
 }
 
 bool SoundPacks::Export(const std::string& id, const std::string& target, char* status,
