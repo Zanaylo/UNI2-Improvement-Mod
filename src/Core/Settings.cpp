@@ -552,7 +552,6 @@ void Settings::ApplySettings()
 	g_modVals.republishPingLocation = g_settings.republishPingLocation != 0;
 	g_modVals.netplayDiagnostics = g_settings.netplayDiagnostics != 0;
 	g_modVals.sharePalettes = g_settings.sharePalettes != 0;
-	g_modVals.unloadPatchOnline = g_settings.unloadPatchOnline != 0;
 
 	g_modVals.memoryDebugEnabled = g_settings.memoryDebugEnabled != 0;
 	g_modVals.profilerEnabled = g_settings.profilerEnabled != 0;

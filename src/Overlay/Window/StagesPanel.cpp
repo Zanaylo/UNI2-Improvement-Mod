@@ -53,13 +53,13 @@ void Gather(std::vector<Listed>& out)
 		if (stage == nullptr)
 			continue;
 
-		if (stage->number >= StageImport::kFirstNumber && stage->number <= StageImport::kLastNumber)
-			continue;
+		const bool free = stage->number >= StageImport::kFirstNumber &&
+			stage->number <= StageImport::kLastNumber;
 
 		Listed row = {};
 		row.number = stage->number;
 		row.name = stage->name.empty() ? stage->folder : stage->name;
-		row.from = "the game's own, bg\\" + stage->folder;
+		row.from = std::string(free ? "yours, bg\\" : "the game's own, bg\\") + stage->folder;
 		row.ported = false;
 
 		out.push_back(row);
@@ -488,11 +488,14 @@ void StagesPanel::DrawPorted()
 	ImGui::EndTable();
 
 	UiText::Help("Colour is live: drag either one during a match and the background changes under "
-		"you. The game draws a background as lift + texture * contrast, so Lift is a flat amount "
-		"added to every pixel - raising it makes the whole stage brighter and flatter, and lowering "
-		"it deepens the blacks. UNI2 adds 0.10 to its own stages and paints them for it; DFCI adds "
-		"nothing and draws its textures as they are, so a DFCI port starts at 0.00 lift with the "
-		"contrast that puts the two games' output back on top of each other.");
+		"you. The game draws a background as lift + texture * vertex colour * contrast, so Lift is "
+		"a flat amount added to every pixel - raising it makes the whole stage brighter and "
+		"flatter, and lowering it deepens the blacks. Contrast multiplies, which is the one that "
+		"makes a dark stage brighter without washing out its blacks: a vertex colour cannot go "
+		"above 1, and this is where the rest of the range lives. UNI2 adds 0.10 to its own stages "
+		"and paints them for it; DFCI adds nothing and draws its textures as they are, so a DFCI "
+		"port starts at 0.00 lift with the contrast that puts the two games' output back on top of "
+		"each other.");
 
 	if (!BgGrade::Reached())
 		UiText::Warn("Colour: %s", BgGrade::StatusText());

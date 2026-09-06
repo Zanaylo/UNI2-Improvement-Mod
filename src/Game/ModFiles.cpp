@@ -5,6 +5,7 @@
 #include "Core/utils.h"
 #include "Game/DataSearchPath.h"
 #include "Game/GamePatches.h"
+#include "Game/ModPacks.h"
 #include "Game/SoundPacks.h"
 #include "Game/UserMusic.h"
 #include "Hooks/HookManager.h"
@@ -41,6 +42,7 @@ volatile long g_misses = 0;
 volatile long g_soundHits = 0;
 volatile long g_stageLines = 0;
 volatile long g_indexed = 0;
+volatile long g_own = 0;
 bool g_hasLanguageEntries = false;
 char g_languageRoot[32] = {};
 
@@ -50,6 +52,13 @@ constexpr long kLoggedStages = 400;
 constexpr int kFirstPortedStage = 28;
 
 constexpr const char* kProbeFolder = "Ask";
+constexpr DWORD kSettleMs = 500;
+
+HANDLE g_watch[2] = { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE };
+DWORD g_stirredAt = 0;
+bool g_stirred = false;
+bool g_packsStirred = false;
+bool g_slotsLogged = false;
 
 constexpr const char* kLanguageRoots[] = {
 	"___st", "___english", "___french", "___german", "___italian",
@@ -347,31 +356,44 @@ bool AnyLocalised(const FileIndex& index)
 	return false;
 }
 
-void ClaimSearchPath(int count)
+void ArmSearchPath()
 {
-	if (count == 0)
+	if (!DataSearchPath::IsSupported())
 	{
-		DataSearchPath::ReleaseOverrides();
+		LOG("ModFiles: this build has no data search path, so only the files the game opens by "
+			"name can be replaced");
 		return;
 	}
 
-	if (!DataSearchPath::IsSupported())
+	if (DataSearchPath::PointOverrides(GetModRootPath(kProbeFolder)))
 		return;
 
-	DataSearchPath::PointOverrides(GetModRootPath(kProbeFolder));
+	LOG("ModFiles: no search path slot was free, so only the files the game opens by name can be "
+		"replaced");
 }
 
 void Rebuild()
 {
+	FileIndex own;
+	own.Walk(g_root);
+
 	FileIndex built;
 
-	built.Walk(g_root);
+	ModPacks::Layer(built);
+
+	for (const FileIndex::Map::value_type& entry : own.Entries())
+		built.Add(entry.first, entry.second);
+
+	InterlockedExchange(&g_own, own.Count());
+
 	IndexUserMusic(built);
 	IndexSoundPacks(built);
 
 	const bool localised = AnyLocalised(built);
 
-	sprintf_s(g_status, "%d file(s) override the game", built.Count());
+	sprintf_s(g_status, DataSearchPath::OverridesArmed()
+		? "%d file(s) are read before the d archive"
+		: "%d file(s) override the game", built.Count());
 
 	AcquireSRWLockExclusive(&g_filesLock);
 	g_files.Swap(built);
@@ -381,7 +403,45 @@ void Rebuild()
 
 	InterlockedExchange(&g_indexed, count);
 
-	ClaimSearchPath(count);
+	DataSearchPath::HoldOverrides(count > 0);
+}
+
+void WatchFolder(int which, const std::string& folder)
+{
+	g_watch[which] = FindFirstChangeNotificationA(folder.c_str(), TRUE,
+		FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_SIZE |
+		FILE_NOTIFY_CHANGE_LAST_WRITE);
+
+	if (g_watch[which] != INVALID_HANDLE_VALUE)
+		return;
+
+	LOG("ModFiles: %s cannot be watched, so a file dropped in it needs a rescan", folder.c_str());
+}
+
+bool Stirred()
+{
+	bool stirred = false;
+
+	for (int i = 0; i < 2; ++i)
+	{
+		if (g_watch[i] == INVALID_HANDLE_VALUE ||
+			WaitForSingleObject(g_watch[i], 0) != WAIT_OBJECT_0)
+		{
+			continue;
+		}
+
+		FindNextChangeNotification(g_watch[i]);
+		g_packsStirred = g_packsStirred || i == 1;
+		stirred = true;
+	}
+
+	if (!stirred)
+		return false;
+
+	g_stirredAt = GetTickCount();
+	g_stirred = true;
+
+	return true;
 }
 
 }
@@ -406,6 +466,12 @@ bool ModFiles::Initialize()
 		CreateDirectoryA(g_root.c_str(), nullptr);
 
 	DataSearchPath::LogSlots("as the game left them");
+	ArmSearchPath();
+
+	ModPacks::Scan();
+
+	WatchFolder(0, g_root);
+	WatchFolder(1, ModPacks::Root());
 
 	UserMusic::Scan();
 	SoundPacks::Scan();
@@ -432,6 +498,9 @@ bool ModFiles::Initialize()
 		g_files.Clear();
 		ReleaseSRWLockExclusive(&g_filesLock);
 
+		InterlockedExchange(&g_indexed, 0);
+		DataSearchPath::HoldOverrides(false);
+
 		strncpy_s(g_status, "the file hooks could not be installed", _TRUNCATE);
 		LOG("ModFiles: %s", g_status);
 		return false;
@@ -445,8 +514,40 @@ bool ModFiles::Initialize()
 
 void ModFiles::Rescan()
 {
+	g_stirred = false;
+
+	if (g_packsStirred)
+	{
+		g_packsStirred = false;
+		ModPacks::Scan();
+	}
+
 	Rebuild();
 	LOG("ModFiles: %s", g_status);
+}
+
+void ModFiles::OnFrame()
+{
+	if (!g_slotsLogged)
+	{
+		g_slotsLogged = true;
+		DataSearchPath::LogSlots("once the game had booted");
+	}
+
+	if (Stirred())
+		return;
+
+	if (!g_stirred || GetTickCount() - g_stirredAt < kSettleMs)
+		return;
+
+	g_stirred = false;
+	LOG("ModFiles: the Mods folder changed");
+	Rescan();
+}
+
+int ModFiles::OwnCount()
+{
+	return static_cast<int>(g_own);
 }
 
 int ModFiles::Count()

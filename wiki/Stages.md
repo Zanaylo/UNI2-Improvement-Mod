@@ -84,6 +84,9 @@ They are stored under `[StageColour]` in the ini as `StageNN=lift,contrast`, and
 the port is removed, so a stage number that gets reused does not inherit the last one's colour. The
 game's own stages are not affected — they keep the 0.10 they were painted for.
 
+The order is: a DFCI port's pair first, then the game's own; anything you drag yourself sits on
+top.
+
 **Bloom is off on a DFCI port.** DFCI has no background bloom pass at all, and UNI2's is tuned for
 its own line-up, so a port used to carry a glow its source never had — with a green channel at
 0.3 against 0.5 for red and blue, which is a colour cast no black level or contrast can cancel.
@@ -117,6 +120,25 @@ probably sit at the wrong scale, so keep it.
 
 It is also what tells you which stage a folder called `bg052` is, in Explorer and in Blender - the
 add-on names its collection from it.
+
+### Making one brighter
+
+A stage that reads too dark is the commonest thing to hit, and **the vertex colours are not where to
+fix it**. The game draws a background as
+
+```
+lift + texture * vertex colour * contrast
+```
+
+and a vertex colour cannot go above 1 — Blender clamps it when the attribute is written, whatever
+you type. **Contrast is that same multiply with the rest of the range in it.** Contrast 2.0 is a
+vertex colour of 2.0, live, and no re-export.
+
+So: put the stage on screen, open **Stages**, and drag **Contrast** on its row until it looks right.
+Raise **Lift** only if the blacks need lifting too — it adds a flat amount to every pixel, so it
+brightens and flattens together.
+
+Nothing in `BgList.txt` reaches this. It has no brightness field.
 
 ### Two made for you
 

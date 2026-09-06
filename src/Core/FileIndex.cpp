@@ -99,6 +99,11 @@ void FileIndex::Add(const std::string& key, const std::string& path)
 	m_entries[key] = path;
 }
 
+void FileIndex::Remove(const std::string& key)
+{
+	m_entries.erase(key);
+}
+
 const std::string* FileIndex::Find(const std::string& key) const
 {
 	const auto found = m_entries.find(key);

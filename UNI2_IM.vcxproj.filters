@@ -186,6 +186,15 @@
     <ClCompile Include="src\Game\ModFiles.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\ModPacks.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\ModsPanel.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\ModsWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\OstImport.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -229,6 +238,9 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\PlayerHealth.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\CharaTint.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\BattleCockpit.cpp">
@@ -1008,6 +1020,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\PlayerHealth.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\CharaTint.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\BattleCockpit.h">

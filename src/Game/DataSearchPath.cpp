@@ -107,6 +107,8 @@ bool RestoreOriginal()
 
 std::string g_overridePrefix;
 int g_overrideSlot = -1;
+bool g_overridesHeld = false;
+bool g_patchHeld = false;
 
 int FreeSlot()
 {
@@ -222,6 +224,30 @@ bool WriteGate(bool on)
 	return true;
 }
 
+bool SyncGate()
+{
+	return WriteGate(g_patchHeld || g_overridesHeld || g_gateOriginal != 0);
+}
+
+void Reclaim()
+{
+	const int slot = FreeSlot();
+
+	if (slot < 0)
+	{
+		LOG("DataSearchPath: the game took slot %d and no other is free; loose files no longer "
+			"beat the d archive", g_overrideSlot);
+		g_overrideSlot = -1;
+		return;
+	}
+
+	LOG("DataSearchPath: the game took slot %d; the overrides move to slot %d", g_overrideSlot,
+		slot);
+
+	g_overrideSlot = slot;
+	WriteSlotAt(slot, g_overridePrefix);
+}
+
 }
 
 bool DataSearchPath::IsSupported()
@@ -233,17 +259,20 @@ bool DataSearchPath::Point(const std::string& prefix)
 {
 	SaveOriginal();
 	ClaimSilence(kOwnerPatch, true);
-	return WriteSlotAt(kPatchSlot, Separated(prefix)) && WriteGate(true);
+	g_patchHeld = true;
+
+	return WriteSlotAt(kPatchSlot, Separated(prefix)) && SyncGate();
 }
 
 bool DataSearchPath::Release()
 {
 	ClaimSilence(kOwnerPatch, false);
+	g_patchHeld = false;
 
 	if (!g_originalSaved)
 		return true;
 
-	return RestoreOriginal() && WriteGate(g_gateOriginal != 0 || !g_overridePrefix.empty());
+	return RestoreOriginal() && SyncGate();
 }
 
 bool DataSearchPath::PointOverrides(const std::string& prefix)
@@ -266,44 +295,51 @@ bool DataSearchPath::PointOverrides(const std::string& prefix)
 
 	g_overrideSlot = slot;
 	g_overridePrefix = separated;
-	ClaimSilence(kOwnerOverrides, true);
 
-	const bool ok = WriteSlotAt(slot, separated) && WriteGate(true);
+	const bool ok = WriteSlotAt(slot, separated);
 
-	LOG("DataSearchPath: slot %d now looks in %s for an overridden file", slot, separated.c_str());
+	LOG("DataSearchPath: slot %d now looks in %s before the d archive", slot, separated.c_str());
 
 	return ok;
 }
 
-bool DataSearchPath::ReleaseOverrides()
+bool DataSearchPath::HoldOverrides(bool hold)
 {
-	if (g_overridePrefix.empty() || g_overrideSlot < 0)
-		return true;
+	if (g_overrideSlot < 0 || hold == g_overridesHeld)
+		return false;
 
-	const int slot = g_overrideSlot;
+	g_overridesHeld = hold;
+	ClaimSilence(kOwnerOverrides, hold);
 
-	g_overridePrefix.clear();
-	g_overrideSlot = -1;
-	ClaimSilence(kOwnerOverrides, false);
+	return SyncGate();
+}
 
-	return WriteSlotAt(slot, std::string());
+bool DataSearchPath::OverridesArmed()
+{
+	return g_overrideSlot >= 0;
 }
 
 void DataSearchPath::Assert()
 {
-	if (g_overridePrefix.empty() || g_overrideSlot < 0)
+	if (g_overrideSlot < 0)
 		return;
 
 	const char* const slot = SlotAt(g_overrideSlot);
-	const unsigned char* const gate = Gate();
 
-	if (slot == nullptr || gate == nullptr)
+	if (slot == nullptr)
 		return;
 
-	if (_stricmp(slot, g_overridePrefix.c_str()) != 0)
+	if (slot[0] == '\0')
 		WriteSlotAt(g_overrideSlot, g_overridePrefix);
+	else if (_stricmp(slot, g_overridePrefix.c_str()) != 0)
+		Reclaim();
 
-	if (*gate == 0)
+	if (!g_overridesHeld)
+		return;
+
+	const unsigned char* const gate = Gate();
+
+	if (gate != nullptr && *gate == 0)
 		WriteGate(true);
 }
 

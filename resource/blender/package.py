@@ -20,7 +20,7 @@ SOURCE = os.path.join(HERE, 'io_scene_fbxex.py')
 TARGET = os.path.join(HERE, 'io_scene_fbxex.zip')
 
 ID = 'io_scene_fbxex'
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 
 MANIFEST = '''schema_version = "1.0.0"
 

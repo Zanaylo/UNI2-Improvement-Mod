@@ -12,7 +12,8 @@ namespace DataSearchPath
 	bool PointsAt(const std::string& prefix);
 
 	bool PointOverrides(const std::string& prefix);
-	bool ReleaseOverrides();
+	bool HoldOverrides(bool hold);
+	bool OverridesArmed();
 
 	void Assert();
 

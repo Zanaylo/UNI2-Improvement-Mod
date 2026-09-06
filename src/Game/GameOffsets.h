@@ -352,6 +352,13 @@ namespace GameOffsets
 	constexpr uintptr_t kHpRecordFirstSegment = 0x10;
 	constexpr int kHpRecordSegments = 5;
 
+	constexpr uintptr_t kPlayerDataTintColour = 0x300;
+	constexpr uintptr_t kPlayerDataTintTime = 0x304;
+	constexpr uintptr_t kPlayerDataTintHold = 0x306;
+	constexpr uintptr_t kPlayerDataTintIn = 0x308;
+	constexpr uintptr_t kPlayerDataTintType = 0x30a;
+	constexpr uint8_t kCharaTintHold = 3;
+
 	constexpr uintptr_t kBattleCockpit = 0x6449f0;
 	constexpr uintptr_t kCockpitView = 0x4;
 	constexpr uint32_t kCockpitViewShown = 0;

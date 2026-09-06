@@ -15,6 +15,7 @@
 
 **Making it yours**
 
+[Mods and game files](Replacing-game-files)
 [Palettes](Palettes)
 [Voices and sound](Voices-and-sound)
 [BGM selector](BGM-selector)

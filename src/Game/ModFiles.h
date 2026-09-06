@@ -6,7 +6,10 @@ namespace ModFiles
 
 	void Rescan();
 
+	void OnFrame();
+
 	int Count();
+	int OwnCount();
 	int Hits();
 
 	const char* Root();

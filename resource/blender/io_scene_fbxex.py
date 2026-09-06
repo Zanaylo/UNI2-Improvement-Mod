@@ -27,7 +27,7 @@ bl_info = {
     "name": "FbxExp stage (.fbx.bin)",
     "description": "Import and export UNI2 / MBTL / UNI stage models",
     "author": "UNI2 Improvement Mod",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (4, 0, 0),
     "location": "File > Import/Export",
     "category": "Import-Export",
@@ -87,6 +87,44 @@ def read_materials(block):
         index, texture = struct.unpack_from("<ii", block.body, at + NAME_BYTES)
         value = list(struct.unpack_from("<17f", block.body, at + NAME_BYTES + 8))
         out.append({"filename": name, "index": index, "textureindex": texture, "value": value})
+
+    return out
+
+
+MATERIAL_FIELDS = (
+    ("fbxex_diffuse", 4),
+    ("fbxex_ambient", 4),
+    ("fbxex_specular", 4),
+    ("fbxex_emissive", 4),
+    ("fbxex_power", 1),
+)
+
+
+def put_material_values(material, value):
+    """Hang an entry's own 17 floats on the Blender material so they can be edited."""
+    at = 0
+
+    for key, count in MATERIAL_FIELDS:
+        material[key] = float(value[at]) if count == 1 else [float(v) for v in value[at:at + count]]
+        at += count
+
+
+def take_material_values(material):
+    """Read them back, or None when this material never came from a stage."""
+    out = []
+
+    for key, count in MATERIAL_FIELDS:
+        stored = material.get(key)
+
+        if stored is None:
+            return None
+
+        values = [float(stored)] if count == 1 else [float(v) for v in stored]
+
+        if len(values) != count:
+            return None
+
+        out += values
 
     return out
 
@@ -310,13 +348,16 @@ def from_blender(matrix):
     ]
 
 
-def stage_material(name, folder, additive):
-    known = bpy.data.materials.get(name)
+def stage_material(entry, slot, folder, additive):
+    name = entry["filename"]
+    unique = "m%03d %s" % (slot, name)
+    known = bpy.data.materials.get(unique)
 
     if known is not None:
         return known
 
-    material = bpy.data.materials.new(name)
+    material = bpy.data.materials.new(unique)
+    put_material_values(material, entry["value"])
     material.use_nodes = True
     tree = material.node_tree
 
@@ -392,7 +433,7 @@ def build_object(index, node, model, folder, collection):
     for order, submesh in enumerate(mesh["submeshes"]):
         indices = submesh["indices"]
         material = model["material"][submesh["material"]]
-        obj.data.materials.append(stage_material(material["filename"], folder,
+        obj.data.materials.append(stage_material(material, submesh["material"], folder,
                                                  mesh["flags"][0] != 0))
 
         for i in range(0, len(indices) - 2, 3):
@@ -644,6 +685,23 @@ def append_node(model, obj):
     return index
 
 
+def apply_materials(model, obj, mesh):
+    """The template owns the material table; an edited Blender material overwrites its entry."""
+    for slot, submesh in enumerate(mesh["submeshes"]):
+        index = submesh["material"]
+
+        if index < 0 or index >= len(model["material"]):
+            continue
+
+        if slot >= len(obj.data.materials) or obj.data.materials[slot] is None:
+            continue
+
+        value = take_material_values(obj.data.materials[slot])
+
+        if value is not None:
+            model["material"][index]["value"] = value
+
+
 def do_export(context, path, template_path):
     model = read(template_path)
 
@@ -674,6 +732,7 @@ def do_export(context, path, template_path):
         node = model["node"][index]
         was = list(node["mesh"]["matrix"])
         node["mesh"] = gather_mesh(obj, node["mesh"])
+        apply_materials(model, obj, node["mesh"])
         now = node["mesh"]["matrix"]
 
         if was == now:

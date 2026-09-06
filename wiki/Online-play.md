@@ -12,10 +12,14 @@ What still runs online is cosmetic and read-only: the custom palettes, which tra
 over Steam and cannot reach the match, and the performance options, which only change how the frame
 gets to your monitor.
 
-**The [patch selector](Patches) is the exception, and it is offline only.** A patch changes what the
-game simulates. Its move tables and system constants are read once at startup and stay for the whole
-session, so if you booted into a patch you are still on it online, whatever menu you are in. It only
-works against someone who picked the same patch. **Do not use it in ranked, or in any match against
-someone who is not on it. It will desync.** Restart on the installed game first.
+**The [patch selector](Patches) is the exception, and it needs both players.** A patch changes what
+the game simulates. Its move tables and system constants are read once at startup and stay for the
+whole session, so if you booted into a patch you are still on it online, whatever menu you are in,
+and nothing the mod can do at the network menu changes that.
+
+That is deliberate: **two people who both run the mod and both picked the same patch can play each
+other**, and a player match is where that belongs. **Never ranked, and never against someone who is
+not on the same patch — it will desync.** If you are not sure who you are about to play, restart on
+the installed game first.
 
 If you find something here that gives an edge in a real match, that is a bug. Report it.

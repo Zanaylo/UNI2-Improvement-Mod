@@ -27,6 +27,7 @@ public:
 	void Walk(const std::string& folder, FileIndexNaming& naming);
 
 	void Add(const std::string& key, const std::string& path);
+	void Remove(const std::string& key);
 
 	const std::string* Find(const std::string& key) const;
 	bool Has(const std::string& key) const;

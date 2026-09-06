@@ -249,7 +249,10 @@ void BgGrade::Update()
 		return;
 
 	if (stage != g_stage)
+	{
 		LOG("BgGrade: the stage the game is holding changed to %d", stage);
+		g_cache.erase(stage);
+	}
 
 	g_stage = stage;
 

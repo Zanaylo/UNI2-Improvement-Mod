@@ -435,6 +435,29 @@ void Rename(const std::string& stage, int number, std::vector<uint8_t>& data)
 	data.assign(text.begin(), text.end());
 }
 
+void RenameAny(int number, std::vector<uint8_t>& data)
+{
+	const std::string mark = "./bg/";
+
+	char now[24] = {};
+	sprintf_s(now, "./bg/bg%03d/", number);
+
+	std::string text(data.begin(), data.end());
+
+	for (size_t at = text.find(mark); at != std::string::npos; at = text.find(mark, at))
+	{
+		const size_t close = text.find('/', at + mark.size());
+
+		if (close == std::string::npos)
+			break;
+
+		text.replace(at, close + 1 - at, now);
+		at += strlen(now);
+	}
+
+	data.assign(text.begin(), text.end());
+}
+
 bool Copy(StageArchive::Source& source, const Job& job)
 {
 	std::vector<std::string> files;
@@ -578,6 +601,9 @@ bool FetchFolder(Job& job)
 			job.list.assign(data.begin(), data.end());
 			continue;
 		}
+
+		if (_stricmp(found.cFileName, kObjectList) == 0)
+			RenameAny(job.number, data);
 
 		if (WriteWhole(target + "\\" + found.cFileName, data))
 			++written;

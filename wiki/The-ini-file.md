@@ -101,7 +101,6 @@ XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back
 | `RepublishPingLocation` | `1` | Republishes your Steam ping location into the room every 30 s. The game publishes it once, on join, which is why rejoining "resets" the ping. Held back during a session. |
 | `Diagnostics` | `0` | Asks GGPO for ping and frame advantage by calling a method on the game's own backend from the render thread - the netcode thread's object. Off by default for that reason, and throttled to once every twenty frames when on. The rollback and frame counters work either way; those are plain reads. |
 | `SharePalettes` | `1` | Sends your palette to the other player over the mod's own Steam channel. It shares a connection with the rollback traffic, so it is sent once when the opponent is not known to be running the mod and three times when they are. |
-| `UnloadPatchOnline` | `1` | A patch is battle data the other side does not have. On, going online unloads it and says so, which turns a desync into a restart. Off, the mod only warns. |
 
 ## `[Video]`
 

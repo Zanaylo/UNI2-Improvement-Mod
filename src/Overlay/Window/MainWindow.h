@@ -43,6 +43,7 @@ private:
 	void DrawPatchSection();
 	void DrawThemeSection();
 	void DrawStagesSection();
+	void DrawModsSection();
 	void DrawCustomSection();
 	void DrawPalettesTab();
 	void CaptureBind();

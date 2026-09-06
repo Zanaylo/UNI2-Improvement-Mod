@@ -50,8 +50,6 @@ namespace GamePatches
 
 	const char* WhyActive();
 
-	bool UnloadedForOnline();
-
 	bool TakeAnnouncement(std::string& out);
 
 	Answer Resolve(const char* path, std::string& out);

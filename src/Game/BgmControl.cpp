@@ -53,6 +53,9 @@ volatile long g_lastPlayed = -1;
 int g_playing = -1;
 int g_pinned = -1;
 int g_menuTrack = -1;
+int g_shuffleAsked = -1;
+int g_shufflePick = -1;
+int g_takenOver = -1;
 bool g_inChooser = false;
 
 uint64_t g_positionBase = 0;
@@ -281,6 +284,24 @@ void ReportTableOnce()
 		vanilla, custom, BgmLibrary::Count(), BgmLibrary::WindowSlot());
 }
 
+int Shuffled(int asked)
+{
+	if (asked == g_shuffleAsked && g_shufflePick >= 0)
+		return g_shufflePick;
+
+	const int picked = BgmCatalog::Pick(g_lastPlayed);
+
+	if (picked < 0)
+		return asked;
+
+	g_shuffleAsked = asked;
+	g_shufflePick = picked;
+
+	LOG("BgmControl: the randomizer drew %d for scene %d", picked, asked);
+
+	return picked;
+}
+
 bool __fastcall HookedBgmPlay(int id, void* edx)
 {
 	g_lastRequested = id;
@@ -289,10 +310,16 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 	if (id < 0)
 		return oBgmPlay(id, edx);
 
-	if (g_pinned >= 0)
+	if (g_pinned >= 0 && !BgmCatalog::ShuffleEnabled())
 	{
 		LOG("BgmControl: game asked for %d, held back by your pick", id);
 		return true;
+	}
+
+	if (g_pinned >= 0)
+	{
+		LOG("BgmControl: the randomizer is on, so your pick of %d is let go", g_pinned);
+		g_pinned = -1;
 	}
 
 	int asked = id;
@@ -317,12 +344,7 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 	int chosen = asked;
 
 	if (BgmCatalog::ShuffleEnabled())
-	{
-		const int picked = BgmCatalog::Pick(g_lastPlayed);
-
-		if (picked >= 0)
-			chosen = picked;
-	}
+		chosen = Shuffled(asked);
 	else
 	{
 		const int resolved = BgmRules::Resolve(asked, left, right);
@@ -578,10 +600,22 @@ int BgmControl::Current()
 	if (ReadGlobal(GameOffsets::kBgmPlayer) == 0)
 		return -1;
 
-	if (g_playing >= 0)
+	const int loaded = static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId));
+
+	if (g_playing < 0)
+		return loaded;
+
+	if (StillLoaded(g_playing))
 		return g_playing;
 
-	return static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId));
+	if (g_takenOver != loaded)
+	{
+		g_takenOver = loaded;
+		LOG("BgmControl: %d was started but the stream holds slot %d - something changed the "
+			"track without asking", g_playing, loaded);
+	}
+
+	return loaded;
 }
 
 void BgmControl::RefreshVolume()
@@ -634,6 +668,28 @@ void BgmControl::Release()
 	const int resolved = BgmRules::Resolve(wanted, left, right);
 
 	if (StartTrack(resolved >= 0 ? resolved : wanted, nullptr))
+		HookedBgmStart();
+}
+
+void BgmControl::Reshuffle()
+{
+	g_pinned = -1;
+	g_shuffleAsked = -1;
+	g_shufflePick = -1;
+
+	const int wanted = GetLastRequested();
+
+	if (wanted < 0 || oBgmPlay == nullptr)
+		return;
+
+	const int picked = Shuffled(wanted);
+
+	if (picked < 0)
+		return;
+
+	g_lastPlayed = picked;
+
+	if (StartTrack(picked, nullptr))
 		HookedBgmStart();
 }
 

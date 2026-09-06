@@ -271,6 +271,9 @@ void MusicPanel::DrawStatus()
 			BgmControl::Release();
 
 		UiText::Muted("The game's own music is on hold until you stop or give it back.");
+
+		if (BgmCatalog::ShuffleEnabled())
+			UiText::Muted("The randomizer has the next screen - it lets your pick go.");
 	}
 
 	ImGui::Text("Loaded characters: %s vs %s", CharacterName(BgmControl::GetCharacter(0)),
@@ -768,11 +771,26 @@ void MusicPanel::DrawShuffle()
 	bool shuffle = BgmCatalog::ShuffleEnabled();
 
 	if (ImGui::Checkbox("Randomizer", &shuffle))
+	{
 		BgmCatalog::SetShuffleEnabled(shuffle);
 
-	UiText::Help("While this is on, every time the game asks for music it gets a random track "
-		"from this list instead. Rules are ignored until you turn it off. Tracks you switch off "
-		"below are never picked.");
+		if (shuffle)
+			BgmControl::Reshuffle();
+	}
+
+	UiText::Help("While this is on, each screen that asks for music gets a random track from this "
+		"list instead. It draws once per screen and keeps it, so a round change or a training "
+		"reset does not move it - use Draw again for that. Rules are ignored until you turn it "
+		"off, and tracks you switch off below are never picked.");
+
+	ImGui::SameLine();
+
+	ImGui::BeginDisabled(!shuffle);
+
+	if (ImGui::SmallButton("Draw again"))
+		BgmControl::Reshuffle();
+
+	ImGui::EndDisabled();
 
 	ImGui::SameLine();
 

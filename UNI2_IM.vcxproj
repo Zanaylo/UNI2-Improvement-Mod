@@ -152,6 +152,9 @@
     <ClCompile Include="src\Game\SoundpackBuilder.cpp" />
     <ClCompile Include="src\Game\BgmLibrary.cpp" />
     <ClCompile Include="src\Game\ModFiles.cpp" />
+    <ClCompile Include="src\Game\ModPacks.cpp" />
+    <ClCompile Include="src\Overlay\Window\ModsPanel.cpp" />
+    <ClCompile Include="src\Overlay\Window\ModsWindow.cpp" />
     <ClCompile Include="src\Game\OstImport.cpp" />
     <ClCompile Include="src\Game\BgListOverride.cpp" />
     <ClCompile Include="src\Game\BgObjectFix.cpp" />
@@ -167,6 +170,7 @@
     <ClCompile Include="src\Game\StageObjects.cpp" />
     <ClCompile Include="src\Game\StageCards.cpp" />
     <ClCompile Include="src\Game\PlayerHealth.cpp" />
+    <ClCompile Include="src\Game\CharaTint.cpp" />
     <ClCompile Include="src\Game\BattleCockpit.cpp" />
     <ClCompile Include="src\Overlay\HealthReadout.cpp" />
     <ClCompile Include="src\Overlay\Window\StagesPanel.cpp" />
@@ -395,6 +399,7 @@
     <ClInclude Include="src\Game\StageObjects.h" />
     <ClInclude Include="src\Game\StageCards.h" />
     <ClInclude Include="src\Game\PlayerHealth.h" />
+    <ClInclude Include="src\Game\CharaTint.h" />
     <ClInclude Include="src\Game\BattleCockpit.h" />
     <ClInclude Include="src\Overlay\HealthReadout.h" />
     <ClInclude Include="src\Overlay\Window\StagesPanel.h" />

@@ -5,15 +5,16 @@ Play an older balance version of the game.
 The **Patches** tab lists the installed game and every patch you added. **Use** picks one. It loads
 on the next start.
 
-## Offline only
+## Both sides, or neither
 
 A patch changes what the game simulates, so both players have to be on the same one. Read
-[A note on online play](Online-play) first. Short version: **do not go online on a patch.** Restart
-on the installed game.
+[A note on online play](Online-play) first. Short version: **a player match you have agreed is
+fine — ranked never is.**
 
-Going online unloads the patch's files by itself, but the battle tables the game read at startup are
-still the patch's. Only a restart clears those. The tab tells you which state you are in, in red
-when it matters.
+The patch **stays loaded when you go online**, which is what makes an agreed match work at all: the
+battle tables were read at startup and a patch cannot be swapped in or out mid-session anyway. So it
+is on you to know who you are playing. Against anyone on the installed game it desyncs. The tab says
+so in red whenever a patch is loaded.
 
 ## Adding one
 

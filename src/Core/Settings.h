@@ -88,7 +88,6 @@ struct ModValues
 	bool republishPingLocation;
 	bool netplayDiagnostics;
 	bool sharePalettes;
-	bool unloadPatchOnline;
 
 	int presentWidth;
 	int presentHeight;

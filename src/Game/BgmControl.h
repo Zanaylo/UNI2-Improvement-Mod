@@ -9,6 +9,8 @@ namespace BgmControl
 	void Stop();
 	void Release();
 
+	void Reshuffle();
+
 	bool IsPinned();
 	int PinnedId();
 

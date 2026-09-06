@@ -46,6 +46,7 @@
 #include "Training/FrameStepper.h"
 #include "Training/DummyScript.h"
 #include "Training/PlayerControl.h"
+#include "Game/ModPacks.h"
 #include "Game/StageImport.h"
 #include "Game/SoundPacks.h"
 #include "Training/StageColor.h"
@@ -152,6 +153,8 @@ void MainWindow::Draw()
 	DrawPatchSection();
 	ImGui::Separator();
 	DrawThemeSection();
+	ImGui::Separator();
+	DrawModsSection();
 	ImGui::Separator();
 	DrawConfigSection();
 }
@@ -1814,6 +1817,28 @@ void MainWindow::DrawStagesSection()
 	if (StageImport::PortCount() > 0)
 		UiText::Good("%d stage(s) ported.", StageImport::PortCount());
 
+}
+
+void MainWindow::DrawModsSection()
+{
+	if (!ImGui::CollapsingHeader("Mods"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Mods) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close mods" : "Open mods"))
+		window->Toggle();
+
+	ImGui::TextWrapped("Folders in UNI2-IM\\Packs that stand in for the game's own files - a "
+		"voice, a screen, a stage, a whole set of them. Switch one on or off without restarting.");
+
+	if (ModPacks::Count() > 0)
+	{
+		UiText::Good("%d of %d mod(s) on, %d file(s).", ModPacks::EnabledCount(),
+			ModPacks::Count(), ModPacks::FileCount());
+	}
 }
 
 void MainWindow::DrawConfigSection()

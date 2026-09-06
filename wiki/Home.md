@@ -18,6 +18,7 @@ Training and quality-of-life mod for **UNDER NIGHT IN-BIRTH II Sys:Celes**.
 
 ## Making it yours
 
+- [Replacing game files](Replacing-game-files) — install a mod, or drop a file in Mods and it beats the d archive
 - [Palettes](Palettes)
 - [Voices and sound](Voices-and-sound) — swap a character's voice, or take one from UNI
 - [BGM selector](BGM-selector)

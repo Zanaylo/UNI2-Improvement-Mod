@@ -133,17 +133,10 @@ void PatchWindow::DrawRestart()
 	if (GameRestart::StatusText()[0] != '\0')
 		UiText::Muted("%s", GameRestart::StatusText());
 
-	if (GamePatches::UnloadedForOnline())
+	if (boot >= 0)
 	{
-		UiText::Warn("The patch was unloaded because the game went online. Every file the game "
-			"reads from here on is the installed one.");
-		UiText::Warn("The battle tables it read at startup are still the patch's, though, so "
-			"restart into the installed game before a ranked or player match.");
-	}
-	else if (boot >= 0)
-	{
-		UiText::Warn("Online: anybody on the current game will desync against %s. Going online "
-			"unloads it, but only a restart clears the tables it already read.",
+		UiText::Warn("Online: %s stays loaded, so both sides need it. A player match you have "
+			"agreed is fine; anybody on the installed game desyncs, and ranked is never safe.",
 			NameOf(GamePatches::Get(boot)));
 	}
 

@@ -78,7 +78,6 @@ const char* const kDefaultIniLines[] = {
 	"RepublishPingLocation = 1",
 	"Diagnostics = 0",
 	"SharePalettes = 1",
-	"UnloadPatchOnline = 1",
 	"",
 	"[Video]",
 	"FlatStage = 0",

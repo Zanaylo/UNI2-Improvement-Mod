@@ -27,6 +27,7 @@
 #include "Game/OstImport.h"
 #include "Game/BgGrade.h"
 #include "Game/BattleCockpit.h"
+#include "Game/CharaTint.h"
 #include "Game/StageCards.h"
 #include "Game/StageImport.h"
 #include "Game/VoiceImport.h"
@@ -334,6 +335,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			NetplayTick::Update();
 			GamePatches::Update();
 			DataSearchPath::Assert();
+			ModFiles::OnFrame();
 			PatchPacks::OnFrame();
 			UpdateInstall::OnFrame();
 			BalanceRules::OnFrame();
@@ -342,6 +344,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			StageImport::Update();
 			BgGrade::Update();
 			BattleCockpit::Update();
+			CharaTint::Update();
 			StageCards::OnFrame();
 			VoiceImport::Update();
 			SoundpackTransfer::Update();

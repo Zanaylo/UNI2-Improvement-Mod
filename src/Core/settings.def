@@ -475,5 +475,4 @@ SETTING_INT(netplayDiagnostics,     "Netplay",  "Diagnostics",          0)
 
 SETTING_INT(sharePalettes,          "Netplay",  "SharePalettes",        1)
 
-SETTING_INT(unloadPatchOnline,      "Netplay",  "UnloadPatchOnline",    1)
 
