@@ -7,7 +7,7 @@
 namespace StageImport
 {
 	constexpr int kFirstNumber = 28;
-	constexpr int kLastNumber = 89;
+	constexpr int kLastNumber = 98;
 
 	struct Offer
 	{
@@ -36,6 +36,8 @@ namespace StageImport
 	bool InstallMany(const int* indices, const char* const* names, int count);
 	bool InstallFolder(const char* folder, const char* name);
 	bool Remove(int number);
+
+	bool Dropped(int number);
 
 	int PortCount();
 	const Port* PortAt(int index);

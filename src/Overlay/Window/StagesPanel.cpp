@@ -53,6 +53,9 @@ void Gather(std::vector<Listed>& out)
 		if (stage == nullptr)
 			continue;
 
+		if (StageImport::Dropped(stage->number))
+			continue;
+
 		const bool free = stage->number >= StageImport::kFirstNumber &&
 			stage->number <= StageImport::kLastNumber;
 
@@ -60,7 +63,7 @@ void Gather(std::vector<Listed>& out)
 		row.number = stage->number;
 		row.name = stage->name.empty() ? stage->folder : stage->name;
 		row.from = std::string(free ? "yours, bg\\" : "the game's own, bg\\") + stage->folder;
-		row.ported = false;
+		row.ported = free;
 
 		out.push_back(row);
 	}
@@ -69,7 +72,7 @@ void Gather(std::vector<Listed>& out)
 	{
 		const StageImport::Port* const port = StageImport::PortAt(i);
 
-		if (port == nullptr)
+		if (port == nullptr || StageImport::Dropped(port->number))
 			continue;
 
 		Listed row = {};

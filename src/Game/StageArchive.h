@@ -27,6 +27,8 @@ namespace StageArchive
 
 	Source* Open(const char* folder);
 
+	bool Asset(const char* folder, const char* path, std::vector<uint8_t>& out);
+
 	bool MagicOk(const std::string& file, const std::vector<uint8_t>& data);
 
 	size_t MatchPair(const std::string& text, size_t open);

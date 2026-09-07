@@ -4,6 +4,7 @@
 #include "Core/utils.h"
 #include "Game/DataArchive.h"
 #include "Game/MbtlCipher.h"
+#include "Game/StageArchive.h"
 #include "Game/StageImport.h"
 
 #include <Windows.h>
@@ -49,6 +50,16 @@ constexpr int kDfciPitchX = 224;
 constexpr int kDfciPitchY = 256;
 
 constexpr const char* kDfciSheet = "grpdat\\CSel\\stage_thum00.dds";
+
+constexpr const char* kUniSheet = "grpdat\\CSel\\stage_sam00.dds";
+constexpr int kUniRows = 16;
+constexpr int kUniCells = 21;
+constexpr int kUniCellWidth = 956;
+constexpr int kUniCellHeight = 128;
+constexpr int kUniFirstX = 43;
+constexpr int kUniFirstY = 0;
+constexpr int kUniPitchX = 1006;
+constexpr int kUniPitchY = 128;
 
 constexpr const char* kOurFolder = "CSel";
 constexpr const char* kCardFolder = "Mods\\CSel";
@@ -543,6 +554,109 @@ bool Paint(const Image& card, int cardX, int cardY, int cardWidth, int cardHeigh
 	return Write(1, blob);
 }
 
+bool TakeDfci(const std::string& gameFolder, int sourceCell, int number)
+{
+	std::vector<uint8_t> raw;
+
+	if (!DfciSheet(gameFolder, raw))
+	{
+		LOG("StageThumb: that DFCI build has no picker sheet at %s", kDfciSheet);
+		return false;
+	}
+
+	Image sheet;
+
+	if (!DecodeDxt(raw, sheet))
+	{
+		LOG("StageThumb: that DFCI picker sheet is not a DDS the mod can decode");
+		return false;
+	}
+
+	int cardX = 0;
+	int cardY = 0;
+	CellOf(sourceCell, kDfciColumns, kDfciFirstX, kDfciFirstY, kDfciPitchX, kDfciPitchY,
+		cardX, cardY);
+
+	if (cardX + kDfciCellWidth > sheet.width || cardY + kDfciCellHeight > sheet.height)
+		return false;
+
+	if (!Paint(sheet, cardX, cardY, kDfciCellWidth, kDfciCellHeight, number, true))
+		return false;
+
+	LOG("StageThumb: stage %d takes cell %d of DFCI's picker", number, sourceCell);
+	return true;
+}
+
+bool TakeUni(const std::string& gameFolder, int sourceCell, int number)
+{
+	const int index = sourceCell - 1;
+
+	if (index < 0 || index >= kUniCells)
+		return false;
+
+	std::vector<uint8_t> raw;
+
+	if (!StageArchive::Asset(gameFolder.c_str(), kUniSheet, raw))
+	{
+		LOG("StageThumb: that UNI build has no picker sheet at %s", kUniSheet);
+		return false;
+	}
+
+	Image sheet;
+
+	if (!DecodeDxt(raw, sheet))
+	{
+		LOG("StageThumb: that UNI picker sheet is not a DDS the mod can decode");
+		return false;
+	}
+
+	const int cardX = kUniFirstX + (index / kUniRows) * kUniPitchX;
+	const int cardY = kUniFirstY + (index % kUniRows) * kUniPitchY;
+
+	if (cardX + kUniCellWidth > sheet.width || cardY + kUniCellHeight > sheet.height)
+		return false;
+
+	const int window = (kUniCellHeight * kOurCellWidth) / kOurCellHeight;
+	const int from = cardX + (kUniCellWidth - window) / 2;
+
+	if (!Paint(sheet, from, cardY, window, kUniCellHeight, number))
+		return false;
+
+	LOG("StageThumb: stage %d takes cell %d of UNI's stage select", number, sourceCell);
+	return true;
+}
+
+bool TakeMbtl(const std::string& gameFolder, int sourceCell, int number)
+{
+	const bool second = sourceCell >= kMbtlSecondSheet;
+	std::vector<uint8_t> blob;
+
+	if (!MbtlSheet(gameFolder, second ? kMbtlThumb01Offset : kMbtlThumb00Offset, blob))
+	{
+		LOG("StageThumb: that MELTY BLOOD build's picker sheet could not be located");
+		return false;
+	}
+
+	Image sheet;
+
+	if (!Unpack(blob, sheet))
+		return false;
+
+	int x = 0;
+	int y = 0;
+	CellOf(second ? sourceCell - kMbtlSecondSheet : sourceCell, kMbtlColumns, kMbtlFirstX,
+		kMbtlFirstY, kMbtlPitchX, kMbtlPitchY, x, y);
+
+	if (x + kMbtlCellWidth > sheet.width || y + kMbtlCellHeight > sheet.height)
+		return false;
+
+	if (!Paint(sheet, x + kMbtlCardX, y + kMbtlCardY, kMbtlCardWidth, kMbtlCardHeight, number))
+		return false;
+
+	LOG("StageThumb: stage %d takes cell %d of MELTY BLOOD's picker", number, sourceCell);
+	return true;
+}
+
 }
 
 int StageThumb::CellFor(int number)
@@ -573,68 +687,15 @@ bool StageThumb::Take(FbGameFolder::Game game, const std::string& gameFolder, in
 		return false;
 
 	if (game == FbGameFolder::Game_DFCI)
-	{
-		std::vector<uint8_t> raw;
+		return TakeDfci(gameFolder, sourceCell, number);
 
-		if (!DfciSheet(gameFolder, raw))
-		{
-			LOG("StageThumb: that DFCI build has no picker sheet at %s", kDfciSheet);
-			return false;
-		}
+	if (game == FbGameFolder::Game_UNI)
+		return TakeUni(gameFolder, sourceCell, number);
 
-		Image sheet;
+	if (game == FbGameFolder::Game_MBTL)
+		return TakeMbtl(gameFolder, sourceCell, number);
 
-		if (!DecodeDxt(raw, sheet))
-		{
-			LOG("StageThumb: that DFCI picker sheet is not a DDS the mod can decode");
-			return false;
-		}
-
-		int cardX = 0;
-		int cardY = 0;
-		CellOf(sourceCell, kDfciColumns, kDfciFirstX, kDfciFirstY, kDfciPitchX, kDfciPitchY,
-			cardX, cardY);
-
-		if (cardX + kDfciCellWidth > sheet.width || cardY + kDfciCellHeight > sheet.height)
-			return false;
-
-		if (!Paint(sheet, cardX, cardY, kDfciCellWidth, kDfciCellHeight, number, true))
-			return false;
-
-		LOG("StageThumb: stage %d takes cell %d of DFCI's picker", number, sourceCell);
-		return true;
-	}
-
-	if (game != FbGameFolder::Game_MBTL)
-		return false;
-
-	const bool second = sourceCell >= kMbtlSecondSheet;
-	std::vector<uint8_t> blob;
-
-	if (!MbtlSheet(gameFolder, second ? kMbtlThumb01Offset : kMbtlThumb00Offset, blob))
-	{
-		LOG("StageThumb: that MELTY BLOOD build's picker sheet could not be located");
-		return false;
-	}
-
-	Image sheet;
-
-	if (!Unpack(blob, sheet))
-		return false;
-
-	int x = 0;
-	int y = 0;
-	CellOf(second ? sourceCell - kMbtlSecondSheet : sourceCell, kMbtlColumns, kMbtlFirstX,
-		kMbtlFirstY, kMbtlPitchX, kMbtlPitchY, x, y);
-
-	if (x + kMbtlCellWidth > sheet.width || y + kMbtlCellHeight > sheet.height)
-		return false;
-
-	if (!Paint(sheet, x + kMbtlCardX, y + kMbtlCardY, kMbtlCardWidth, kMbtlCardHeight, number))
-		return false;
-
-	LOG("StageThumb: stage %d takes cell %d of MELTY BLOOD's picker", number, sourceCell);
-	return true;
+	return false;
 }
 
 bool StageThumb::Drop(int number)

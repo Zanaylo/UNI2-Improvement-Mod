@@ -82,8 +82,6 @@ const Defaulted kCapped[] = {
 	{ "BGBloomTextureSize", "256" },
 };
 
-// A stage narrower than the game's own changes where the walls are, and two players on different
-// stage data do not agree about that. Every stage UNI2 ships is 4096.
 const Defaulted kFloored[] = {
 	{ "StageW", "4096" },
 };
@@ -177,7 +175,13 @@ std::string g_scanGame;
 char g_status[224] = "no game looked at yet";
 volatile long g_busy = 0;
 volatile long g_finished = 0;
+bool g_dropped[StageImport::kLastNumber + 1] = {};
 volatile long g_progress = 0;
+
+bool Numbered(int number)
+{
+	return number >= 0 && number <= StageImport::kLastNumber;
+}
 
 std::string BgRoot()
 {
@@ -266,11 +270,27 @@ void LoadPorts()
 	}
 }
 
+void RememberPort(const StageImport::Port& port)
+{
+	for (StageImport::Port& known : g_ports)
+	{
+		if (known.number != port.number)
+			continue;
+
+		known = port;
+		return;
+	}
+
+	g_ports.push_back(port);
+}
+
 void SavePort(const StageImport::Port& port)
 {
 	const std::string value = port.game + "|" + port.folder + "|" + port.name;
 
 	Settings::SaveString(kSection, Key(port.number).c_str(), value.c_str());
+
+	RememberPort(port);
 }
 
 FbGameFolder::Game GameNamed(const std::string& name)
@@ -309,10 +329,6 @@ std::string English(FbGameFolder::Game game, const std::string& folder)
 int Thumbnail(const Job& job, const std::string& list, const std::string& block)
 {
 	const FbGameFolder::Game game = FbGameFolder::Detect(job.folder.c_str());
-	const StageNameEntry* const known = Known(game, job.stage);
-
-	if (known != nullptr && known->thumbnail >= 0)
-		return known->thumbnail;
 
 	int cell = -1;
 
@@ -695,6 +711,9 @@ bool Drop(const Job& job)
 	Settings::SaveString(kSection, Key(job.number).c_str(), "");
 	BgGrade::Forget(job.number);
 
+	if (Numbered(job.number))
+		g_dropped[job.number] = true;
+
 	sprintf_s(g_status, "stage %d removed - restart the game to clear it", job.number);
 	return true;
 }
@@ -1035,6 +1054,11 @@ bool StageImport::Remove(int number)
 	sprintf_s(g_status, "removing stage %d...", number);
 
 	return Start(batch);
+}
+
+bool StageImport::Dropped(int number)
+{
+	return Numbered(number) && g_dropped[number];
 }
 
 int StageImport::PortCount()

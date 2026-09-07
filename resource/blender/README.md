@@ -23,19 +23,6 @@ It enables itself. Two entries appear:
 If `Install from Disk...` is missing you are on Blender 4.1 or older; use `Install...` and
 tick the add-on in the list afterwards.
 
-## The Last Corridor, already set up
-
-`last_corridor.blend` in this folder is a finished stage, opened and ready to edit. It is the
-quickest way in: open it, move something, `File > Export`, and the stage is written. The scene also
-carries two things you cannot see otherwise - a camera at the framing the game really uses, so the
-viewport shows what a match will show, and an arrow the height of a character.
-
-Its export Template is already pointed at the folder it was built from. **On another machine that
-path will not exist**, so set the Template field in the export dialog to your own copy of the
-stage's `bg.fbx.bin`.
-
-`tools/blender/make_template.py` builds it, so any stage can be turned into one the same way.
-
 ## Open a stage
 
 Import any `bg.fbx.bin`. The textures load from the `.dds` files beside it, so import the

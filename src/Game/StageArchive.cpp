@@ -406,6 +406,108 @@ private:
 	FILE* m_handle = nullptr;
 };
 
+bool ReadUniIndex(const std::string& path, std::vector<uint8_t>& out, uint32_t& folders,
+	uint32_t& files)
+{
+	FILE* handle = nullptr;
+
+	if (fopen_s(&handle, path.c_str(), "rb") != 0 || handle == nullptr)
+		return false;
+
+	std::vector<uint8_t> head;
+	const bool header = ReadAt(handle, 0, kUniHeader, head) && head.size() == kUniHeader;
+
+	folders = header ? ReadLittle32(head, 0) : 0;
+	files = header ? ReadLittle32(head, 4) : 0;
+
+	const bool sane = folders != 0 && folders < kUniMaxFolders && files != 0 &&
+		files < kUniMaxFiles;
+
+	const size_t expected = sane ? kUniHeader +
+		static_cast<size_t>(folders) * kUniFolderRecord +
+		static_cast<size_t>(files) * kUniFileRecord : 0;
+
+	const bool whole = sane && ReadAt(handle, 0, expected, out) && out.size() == expected &&
+		fgetc(handle) == EOF;
+
+	fclose(handle);
+
+	return whole;
+}
+
+bool FindUniRecord(const std::vector<uint8_t>& blob, uint32_t folders, uint32_t files,
+	const std::string& wanted, uint32_t& offset, uint32_t& size)
+{
+	size_t at = kUniHeader;
+	size_t taken = 0;
+
+	for (uint32_t folder = 0; folder < folders; ++folder)
+	{
+		const uint32_t count = ReadLittle32(blob, at);
+		std::string folderPath = ReadName(blob, at + 12, kUniFolderRecord - 16);
+		at += kUniFolderRecord;
+
+		for (char& c : folderPath)
+			c = c == '/' ? '\\' : c;
+
+		while (!folderPath.empty() && folderPath.back() == '\\')
+			folderPath.pop_back();
+
+		for (uint32_t i = 0; i < count && taken < files; ++i, ++taken)
+		{
+			const size_t record = kUniHeader +
+				static_cast<size_t>(folders) * kUniFolderRecord + taken * kUniFileRecord;
+
+			const std::string leaf = ReadName(blob, record + 16, kUniFileRecord - 16);
+
+			if (leaf.empty() || Lowered(folderPath + "\\" + leaf) != wanted)
+				continue;
+
+			size = ReadLittle32(blob, record + 4);
+			offset = ReadLittle32(blob, record + 12);
+
+			if (size == 0)
+				continue;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool TakeAsset(const std::string& root, const std::string& name, const std::string& wanted,
+	std::vector<uint8_t>& out)
+{
+	std::vector<uint8_t> blob;
+	uint32_t folders = 0;
+	uint32_t files = 0;
+
+	if (!ReadUniIndex(Combine(root, name), blob, folders, files))
+		return false;
+
+	const std::string archive = ReadName(blob, 12, kUniHeader - 12);
+
+	if (archive.empty())
+		return false;
+
+	uint32_t offset = 0;
+	uint32_t size = 0;
+
+	if (!FindUniRecord(blob, folders, files, wanted, offset, size))
+		return false;
+
+	FILE* data = nullptr;
+
+	if (fopen_s(&data, Combine(root, archive).c_str(), "rb") != 0 || data == nullptr)
+		return false;
+
+	const bool got = ReadAt(data, offset, size, out);
+	fclose(data);
+
+	return got;
+}
+
 UniSource::UniSource(const std::string& folder)
 {
 	const std::string root = Combine(folder, "d");
@@ -1094,4 +1196,38 @@ int StageArchive::CardIndex(const std::string& bgList, const std::string& stage)
 	}
 
 	return -1;
+}
+
+bool StageArchive::Asset(const char* folder, const char* path, std::vector<uint8_t>& out)
+{
+	if (folder == nullptr || path == nullptr)
+		return false;
+
+	std::string wanted = Lowered(path);
+
+	for (char& c : wanted)
+		c = c == '/' ? '\\' : c;
+
+	const std::string root = Combine(folder, "d");
+
+	WIN32_FIND_DATAA found = {};
+	const HANDLE search = FindFirstFileA(Combine(root, "*").c_str(), &found);
+
+	if (search == INVALID_HANDLE_VALUE)
+		return false;
+
+	bool got = false;
+
+	do
+	{
+		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+			continue;
+
+		got = TakeAsset(root, found.cFileName, wanted, out);
+	}
+	while (!got && FindNextFileA(search, &found) != 0);
+
+	FindClose(search);
+
+	return got;
 }
