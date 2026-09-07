@@ -326,6 +326,14 @@ std::string English(FbGameFolder::Game game, const std::string& folder)
 	return entry == nullptr ? std::string() : entry->name;
 }
 
+int CustomThumbnail(const Job& job)
+{
+	if (!StageThumb::TakeFolder(job.folder, job.number))
+		return kNoThumbnail;
+
+	return StageThumb::CellFor(job.number);
+}
+
 int Thumbnail(const Job& job, const std::string& list, const std::string& block)
 {
 	const FbGameFolder::Game game = FbGameFolder::Detect(job.folder.c_str());
@@ -668,7 +676,7 @@ bool Register(const Job& job)
 	else
 		StageArchive::Block(job.list, job.stage, block);
 
-	const int cell = job.custom ? kNoThumbnail : Thumbnail(job, job.list, block);
+	const int cell = job.custom ? CustomThumbnail(job) : Thumbnail(job, job.list, block);
 	const FbGameFolder::Game game = job.custom ? FbGameFolder::Game_None
 		: FbGameFolder::Detect(job.folder.c_str());
 

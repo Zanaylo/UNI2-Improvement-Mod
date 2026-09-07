@@ -1,6 +1,7 @@
 #include "Game/StageThumb.h"
 
 #include "Core/logger.h"
+#include "Core/PngImage.h"
 #include "Core/utils.h"
 #include "Game/DataArchive.h"
 #include "Game/MbtlCipher.h"
@@ -60,6 +61,8 @@ constexpr int kUniFirstX = 43;
 constexpr int kUniFirstY = 0;
 constexpr int kUniPitchX = 1006;
 constexpr int kUniPitchY = 128;
+
+constexpr const char* kFolderThumbs[] = { "Thumbnail.png", "Thumbnail.dds" };
 
 constexpr const char* kOurFolder = "CSel";
 constexpr const char* kCardFolder = "Mods\\CSel";
@@ -554,6 +557,27 @@ bool Paint(const Image& card, int cardX, int cardY, int cardWidth, int cardHeigh
 	return Write(1, blob);
 }
 
+bool FolderImage(const std::string& folder, Image& out)
+{
+	for (const char* leaf : kFolderThumbs)
+	{
+		std::vector<uint8_t> blob;
+
+		if (!ReadWholeFile(folder + "\\" + leaf, blob) || blob.empty())
+			continue;
+
+		if (PngImage::Decode(blob, out.width, out.height, out.pixels))
+			return true;
+
+		if (DecodeDxt(blob, out) || Unpack(blob, out))
+			return true;
+
+		LOG("StageThumb: %s is not a PNG or DDS the mod can decode", leaf);
+	}
+
+	return false;
+}
+
 bool TakeDfci(const std::string& gameFolder, int sourceCell, int number)
 {
 	std::vector<uint8_t> raw;
@@ -678,6 +702,23 @@ std::string StageThumb::CardPath(int number)
 bool StageThumb::HasCard(int number)
 {
 	return GetFileAttributesA(CardPath(number).c_str()) != INVALID_FILE_ATTRIBUTES;
+}
+
+bool StageThumb::TakeFolder(const std::string& folder, int number)
+{
+	if (CellFor(number) < 0)
+		return false;
+
+	Image card;
+
+	if (!FolderImage(folder, card) || card.width <= 0 || card.height <= 0)
+		return false;
+
+	if (!Paint(card, 0, 0, card.width, card.height, number, true))
+		return false;
+
+	LOG("StageThumb: stage %d takes the Thumbnail in its own folder", number);
+	return true;
 }
 
 bool StageThumb::Take(FbGameFolder::Game game, const std::string& gameFolder, int sourceCell,

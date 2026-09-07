@@ -16,6 +16,8 @@ namespace StageThumb
 	std::string CardPath(int number);
 	bool HasCard(int number);
 
+	bool TakeFolder(const std::string& folder, int number);
+
 	bool Take(FbGameFolder::Game game, const std::string& gameFolder, int sourceCell, int number);
 
 	bool Drop(int number);

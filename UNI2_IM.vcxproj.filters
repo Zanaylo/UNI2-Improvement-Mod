@@ -336,6 +336,9 @@
     <ClCompile Include="src\Core\Deflate.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\PngImage.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\DpiScaling.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1116,6 +1119,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Deflate.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\PngImage.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\DpiScaling.h">

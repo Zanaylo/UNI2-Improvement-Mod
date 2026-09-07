@@ -202,6 +202,7 @@
     <ClCompile Include="src\Core\logger.cpp" />
     <ClCompile Include="src\Core\Compat.cpp" />
     <ClCompile Include="src\Core\Deflate.cpp" />
+    <ClCompile Include="src\Core\PngImage.cpp" />
     <ClCompile Include="src\Core\DpiScaling.cpp" />
     <ClCompile Include="src\Core\crashdump.cpp" />
     <ClCompile Include="src\Core\utils.cpp" />
@@ -431,6 +432,7 @@
     <ClInclude Include="src\Core\logger.h" />
     <ClInclude Include="src\Core\Compat.h" />
     <ClInclude Include="src\Core\Deflate.h" />
+    <ClInclude Include="src\Core\PngImage.h" />
     <ClInclude Include="src\Core\DpiScaling.h" />
     <ClInclude Include="src\Core\crashdump.h" />
     <ClInclude Include="src\Core\utils.h" />
