@@ -21,6 +21,7 @@ private:
 	void DrawCustom();
 	void DrawOffers();
 	void DrawOfferRow(int index);
+	void DrawRoom();
 	void DrawPorted();
 	void DrawHelp();
 	void DrawRestart();

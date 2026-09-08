@@ -16,6 +16,9 @@ namespace BgGrade
 	constexpr float kDfciLift = 0.00f;
 	constexpr float kDfciContrast = 1.50f;
 
+	constexpr float kUnielLift = 0.00f;
+	constexpr float kUnielContrast = 1.00f;
+
 	bool Initialize();
 
 	void Attach(IDirect3DDevice9* device);

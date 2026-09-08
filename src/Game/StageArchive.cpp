@@ -3,8 +3,10 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/FbGameFolder.h"
+#include "Game/FbxExLocal.h"
 #include "Game/FbxToFbxEx.h"
 #include "Game/MbtlCipher.h"
+#include "Game/UnielCipher.h"
 
 #include <Windows.h>
 
@@ -724,10 +726,10 @@ bool KeyAt(const std::string& text, size_t at, const char* key, size_t length)
 		isalnum(static_cast<unsigned char>(after)) == 0 && after != '_';
 }
 
-class DfciSource : public StageArchive::Source
+class FolderSource : public StageArchive::Source
 {
 public:
-	explicit DfciSource(const std::string& folder)
+	explicit FolderSource(const std::string& folder)
 		: m_bg(folder + "\\bg")
 	{
 	}
@@ -743,16 +745,59 @@ public:
 		return GetFileAttributesA((m_bg + "\\" + kBgList).c_str()) != INVALID_FILE_ATTRIBUTES;
 	}
 
-private:
-	std::string Model(const std::string& stage) const;
+protected:
+	virtual std::string Model(const std::string& stage) const = 0;
+
+	virtual std::string Exported(const std::string& name) const { return name; }
+
+	virtual bool Convert(std::vector<uint8_t>& data, const std::string&) const
+	{
+		return !data.empty();
+	}
+
+	virtual void Decode(std::vector<uint8_t>&) const {}
+
+	virtual std::string Named(int) { return std::string(); }
 
 	bool Whole(const std::string& path, std::vector<uint8_t>& out) const;
 
+	std::string m_bg;
+};
+
+class DfciSource : public FolderSource
+{
+public:
+	explicit DfciSource(const std::string& folder)
+		: FolderSource(folder)
+	{
+	}
+
+protected:
+	std::string Model(const std::string& stage) const override;
+	std::string Exported(const std::string& name) const override;
+	bool Convert(std::vector<uint8_t>& data, const std::string& stage) const override;
+	std::string Named(int number) override;
+
+private:
 	void LoadEnglish();
 
-	std::string m_bg;
 	std::map<int, std::string> m_english;
 	bool m_loaded = false;
+};
+
+class UnielSource : public FolderSource
+{
+public:
+	explicit UnielSource(const std::string& folder)
+		: FolderSource(folder)
+	{
+	}
+
+protected:
+	std::string Model(const std::string& stage) const override;
+	std::string Exported(const std::string& name) const override;
+	bool Convert(std::vector<uint8_t>& data, const std::string& stage) const override;
+	void Decode(std::vector<uint8_t>& data) const override;
 };
 
 void DfciSource::LoadEnglish()
@@ -815,6 +860,36 @@ void DfciSource::LoadEnglish()
 	}
 }
 
+std::string DfciSource::Named(int number)
+{
+	LoadEnglish();
+
+	const std::map<int, std::string>::const_iterator english = m_english.find(number);
+
+	return english == m_english.end() ? std::string() : english->second;
+}
+
+std::string DfciSource::Exported(const std::string& name) const
+{
+	return _stricmp(name.c_str(), "bg.fbx") == 0 ? std::string(kModel) : name;
+}
+
+bool DfciSource::Convert(std::vector<uint8_t>& data, const std::string& stage) const
+{
+	std::vector<uint8_t> model;
+	std::string error;
+
+	if (FbxToFbxEx::Convert(data.data(), data.size(), model, error))
+	{
+		data.swap(model);
+		return true;
+	}
+
+	LOG("StageArchive: %s\\bg.fbx did not convert - %s", stage.c_str(), error.c_str());
+	data.clear();
+	return false;
+}
+
 std::string DfciSource::Model(const std::string& stage) const
 {
 	const char* const names[] = { "bg.fbx", "bg.FBX" };
@@ -830,40 +905,21 @@ std::string DfciSource::Model(const std::string& stage) const
 	return std::string();
 }
 
-bool DfciSource::Whole(const std::string& path, std::vector<uint8_t>& out) const
+bool FolderSource::Whole(const std::string& path, std::vector<uint8_t>& out) const
 {
-	const HANDLE handle = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
-		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-
-	if (handle == INVALID_HANDLE_VALUE)
+	if (!ReadWholeFile(path, out))
 		return false;
 
-	LARGE_INTEGER size = {};
-
-	if (GetFileSizeEx(handle, &size) == 0 || size.QuadPart > 0x7fffffff)
-	{
-		CloseHandle(handle);
-		return false;
-	}
-
-	out.resize(static_cast<size_t>(size.QuadPart));
-
-	DWORD got = 0;
-	const BOOL ok = out.empty() ? TRUE
-		: ReadFile(handle, out.data(), static_cast<DWORD>(out.size()), &got, nullptr);
-
-	CloseHandle(handle);
-
-	return ok != 0 && got == out.size();
+	Decode(out);
+	return true;
 }
 
-void DfciSource::Stages(std::vector<StageArchive::Stage>& out)
+void FolderSource::Stages(std::vector<StageArchive::Stage>& out)
 {
 	out.clear();
 
 	std::string bgList;
 	BgList(bgList);
-	LoadEnglish();
 
 	WIN32_FIND_DATAA found = {};
 	const HANDLE handle = FindFirstFileA((m_bg + "\\bg*").c_str(), &found);
@@ -895,14 +951,9 @@ void DfciSource::Stages(std::vector<StageArchive::Stage>& out)
 		if (GetFileAttributesExA(model.c_str(), GetFileExInfoStandard, &info) != 0)
 			stage.bytes = info.nFileSizeLow;
 
-		const std::map<int, std::string>::const_iterator english =
-			m_english.find(NumberOf(stage.folder));
+		stage.name = Named(NumberOf(stage.folder));
 
-		if (english != m_english.end())
-		{
-			stage.name = english->second;
-		}
-		else
+		if (stage.name.empty())
 		{
 			std::string block;
 
@@ -917,7 +968,7 @@ void DfciSource::Stages(std::vector<StageArchive::Stage>& out)
 	FindClose(handle);
 }
 
-void DfciSource::Files(const std::string& stage, std::vector<std::string>& out)
+void FolderSource::Files(const std::string& stage, std::vector<std::string>& out)
 {
 	out.clear();
 
@@ -932,22 +983,17 @@ void DfciSource::Files(const std::string& stage, std::vector<std::string>& out)
 		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
 			continue;
 
-		const std::string name = found.cFileName;
+		const std::string exported = Exported(found.cFileName);
 
-		if (_stricmp(name.c_str(), "bg.fbx") == 0)
-		{
-			out.push_back(kModel);
-			continue;
-		}
-
-		out.push_back(name);
+		if (!exported.empty())
+			out.push_back(exported);
 	}
 	while (FindNextFileA(handle, &found) != 0);
 
 	FindClose(handle);
 }
 
-bool DfciSource::Read(const std::string& stage, const std::string& file,
+bool FolderSource::Read(const std::string& stage, const std::string& file,
 	std::vector<uint8_t>& out)
 {
 	out.clear();
@@ -960,22 +1006,13 @@ bool DfciSource::Read(const std::string& stage, const std::string& file,
 	if (model.empty())
 		return false;
 
-	std::vector<uint8_t> text;
-
-	if (!Whole(model, text))
+	if (!Whole(model, out))
 		return false;
 
-	std::string error;
-
-	if (FbxToFbxEx::Convert(text.data(), text.size(), out, error))
-		return true;
-
-	LOG("StageArchive: %s\\bg.fbx did not convert - %s", stage.c_str(), error.c_str());
-	out.clear();
-	return false;
+	return Convert(out, stage);
 }
 
-bool DfciSource::BgList(std::string& out)
+bool FolderSource::BgList(std::string& out)
 {
 	out.clear();
 
@@ -988,6 +1025,51 @@ bool DfciSource::BgList(std::string& out)
 	return true;
 }
 
+std::string UnielSource::Model(const std::string& stage) const
+{
+	const std::string path = m_bg + "\\" + stage + "\\" + kModel;
+
+	return GetFileAttributesA(path.c_str()) == INVALID_FILE_ATTRIBUTES ? std::string() : path;
+}
+
+std::string UnielSource::Exported(const std::string& name) const
+{
+	return _stricmp(name.c_str(), "bg.fbx") == 0 ? std::string() : name;
+}
+
+bool UnielSource::Convert(std::vector<uint8_t>& data, const std::string& stage) const
+{
+	if (data.empty())
+		return false;
+
+	FbxExLocal::Report report = {};
+
+	if (FbxExLocal::Apply(data, report) && report.nodes != 0)
+	{
+		LOG("StageArchive: %s bakes each node's world matrix - %d node(s) and %d frame(s) put "
+			"back onto their parents", stage.c_str(), report.nodes, report.frames);
+	}
+
+	return true;
+}
+
+void UnielSource::Decode(std::vector<uint8_t>& data) const
+{
+	UnielCipher::Decrypt(data);
+}
+
+template <typename T>
+StageArchive::Source* Opened(const char* folder)
+{
+	T* const source = new T(folder);
+
+	if (source->IsOpen())
+		return source;
+
+	delete source;
+	return nullptr;
+}
+
 }
 
 StageArchive::Source* StageArchive::Open(const char* folder)
@@ -995,42 +1077,23 @@ StageArchive::Source* StageArchive::Open(const char* folder)
 	if (folder == nullptr || folder[0] == 0)
 		return nullptr;
 
-	const FbGameFolder::Game game = FbGameFolder::Detect(folder);
-
-	if (game == FbGameFolder::Game_MBTL)
+	switch (FbGameFolder::Detect(folder))
 	{
-		MbtlSource* const source = new MbtlSource(folder);
+	case FbGameFolder::Game_MBTL:
+		return Opened<MbtlSource>(folder);
 
-		if (source->IsOpen())
-			return source;
+	case FbGameFolder::Game_UNI:
+		return Opened<UniSource>(folder);
 
-		delete source;
+	case FbGameFolder::Game_UNIEL:
+		return Opened<UnielSource>(folder);
+
+	case FbGameFolder::Game_DFCI:
+		return Opened<DfciSource>(folder);
+
+	default:
 		return nullptr;
 	}
-
-	if (game == FbGameFolder::Game_UNI)
-	{
-		UniSource* const source = new UniSource(folder);
-
-		if (source->IsOpen())
-			return source;
-
-		delete source;
-		return nullptr;
-	}
-
-	if (game == FbGameFolder::Game_DFCI)
-	{
-		DfciSource* const source = new DfciSource(folder);
-
-		if (source->IsOpen())
-			return source;
-
-		delete source;
-		return nullptr;
-	}
-
-	return nullptr;
 }
 
 bool StageArchive::MagicOk(const std::string& file, const std::vector<uint8_t>& data)
@@ -1207,6 +1270,15 @@ bool StageArchive::Asset(const char* folder, const char* path, std::vector<uint8
 
 	for (char& c : wanted)
 		c = c == '/' ? '\\' : c;
+
+	if (FbGameFolder::Detect(folder) == FbGameFolder::Game_UNIEL)
+	{
+		if (!ReadWholeFile(Combine(folder, wanted), out))
+			return false;
+
+		UnielCipher::Decrypt(out);
+		return true;
+	}
 
 	const std::string root = Combine(folder, "d");
 

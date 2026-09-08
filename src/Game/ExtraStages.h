@@ -1,9 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace ExtraStages
 {
+	uintptr_t RecordAt(int number);
+
 	struct Stage
 	{
 		int number;

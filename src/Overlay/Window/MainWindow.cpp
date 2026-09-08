@@ -48,6 +48,8 @@
 #include "Training/PlayerControl.h"
 #include "Game/ModPacks.h"
 #include "Game/StageImport.h"
+#include "Game/BgCeiling.h"
+#include "Game/StageLibrary.h"
 #include "Game/SoundPacks.h"
 #include "Training/StageColor.h"
 
@@ -1814,9 +1816,7 @@ void MainWindow::DrawStagesSection()
 	ImGui::TextWrapped("The two stages the game hides from its own lists, and stages taken out of "
 		"another French-Bread game you own and installed as stages of their own.");
 
-	if (StageImport::PortCount() > 0)
-		UiText::Good("%d stage(s) ported.", StageImport::PortCount());
-
+	UiText::Good("%d/%d stages.", StageLibrary::Total(), BgCeiling::Numbers());
 }
 
 void MainWindow::DrawModsSection()

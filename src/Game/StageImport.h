@@ -2,26 +2,14 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
 
 namespace StageImport
 {
-	constexpr int kFirstNumber = 28;
-	constexpr int kLastNumber = 98;
-
 	struct Offer
 	{
 		std::string folder;
 		std::string name;
 		uint32_t bytes;
-	};
-
-	struct Port
-	{
-		int number;
-		std::string game;
-		std::string folder;
-		std::string name;
 	};
 
 	void Initialize();
@@ -35,15 +23,11 @@ namespace StageImport
 	bool Install(int index, const char* name);
 	bool InstallMany(const int* indices, const char* const* names, int count);
 	bool InstallFolder(const char* folder, const char* name);
-	bool Remove(int number);
+	bool Remove(int id);
 
-	bool Dropped(int number);
+	bool SetInGame(int id, bool inGame);
 
-	int PortCount();
-	const Port* PortAt(int index);
-
-	int FreeNumber();
-	int FreeNumber(const std::vector<int>& reserved);
+	bool Dropped(int id);
 
 	void Update();
 

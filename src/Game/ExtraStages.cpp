@@ -4,6 +4,7 @@
 #include "Core/TextEncoding.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/BgCeiling.h"
 #include "Game/BgListOverride.h"
 #include "Game/GameOffsets.h"
 
@@ -47,20 +48,6 @@ std::vector<Held> g_held;
 bool g_ready = false;
 int g_countdown = 0;
 char g_status[160] = "not looked yet";
-
-uintptr_t RecordAt(int number)
-{
-	if (number < 0 || number >= GameOffsets::kBgRecordCount)
-		return 0;
-
-	const uintptr_t table = RvaToAddress(GameOffsets::kBgRecordTable);
-	uint32_t record = 0;
-
-	if (!TryReadDword(reinterpret_cast<const void*>(table + number * sizeof(uint32_t)), record))
-		return 0;
-
-	return record;
-}
 
 bool ReadFlags(uintptr_t record, uint32_t* out)
 {
@@ -134,7 +121,7 @@ const Held* HeldFor(int number)
 
 void Write(int number, bool unlocked)
 {
-	const uintptr_t record = RecordAt(number);
+	const uintptr_t record = ExtraStages::RecordAt(number);
 	const Held* const held = HeldFor(number);
 
 	if (record == 0 || held == nullptr)
@@ -189,9 +176,9 @@ void Discover()
 	GetPrivateProfileStringA("Extras", "UnlockedStages", "", saved, sizeof(saved),
 		Settings::GetIniPath().c_str());
 
-	for (int number = 0; number < GameOffsets::kBgRecordCount; ++number)
+	for (int number = 0; number < BgCeiling::Numbers(); ++number)
 	{
-		const uintptr_t record = RecordAt(number);
+		const uintptr_t record = ExtraStages::RecordAt(number);
 
 		if (record == 0)
 			continue;
@@ -208,6 +195,9 @@ void Discover()
 		stage.name = Readable(record, number);
 		stage.unlocked = Lists(saved, number);
 
+		if (stage.folder.empty() && InEnglish(number).empty())
+			continue;
+
 		if (!stage.folder.empty())
 			g_all.push_back(stage);
 
@@ -221,7 +211,7 @@ void Discover()
 
 void Settle()
 {
-	if (RecordAt(kFirstStage) == 0)
+	if (ExtraStages::RecordAt(kFirstStage) == 0)
 		return;
 
 	Discover();
@@ -296,6 +286,20 @@ const ExtraStages::Stage* ExtraStages::Get(int index)
 	return &g_stages[index];
 }
 
+uintptr_t ExtraStages::RecordAt(int number)
+{
+	if (number < 0 || number >= BgCeiling::Numbers())
+		return 0;
+
+	const uintptr_t table = BgCeiling::RecordTable();
+	uint32_t record = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(table + number * sizeof(uint32_t)), record))
+		return 0;
+
+	return record;
+}
+
 int ExtraStages::LoadedStage()
 {
 	const uintptr_t address = RvaToAddress(GameOffsets::kBgLoadedIndex);
@@ -310,7 +314,7 @@ int ExtraStages::LoadedStage()
 
 	const int stage = static_cast<int>(value);
 
-	return stage >= 0 && stage < 100 ? stage : -1;
+	return stage >= 0 && stage < BgCeiling::Numbers() ? stage : -1;
 }
 
 void ExtraStages::SetUnlocked(int number, bool unlocked)

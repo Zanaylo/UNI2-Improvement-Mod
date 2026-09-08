@@ -216,16 +216,31 @@
     <ClCompile Include="src\Game\FbxAscii.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\BgCeiling.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\FbxExLocal.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\FbxToFbxEx.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\MbtlCipher.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\UnielCipher.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\StageArchive.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\StageImport.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgRecord.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StageLibrary.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\StageThumb.cpp">
@@ -1001,16 +1016,31 @@
     <ClInclude Include="src\Game\FbxAscii.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\BgCeiling.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\FbxExLocal.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\FbxToFbxEx.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\MbtlCipher.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\UnielCipher.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\StageArchive.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\StageImport.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgRecord.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StageLibrary.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\StageThumb.h">

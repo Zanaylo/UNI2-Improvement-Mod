@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <vector>
 
 namespace {
@@ -44,8 +45,16 @@ bool Read(const char* leaf, std::string& out)
 	return true;
 }
 
-bool Write(const char* leaf, const std::string& text)
+bool Write(const char* leaf, const std::string& text, bool& changed)
 {
+	std::vector<uint8_t> was;
+
+	if (ReadWholeFile(Path(leaf), was) && was.size() == text.size()
+		&& memcmp(was.data(), text.data(), text.size()) == 0)
+	{
+		return true;
+	}
+
 	CreateDirectoryTree(Root());
 
 	FILE* handle = nullptr;
@@ -55,6 +64,8 @@ bool Write(const char* leaf, const std::string& text)
 
 	const size_t written = fwrite(text.data(), 1, text.size(), handle);
 	fclose(handle);
+
+	changed = changed || written == text.size();
 
 	return written == text.size();
 }
@@ -77,18 +88,18 @@ size_t TableEnd(const std::string& list)
 	return end == std::string::npos ? end : end - 1;
 }
 
-void DropEntry(std::string& list, int number)
+bool Span(const std::string& list, int number, size_t& start, size_t& end)
 {
-	size_t start = list.find(Tag(number));
+	start = list.find(Tag(number));
 	const size_t open = start == std::string::npos ? start : list.find('{', start);
 
 	if (open == std::string::npos)
-		return;
+		return false;
 
-	size_t end = StageArchive::MatchPair(list, open);
+	end = StageArchive::MatchPair(list, open);
 
 	if (end == std::string::npos)
-		return;
+		return false;
 
 	while (start > 0 && (list[start - 1] == '\t' || list[start - 1] == ' '))
 		--start;
@@ -96,7 +107,57 @@ void DropEntry(std::string& list, int number)
 	while (end < list.size() && (list[end] == '\r' || list[end] == '\n'))
 		++end;
 
-	list.erase(start, end - start);
+	return true;
+}
+
+void DropEntry(std::string& list, int number)
+{
+	size_t start = 0;
+	size_t end = 0;
+
+	if (Span(list, number, start, end))
+		list.erase(start, end - start);
+}
+
+void EntryNumbers(const std::string& list, std::vector<int>& out)
+{
+	const std::string mark = "Bg_";
+
+	for (size_t at = list.find(mark); at != std::string::npos; at = list.find(mark, at + 1))
+	{
+		const size_t digits = at + mark.size();
+
+		if (digits + 3 > list.size())
+			return;
+
+		if (isdigit(static_cast<unsigned char>(list[digits])) == 0 ||
+			isdigit(static_cast<unsigned char>(list[digits + 1])) == 0 ||
+			isdigit(static_cast<unsigned char>(list[digits + 2])) == 0)
+		{
+			continue;
+		}
+
+		size_t after = digits + 3;
+
+		while (after < list.size() && (list[after] == ' ' || list[after] == '\t'))
+			++after;
+
+		if (after >= list.size() || list[after] != '=')
+			continue;
+
+		out.push_back(atoi(list.substr(digits, 3).c_str()));
+	}
+}
+
+bool Original(const char* leaf, std::string& out)
+{
+	std::vector<uint8_t> blob;
+
+	if (!DataArchive::Read("bg", leaf, blob) || blob.empty())
+		return false;
+
+	out.assign(blob.begin(), blob.end());
+	return true;
 }
 
 bool ListedNumbers(const std::string& list, std::vector<int>& out, size_t& first, size_t& last)
@@ -256,17 +317,151 @@ std::string NameIn(const std::string& list, int number)
 	return name;
 }
 
+void Restock(std::string& list, std::string& names, const std::vector<int>& owned)
+{
+	std::string original;
+	std::string originalNames;
+
+	if (!Original(kList, original) || !Original(kNames, originalNames))
+		return;
+
+	const size_t table = TableEnd(list);
+
+	if (table == std::string::npos)
+		return;
+
+	std::vector<int> numbers;
+	EntryNumbers(original, numbers);
+
+	std::vector<int> lost;
+	std::string added;
+
+	for (int number : numbers)
+	{
+		if (std::find(owned.begin(), owned.end(), number) != owned.end())
+			continue;
+
+		size_t start = 0;
+		size_t end = 0;
+
+		if (Span(list, number, start, end) || !Span(original, number, start, end))
+			continue;
+
+		added += original.substr(start, end - start);
+		lost.push_back(number);
+	}
+
+	if (lost.empty())
+		return;
+
+	list.insert(table, added);
+
+	std::vector<int> listed;
+	size_t first = 0;
+	size_t last = 0;
+	ListedNumbers(original, listed, first, last);
+
+	for (int number : lost)
+	{
+		if (std::find(listed.begin(), listed.end(), number) != listed.end())
+			SetListed(list, number, true);
+
+		size_t start = 0;
+		size_t end = 0;
+
+		if (!HasName(names, number) && LineOf(originalNames, number, start, end))
+		{
+			if (!names.empty() && names.back() != '\n')
+				names += "\r\n";
+
+			names += originalNames.substr(start, end - start);
+		}
+
+		LOG("BgListOverride: stage %d had gone from the table and is put back", number);
+	}
+}
+
 bool g_restart = false;
 
 bool Commit(const std::string& list, const std::string& names)
 {
-	if (!Write(kList, list) || !Write(kNames, names))
+	bool changed = false;
+
+	if (!Write(kList, list, changed) || !Write(kNames, names, changed))
 		return false;
 
-	g_restart = true;
+	g_restart = g_restart || changed;
 	return true;
 }
 
+}
+
+bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned)
+{
+	std::string list;
+	std::string names;
+
+	if (!Read(kList, list) || !Read(kNames, names))
+		return false;
+
+	Restock(list, names, owned);
+
+	for (int number : owned)
+	{
+		DropEntry(list, number);
+		ClearName(names, number);
+	}
+
+	std::vector<int> order;
+	size_t open = 0;
+	size_t close = 0;
+
+	if (!ListedNumbers(list, order, open, close))
+		return false;
+
+	order.erase(std::remove_if(order.begin(), order.end(), [&owned](int number)
+		{ return std::find(owned.begin(), owned.end(), number) != owned.end(); }), order.end());
+
+	const size_t table = TableEnd(list);
+
+	if (table == std::string::npos)
+		return false;
+
+	std::string added;
+
+	for (const Slotted& one : ours)
+	{
+		added += one.entry;
+		added += "\r\n";
+
+		SetName(names, one.number, one.shiftJisName);
+		order.push_back(one.number);
+	}
+
+	list.insert(table, added);
+
+	std::vector<int> moved;
+
+	if (!ListedNumbers(list, moved, open, close))
+		return false;
+
+	std::string rebuilt = " ";
+
+	for (size_t i = 0; i < order.size(); ++i)
+	{
+		char text[16] = {};
+		sprintf_s(text, "%d", order[i]);
+
+		rebuilt += text;
+		rebuilt += i + 1 < order.size() ? ", " : " ";
+	}
+
+	list.replace(open + 1, close - open - 1, rebuilt);
+
+	LOG("BgListOverride: the picker list carries %d of ours now",
+		static_cast<int>(ours.size()));
+
+	return Commit(list, names);
 }
 
 bool BgListOverride::Add(int number, const std::string& entry, const std::string& shiftJisName)
@@ -302,6 +497,58 @@ bool BgListOverride::Drop(int number)
 	DropEntry(list, number);
 	SetListed(list, number, false);
 	ClearName(names, number);
+
+	return Commit(list, names);
+}
+
+bool BgListOverride::Restore(int number)
+{
+	std::string list;
+	std::string names;
+	std::string ownList;
+	std::string ownNames;
+
+	if (!Read(kList, list) || !Read(kNames, names) || !Original(kList, ownList)
+		|| !Original(kNames, ownNames))
+	{
+		return false;
+	}
+
+	size_t start = 0;
+	size_t end = 0;
+
+	if (!Span(ownList, number, start, end))
+		return false;
+
+	const std::string entry = ownList.substr(start, end - start);
+
+	DropEntry(list, number);
+
+	const size_t close = TableEnd(list);
+
+	if (close == std::string::npos)
+		return false;
+
+	list.insert(close, entry);
+
+	std::vector<int> ownOrder;
+	size_t first = 0;
+	size_t last = 0;
+
+	ListedNumbers(ownList, ownOrder, first, last);
+	SetListed(list, number, std::find(ownOrder.begin(), ownOrder.end(), number) != ownOrder.end());
+
+	ClearName(names, number);
+
+	if (LineOf(ownNames, number, start, end))
+	{
+		if (!names.empty() && names.back() != '\n')
+			names += "\r\n";
+
+		names += ownNames.substr(start, end - start);
+	}
+
+	LOG("BgListOverride: stage %d is the game's own again", number);
 
 	return Commit(list, names);
 }
@@ -344,6 +591,16 @@ bool BgListOverride::IsListed(int number)
 		return false;
 
 	return std::find(numbers.begin(), numbers.end(), number) != numbers.end();
+}
+
+bool BgListOverride::Body(int number, std::string& out)
+{
+	std::string list;
+
+	if (!Read(kList, list))
+		return false;
+
+	return StageArchive::Block(list, Tag(number), out);
 }
 
 bool BgListOverride::SelectOrder(std::vector<int>& out)

@@ -5,6 +5,7 @@
 #include "Game/BgListOverride.h"
 #include "Game/GameOffsets.h"
 #include "Game/SceneWatch.h"
+#include "Game/StageLibrary.h"
 #include "Game/StageThumb.h"
 #include "Hooks/HookManager.h"
 
@@ -161,11 +162,11 @@ void CellOrigin(int cell, int& outX, int& outY)
 	outY = kFirstY + (local / kColumns) * kPitchY;
 }
 
-const std::vector<uint8_t>& CardOf(int number)
+const std::vector<uint8_t>& CardOf(int id)
 {
 	static const std::vector<uint8_t> none;
 
-	const std::map<int, std::vector<uint8_t> >::const_iterator known = g_cards.find(number);
+	const std::map<int, std::vector<uint8_t> >::const_iterator known = g_cards.find(id);
 
 	if (known != g_cards.end())
 		return known->second;
@@ -175,20 +176,20 @@ const std::vector<uint8_t>& CardOf(int number)
 
 	std::vector<uint8_t> card;
 
-	if (!ReadWhole(StageThumb::CardPath(number), card))
+	if (!ReadWhole(StageThumb::CardPath(id), card))
 		return none;
 
-	return g_cards.insert(std::make_pair(number, card)).first->second;
+	return g_cards.insert(std::make_pair(id, card)).first->second;
 }
 
-bool PaintCell(int cell, int number)
+bool PaintCell(int cell, int id)
 {
 	IDirect3DTexture9* const sheet = g_sheet;
 
 	if (sheet == nullptr)
 		return false;
 
-	const std::vector<uint8_t>& card = CardOf(number);
+	const std::vector<uint8_t>& card = CardOf(id);
 
 	if (card.size() != static_cast<size_t>(kCardWidth) * kCardHeight * 4)
 		return false;
@@ -225,29 +226,33 @@ bool Refresh(int cursor)
 	const int count = static_cast<int>(g_order.size());
 	int painted = 0;
 
+	if (count <= 0)
+		return true;
+
 	for (int step = 0; step <= kWindow * 2; ++step)
 	{
 		const int away = (step + 1) / 2;
-		const int at = step % 2 == 0 ? cursor - away : cursor + away;
 
-		if (at < 0 || at >= count || away > kWindow)
+		if (away > kWindow || away * 2 > count)
 			continue;
 
-		const int number = g_order[at];
-		const int cell = StageThumb::CellFor(number);
+		const int at = ((step % 2 == 0 ? cursor - away : cursor + away) % count + count) % count;
+
+		const int cell = StageThumb::CellFor(g_order[at]);
 
 		if (cell < StageThumb::kFirstCell || cell > StageThumb::kLastCell)
 			continue;
 
-		const int slot = cell - StageThumb::kFirstCell;
+		const int id = StageLibrary::IdForSlot(g_order[at]);
+		const int hold = cell - StageThumb::kFirstCell;
 
-		if (g_holds[slot] == number)
+		if (id < 0 || g_holds[hold] == id)
 			continue;
 
-		if (!StageThumb::HasCard(number) || !PaintCell(cell, number))
+		if (!StageThumb::HasCard(id) || !PaintCell(cell, id))
 			continue;
 
-		g_holds[slot] = number;
+		g_holds[hold] = id;
 
 		if (++painted >= kPerFrame)
 			return false;
@@ -260,6 +265,7 @@ bool Refresh(int cursor)
 
 bool StageCards::Initialize()
 {
+	StageThumb::ServeSheet();
 	ReadWhole(GetModRootPath(kSheetFile), g_wanted);
 
 	const uintptr_t address = RvaToAddress(GameOffsets::kFnStageSelectSetup);
@@ -318,6 +324,16 @@ void StageCards::OnFrame()
 
 	if (g_pending)
 		g_pending = !Refresh(g_cursor);
+}
+
+void StageCards::Repaint()
+{
+	for (int& holds : g_holds)
+		holds = 0;
+
+	g_cards.clear();
+	g_ordered = false;
+	g_pending = true;
 }
 
 bool StageCards::Reached()

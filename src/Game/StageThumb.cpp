@@ -6,11 +6,12 @@
 #include "Game/DataArchive.h"
 #include "Game/MbtlCipher.h"
 #include "Game/StageArchive.h"
-#include "Game/StageImport.h"
+#include "Game/StageLibrary.h"
 
 #include <Windows.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 
@@ -61,6 +62,11 @@ constexpr int kUniFirstX = 43;
 constexpr int kUniFirstY = 0;
 constexpr int kUniPitchX = 1006;
 constexpr int kUniPitchY = 128;
+constexpr int kUniFocusWidth = kOurCellWidth;
+constexpr int kFocusReach = 96;
+constexpr int kFocusTaper = 85;
+constexpr int kFocusGain = 135;
+constexpr int kDetailStep = 2;
 
 constexpr const char* kFolderThumbs[] = { "Thumbnail.png", "Thumbnail.dds" };
 
@@ -81,6 +87,108 @@ struct Image
 	int width;
 	int height;
 };
+
+struct Rect
+{
+	int x;
+	int y;
+	int width;
+	int height;
+};
+
+Rect Middle(const Rect& whole, int width)
+{
+	Rect out = whole;
+
+	if (width > 0 && width < whole.width)
+	{
+		out.x = whole.x + (whole.width - width) / 2;
+		out.width = width;
+	}
+
+	return out;
+}
+
+int Luma(const Image& image, int x, int y)
+{
+	const uint8_t* const pixel = &image.pixels[(static_cast<size_t>(y) * image.width + x) * 4];
+
+	return (pixel[2] * 30 + pixel[1] * 59 + pixel[0] * 11) / 100;
+}
+
+int ColumnDetail(const Image& image, const Rect& band, int column)
+{
+	const int x = band.x + column;
+	int detail = 0;
+
+	for (int row = 0; row + kDetailStep < band.height; row += kDetailStep)
+	{
+		const int here = Luma(image, x, band.y + row);
+
+		if (column + 1 < band.width)
+			detail += abs(here - Luma(image, x + 1, band.y + row));
+
+		detail += abs(here - Luma(image, x, band.y + row + kDetailStep));
+	}
+
+	return detail;
+}
+
+int WindowDetail(const std::vector<int>& detail, int at, int width)
+{
+	int score = 0;
+
+	for (int column = 0; column < width; ++column)
+	{
+		const int weight = 100 - (kFocusTaper * abs(2 * column - width)) / width;
+
+		score += (detail[static_cast<size_t>(at) + column] * weight) / 100;
+	}
+
+	return score;
+}
+
+Rect Focused(const Image& image, const Rect& band, int width)
+{
+	const Rect middle = Middle(band, width);
+
+	if (width <= 0 || width >= band.width)
+		return middle;
+
+	std::vector<int> detail(static_cast<size_t>(band.width), 0);
+
+	for (int column = 0; column < band.width; ++column)
+		detail[column] = ColumnDetail(image, band, column);
+
+	const int centre = middle.x - band.x;
+	const int settled = WindowDetail(detail, centre, width);
+	const int reached = centre - kFocusReach;
+	const int first = reached < 0 ? 0 : reached;
+	const int limit = band.width - width;
+	const int last = centre + kFocusReach > limit ? limit : centre + kFocusReach;
+
+	int best = settled;
+	int at = centre;
+
+	for (int start = first; start <= last; ++start)
+	{
+		const int score = WindowDetail(detail, start, width);
+
+		if (score <= best)
+			continue;
+
+		best = score;
+		at = start;
+	}
+
+	if (best * 100 <= settled * kFocusGain)
+		return middle;
+
+	Rect out = middle;
+	out.x = band.x + at;
+
+	return out;
+}
 
 std::string OurPath(int sheet)
 {
@@ -440,9 +548,14 @@ void BoxBlur(std::vector<uint8_t>& pixels, int width, int height)
 	}
 }
 
-void BlitCard(const Image& source, int sourceX, int sourceY, int sourceWidth, int sourceHeight,
-	Image& target, int targetX, int targetY)
+void BlitCard(const Image& source, const Rect& cover, const Rect& focus, Image& target,
+	int targetX, int targetY)
 {
+	const int sourceX = cover.x;
+	const int sourceY = cover.y;
+	const int sourceWidth = cover.width;
+	const int sourceHeight = cover.height;
+
 	std::vector<uint8_t> cell(static_cast<size_t>(kOurCellWidth) * kOurCellHeight * 4);
 
 	int coverWidth = (sourceHeight * kOurCellWidth) / kOurCellHeight;
@@ -472,16 +585,16 @@ void BlitCard(const Image& source, int sourceX, int sourceY, int sourceWidth, in
 
 	BoxBlur(cell, kOurCellWidth, kOurCellHeight);
 
-	const int fitted = (kOurCellWidth * sourceHeight) / sourceWidth;
+	const int fitted = (kOurCellWidth * focus.height) / focus.width;
 	const int top = (kOurCellHeight - fitted) / 2;
 
-	for (int row = 0; row < fitted; ++row)
+	for (int row = 0; row < fitted && top + row < kOurCellHeight; ++row)
 	{
-		const int from = sourceY + (row * sourceHeight) / fitted;
+		const int from = focus.y + (row * focus.height) / fitted;
 
 		for (int column = 0; column < kOurCellWidth; ++column)
 		{
-			const int at = sourceX + (column * sourceWidth) / kOurCellWidth;
+			const int at = focus.x + (column * focus.width) / kOurCellWidth;
 			const uint8_t* const in = &source.pixels[(static_cast<size_t>(from) * source.width +
 				at) * 4];
 			uint8_t* const out = &cell[(static_cast<size_t>(top + row) * kOurCellWidth +
@@ -502,59 +615,72 @@ void BlitCard(const Image& source, int sourceX, int sourceY, int sourceWidth, in
 	}
 }
 
-void KeepCard(const Image& sheet, int x, int y, int number)
+bool Carded(int id)
 {
-	std::vector<uint8_t> cell(static_cast<size_t>(kOurCellWidth) * kOurCellHeight * 4);
+	return id >= StageLibrary::kSlotFirst && id <= StageLibrary::kIdLast;
+}
 
-	for (int row = 0; row < kOurCellHeight; ++row)
-	{
-		memcpy(&cell[static_cast<size_t>(row) * kOurCellWidth * 4],
-			&sheet.pixels[(static_cast<size_t>(y + row) * sheet.width + x) * 4],
-			static_cast<size_t>(kOurCellWidth) * 4);
-	}
+bool EnsureSheet()
+{
+	std::vector<uint8_t> vanilla;
 
+	if (!DataArchive::Read(kOurFolder, kOurSheets[1], vanilla) || vanilla.empty())
+		return false;
+
+	std::vector<uint8_t> ours;
+
+	if (ReadWholeFile(OurPath(1), ours) && ours == vanilla)
+		return true;
+
+	LOG("StageThumb: the picker's second sheet is ours to serve now, so the cards can be painted");
+
+	return Write(1, vanilla);
+}
+
+bool SaveCard(const Image& card, int id)
+{
+	EnsureSheet();
 	CreateDirectoryTree(GetModRootPath(kCardFolder));
 
 	FILE* handle = nullptr;
 
-	if (fopen_s(&handle, StageThumb::CardPath(number).c_str(), "wb") != 0 || handle == nullptr)
-		return;
+	if (fopen_s(&handle, StageThumb::CardPath(id).c_str(), "wb") != 0 || handle == nullptr)
+		return false;
 
-	fwrite(cell.data(), 1, cell.size(), handle);
+	const size_t written = fwrite(card.pixels.data(), 1, card.pixels.size(), handle);
 	fclose(handle);
+
+	return written == card.pixels.size();
 }
 
-bool Paint(const Image& card, int cardX, int cardY, int cardWidth, int cardHeight, int number,
+bool Paint(const Image& card, int cardX, int cardY, int cardWidth, int cardHeight, int id,
 	bool fit = false)
 {
-	const int cell = StageThumb::CellFor(number) - kOurSecondSheet;
+	Image out;
+	out.width = kOurCellWidth;
+	out.height = kOurCellHeight;
+	out.pixels.assign(static_cast<size_t>(kOurCellWidth) * kOurCellHeight * 4, 0);
 
-	std::vector<uint8_t> blob;
-
-	if (!OurSheet(1, blob))
-		return false;
-
-	Image ours;
-
-	if (!Unpack(blob, ours))
-		return false;
-
-	int x = 0;
-	int y = 0;
-	CellOf(cell, kOurColumns, kOurFirstX, kOurFirstY, kOurPitchX, kOurPitchY, x, y);
-
-	if (x + kOurCellWidth > ours.width || y + kOurCellHeight > ours.height)
-		return false;
+	const Rect whole = { cardX, cardY, cardWidth, cardHeight };
 
 	if (fit)
-		BlitCard(card, cardX, cardY, cardWidth, cardHeight, ours, x, y);
+		BlitCard(card, whole, whole, out, 0, 0);
 	else
-		Blit(card, cardX, cardY, cardWidth, cardHeight, ours, x, y);
+		Blit(card, cardX, cardY, cardWidth, cardHeight, out, 0, 0);
 
-	memcpy(blob.data() + kDdsHeader, ours.pixels.data(), ours.pixels.size());
-	KeepCard(ours, x, y, number);
+	return SaveCard(out, id);
+}
 
-	return Write(1, blob);
+bool PaintFocused(const Image& card, const Rect& cover, const Rect& focus, int id)
+{
+	Image out;
+	out.width = kOurCellWidth;
+	out.height = kOurCellHeight;
+	out.pixels.assign(static_cast<size_t>(kOurCellWidth) * kOurCellHeight * 4, 0);
+
+	BlitCard(card, cover, focus, out, 0, 0);
+
+	return SaveCard(out, id);
 }
 
 bool FolderImage(const std::string& folder, Image& out)
@@ -613,7 +739,7 @@ bool TakeDfci(const std::string& gameFolder, int sourceCell, int number)
 
 bool TakeUni(const std::string& gameFolder, int sourceCell, int number)
 {
-	const int index = sourceCell - 1;
+	const int index = sourceCell;
 
 	if (index < 0 || index >= kUniCells)
 		return false;
@@ -640,10 +766,9 @@ bool TakeUni(const std::string& gameFolder, int sourceCell, int number)
 	if (cardX + kUniCellWidth > sheet.width || cardY + kUniCellHeight > sheet.height)
 		return false;
 
-	const int window = (kUniCellHeight * kOurCellWidth) / kOurCellHeight;
-	const int from = cardX + (kUniCellWidth - window) / 2;
+	const Rect banner = { cardX, cardY, kUniCellWidth, kUniCellHeight };
 
-	if (!Paint(sheet, from, cardY, window, kUniCellHeight, number))
+	if (!PaintFocused(sheet, banner, Focused(sheet, banner, kUniFocusWidth), number))
 		return false;
 
 	LOG("StageThumb: stage %d takes cell %d of UNI's stage select", number, sourceCell);
@@ -683,30 +808,35 @@ bool TakeMbtl(const std::string& gameFolder, int sourceCell, int number)
 
 }
 
-int StageThumb::CellFor(int number)
+bool StageThumb::ServeSheet()
 {
-	if (number < StageImport::kFirstNumber || number > StageImport::kLastNumber)
-		return -1;
-
-	return kFirstCell + (number - kFirstCell) % kCells;
+	return EnsureSheet();
 }
 
-std::string StageThumb::CardPath(int number)
+int StageThumb::CellFor(int slot)
+{
+	if (!StageLibrary::Bindable(slot))
+		return -1;
+
+	return kFirstCell + (slot - kFirstCell) % kCells;
+}
+
+std::string StageThumb::CardPath(int id)
 {
 	char leaf[32] = {};
-	sprintf_s(leaf, "\\card%03d.bin", number);
+	sprintf_s(leaf, "\\card%03d.bin", id);
 
 	return GetModRootPath(kCardFolder) + leaf;
 }
 
-bool StageThumb::HasCard(int number)
+bool StageThumb::HasCard(int id)
 {
-	return GetFileAttributesA(CardPath(number).c_str()) != INVALID_FILE_ATTRIBUTES;
+	return Carded(id) && GetFileAttributesA(CardPath(id).c_str()) != INVALID_FILE_ATTRIBUTES;
 }
 
-bool StageThumb::TakeFolder(const std::string& folder, int number)
+bool StageThumb::TakeFolder(const std::string& folder, int id)
 {
-	if (CellFor(number) < 0)
+	if (!Carded(id))
 		return false;
 
 	Image card;
@@ -714,63 +844,32 @@ bool StageThumb::TakeFolder(const std::string& folder, int number)
 	if (!FolderImage(folder, card) || card.width <= 0 || card.height <= 0)
 		return false;
 
-	if (!Paint(card, 0, 0, card.width, card.height, number, true))
+	if (!Paint(card, 0, 0, card.width, card.height, id, true))
 		return false;
 
-	LOG("StageThumb: stage %d takes the Thumbnail in its own folder", number);
+	LOG("StageThumb: stage %d takes the Thumbnail in its own folder", id);
 	return true;
 }
 
 bool StageThumb::Take(FbGameFolder::Game game, const std::string& gameFolder, int sourceCell,
-	int number)
+	int id)
 {
-	if (sourceCell < 0 || CellFor(number) < 0)
+	if (sourceCell < 0 || !Carded(id))
 		return false;
 
 	if (game == FbGameFolder::Game_DFCI)
-		return TakeDfci(gameFolder, sourceCell, number);
+		return TakeDfci(gameFolder, sourceCell, id);
 
-	if (game == FbGameFolder::Game_UNI)
-		return TakeUni(gameFolder, sourceCell, number);
+	if (game == FbGameFolder::Game_UNI || game == FbGameFolder::Game_UNIEL)
+		return TakeUni(gameFolder, sourceCell, id);
 
 	if (game == FbGameFolder::Game_MBTL)
-		return TakeMbtl(gameFolder, sourceCell, number);
+		return TakeMbtl(gameFolder, sourceCell, id);
 
 	return false;
 }
 
-bool StageThumb::Drop(int number)
+bool StageThumb::Forget(int id)
 {
-	if (number < kFirstCell || number > kLastCell)
-		return false;
-
-	std::vector<uint8_t> ours;
-	std::vector<uint8_t> vanilla;
-
-	if (!ReadWholeFile(OurPath(1), ours) ||
-		!DataArchive::Read(kOurFolder, kOurSheets[1], vanilla) || vanilla.size() != ours.size())
-	{
-		return false;
-	}
-
-	Image blank;
-	Image target;
-
-	if (!Unpack(vanilla, blank) || !Unpack(ours, target))
-		return false;
-
-	int x = 0;
-	int y = 0;
-	CellOf(number - kOurSecondSheet, kOurColumns, kOurFirstX, kOurFirstY, kOurPitchX, kOurPitchY,
-		x, y);
-
-	for (int row = 0; row < kOurCellHeight; ++row)
-	{
-		const size_t at = (static_cast<size_t>(y + row) * target.width + x) * 4;
-		memcpy(&target.pixels[at], &blank.pixels[at], static_cast<size_t>(kOurCellWidth) * 4);
-	}
-
-	memcpy(ours.data() + kDdsHeader, target.pixels.data(), target.pixels.size());
-
-	return Write(1, ours);
+	return Carded(id) && DeleteFileA(CardPath(id).c_str()) != 0;
 }

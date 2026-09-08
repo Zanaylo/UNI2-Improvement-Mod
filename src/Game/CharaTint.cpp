@@ -7,6 +7,7 @@
 #include "Game/GameState.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
+#include "Game/StageLibrary.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -26,19 +27,12 @@ bool g_wanted = false;
 
 char g_status[160] = "no stage asks for one";
 
-std::string NotePath(int number)
+bool ReadTint(int stage, uint32_t& out)
 {
-	char leaf[32] = {};
-	sprintf_s(leaf, "Mods\\bg\\bg%03d\\stage.txt", number);
-
-	return GetModRootPath(leaf);
-}
-
-bool ReadTint(int number, uint32_t& out)
-{
+	const int id = StageLibrary::IdForSlot(stage);
 	std::vector<uint8_t> blob;
 
-	if (!ReadWholeFile(NotePath(number), blob) || blob.empty())
+	if (id < 0 || !ReadWholeFile(StageLibrary::NoteOf(id), blob) || blob.empty())
 		return false;
 
 	const std::string text(reinterpret_cast<const char*>(blob.data()), blob.size());

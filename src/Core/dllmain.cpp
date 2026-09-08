@@ -17,6 +17,7 @@
 #include "Game/BalanceRules.h"
 #include "Game/BgmControl.h"
 #include "Game/GamePatches.h"
+#include "Game/BgCeiling.h"
 #include "Game/ModFiles.h"
 #include "Game/StageImport.h"
 #include "Game/StageObjects.h"
@@ -246,6 +247,7 @@ void Stage_Netplay()
 
 void Stage_FileOverrides()
 {
+	BgCeiling::Initialize();
 	ModFiles::Initialize();
 	StageImport::Initialize();
 	GamePatches::ApplyRemembered();

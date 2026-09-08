@@ -11,14 +11,17 @@ namespace StageThumb
 
 	constexpr int kCells = kLastCell - kFirstCell + 1;
 
-	int CellFor(int number);
+	int CellFor(int slot);
 
-	std::string CardPath(int number);
-	bool HasCard(int number);
+	bool ServeSheet();
 
-	bool TakeFolder(const std::string& folder, int number);
+	std::string CardPath(int id);
+	bool HasCard(int id);
 
-	bool Take(FbGameFolder::Game game, const std::string& gameFolder, int sourceCell, int number);
+	bool TakeFolder(const std::string& folder, int id);
 
-	bool Drop(int number);
+	bool Take(FbGameFolder::Game game, const std::string& gameFolder, int sourceCell, int id);
+
+	bool Forget(int id);
+
 }

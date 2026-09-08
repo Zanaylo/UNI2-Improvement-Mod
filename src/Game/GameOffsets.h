@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -207,6 +207,8 @@ namespace GameOffsets
 	constexpr uintptr_t kStageSelectSheet01 = 0xa8;
 
 	constexpr uintptr_t kBgRecordTable = 0x6447b0;
+	constexpr uintptr_t kBgSelectList = 0x6444b0;
+	constexpr uintptr_t kBgSelectCount = 0x644694;
 	constexpr uintptr_t kBgRecordNameField = 0x20;
 	constexpr uintptr_t kBgRecordSelectDisable = 0x60;
 	constexpr uintptr_t kBgRecordRandomDisable = 0x64;

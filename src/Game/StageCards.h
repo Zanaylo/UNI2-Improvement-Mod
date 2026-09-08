@@ -6,6 +6,8 @@ namespace StageCards
 
 	void OnFrame();
 
+	void Repaint();
+
 	bool Reached();
 
 	const char* StatusText();

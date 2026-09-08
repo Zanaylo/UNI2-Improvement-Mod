@@ -7,7 +7,7 @@
 #include "Game/FbGameFolder.h"
 #include "Game/GameOffsets.h"
 #include "Game/ModFiles.h"
-#include "Game/StageImport.h"
+#include "Game/StageLibrary.h"
 #include "Hooks/HookManager.h"
 #include "Training/FrameStepper.h"
 
@@ -35,6 +35,11 @@ using SetPixelShaderConstantF_t = HRESULT(STDMETHODCALLTYPE*)(IDirect3DDevice9*,
 
 CreateEffect_t oCreateEffect = nullptr;
 SetPixelShaderConstantF_t oSetPixelShaderConstantF = nullptr;
+
+bool From(const std::string& game, FbGameFolder::Game source)
+{
+	return game == FbGameFolder::Name(source);
+}
 
 char g_status[224] = "the game's own curve, unchanged";
 volatile long g_altered = 0;
@@ -164,25 +169,18 @@ void BgGrade::Attach(IDirect3DDevice9* device)
 
 BgGrade::Grade BgGrade::DefaultOf(int stage)
 {
-	Grade grade = { kGameLift, kGameContrast };
+	StageLibrary::Entry entry = {};
 
-	for (int i = 0; i < StageImport::PortCount(); ++i)
-	{
-		const StageImport::Port* const port = StageImport::PortAt(i);
+	if (!StageLibrary::Of(stage, entry))
+		return Grade{ kGameLift, kGameContrast };
 
-		if (port == nullptr || port->number != stage)
-			continue;
+	if (From(entry.game, FbGameFolder::Game_DFCI))
+		return Grade{ kDfciLift, kDfciContrast };
 
-		if (port->game == FbGameFolder::Name(FbGameFolder::Game_DFCI))
-		{
-			grade.lift = kDfciLift;
-			grade.contrast = kDfciContrast;
-		}
+	if (From(entry.game, FbGameFolder::Game_UNIEL))
+		return Grade{ kUnielLift, kUnielContrast };
 
-		break;
-	}
-
-	return grade;
+	return Grade{ kGameLift, kGameContrast };
 }
 
 BgGrade::Grade BgGrade::Of(int stage)
@@ -242,7 +240,9 @@ void BgGrade::Update()
 	if (!IsAddressInGameModule(address))
 		return;
 
-	const int stage = *reinterpret_cast<const int*>(address);
+	const int number = *reinterpret_cast<const int*>(address);
+	const int loaded = StageLibrary::IdForSlot(number);
+	const int stage = loaded < 0 ? number : loaded;
 	const long dirty = InterlockedExchange(&g_dirty, 0);
 
 	if (stage == g_stage && dirty == 0)
@@ -250,7 +250,7 @@ void BgGrade::Update()
 
 	if (stage != g_stage)
 	{
-		LOG("BgGrade: the stage the game is holding changed to %d", stage);
+		LOG("BgGrade: the stage the game is holding changed to %d", number);
 		g_cache.erase(stage);
 	}
 
