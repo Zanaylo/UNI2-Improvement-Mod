@@ -13,7 +13,15 @@ namespace BgListOverride
 		std::string shiftJisName;
 	};
 
-	bool Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned);
+	struct Reworked
+	{
+		int number;
+		std::string note;
+		std::string shiftJisName;
+	};
+
+	bool Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned,
+		const std::vector<Reworked>& reworked);
 
 	bool Add(int number, const std::string& entry, const std::string& shiftJisName);
 

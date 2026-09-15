@@ -41,6 +41,11 @@ volatile long g_hits = 0;
 volatile long g_misses = 0;
 volatile long g_soundHits = 0;
 volatile long g_stageLines = 0;
+volatile long g_loadStage = -1;
+long g_loadFiles = 0;
+DWORD g_loadFirst = 0;
+DWORD g_loadLast = 0;
+char g_loadStatus[160] = "no ported stage has loaded yet";
 volatile long g_indexed = 0;
 volatile long g_own = 0;
 bool g_hasLanguageEntries = false;
@@ -50,6 +55,7 @@ constexpr long kLoggedRedirects = 16;
 constexpr long kLoggedMisses = 16;
 constexpr long kLoggedStages = 400;
 constexpr int kFirstPortedStage = 28;
+constexpr DWORD kLoadQuietMs = 500;
 
 constexpr const char* kProbeFolder = "Ask";
 constexpr DWORD kSettleMs = 500;
@@ -138,6 +144,36 @@ const std::string* FindAcrossLanguages(const std::string& generic)
 	return nullptr;
 }
 
+void CloseLoad()
+{
+	const long stage = InterlockedExchange(&g_loadStage, -1);
+
+	if (stage < 0)
+		return;
+
+	sprintf_s(g_loadStatus, "bg%03ld read %ld file(s) in %lu ms", stage, g_loadFiles,
+		static_cast<unsigned long>(g_loadLast - g_loadFirst));
+
+	LOG("ModFiles: %s", g_loadStatus);
+}
+
+void NoteLoad(int number)
+{
+	const DWORD now = GetTickCount();
+
+	if (InterlockedCompareExchange(&g_loadStage, number, number) != number)
+	{
+		CloseLoad();
+
+		InterlockedExchange(&g_loadStage, number);
+		g_loadFirst = now;
+		g_loadFiles = 0;
+	}
+
+	++g_loadFiles;
+	g_loadLast = now;
+}
+
 bool NoteStage(const char* path, const std::string& key, const char* answer)
 {
 	const size_t at = key.compare(0, 3, "bg\\") == 0 ? 0 : key.find("\\bg\\");
@@ -146,6 +182,11 @@ bool NoteStage(const char* path, const std::string& key, const char* answer)
 		return false;
 
 	const size_t stage = at == 0 ? 3 : at + 4;
+	const int number = key.compare(stage, 2, "bg") == 0
+		? atoi(key.c_str() + stage + 2) : -1;
+
+	if (number >= kFirstPortedStage)
+		NoteLoad(number);
 
 	if (key.compare(stage, 2, "bg") != 0 || atoi(key.c_str() + stage + 2) < kFirstPortedStage)
 		return true;
@@ -392,7 +433,7 @@ void Rebuild()
 	const bool localised = AnyLocalised(built);
 
 	sprintf_s(g_status, DataSearchPath::OverridesArmed()
-		? "%d file(s) are read before the d archive"
+		? "%d file(s) are read before the game's archive"
 		: "%d file(s) override the game", built.Count());
 
 	AcquireSRWLockExclusive(&g_filesLock);
@@ -534,6 +575,12 @@ void ModFiles::OnFrame()
 		DataSearchPath::LogSlots("once the game had booted");
 	}
 
+	if (InterlockedCompareExchange(&g_loadStage, -1, -1) >= 0
+		&& GetTickCount() - g_loadLast > kLoadQuietMs)
+	{
+		CloseLoad();
+	}
+
 	if (Stirred())
 		return;
 
@@ -566,6 +613,11 @@ int ModFiles::Hits()
 const char* ModFiles::Root()
 {
 	return g_root.c_str();
+}
+
+const char* ModFiles::LoadText()
+{
+	return g_loadStatus;
 }
 
 const char* ModFiles::StatusText()

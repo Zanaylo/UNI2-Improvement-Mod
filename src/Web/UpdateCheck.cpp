@@ -40,9 +40,9 @@ void Publish(const GitHubRelease::Release& release, bool newer)
 	strncpy_s(g_notes, release.notes.c_str(), _TRUNCATE);
 
 	if (newer)
-		sprintf_s(g_status, "%s is out, this is %s", release.version.c_str(), UNI2_IM_VERSION);
+		sprintf_s(g_status, "%s is out, you have %s", release.version.c_str(), UNI2_IM_VERSION);
 	else
-		strncpy_s(g_status, "this is the latest release", _TRUNCATE);
+		strncpy_s(g_status, "you have the latest version", _TRUNCATE);
 
 	g_newer.store(newer);
 }
@@ -51,7 +51,7 @@ void Fail(const char* error)
 {
 	std::lock_guard<std::mutex> guard(g_lock);
 
-	sprintf_s(g_status, "the check did not answer - %.180s", error);
+	sprintf_s(g_status, "could not check for updates: %.180s", error);
 	g_newer.store(false);
 }
 
@@ -91,7 +91,7 @@ void Launch()
 
 	{
 		std::lock_guard<std::mutex> guard(g_lock);
-		strncpy_s(g_status, "asking GitHub", _TRUNCATE);
+		strncpy_s(g_status, "checking GitHub", _TRUNCATE);
 	}
 
 	const HANDLE thread = CreateThread(nullptr, 0, &Run, nullptr, 0, nullptr);

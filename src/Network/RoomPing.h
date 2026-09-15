@@ -12,6 +12,7 @@ namespace RoomPing
 	void SetEnabled(bool enabled);
 
 	uint64_t GetLobbyId();
+	uint64_t ReadLobbyNow();
 	bool InRoom();
 
 	int GetPublishCount();

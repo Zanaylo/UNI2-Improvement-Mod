@@ -1,17 +1,17 @@
 # The ini file
 
-`UNI2_IM.ini` sits in the `UNI2-IM` folder next to the DLL. The mod completes it on every run: a
-missing key or section is appended with its default, an edited one is left alone, and deleting the
-whole file starts over. So the file always lists every setting this build understands, and keys
-added by a new version show up on the next launch.
+`UNI2_IM.ini` sits in the `UNI2-IM` folder next to the DLL. The mod fills it in on every run. A
+missing key or section is added with its default, and a key you edited is left alone. Delete the
+file to start over. The file always lists every setting your build knows, and keys from a new
+version show up on the next launch.
 
 ## `[Mod]`
 
 | Key | Default | What it does |
 |---|---|---|
 | `DinputDllWrapper` | empty | Full path to another `dinput8.dll` to chain-load. Empty uses the system one. |
-| `CheckForUpdates` | `1` | Asks GitHub once, on a thread of its own, whether a newer release exists. Nothing is downloaded until you press **Update now**. |
-| `SettingsRevision` | `2` | Which release's defaults this file was last brought up to. A lower number lets the mod correct a setting whose old default turned out to be unsafe. Never edit it by hand. |
+| `CheckForUpdates` | `1` | Checks GitHub once, in the background, for a newer release. Nothing is downloaded until you press **Update now**. |
+| `SettingsRevision` | `2` | Which release's defaults this file was last updated to. The mod uses it to fix a setting whose old default turned out to be unsafe. Do not edit it. |
 
 ## `[Keybinds]`
 
@@ -21,25 +21,25 @@ added by a new version show up on the next launch.
 | `ToggleHitboxOverlay` | `F2` | Hitbox viewer. |
 | `ToggleFrameMeter` | `F3` | Frame meter. |
 | `FreezeFrame` | `F5` | Pause and resume. |
-| `StepForward` | `F6` | One frame forward; hold to repeat. |
-| `NextPalette` | `F8` | Next palette on the character you are playing; wraps back to the game's own colours. |
+| `StepForward` | `F6` | One frame forward. Hold to repeat. |
+| `NextPalette` | `F8` | Next palette on the character you are playing. After the last one it goes back to the game's own colours. |
 | `PreviousPalette` | `F7` | The same, backwards. |
-| `FunctionKey` | empty | Held with another key, the way a fighting game does shortcuts. A bind asks for it by carrying an `Fn+` prefix - `Fn+F8` - and a bind without the prefix is ignored while it is held, so one key can serve both. |
+| `FunctionKey` | empty | A key you hold together with another one, like a shortcut. To use it, start the bind with `Fn+` (for example `Fn+F8`). While it is held, binds without the prefix are ignored, so one key can do two things. |
 
 ## `[PadKeybinds]`
 
-Pad binds are always the function button **plus** one other, and they read XInput. Names are
-XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back`, `Guide`,
-`DPad Up`, `DPad Down`, `DPad Left`, `DPad Right`. An empty value is unbound.
+A pad bind is always the function button **plus** one other button. Pad binds use XInput, with
+XInput's names: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back`, `Guide`,
+`DPad Up`, `DPad Down`, `DPad Left`, `DPad Right`. An empty value means unbound.
 
 | Key | Default | What it does |
 |---|---|---|
-| `FunctionButton` | `Back` | The button every pad bind is held with. |
+| `FunctionButton` | `Back` | The button you hold for every pad bind. |
 | `ToggleOverlay` | empty | Opens and closes the main window. |
 | `ToggleHitboxOverlay` | empty | Hitbox viewer. |
 | `ToggleFrameMeter` | empty | Frame meter. |
 | `FreezeFrame` | empty | Pause and resume. |
-| `StepForward` | empty | One frame forward; hold to repeat. |
+| `StepForward` | empty | One frame forward. Hold to repeat. |
 | `NextPalette` | empty | Next palette on the character you are playing. |
 | `PreviousPalette` | empty | The same, backwards. |
 
@@ -47,123 +47,123 @@ XInput's: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`, `Back
 
 | Key | Default | What it does |
 |---|---|---|
-| `KeyboardSeat` | `0` | Which player number the keyboard is: 0 leaves the game alone, 1 puts your own keys on 1P, 2 on 2P. |
-| `KeyboardSeatRouteSides` | `1` | Whether the seat also writes both sides' controller slots every frame of a local match. |
+| `KeyboardSeat` | `0` | Which player the keyboard controls. 0 leaves the game alone, 1 puts your keys on 1P, 2 on 2P. |
+| `KeyboardSeatRouteSides` | `1` | Also writes both sides' controller slots every frame of a local match. |
 
 ## `[Training]`
 
 | Key | Default | What it does |
 |---|---|---|
-| `FreezeMode` | `0` | 0 tick stop, 1 hitstun stop. Tick stop freezes everything; hitstun stop keeps menus live but distorts effects. |
-| `AutoPauseOnAttack` | `0` | Bit field: 1 watch P1, 2 watch P2, 4 on attacks, 8 on armoured moves. 0 is off. |
-| `AutoPauseComboStops` | `3` | Hit counts to stop at, comma separated. `3,20` stops on the third hit and the twentieth. |
+| `FreezeMode` | `0` | 0 tick stop, 1 hitstun stop. Tick stop freezes everything. Hitstun stop keeps menus working but distorts effects. |
+| `AutoPauseOnAttack` | `0` | Add the numbers together: 1 watch P1, 2 watch P2, 4 on attacks, 8 on armoured moves. 0 is off. |
+| `AutoPauseComboStops` | `3` | Hit counts to stop at, comma separated. `3,20` stops on the third hit and on the twentieth. |
 | `AutoPauseBlockStops` | `3` | The same, for blocked hits. |
 | `ResumeDelayFrames` | `60` | Countdown before the game resumes after an auto pause. |
-| `StepRepeatDelayMs` | `250` | How long the next-frame key must be held before it repeats. |
-| `StepRepeatIntervalMs` | `90` | How long between repeated steps. |
-| `RecordFrameCounterRva` | `0` | Advanced. RVA of the recorder's frame counter; 0 disables it. |
+| `StepRepeatDelayMs` | `250` | How long you hold the next-frame key before it starts repeating. |
+| `StepRepeatIntervalMs` | `90` | Time between repeated steps. |
+| `RecordFrameCounterRva` | `0` | Advanced. Memory address of the recorder's frame counter. 0 turns it off. |
 
 ## `[FrameMeter]`
 
 | Key | Default | What it does |
 |---|---|---|
-| `PlaceAutomatically` | `0` | Keeps the meter centred near the bottom of whatever resolution the game runs at, ignoring the position below. |
-| `PositionX` / `PositionY` | `-1` | Top-left corner in pixels. `-1` means it has never been placed: the meter takes the automatic spot once, writes it here, and is draggable from there. |
+| `PlaceAutomatically` | `0` | Keeps the meter centred near the bottom of the screen at any resolution. The position below is ignored. |
+| `PositionX` / `PositionY` | `-1` | Top-left corner in pixels. `-1` means it was never placed: the meter takes the automatic spot once, saves it here, and you can drag it from there. |
 | `Scale` | `1.5` | Size of the meter. |
-| `BandCounts` | `1` | Print the length of every finished band inside the bar. |
-| `LineTotals` | `1` | Blockstun, hitstun and the gap for the exchange, plus the super flash inside the move, on its own line. |
-| `AttributeRow` | `1` | The thin row under each bar naming every invincibility in force. |
-| `Opacity` | `100` | How solid the meter is drawn, as a percentage. |
-| `MouseDrag` | `1` | Whether a click that lands on the meter drags it. |
+| `BandCounts` | `1` | Shows the length of each finished band inside the bar. |
+| `LineTotals` | `1` | Shows blockstun, hitstun and the gap for the exchange, plus the super flash inside the move, on their own line. |
+| `AttributeRow` | `1` | The thin row under each bar that names every active invincibility. |
+| `Opacity` | `100` | How solid the meter looks, in percent. |
+| `MouseDrag` | `1` | Lets you drag the meter with the mouse. |
 
 ## `[Palette]`
 
 | Key | Default | What it does |
 |---|---|---|
-| `ShowOnlinePalettes` | `1` | The other player's side, in one decision. On, their palette is read as it arrives and worn. Off, their packets are dropped and their side is left as the game gives it. Yours is sent either way. |
-| `Creator` | empty | The author name written into palettes you save. The overlay fills this in as you type it. |
-| `CompanionCharacters` | `15` | Characters whose companion draws before the fighters do, by the game's own numbering. Chaos is 15. Comma separated. |
-| `OwnersFromDraws` | `1` | Take texture owners from the renderer's own draw calls instead of the bind-order guess. A mirror match needs this on. |
-| `IdentifyByColours` | `0` | Let the colour comparison name a side. Off, and off for a measured reason: it has come out backwards every time it was tried. |
-| `PaintOutOfMatch` | `0` | Paint chosen palettes outside a match too - character select portrait, lobby avatar. |
-| `PaintEffectRows` | `1` | Reserved; it no longer does anything. Left so an older ini still loads. |
-| `ShowLegacyTab` | `0` | Shows the first palette system's tab. Kept for its machinery only. |
-| `GroupByPart` | `1` | Group palette entries the way the game's own colour screen does - hair, skin, and so on. |
-| `FlashEntry` | `1` | Picking an entry darkens everything else and blinks that entry on the character. |
-| `FilterJunk` | `1` | Hide the entries that are not really colours: the black padding, the green the unused slots are filled with, and anything repeating an entry above it. |
+| `ShowOnlinePalettes` | `1` | Controls the other player's side. On, their palette is applied when it arrives. Off, it is ignored and their side keeps the game's colours. Yours is sent either way. |
+| `Creator` | empty | The author name saved into your palettes. The overlay fills it in as you type. |
+| `CompanionCharacters` | `15` | Characters whose companion is drawn before the fighters, by the game's own numbering. Chaos is 15. Comma separated. |
+| `OwnersFromDraws` | `1` | Finds which character owns a texture from the actual draw calls instead of guessing from bind order. Mirror matches need this on. |
+| `IdentifyByColours` | `0` | Lets the colour comparison decide which side is which. Leave it off: every time it was tested it got the sides backwards. |
+| `PaintOutOfMatch` | `0` | Also applies chosen palettes outside a match, such as the character select portrait and the lobby avatar. |
+| `PaintEffectRows` | `1` | Does nothing now. It stays so an older ini still loads. |
+| `ShowLegacyTab` | `0` | Shows the tab of the first palette system. |
+| `GroupByPart` | `1` | Groups palette entries like the game's own colour screen does (hair, skin and so on). |
+| `FlashEntry` | `1` | When you pick an entry, everything else darkens and that entry blinks on the character. |
+| `FilterJunk` | `1` | Hides entries that are not real colours: the black padding, the green filler in unused slots, and repeats of an entry above. |
 
 ## `[Netplay]`
 
 | Key | Default | What it does |
 |---|---|---|
-| `SafeOnline` | `1` | While a netplay session is up the mod writes nothing anybody else receives and calls nothing the netcode owns. Everything below still runs in a room. Off, each switch decides for itself again - which is what the mid-match disconnects were traced to. |
-| `RoomRosterFix` | `1` | The game removes a room member only on an exact `Left`, so `Disconnected`, `Kicked` and `Banned` leave a ghost behind. On, those are routed to the handler the game uses for `Left`. `SafeOnline` holds it back once a session is up, because a blip Steam reports as `Disconnected` would otherwise take the opponent out of the room mid-match. |
-| `RepublishPingLocation` | `1` | Republishes your Steam ping location into the room every 30 s. The game publishes it once, on join, which is why rejoining "resets" the ping. Held back during a session. |
-| `Diagnostics` | `0` | Asks GGPO for ping and frame advantage by calling a method on the game's own backend from the render thread - the netcode thread's object. Off by default for that reason, and throttled to once every twenty frames when on. The rollback and frame counters work either way; those are plain reads. |
-| `SharePalettes` | `1` | Sends your palette to the other player over the mod's own Steam channel. It shares a connection with the rollback traffic, so it is sent once when the opponent is not known to be running the mod and three times when they are. |
+| `SafeOnline` | `1` | During a netplay session the mod sends nothing to the other player and does not touch the netcode. The settings below still work in a room. Off, each setting decides on its own again. Mid-match disconnects were traced to that. |
+| `RoomRosterFix` | `1` | The game only removes a room member when they `Left`, so `Disconnected`, `Kicked` and `Banned` leave a ghost behind. On, those are handled like `Left`. `SafeOnline` pauses it during a session, because a short Steam `Disconnected` could otherwise remove your opponent mid-match. |
+| `RepublishPingLocation` | `1` | Sends your Steam ping location to the room every 30 s. The game only sends it once, when you join, which is why rejoining "resets" the ping. Paused during a session. |
+| `Diagnostics` | `0` | Asks GGPO for ping and frame advantage. This calls into the netcode from the render thread, so it is off by default, and when on it runs only once every twenty frames. The rollback and frame counters work either way. |
+| `SharePalettes` | `1` | Sends your palette to the other player over the mod's own Steam channel. It shares the connection with rollback traffic, so it is sent once if the opponent is not known to run the mod, and three times if they do. |
 
 ## `[Video]`
 
 | Key | Default | What it does |
 |---|---|---|
-| `TimerResolution` | `1` | Hold Windows' 1 ms timer and ask again when the window regains focus. The game asks once at startup and never again, and Windows takes it back in the background - which is what an alt-tab leaves behind. |
-| `PowerThrottlingOptOut` | `1` | Opt the process out of EcoQoS and of the background clamp on timer resolution. The other half of the same fix. |
-| `PumpWait` | `0` | Wait on the frame thread's message instead of on the clock, and put the engine's other short sleeps on a high resolution timer. No CPU cost, no engine code patched. |
-| `PumpWaitAllInput` | `0` | Wake that wait on every message rather than only on the handshake. Shortens window message latency and costs CPU in proportion to how much the mouse moves. |
-| `DisplayTuning` | `1` | Let the mod choose the fullscreen display parameters below. Off leaves exactly what the game asked for. |
-| `FullscreenRefreshHz` | `0` | 0 leaves the desktop's own mode alone. With the game's vsync on and a rate that is not a multiple of 60, 0 picks the highest listed multiple of 60 at or below the desktop rate. Exclusive fullscreen only. |
-| `ExtraBackBuffer` | `0` | A second back buffer. Only helps in exclusive fullscreen with the game's vsync on, and costs up to a frame of input latency. Ignored windowed and with vsync off. |
-| `FlatStage` | `0` | Replace the stage with a flat colour, for keying a capture. |
-| `FlatStageColour` | `65280` | That colour, as `0xRRGGBB` in decimal. |
-| `ScreenShake` | `100` | How much of the game's own screen shake to keep, 0 to 100. Every shake - a move, Wald's walk, a cutscene - is one call asking the camera to quake, and the slot it fills carries a percentage the engine multiplies the amplitude by, so this rescales that and the shake keeps its shape and its length. 0 answers the call with a duration of zero, which is how the engine cancels one itself. Also a slider on the Config tab. |
+| `TimerResolution` | `1` | Keeps Windows' 1 ms timer and asks for it again when the window gets focus back. The game only asks once at startup, and Windows takes it away in the background. That is what makes the game worse after an alt-tab. |
+| `PowerThrottlingOptOut` | `1` | Opts the game out of EcoQoS and of the background timer limit. The other half of the same fix. |
+| `PumpWait` | `0` | Waits on the frame thread's message instead of the clock, and puts the engine's other short sleeps on a high resolution timer. No CPU cost, no game code patched. |
+| `PumpWaitAllInput` | `0` | Wakes that wait on every message, not only the handshake. Lowers window message latency, but uses more CPU the more you move the mouse. |
+| `DisplayTuning` | `1` | Lets the mod choose the fullscreen display settings below. Off keeps exactly what the game asked for. |
+| `FullscreenRefreshHz` | `0` | 0 keeps the desktop's mode. If the game's vsync is on and the rate is not a multiple of 60, 0 picks the highest listed multiple of 60 at or below the desktop rate. Exclusive fullscreen only. |
+| `ExtraBackBuffer` | `0` | Adds a second back buffer. Only helps in exclusive fullscreen with the game's vsync on, and adds up to one frame of input latency. Ignored in windowed mode and with vsync off. |
+| `FlatStage` | `0` | Replaces the stage with a flat colour, for keying a capture. |
+| `FlatStageColour` | `65280` | That colour, as `0xRRGGBB` written in decimal. |
+| `ScreenShake` | `100` | How much of the game's screen shake to keep, 0 to 100. Every shake (a move, Wald's walk, a cutscene) is scaled by this, so it keeps its shape and length. 0 cancels the shake. Also a slider on the Config tab. |
 
 ## `[Music]`
 
 | Key | Default | What it does |
 |---|---|---|
-| `KeepMenuMusic` | `1` | Keep the menu music playing across Options, Customize and Gallery. The game's own menu BGM chooser rebuilds the track from the start unless it is still running with the same id when you come back, and those screens pause it on the way in, so it always restarts. On, the mod holds the paused track for the chooser and resumes it. 0 is the game's own behaviour. Also a checkbox in the Music section. |
+| `KeepMenuMusic` | `1` | Keeps the menu music playing when you go into Options, Customize and Gallery. Without it, the game restarts the track every time you come back. 0 is the game's normal behaviour. Also a checkbox in the Music section. |
 
 ## `[Graphics]`
 
-Set `PotatoMode` and leave the rest alone. It is a preset over the keys under it, and turning it off
-puts them back. They are here for taking one of them further than the preset does.
+Set `PotatoMode` and leave the rest alone. It is a preset for the keys below, and turning it off
+restores them. Change the other keys only if you want to push one further than the preset does.
 
 | Key | Default | What it does |
 |---|---|---|
 | `PotatoMode` | `0` | 0 off, 1 balanced, 2 potato, 3 extreme potato. |
-| `DisableBackBufferAA` | `0` | Ask for a back buffer with no multisampling. The scene is never antialiased anyway, so the samples buy nothing. |
-| `DisableCharacterFilter` | `0` | Hold the game's own Character Visual Improvements off: nine palette lookups a pixel for a one pixel blur. |
-| `PresentWidth` | `0` | The width the finished frame is drawn at before it is stretched to your window. 0 leaves the game's own Display option alone. |
-| `PresentHeight` | `0` | The height, same rule. Both have to be set for either to do anything. Windowed and borderless only. |
-| `PotatoHeight` | `360` | Which size the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144. |
-| `Supersample` | `0` | The Improvements tab: 0 off, 1 draws at 1440p, 2 at 4K, and Direct3D fits that to your window. Ignored while `PotatoMode` is set - the two settle the same size from opposite ends. |
-| `Sharpen` | `0` | Sharpening over the finished frame, 0 to 100. 0 is off, 40-60 is the useful range. Immediate; works at any drawing size, POTATO MODE included. |
-| `SharpenMode` | `0` | Which kernel that uses: 0 off, 1 contrast adaptive, 2 FidelityFX RCAS. |
-| `UpscaleFilter` | `0` | Which kernel magnifies the scene on its way to your window, in place of the engine's bilinear: 0 off, 1 bicubic, 2 Lanczos, 3 FidelityFX EASU. Only does anything where the back buffer is larger than 1280x720. |
-| `Bloom` `BloomIntensity` `BloomThreshold` | `0` `40` `75` | Bloom over the finished frame. `Bloom` is the switch; the other two are 0 to 100. |
-| `Look` | `0` | Whether the colour and display pass runs at all. Off, none of the `Look*` values below is read. |
-| `AntiAliasing` | `0` | FXAA over the finished frame: 0 off, 1 low, 2 medium, 3 high, 4 ultra. Multisampling cannot reach this game, so supersampling and this filter are the two things that can. |
-| `LookBrightness` `LookContrast` `LookSaturation` `LookVibrance` `LookTemperature` | `0` | The colour pass, -100 to 100 each. The pass does not run at all while every one of them is neutral. |
+| `DisableBackBufferAA` | `0` | Asks for a back buffer with no multisampling. The scene is never antialiased anyway, so the samples do nothing. |
+| `DisableCharacterFilter` | `0` | Keeps the game's own Character Visual Improvements off. It costs nine palette lookups per pixel for a one pixel blur. |
+| `PresentWidth` | `0` | The width the finished frame is drawn at before it is stretched to your window. 0 keeps the game's own Display option. |
+| `PresentHeight` | `0` | The height, same rule. Set both, or neither does anything. Windowed and borderless only. |
+| `PotatoHeight` | `360` | The size the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144. |
+| `Supersample` | `0` | The Improvements tab: 0 off, 1 draws at 1440p, 2 at 4K, and Direct3D fits that to your window. Ignored while `PotatoMode` is set, because both set the drawing size. |
+| `Sharpen` | `0` | Sharpening on the finished frame, 0 to 100. 0 is off, 40-60 is the useful range. Applies right away and works at any drawing size, POTATO MODE included. |
+| `SharpenMode` | `0` | Which sharpening method: 0 off, 1 contrast adaptive, 2 FidelityFX RCAS. |
+| `UpscaleFilter` | `0` | Which filter scales the scene up to your window, instead of the engine's bilinear: 0 off, 1 bicubic, 2 Lanczos, 3 FidelityFX EASU. Only works when the back buffer is larger than 1280x720. |
+| `Bloom` `BloomIntensity` `BloomThreshold` | `0` `40` `75` | Bloom on the finished frame. `Bloom` turns it on. The other two go from 0 to 100. |
+| `Look` | `0` | Turns the colour and display pass on. Off, none of the `Look*` values below are used. |
+| `AntiAliasing` | `0` | FXAA on the finished frame: 0 off, 1 low, 2 medium, 3 high, 4 ultra. Multisampling does not work in this game, so supersampling and this filter are the only antialiasing options. |
+| `LookBrightness` `LookContrast` `LookSaturation` `LookVibrance` `LookTemperature` | `0` | The colour pass, -100 to 100 each. The pass does not run while all of them are at 0. |
 | `LookGamma` | `100` | Gamma as a percentage of 1.0. |
 | `LookVignette` `LookScanlines` | `0` | 0 to 100 each. |
-| `LookDither` | `0` | A pixel of noise under the banding a gradient picks up on an 8 bit back buffer. |
-| `ShaderPack` | empty | The user shader that runs last in the chain, by file name, out of `UNI2-IM/Shaders` (`.hlsl`, `.ps`, `.fx`, `.slang`, `.glsl`, `.frag`, `.fsh`). Needs `d3dcompiler_47.dll`, which ships with Windows and with Proton. |
+| `LookDither` | `0` | Adds a pixel of noise to hide the banding gradients get on an 8 bit back buffer. |
+| `ShaderPack` | empty | The user shader that runs last, by file name, from `UNI2-IM/Shaders` (`.hlsl`, `.ps`, `.fx`, `.slang`, `.glsl`, `.frag`, `.fsh`). Needs `d3dcompiler_47.dll`, which comes with Windows and with Proton. |
+| `SimpleStage` | `0` | Draws the empty stage instead of the full one. Not part of any POTATO MODE level on purpose. |
 
 `PresentWidth` and `PresentHeight` are **derived** from `PotatoMode` + `PotatoHeight` +
-`Supersample` and rewritten whenever any of those change. They are what reaches Direct3D.
-| `SimpleStage` | `0` | Draw the empty stage instead of the built one. Deliberately not part of any POTATO MODE level. |
+`Supersample`, and rewritten whenever any of those change. They are what Direct3D receives.
 
 ## `[Overlay]`
 
 | Key | Default | What it does |
 |---|---|---|
 | `UiScale` | `1.0` | Overlay scale. 1.0 is native. |
-| `FontPath` | empty | A `.ttf` for the overlay. Empty picks the first scalable face the system has - Segoe UI on Windows, usually DejaVu Sans under Proton. |
-| `FontSize` | `16.0` | Its size in pixels before scaling. |
-| `DpiAware` | `0` | Tell Windows the game handles its own scaling. Off, a display scale above 100% makes Windows render the window small and stretch it, which is a second blur over everything. Has to be set before the game makes its window, so it needs a restart, and the Config tab reports whether it took. |
-| `Notifications` | `1` | The line that slides across the top when the mod loads. 0 silences it. |
-| `BlockGameMouse` | `0` | Stop the game seeing the mouse at all, so clicking the overlay cannot disturb it. |
-| `DrawWhileGamePaused` | `0` | Keeps the hitbox viewer and the frame meter up while the game's own pause menu is open. Off, both hide with the battle tick. |
+| `FontPath` | empty | A `.ttf` for the overlay. Empty picks the first scalable font on the system (Segoe UI on Windows, usually DejaVu Sans under Proton). |
+| `FontSize` | `16.0` | Font size in pixels before scaling. |
+| `DpiAware` | `0` | Tells Windows the game handles its own scaling. Off, with display scale above 100%, Windows draws the window small and stretches it, which blurs everything. Needs a restart. The Config tab tells you whether it worked. |
+| `Notifications` | `1` | The message that slides across the top when the mod loads. 0 hides it. |
+| `BlockGameMouse` | `0` | Hides the mouse from the game, so clicking the overlay cannot affect it. |
+| `DrawWhileGamePaused` | `0` | Keeps the hitbox viewer and frame meter visible while the game's pause menu is open. Off, both hide. |
 
 ## `[Debug]`
 
@@ -173,19 +173,19 @@ puts them back. They are here for taking one of them further than the preset doe
 | `Profiler` | `0` | Frame interval and per-section timing, shown in the Performance window's Metrics tab. |
 | `MeterTrace` | `0` | The frame meter's diagnostic capture and its CSV. |
 
-`Logging = 1` turns logging on. Nothing is written without it. Ask for it first when someone reports
-the mod does nothing: the log has the startup trail, every hook the mod installed and where, and
-anything that faulted.
+`Logging = 1` turns logging on. Nothing is written without it. If someone reports the mod does
+nothing, ask for the log first: it shows startup, every hook the mod installed and where, and
+anything that crashed.
 
 ## `[Compat]`
 
 | Key | Default | What it does |
 |---|---|---|
-| `WineSafeMode` | `-1` | `-1` automatic - on under Wine/Proton, off on Windows. `1` forces it on, `0` forces it off. On, the mod leaves the host's presentation and scheduling alone: no fullscreen refresh rewriting, no power throttling opt-out, no `Sleep` substitution. Set `0` on Linux to find out whether one of those three is what is misbehaving. |
+| `WineSafeMode` | `-1` | `-1` is automatic: on under Wine/Proton, off on Windows. `1` forces it on, `0` forces it off. On, the mod does not touch presentation or scheduling: no fullscreen refresh change, no power throttling opt-out, no `Sleep` substitution. On Linux, set `0` to test whether one of those three is causing a problem. |
 
 ## `[Extras]` and `[Stages]`
 
-Written by the [Stages](Stages) window, not meant to be edited by hand.
+Written by the [Stages](Stages) window. Do not edit them by hand.
 
 | Key | What it holds |
 |---|---|

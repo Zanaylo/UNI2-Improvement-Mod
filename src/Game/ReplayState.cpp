@@ -154,7 +154,7 @@ void ReplayState::Update()
 		g_reportedMode = reported;
 
 		if (read)
-			sprintf_s(g_status, "battle mode %u - %s", mode, ModeName(mode));
+			sprintf_s(g_status, "battle mode %u (%s)", mode, ModeName(mode));
 		else
 			sprintf_s(g_status, "battle mode unreadable");
 	}

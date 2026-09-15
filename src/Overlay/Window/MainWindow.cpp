@@ -10,12 +10,14 @@
 #include "Core/keycodes.h"
 #include "Core/PadInput.h"
 #include "Core/Settings.h"
+#include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
 #include "Game/GameTables.h"
 #include "Game/KeyboardSeat.h"
 #include "Game/ReplayFiles.h"
 #include "Game/ScreenShake.h"
+#include "Game/NameCensor.h"
 #include "Game/SteamNames.h"
 #include "Game/OnlineState.h"
 #include "Network/PaletteShare.h"
@@ -51,6 +53,7 @@
 #include "Game/BgCeiling.h"
 #include "Game/StageLibrary.h"
 #include "Game/SoundPacks.h"
+#include "Game/SubtitleWatch.h"
 #include "Training/StageColor.h"
 
 #include <Windows.h>
@@ -136,6 +139,12 @@ void MainWindow::DrawPlayerCount()
 
 void MainWindow::Draw()
 {
+	if (!IsMeasuredGameBuild())
+	{
+		UiText::Warn("The game was updated. Game features stay off until the mod is updated too.");
+		ImGui::Separator();
+	}
+
 	DrawPlayerCount();
 	ImGui::Separator();
 	DrawTrainingSection();
@@ -148,7 +157,11 @@ void MainWindow::Draw()
 	ImGui::Separator();
 	DrawSoundSection();
 	ImGui::Separator();
+	DrawSubtitlesSection();
+	ImGui::Separator();
 	DrawStagesSection();
+	ImGui::Separator();
+	DrawOnlineSection();
 	ImGui::Separator();
 	DrawPerformanceSection();
 	ImGui::Separator();
@@ -173,8 +186,8 @@ void MainWindow::DrawMusicSection()
 	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close music" : "Open music"))
 		window->Toggle();
 
-	ImGui::TextWrapped("Soundpacks, the whole track list and the rules that decide what plays "
-		"where all live in that window.");
+	ImGui::TextWrapped("Soundpacks, the track list and the rules for what plays where are all in "
+		"that window.");
 
 	if (!BgmControl::IsHooked())
 	{
@@ -187,11 +200,9 @@ void MainWindow::DrawMusicSection()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("The game's menu music chooser rebuilds the track from the start unless "
-			"it is still running when you come back, and a trip into Options, Customize or Gallery "
-			"always pauses it first - so it always restarts. On, the mod holds the paused track "
-			"for the chooser and resumes it, and the music carries across those screens. Off is "
-			"the game's own behaviour.");
+		ImGui::SetTooltip("Normally the menu music starts over every time you come back from "
+			"Options, Customize or Gallery. Turn this on to keep the same track playing across "
+			"those screens.");
 	}
 
 	char playing[224] = {};
@@ -214,10 +225,34 @@ void MainWindow::DrawSoundSection()
 	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close voices" : "Open voices"))
 		window->Toggle();
 
-	ImGui::TextWrapped("Give one character another game's voice, or replace the shared sound "
-		"effects, without touching anybody else. Packs are folders you can zip and send on.");
+	ImGui::TextWrapped("Give one character another game's voice without changing anyone else, or "
+		"replace the shared sound effects. Packs are folders you can zip and share.");
 
 	UiText::Muted("%s", SoundPacks::StatusText());
+}
+
+void MainWindow::DrawSubtitlesSection()
+{
+	if (!ImGui::CollapsingHeader("Subtitles"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Subtitles) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close subtitles" : "Open subtitles"))
+		window->Toggle();
+
+	ImGui::TextWrapped("Shows what each character says on screen, in the game's own font. Write "
+		"the lines for each character, save them to a file and share it.");
+
+	if (!g_modVals.subtitles)
+	{
+		UiText::Muted("Subtitles are off.");
+		return;
+	}
+
+	UiText::Good("Subtitles are on. %d line(s) shown so far.", SubtitleWatch::Shows());
 }
 
 void MainWindow::DrawPerformanceSection()
@@ -238,8 +273,8 @@ void MainWindow::DrawPerformanceSection()
 	if (ImGui::Button(window->IsOpen() ? "Close performance editor" : "Open performance editor"))
 		window->Toggle();
 
-	ImGui::TextWrapped("Frame pacing, POTATO MODE and where the time in each frame goes, with the "
-		"knobs for all three, live in that window.");
+	ImGui::TextWrapped("Frame pacing, POTATO MODE and where each frame's time goes. All their "
+		"settings are in that window.");
 }
 
 void MainWindow::DrawPatchSection()
@@ -254,8 +289,8 @@ void MainWindow::DrawPatchSection()
 	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close patches" : "Open patches"))
 		window->Toggle();
 
-	ImGui::TextWrapped("Play the game's battle data from an older build, so a replay recorded on "
-		"it runs against the logic it was made under instead of today's.");
+	ImGui::TextWrapped("Play with the battle data of an older game version, so replays recorded "
+		"on it play back the way they were made.");
 
 	const GamePatches::Patch* const active = GamePatches::Get(GamePatches::ActiveIndex());
 
@@ -283,8 +318,8 @@ void MainWindow::DrawThemeSection()
 	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close theme" : "Open theme"))
 		window->Toggle();
 
-	ImGui::TextWrapped("A theme draws another French-Bread game's screens over UNI2's, leaving "
-		"every UNI2 option where it is.");
+	ImGui::TextWrapped("A theme draws another French-Bread game's screens over UNI2's. Every UNI2 "
+		"option stays where it is.");
 
 	const ScreenTheme::Theme* const theme = ScreenTheme::Active();
 
@@ -310,7 +345,7 @@ void MainWindow::DrawReplayPatchWarning()
 	if (needs == nullptr)
 		return;
 
-	UiText::Muted("The last replay wanted %s. Start Replay loads it and plays on its own.",
+	UiText::Muted("The last replay needs %s. Start Replay loads it for you and plays.",
 		needs->name.c_str());
 }
 
@@ -336,9 +371,9 @@ void MainWindow::DrawReplayAccounts()
 		ImGui::EndCombo();
 	}
 
-	UiText::Help("The install carries more than one Steam account's saves. Export all reads the one "
-		"picked here. An account that is not yours is read only - loading a file into the replay "
-		"list always writes to your own.");
+	UiText::Help("This install has saves from more than one Steam account. Export all uses the one "
+		"picked here. Other accounts are read only, and loading a file into the replay list always "
+		"writes to yours.");
 
 	if (!ReplayFiles::IsOwnAccount())
 	{
@@ -357,11 +392,9 @@ void MainWindow::DrawReplaySection()
 	const bool readable = ReplayFiles::IsAvailable();
 	const bool live = ReplayFiles::IsLive();
 
-	ImGui::TextWrapped("Every replay the game records from now on is written to UNI2-IM\\Replays as "
-		"a file of its own, so one match can be sent to somebody without sending them all of "
-		"them. Files are named after the two players; a name Steam cannot resolve is written as "
-		"P1 or P2. The replays already in REP-DATA are left where they are until Export all is "
-		"pressed.");
+	ImGui::TextWrapped("Each new replay is saved to UNI2-IM\\Replays as its own file, so you can "
+		"share a single match. Files are named after the two players, or P1 and P2 when Steam "
+		"cannot find a name. Press Export all to also save the replays already in REP-DATA.");
 
 	ImGui::Spacing();
 
@@ -471,9 +504,8 @@ void MainWindow::DrawReplaySection()
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::SetTooltip(canPlay
-				? "Plays this file straight away, through the same call the Replay list's own "
-				  "Playback runs, so both names load with it. It uses no slot and does not touch "
-				  "REP-DATA."
+				? "Plays this file right away, the same way the game's Replay list does, with "
+				  "both player names. It does not use a slot or change REP-DATA."
 				: "Not while a match is running.");
 		}
 
@@ -492,29 +524,29 @@ void MainWindow::DrawReplaySection()
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Writes it into the oldest unprotected slot. The Replay screen sorts by date, so it "
-				"appears at its own timestamp. Protect anything you want to keep there first.");
+			ImGui::SetTooltip("Writes it over the oldest unprotected slot. It shows up in the Replay "
+				"screen under its own date. Protect any replay you want to keep first.");
 		}
 	}
 
 	if (!readable)
 	{
 		ImGui::Spacing();
-		ImGui::TextDisabled("No replays could be read - neither the game's own nor REP-DATA.");
+		ImGui::TextDisabled("Could not read any replays, from the game or from REP-DATA.");
 		return;
 	}
 
 	ImGui::Spacing();
 	ImGui::TextDisabled("%d of %d slots used, replay format version %d%s",
 		ReplayFiles::CountUsed(), ReplayFiles::kSlotCount, ReplayFiles::CurrentVersion(),
-		live ? "" : " (read from REP-DATA - a load shows up after a restart)");
+		live ? "" : " (read from REP-DATA, loaded files show up after a restart)");
 
 	ImGui::TextDisabled("Steam names: %s", SteamNames::GetStatus());
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Kept in UNI2-IM\\SteamNames.txt and reused every session. An account "
-			"Steam cannot answer for is asked again at most once every 20 seconds.");
+		ImGui::SetTooltip("Names are saved in UNI2-IM\\SteamNames.txt and reused every session. If "
+			"Steam cannot find a name, it asks again at most once every 20 seconds.");
 	}
 
 	if (ReplayFiles::GetStatus()[0] != 0)
@@ -547,7 +579,7 @@ void MainWindow::DrawCustomSection()
 		ImGui::EndTabItem();
 	}
 
-	const bool colorCustomize = ImGui::BeginTabItem("Palette Nativa");
+	const bool colorCustomize = ImGui::BeginTabItem("Native Palette");
 
 	if (colorCustomize)
 	{
@@ -584,7 +616,7 @@ void MainWindow::DrawPaletteChooser(int player)
 
 	if (chara < 0)
 	{
-		ImGui::TextDisabled("P%d: nobody there yet", player + 1);
+		ImGui::TextDisabled("P%d: no character yet", player + 1);
 		return;
 	}
 
@@ -648,8 +680,8 @@ void MainWindow::DrawPaletteOptions()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Groups the entries the way the game's own colour screen does - hair, "
-			"skin, boots - out of its colour-edit table rather than by guessing.");
+		ImGui::SetTooltip("Groups the colours by part (hair, skin, boots), the same way the game's "
+			"own colour screen does.");
 	}
 
 	if (ImGui::Checkbox("Flash the entry on the character", &g_modVals.paletteFlashEntry))
@@ -657,8 +689,8 @@ void MainWindow::DrawPaletteOptions()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Picking an entry darkens everything else and blinks that entry on the "
-			"character, so what it owns is unmistakable before you change it.");
+		ImGui::SetTooltip("When you pick a colour, everything else darkens and that part blinks on "
+			"the character, so you can see what you are about to change.");
 	}
 
 	if (ImGui::Checkbox("Filter junk colours", &g_modVals.paletteFilterJunk))
@@ -666,9 +698,8 @@ void MainWindow::DrawPaletteOptions()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Hides the entries no pixel of this character ever uses, read off its own "
-			"sprite sheet, and the green the unused slots are filled with. Anything the game's own "
-			"colour screen offers stays, however ordinary it looks.");
+		ImGui::SetTooltip("Hides the colours this character's sprites never use, and the green that "
+			"fills unused slots. Colours the game's own colour screen offers are always kept.");
 	}
 
 	if (ImGui::Checkbox("See the other player's colours", &g_modVals.showOnlinePalettes))
@@ -676,12 +707,12 @@ void MainWindow::DrawPaletteOptions()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("On, you see the palette they picked. Off, their side is left the way the "
-			"game gives it. Yours is sent either way.");
+		ImGui::SetTooltip("Turn this on to see the palette your opponent picked. When off, their "
+			"character keeps the game's colours. Yours is sent either way.");
 	}
 
 	ImGui::TextDisabled("%s", PaletteControl::IsSpectating()
-		? "watching - the colours are the players' own"
+		? "watching: the colours are the players' own"
 		: (PaletteControl::LocalPlayer() >= 0
 			? (PaletteControl::LocalPlayer() == 0 ? "you are playing P1" : "you are playing P2")
 			: "both characters are yours to dress"));
@@ -700,9 +731,9 @@ void MainWindow::DrawPalettesTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Reads UNI2-IM\\Palettes again. One folder per character, named for the "
-			"character. Drop a .pal in it - the game's own format, which Hantei-kun writes too - and "
-			"it appears here. The folders are created the first time this runs.");
+		ImGui::SetTooltip("Reloads UNI2-IM\\Palettes. Each character has a folder named after them. "
+			"Put a .pal file there (the game's format, which Hantei-kun also saves) and it shows up "
+			"here. The folders are created the first time you press this.");
 	}
 
 	ImGui::SameLine();
@@ -728,11 +759,11 @@ void MainWindow::DrawPalettesTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Writes everything the palette system currently believes to a text file in "
-			"UNI2-IM\\Logs: which side the mod thinks it is, what each side is wearing, every "
-			"texture it is tracking, and what the renderer was seen drawing.\n\n"
-			"Take one on each machine at the same moment to find out where a shared palette went "
-			"wrong. It works in this build - it does not need a logging one.");
+		ImGui::SetTooltip("Writes the palette state to a text file in UNI2-IM\\Logs: which side the "
+			"mod thinks you are, what each side is wearing, the textures it tracks and what was "
+			"drawn.\n\n"
+			"If a shared palette looks wrong, take one on each PC at the same moment. Works in "
+			"this build, no logging build needed.");
 	}
 
 	ImGui::TextDisabled("(%s)", PaletteShare::GetStatusText());
@@ -750,7 +781,7 @@ void MainWindow::DrawPalettesTab()
 		if (PaletteTexture::FindForPlayer(player) < 0)
 		{
 			ImGui::SameLine();
-			ImGui::TextDisabled("- no palette texture for this side yet");
+			ImGui::TextDisabled("(no palette texture for this side yet)");
 			ImGui::PopID();
 			continue;
 		}
@@ -758,7 +789,7 @@ void MainWindow::DrawPalettesTab()
 		if (count == 0)
 		{
 			ImGui::SameLine();
-			ImGui::TextDisabled("- no palettes in its folder");
+			ImGui::TextDisabled("(no palettes in its folder)");
 			ImGui::PopID();
 			continue;
 		}
@@ -778,7 +809,7 @@ void MainWindow::DrawPalettesTab()
 				PaletteManager::Restore(player);
 
 			if (ImGui::IsItemHovered() && worn[0] != '\0')
-				ImGui::SetTooltip("%s - the colours this character was picked with", worn);
+				ImGui::SetTooltip("%s: the colours this character was picked with", worn);
 
 			ComboNav::KeepSelectedInView(chosen == 0);
 
@@ -843,15 +874,15 @@ void MainWindow::DrawTrainingSection()
 	{
 		if (OnlineState::IsBlind())
 		{
-			ImGui::TextDisabled("Steam networking never came up, so the mod cannot tell an online "
-				"match from a local one. Battle modes it is sure about still work; the one that "
-				"might be online is refused.");
+			ImGui::TextDisabled("Steam networking did not start, so the mod cannot tell if a match "
+				"is online. Modes that are surely offline still work. Anything that might be online "
+				"is blocked.");
 		}
 		else
 		{
 			ImGui::TextDisabled(OnlineState::IsOnline()
 				? "Not while you are online."
-				: "In a match only - training, replay, single player or local versus.");
+				: "Only in a match: training, replay, single player or local versus.");
 		}
 		return;
 	}
@@ -901,8 +932,8 @@ void MainWindow::DrawHitboxControls()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("The exact numbers under each health bar, and what the trailing bar still "
-			"has left to lose. Offline only.");
+		ImGui::SetTooltip("Shows the exact health under each health bar, and how much the trailing "
+			"bar still has to drop. Offline only.");
 	}
 
 	bool hudHidden = BattleCockpit::IsHidden();
@@ -911,8 +942,8 @@ void MainWindow::DrawHitboxControls()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Takes the gauges, the timer and the round markers off the screen the way "
-			"the game itself does for a cinematic. The health values above are drawn either way.");
+		ImGui::SetTooltip("Hides the gauges, the timer and the round markers, like the game does "
+			"during a cinematic. Health values still show either way.");
 	}
 }
 
@@ -932,9 +963,8 @@ void MainWindow::DrawHitboxTypeControls()
 	ImGui::Checkbox("Show Origin", &overlay->GetShowOrigin());
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("A cross at each object's own position - the point its boxes are measured "
-			"from, and the point the game means when it talks about where a character is. Use it to "
-			"tell whether a projectile's boxes belong to the projectile or to whoever fired it.");
+		ImGui::SetTooltip("Draws a cross at each object's position, the point its boxes are measured "
+			"from. Use it to tell if boxes belong to a projectile or to the character who fired it.");
 	}
 
 	const ImGuiStyle& style = ImGui::GetStyle();
@@ -1003,8 +1033,8 @@ void MainWindow::DrawHitboxTypeControls()
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("What each box type is, what it can and cannot touch, and which moves "
-				"actually use it. The swatches are the same colours the viewer draws with.");
+			ImGui::SetTooltip("Explains each box type, what it can touch and which moves use it. The "
+				"colours match the hitbox viewer.");
 		}
 	}
 
@@ -1028,8 +1058,8 @@ void MainWindow::DrawFrameMeterControls()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("How solid the whole meter is drawn, bars, numbers and all. Turn it down to "
-			"read the fight through it.");
+		ImGui::SetTooltip("How solid the whole meter looks, bars and numbers included. Lower it to see "
+			"the fight behind it.");
 	}
 
 	if (ImGui::Checkbox("Count band", &g_modVals.frameMeterCounts))
@@ -1037,9 +1067,8 @@ void MainWindow::DrawFrameMeterControls()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Prints how many frames each finished band lasted, at the end of the band. "
-			"A band too short to hold its own number is left blank rather than drawn over the one "
-			"beside it.");
+		ImGui::SetTooltip("Shows how many frames each finished band lasted, at the end of the band. "
+			"Bands too short to fit the number stay blank.");
 	}
 
 	ImGui::SameLine();
@@ -1048,10 +1077,9 @@ void MainWindow::DrawFrameMeterControls()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Blockstun, hitstun and the gap for the whole exchange, and the super flash "
-			"inside the move above it, on a line of its own - above P1's numbers and below P2's, so "
-			"each side's readouts sit together. The flash is the one of those the bar cannot show, "
-			"since no cell is drawn for it.");
+		ImGui::SetTooltip("Adds a line with the blockstun, hitstun and gap for the whole exchange, and "
+			"the super flash length. It sits above P1's numbers and below P2's. The bar has no cells "
+			"for the flash, so this line is the only place it shows.");
 	}
 
 	if (ImGui::Checkbox("Status Bar", &g_modVals.frameMeterAttributes))
@@ -1059,11 +1087,10 @@ void MainWindow::DrawFrameMeterControls()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("A thin row under each bar naming everything the character is invincible to "
-			"on that frame - throw, projectile, head, legs, air dive, and the two partial heights the "
-			"frame data declares. White means nothing can connect at all, and it is drawn on its own. "
-			"Turning this off removes the invincibility display entirely; the row is the only place "
-			"it goes. Frame Meter Doc. names every colour.");
+		ImGui::SetTooltip("Adds a thin row under each bar showing what the character is invincible to "
+			"on each frame: throw, projectile, head, legs, air dive and two partial heights. White "
+			"means nothing can hit. This row is the only place invincibility shows. Frame Meter Doc. "
+			"lists every colour.");
 	}
 
 	if (ImGui::Checkbox("Place automatically", &g_modVals.frameMeterAuto))
@@ -1073,14 +1100,13 @@ void MainWindow::DrawFrameMeterControls()
 
 	if (!automatic)
 	{
-		if (ImGui::Checkbox("Allow move meter with mouse", &g_modVals.frameMeterDrag))
+		if (ImGui::Checkbox("Drag the meter with the mouse", &g_modVals.frameMeterDrag))
 			Settings::SaveInt("FrameMeter", "MouseDrag", g_modVals.frameMeterDrag ? 1 : 0);
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("The meter is drawn straight onto the back buffer and has none of the "
-				"overlay's hit testing, so a click that lands on it moves it whatever else you were "
-				"doing.");
+			ImGui::SetTooltip("Any click that lands on the meter grabs it, even if you meant to click "
+				"something else.");
 		}
 
 		Ui::SetItemWidth(160.0f);
@@ -1104,9 +1130,8 @@ void MainWindow::DrawFrameMeterControls()
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Every band and every status slice, with a sample meter and what the "
-				"numbers are measuring. The swatches are drawn from the same colours the bar uses, so "
-				"the page cannot go stale.");
+			ImGui::SetTooltip("Explains every band and status colour, with a sample meter and what "
+				"each number means. The colours match the meter.");
 		}
 	}
 
@@ -1264,8 +1289,8 @@ void MainWindow::DrawTimingControls()
 	ImGui::Combo("##leadinmode", &config.leadInMode, kLeadInModes, 2);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Warm up leaves everyone free to move; Still stops the tick. Both drop "
-			"the countdown from the take.");
+		ImGui::SetTooltip("Warm up lets everyone move before recording starts. Still freezes the "
+			"game. Neither one records the countdown.");
 
 	ImGui::EndDisabled();
 
@@ -1316,8 +1341,8 @@ void MainWindow::DrawAutoPauseControls()
 	{
 		ImGui::BeginTooltip();
 		ImGui::PushTextWrapPos(340.0f);
-		ImGui::TextUnformatted("The move's first startup frame. Jumps, dashes and assaults are drawn "
-			"as movement rather than as a move, so they cannot trigger this.");
+		ImGui::TextUnformatted("Pauses on the first startup frame of a move. Jumps, dashes and "
+			"assaults count as movement, so they do not trigger this.");
 		ImGui::PopTextWrapPos();
 		ImGui::EndTooltip();
 	}
@@ -1329,8 +1354,8 @@ void MainWindow::DrawAutoPauseControls()
 	{
 		ImGui::BeginTooltip();
 		ImGui::PushTextWrapPos(340.0f);
-		ImGui::TextUnformatted("Every connected hit, read from the game's own combo counter. A "
-			"blocked hit does not count.");
+		ImGui::TextUnformatted("Pauses on every hit that connects, using the game's combo counter. "
+			"Blocked hits do not count.");
 		ImGui::PopTextWrapPos();
 		ImGui::EndTooltip();
 	}
@@ -1346,10 +1371,10 @@ void MainWindow::DrawAutoPauseControls()
 			"twice in the same combo.", config.onComboHits, config.comboStop);
 
 		ImGui::TableNextColumn();
-		DrawStopList("Block count", "Stops on each of these blocked hit counts, counted the way the "
-			"option below selects.\n\n"
-			"Note: a multi-hit attack on block is not consistent - sometimes the whole move "
-			"registers as one blocked hit, sometimes as several.", config.onBlockedHits,
+		DrawStopList("Block count", "Stops on each of these blocked hit counts. The option below "
+			"picks how they are counted.\n\n"
+			"Note: multi-hit attacks are not consistent on block. Sometimes the whole move counts "
+			"as one blocked hit, sometimes as several.", config.onBlockedHits,
 			config.blockStop);
 
 		ImGui::EndTable();
@@ -1378,16 +1403,16 @@ void MainWindow::DrawExtrasControls()
 	ImGui::Checkbox("Reversal action after restart", &config.reversalAfterRestart);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("After the training restart, the dummy performs whatever the game's "
-			"Reversal action page has ticked, at the first frame it can act. Aerial actions need "
-			"the dummy to be airborne, so they will not come out from a standing restart.");
+		ImGui::SetTooltip("After a training restart, the dummy does the action ticked on the game's "
+			"Reversal action page, on the first frame it can act. Air actions need the dummy in the "
+			"air, so they do not come out from a standing restart.");
 
 	ImGui::BeginDisabled(!config.reversalAfterRestart);
 	ImGui::Checkbox("Count down first", &config.reversalAfterCountdown);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("The restart freezes with hitstop for the frame count in Timing, and the "
-			"reversal is armed only once that has run out.");
+		ImGui::SetTooltip("The restart freezes for the frame count set in Timing. The reversal is "
+			"ready only after that runs out.");
 
 	ImGui::EndDisabled();
 
@@ -1499,7 +1524,7 @@ void MainWindow::DrawScriptTab(int player)
 		else if (tab.error[0] == '\0')
 		{
 
-			sprintf_s(tab.error, "nothing to play - the script is empty");
+			sprintf_s(tab.error, "nothing to play, the script is empty");
 		}
 	}
 
@@ -1728,26 +1753,25 @@ void MainWindow::DrawFreezeModeCombo()
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip(forced
-			? "A replay always pauses with Tick stop.\nHitstun Stop leaves the tick running, and in a "
-			  "replay the tick is what plays the recorded inputs - the recording would keep going "
-			  "behind a still picture."
-			: "Tick stop halts the whole game, menus included, and replays the last rendered frame.\n"
-			  "Hitstun Stop uses the engine's own hitstop: the menus keep working, but visual effects "
-			  "render wrong while held.");
+			? "Replays always pause with Tick stop.\nHitstun Stop keeps the game running, and in a "
+			  "replay that would keep playing the recording behind a frozen picture."
+			: "Tick stop freezes the whole game, menus included, and shows the last frame.\n"
+			  "Hitstun Stop uses the game's own hitstop. Menus keep working, but effects look "
+			  "wrong while paused.");
 	}
 
 	if (forced)
 	{
 		ImGui::SameLine();
-		ImGui::TextDisabled("(forced - replay or watch mode)");
+		ImGui::TextDisabled("(forced in replay or watch mode)");
 	}
 }
 
 void MainWindow::DrawKeyboardTab()
 {
-	ImGui::TextWrapped("The game gives the keyboard and the first controller the same player "
-		"number, so in local versus they drive the same character. Pick a side for the keyboard "
-		"here and the controller moves to the other one. Your key settings are never touched.");
+	ImGui::TextWrapped("The game puts the keyboard and the first controller on the same side, so in "
+		"local versus they control the same character. Pick a side for the keyboard here and the "
+		"controller moves to the other one. Your key settings are not changed.");
 
 	ImGui::Spacing();
 
@@ -1776,7 +1800,7 @@ void MainWindow::DrawKeyboardTab()
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Game default leaves the keyboard where the game puts it.\n"
-			"1P and 2P keep your keys exactly as configured and move the controller to the other side.");
+			"1P and 2P keep your keys as they are and move the controller to the other side.");
 	}
 
 	bool route = KeyboardSeat::GetRouteSides();
@@ -1785,14 +1809,13 @@ void MainWindow::DrawKeyboardTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Writes both sides' controller slots every frame, so the side you picked is "
-			"the side you get. Off, the game decides who joins where and only the controller moves.");
+		ImGui::SetTooltip("Keeps you on the side you picked for the whole match. When off, the game "
+			"decides who goes where and only the controller moves.");
 	}
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("If you have a second keyboard player configured in the game's own options, "
-		"those keys will answer on the controller's side. Set Keyboard Player Number to 1 there to "
-		"switch them off.");
+	ImGui::TextWrapped("If a second keyboard player is set up in the game's options, those keys "
+		"will work on the controller's side. Set Keyboard Player Number to 1 there to turn them off.");
 
 	ImGui::Spacing();
 	ImGui::TextDisabled("%s", KeyboardSeat::GetStatus());
@@ -1813,10 +1836,31 @@ void MainWindow::DrawStagesSection()
 	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close stages" : "Open stages"))
 		window->Toggle();
 
-	ImGui::TextWrapped("The two stages the game hides from its own lists, and stages taken out of "
-		"another French-Bread game you own and installed as stages of their own.");
+	ImGui::TextWrapped("Play the two stages the game hides from its lists, and install stages from "
+		"other French-Bread games you own.");
 
 	UiText::Good("%d/%d stages.", StageLibrary::Total(), BgCeiling::Numbers());
+}
+
+void MainWindow::DrawOnlineSection()
+{
+	if (!ImGui::CollapsingHeader("Online"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Netplay) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close netplay" : "Open netplay"))
+		window->Toggle();
+
+	ImGui::TextWrapped("Rollback and ping as the game counts them, who is in the room and everyone "
+		"you have played. The Privacy tab replaces the other player's name everywhere, and room "
+		"names in the room search, for screenshots or streams.");
+
+	if (g_modVals.censorNames)
+		UiText::Good("Opponent names are being replaced with \"%s\".",
+			NameCensor::Mask());
 }
 
 void MainWindow::DrawModsSection()
@@ -1831,8 +1875,8 @@ void MainWindow::DrawModsSection()
 	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close mods" : "Open mods"))
 		window->Toggle();
 
-	ImGui::TextWrapped("Folders in UNI2-IM\\Packs that stand in for the game's own files - a "
-		"voice, a screen, a stage, a whole set of them. Switch one on or off without restarting.");
+	ImGui::TextWrapped("Folders in UNI2-IM\\Packs that replace the game's own files, like a voice, "
+		"a screen or a stage. Turn them on or off without restarting.");
 
 	if (ModPacks::Count() > 0)
 	{
@@ -1887,8 +1931,8 @@ void MainWindow::DrawConfigGeneralTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Asks GitHub once, on a thread of its own, whether a newer release exists. "
-			"Nothing is downloaded until you ask for it.");
+		ImGui::SetTooltip("Checks GitHub once for a newer release when the game starts. Nothing is "
+			"downloaded unless you ask.");
 	}
 
 	ImGui::BeginDisabled(UpdateCheck::IsChecking() || UpdateInstall::IsBusy());
@@ -1908,7 +1952,7 @@ void MainWindow::DrawConfigGeneralTab()
 
 	UiText::Muted("%s", UpdateCheck::GetStatusText());
 
-	if (ImGui::Checkbox("Keep the hitboxes and the meter up in the game's pause",
+	if (ImGui::Checkbox("Show hitboxes and frame meter in the pause menu",
 		&g_modVals.drawWhilePaused))
 	{
 		Settings::SaveInt("Overlay", "DrawWhileGamePaused", g_modVals.drawWhilePaused ? 1 : 0);
@@ -1916,9 +1960,8 @@ void MainWindow::DrawConfigGeneralTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("The game's own pause menu stops the battle tick, and both overlays hide "
-			"with it because a stopped tick usually means the match has ended. On, they stay up "
-			"while the match does - the characters are frozen behind the menu, not gone.");
+		ImGui::SetTooltip("The hitboxes and frame meter normally hide when you open the game's pause "
+			"menu. Turn this on to keep them on screen while the match is paused.");
 	}
 
 	bool& blockMouse = WindowManager::GetInstance().GetBlockGameMouse();
@@ -1926,8 +1969,8 @@ void MainWindow::DrawConfigGeneralTab()
 		Settings::SaveInt("Overlay", "BlockGameMouse", blockMouse ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Stops the game from seeing the mouse at all, so clicking the overlay can "
-			"never disturb it.\nSaved to the ini as soon as it changes.");
+		ImGui::SetTooltip("The game ignores the mouse, so clicking the overlay never affects it.\n"
+			"Saved as soon as it changes.");
 
 	int shake = ScreenShake::GetIntensity();
 
@@ -1947,18 +1990,25 @@ void MainWindow::DrawConfigGeneralTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Every shake in the game - Wald's walk, the heavy hits, the cutscenes - "
-			"is one call asking the camera to quake, and the slot it fills carries a percentage "
-			"the engine multiplies the amplitude by. This rescales that, so a shake keeps its "
-			"shape, its length and its timing and only moves less. 100%% is the game's own; 0 "
-			"answers the call with a duration of zero, which is how the engine cancels a shake "
-			"itself.");
+		ImGui::SetTooltip("Scales every screen shake in the game (Wald's walk, heavy hits, "
+			"cutscenes). Shakes keep their length and timing and only move less. 100%% is the "
+			"game's default and 0 turns shaking off.");
 	}
 
 	ImGui::EndDisabled();
 
 	if (!ScreenShake::IsAvailable())
 		UiText::Warn("%s", ScreenShake::StatusText());
+
+	if (ImGui::Checkbox("Advanced stage options", &g_modVals.advancedStages))
+		Settings::SaveInt("Stages", "AdvancedOptions", g_modVals.advancedStages ? 1 : 0);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Shows Light and Size on the stage list, and the placement sliders under "
+			"it. Light only affects glowing (additive) parts, which UNI2's own stages do not have. "
+			"The right Size is different on every stage.");
+	}
 
 	GraphicsPanel::DrawOverlayAppearance();
 
@@ -1971,8 +2021,8 @@ void MainWindow::DrawConfigGeneralTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("How long the key has to be held before it starts stepping on its own. A "
-			"tap is always one frame, whatever this says.");
+		ImGui::SetTooltip("How long to hold the key before it starts stepping by itself. A tap always "
+			"steps one frame.");
 	}
 
 	Ui::SetItemWidth(160.0f);
@@ -1983,9 +2033,8 @@ void MainWindow::DrawConfigGeneralTab()
 	if (ImGui::IsItemHovered())
 	{
 
-		ImGui::SetTooltip("How long between steps once it is repeating - %d a second. It is checked "
-			"once a frame, so the real spacing rounds to whole frames: at 60 Hz anything from 34 to "
-			"49 ms steps every third one.",
+		ImGui::SetTooltip("Time between steps while the key is held (%d a second). It rounds to "
+			"whole frames, so at 60 Hz anything from 34 to 49 ms steps every third frame.",
 			1000 / (g_modVals.stepRepeatIntervalMs > 0 ? g_modVals.stepRepeatIntervalMs : 1));
 	}
 
@@ -2070,7 +2119,7 @@ void MainWindow::DrawFunctionBinds()
 {
 	ImGui::TextUnformatted("Function");
 	ImGui::SameLine();
-	ImGui::TextDisabled("held with another key or button, the way a fighting game does shortcuts");
+	ImGui::TextDisabled("hold it with another key or button for shortcuts");
 
 	const bool keyCapturing = g_bindCapture == kFunctionRow && !g_bindPad;
 	const bool padCapturing = g_bindCapture == kFunctionRow && g_bindPad;

@@ -1,5 +1,7 @@
 #include "Game/StageCards.h"
 
+#include "Game/BgMipmaps.h"
+
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/BgListOverride.h"
@@ -105,8 +107,21 @@ HRESULT WINAPI HookedCreateTexture(void* device, const void* source, UINT bytes,
 	UINT height, UINT levels, DWORD usage, DWORD format, DWORD pool, DWORD filter,
 	DWORD mipFilter, DWORD colourKey, void* info, void* palette, IDirect3DTexture9** texture)
 {
-	const HRESULT result = oCreateTexture(device, source, bytes, width, height, levels, usage,
+	UINT wantedLevels = levels;
+	const bool baked = BgMipmaps::FromFile(source, bytes, wantedLevels);
+
+	const DWORD began = GetTickCount();
+
+	HRESULT result = oCreateTexture(device, source, bytes, width, height, wantedLevels, usage,
 		format, pool, filter, mipFilter, colourKey, info, palette, texture);
+
+	BgMipmaps::Note(GetTickCount() - began, baked);
+
+	if (FAILED(result) && baked)
+	{
+		result = oCreateTexture(device, source, bytes, width, height, levels, usage, format, pool,
+			filter, mipFilter, colourKey, info, palette, texture);
+	}
 
 	if (FAILED(result) || texture == nullptr || *texture == nullptr)
 		return result;

@@ -52,6 +52,17 @@ bool MemoryMap::Initialize()
 		return false;
 	}
 
+	g_versionMatches = IsMeasuredGameBuild();
+
+	if (!g_versionMatches)
+	{
+		char message[192] = {};
+		sprintf_s(message, "uni2.exe build %08x is not the build the offsets were measured on (%08x); "
+			"features disabled", GetGameBuildStamp(), UNI2_IM_SUPPORTED_GAME_STAMP);
+		SetStatus(message);
+		return false;
+	}
+
 	g_charaStackBase = RvaToAddress(GameOffsets::kCharaStackBase);
 	g_charaStackTop = RvaToAddress(GameOffsets::kCharaStackTop);
 
@@ -59,25 +70,6 @@ bool MemoryMap::Initialize()
 		!IsReadableMemory(reinterpret_cast<void*>(g_charaStackTop), sizeof(void*)))
 	{
 		SetStatus("chara data stack globals are not readable");
-		return false;
-	}
-
-	char version[32] = {};
-	if (GetGameVersion(version, sizeof(version)))
-	{
-		g_versionMatches = strcmp(version, UNI2_IM_SUPPORTED_GAME_VERSION) == 0;
-		if (!g_versionMatches)
-		{
-			char message[192] = {};
-			sprintf_s(message, "game reports %s but offsets target %s; features disabled",
-				version, UNI2_IM_SUPPORTED_GAME_VERSION);
-			SetStatus(message);
-			return false;
-		}
-	}
-	else
-	{
-		SetStatus("game version string not readable at the expected address; features disabled");
 		return false;
 	}
 

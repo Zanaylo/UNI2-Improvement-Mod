@@ -5,6 +5,8 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
+#include "Network/ModChannel.h"
+#include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
 #include "Network/SteamNetwork.h"
 #include "Palette/EffectPaint.h"
@@ -22,11 +24,11 @@
 
 namespace {
 
-constexpr uint32_t kMagic = 0x32494e55;
+constexpr uint32_t kMagic = ModChannel::kMagic;
 constexpr uint16_t kVersionOne = 1;
 constexpr uint16_t kVersionTwo = 2;
 constexpr uint16_t kVersionThree = 3;
-constexpr uint16_t kKindPalette = 1;
+constexpr uint16_t kKindPalette = ModChannel::kKindPalette;
 
 #pragma pack(push, 1)
 struct PacketV1
@@ -68,7 +70,6 @@ constexpr int kSendDelayFrames = 120;
 
 constexpr int kResendFrames = 180;
 constexpr int kResendsKnown = 3;
-constexpr int kResendsUnknown = 1;
 
 constexpr int kSettleFrames = 30;
 
@@ -143,7 +144,7 @@ void UpdateStatus()
 	char seatText[32] = {};
 
 	if (seat < 0)
-		strncpy_s(seatText, "seat unreadable - both sides count as yours", _TRUNCATE);
+		strncpy_s(seatText, "seat unknown, both are yours", _TRUNCATE);
 	else
 		sprintf_s(seatText, "you are p%d", seat + 1);
 
@@ -155,7 +156,10 @@ void UpdateStatus()
 
 int Resends()
 {
-	return ModPresence::PeerHasMod(SteamNetwork::GetPeer()) ? kResendsKnown : kResendsUnknown;
+	const bool known = ModHandshake::PeerHasMod() ||
+		ModPresence::PeerHasMod(SteamNetwork::GetPeer());
+
+	return known ? kResendsKnown : 0;
 }
 
 int ReadOwnSide()
@@ -448,16 +452,6 @@ void HandlePacket(const uint8_t* data, int size, uint64_t from)
 	PlaceForeign(side, incoming.chara, incoming.name, incoming.colors, incoming.effects);
 }
 
-void Receive()
-{
-	uint8_t buffer[sizeof(PacketV3)] = {};
-	int size = 0;
-	uint64_t from = 0;
-
-	while (SteamNetwork::Receive(buffer, sizeof(buffer), size, from))
-		HandlePacket(buffer, size, from);
-}
-
 void DropStaleForeign()
 {
 	for (int side = 0; side < 2; ++side)
@@ -495,6 +489,7 @@ void ForgetForeign()
 
 void PaletteShare::Initialize()
 {
+	ModChannel::Register(ModChannel::kKindPalette, &HandlePacket);
 	SteamNetwork::Initialize();
 	UpdateStatus();
 }
@@ -539,8 +534,6 @@ void PaletteShare::OnFrame()
 {
 	if (!SteamNetwork::IsReady() && !RetrySteam())
 		return;
-
-	Receive();
 
 	const bool inMatch = GameState::IsInMatch();
 

@@ -26,24 +26,24 @@ struct Preset
 constexpr Preset kPresets[PotatoMode::Level_COUNT] = {
 	{
 		"Off",
-		"Everything as the game ships it, at whatever its own Display option asks for.",
+		"Everything as the game ships it, at the size its own Display option picks.",
 		0, 0, false, false, false, false,
 	},
 	{
 		"Balanced",
-		"Draws at 960x540 and stretches that up, drops the back buffer's anti-aliasing - which a "
-		"Direct3D 9 texture cannot use anyway - and waits on the frame handshake instead of on the "
-		"clock. In exclusive fullscreen the scene targets carry the size instead, because a back "
-		"buffer there can only be a size the monitor lists. Slightly soft.",
+		"Draws at 960x540 and stretches it up. Turns off back buffer anti-aliasing, which a "
+		"Direct3D 9 texture cannot use anyway, and waits on the frame handshake instead of the "
+		"clock. In exclusive fullscreen the scene is drawn smaller instead, because the back "
+		"buffer there must be a size the monitor lists. Slightly soft.",
 		960, 540, false, true, true, false,
 	},
 	{
 		"Potato",
-		"Draws at the size chosen below and stretches that up, whatever the window or the monitor "
-		"is, and turns off Character Visual Improvements: nine palette lookups per character pixel "
-		"for a blur one screen pixel wide. In exclusive fullscreen the scene targets carry the size, "
-		"since a back buffer there can only be a size the monitor lists. Visibly soft, and the "
-		"stage still draws.",
+		"Draws at the size chosen below and stretches it up, whatever the window or monitor. "
+		"Also turns off Character Visual Improvements, which costs nine palette lookups per "
+		"character pixel for a blur one screen pixel wide. In exclusive fullscreen the scene is "
+		"drawn at that size instead, because the back buffer there must be a size the monitor "
+		"lists. Visibly soft, and the stage still draws.",
 		0, 0, true, true, true, true,
 	},
 };

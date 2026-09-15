@@ -55,4 +55,8 @@ static const StageNameEntry kStageNames[] = {
 	{ FbGameFolder::Game_MBTL, "bg034", "Waiting Room", -1 },
 	{ FbGameFolder::Game_MBTL, "bg035", "Tohno Mansion, Night (Time Stopped)", -1 },
 	{ FbGameFolder::Game_MBTL, "bg090", "Training Stage", -1 },
+	{ FbGameFolder::Game_BBTAG, "bg_falling_blossoms", "Riverside Space", -1 },
+	{ FbGameFolder::Game_BBTAG, "bg_fountain_plaza", "Sleeping Fountain Plaza", -1 },
+	{ FbGameFolder::Game_BBTAG, "bg_intersection", "Tower Center - Crossing", -1 },
+	{ FbGameFolder::Game_BBTAG, "bg_odaiba", "Central Station", -1 },
 };

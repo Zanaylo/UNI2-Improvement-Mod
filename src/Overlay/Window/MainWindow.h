@@ -39,6 +39,8 @@ private:
 	void DrawPlayerCount();
 	void DrawMusicSection();
 	void DrawSoundSection();
+	void DrawSubtitlesSection();
+	void DrawOnlineSection();
 	void DrawPerformanceSection();
 	void DrawPatchSection();
 	void DrawThemeSection();

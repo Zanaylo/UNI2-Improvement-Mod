@@ -58,7 +58,7 @@ bool EnsurePass(IDirect3DDevice9* device, int kind)
 		return true;
 	}
 
-	Report("the device refused the %s shader - it needs pixel shader 3.0",
+	Report("the device refused the %s shader (it needs pixel shader 3.0)",
 		UpscaleFilter::GetName(kind));
 	return false;
 }
@@ -83,7 +83,7 @@ bool IsSceneTarget(const D3DSURFACE_DESC& desc)
 
 	if (!SceneScale::GetSize(width, height))
 	{
-		Report("the engine's render size globals did not read - refusing");
+		Report("could not read the game's render size");
 		return false;
 	}
 
@@ -117,7 +117,7 @@ bool Run(IDirect3DDevice9* device, IDirect3DTexture9* source, const D3DSURFACE_D
 {
 	if (!g_target.Ensure(device, backBufferDesc.Width, backBufferDesc.Height, sourceDesc.Format))
 	{
-		Report("no room for a %ux%u copy", backBufferDesc.Width, backBufferDesc.Height);
+		Report("could not create a %ux%u copy", backBufferDesc.Width, backBufferDesc.Height);
 		return false;
 	}
 
@@ -173,8 +173,8 @@ IDirect3DBaseTexture9* SceneUpscale::OnSetTexture(IDirect3DDevice9* device, DWOR
 
 	if (backBufferDesc.Width <= sourceDesc.Width || backBufferDesc.Height <= sourceDesc.Height)
 	{
-		Report("the scene is %ux%u into a %ux%u back buffer, so there is nothing to magnify - "
-			"raise the Improvements level or lower the scene resolution", sourceDesc.Width,
+		Report("nothing to upscale: the scene is %ux%u and the back buffer is %ux%u. Raise the "
+			"Improvements level or lower the scene resolution", sourceDesc.Width,
 			sourceDesc.Height, backBufferDesc.Width, backBufferDesc.Height);
 		return texture;
 	}
@@ -213,7 +213,7 @@ void SceneUpscale::OnPresent()
 	if (WantedKind() == UpscaleFilter::Kind_Off)
 		snprintf(g_status, sizeof(g_status), "off");
 	else if (!g_reportedThisFrame && !g_failed)
-		snprintf(g_status, sizeof(g_status), "no composite draw seen this frame");
+		snprintf(g_status, sizeof(g_status), "no scene draw seen this frame");
 
 	g_source = nullptr;
 	g_passesThisFrame = 0;

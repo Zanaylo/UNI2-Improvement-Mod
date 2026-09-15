@@ -30,7 +30,7 @@ void DpiScaling::Apply()
 
 	if (user32 == nullptr)
 	{
-		snprintf(g_description, sizeof(g_description), "user32 is not loaded yet, so the awareness "
+		snprintf(g_description, sizeof(g_description), "user32 is not loaded yet, so DPI awareness "
 			"could not be set");
 		return;
 	}
@@ -41,15 +41,15 @@ void DpiScaling::Apply()
 
 	if (!g_modVals.dpiAware)
 	{
-		snprintf(g_description, sizeof(g_description), "off - Windows scales the window for the "
-			"game, which resamples the whole frame a second time above 100%%");
+		snprintf(g_description, sizeof(g_description), "off. Above 100%% display scale, Windows "
+			"stretches the window, which blurs the picture a second time");
 		return;
 	}
 
 	if (set == nullptr)
 	{
-		snprintf(g_description, sizeof(g_description), "this system has no "
-			"SetProcessDpiAwarenessContext, so the window stays scaled by Windows");
+		snprintf(g_description, sizeof(g_description), "not supported on this "
+			"system, so Windows keeps scaling the window");
 		LOG("[DpiScaling] %s", g_description);
 		return;
 	}
@@ -58,13 +58,13 @@ void DpiScaling::Apply()
 
 	if (g_aware)
 	{
-		snprintf(g_description, sizeof(g_description), "on - the window is laid out in real "
+		snprintf(g_description, sizeof(g_description), "on, the window uses real "
 			"pixels");
 	}
 	else
 	{
-		snprintf(g_description, sizeof(g_description), "refused, which usually means the window "
-			"already exists or the host set the awareness first");
+		snprintf(g_description, sizeof(g_description), "refused, usually because the window "
+			"already exists or the host set it first");
 	}
 
 	LOG("[DpiScaling] %s", g_description);

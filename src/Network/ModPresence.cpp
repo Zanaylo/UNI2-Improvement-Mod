@@ -2,6 +2,8 @@
 
 #include "Core/logger.h"
 #include "Core/info.h"
+#include "Game/GamePatches.h"
+#include "Network/ModHandshake.h"
 #include "Network/OnlineSafety.h"
 #include "Network/RoomPing.h"
 #include "Network/SteamInterfaces.h"
@@ -14,6 +16,7 @@
 namespace {
 
 constexpr const char* kMemberKey = "uni2im";
+constexpr const char* kPickKey = "uni2im_pick";
 constexpr DWORD kPublishMs = 15000;
 constexpr DWORD kScanMs = 2000;
 
@@ -21,6 +24,7 @@ struct Member
 {
 	uint64_t id;
 	char version[32];
+	char pick[ModHandshake::kDataIdBytes];
 	bool hasMod;
 };
 
@@ -29,8 +33,10 @@ int g_roomSize = 0;
 int g_modCount = 0;
 
 uint64_t g_lobby = 0;
+uint64_t g_self = 0;
 DWORD g_lastPublish = 0;
 DWORD g_lastScan = 0;
+char g_publishedPick[ModHandshake::kDataIdBytes] = "";
 
 char g_status[192] = "not in a room";
 
@@ -46,12 +52,21 @@ void Forget()
 
 void Publish(DWORD now)
 {
-	if (g_lastPublish != 0 && now - g_lastPublish < kPublishMs)
+	char pick[ModHandshake::kDataIdBytes] = {};
+	ModHandshake::DescribeData(GamePatches::HomeIndex(), pick, sizeof(pick));
+
+	const bool pickChanged = strcmp(pick, g_publishedPick) != 0;
+
+	if (!pickChanged && g_lastPublish != 0 && now - g_lastPublish < kPublishMs)
 		return;
 
-	if (!SteamInterfaces::SetLobbyMemberData(g_lobby, kMemberKey, UNI2_IM_VERSION))
+	if (!SteamInterfaces::SetLobbyMemberData(g_lobby, kMemberKey, UNI2_IM_VERSION) ||
+		!SteamInterfaces::SetLobbyMemberData(g_lobby, kPickKey, pick))
+	{
 		return;
+	}
 
+	strncpy_s(g_publishedPick, pick, _TRUNCATE);
 	g_lastPublish = now;
 }
 
@@ -61,6 +76,9 @@ void Scan(DWORD now)
 		return;
 
 	g_lastScan = now;
+
+	if (g_self == 0)
+		g_self = SteamInterfaces::GetOwnSteamId();
 
 	const int count = SteamInterfaces::GetNumLobbyMembers(g_lobby);
 
@@ -73,6 +91,7 @@ void Scan(DWORD now)
 
 		member.id = SteamInterfaces::GetLobbyMemberByIndex(g_lobby, i);
 		member.version[0] = 0;
+		member.pick[0] = 0;
 		member.hasMod = false;
 
 		if (member.id == 0)
@@ -84,6 +103,8 @@ void Scan(DWORD now)
 			continue;
 
 		strncpy_s(member.version, value, _TRUNCATE);
+		strncpy_s(member.pick, SteamInterfaces::GetLobbyMemberData(g_lobby, member.id, kPickKey),
+			_TRUNCATE);
 		member.hasMod = true;
 		++g_modCount;
 	}
@@ -175,6 +196,33 @@ const char* ModPresence::VersionAt(int index)
 		return "";
 
 	return g_members[index].version;
+}
+
+const char* ModPresence::PickAt(int index)
+{
+	if (index < 0 || index >= g_roomSize)
+		return "";
+
+	return g_members[index].pick;
+}
+
+bool ModPresence::RoomAgrees(const char* pick)
+{
+	if (pick == nullptr || g_roomSize < 2)
+		return false;
+
+	for (int i = 0; i < g_roomSize; ++i)
+	{
+		const Member& member = g_members[i];
+
+		if (member.id == 0 || member.id == g_self)
+			continue;
+
+		if (!member.hasMod || strcmp(member.pick, pick) != 0)
+			return false;
+	}
+
+	return true;
 }
 
 const char* ModPresence::GetStatusText()

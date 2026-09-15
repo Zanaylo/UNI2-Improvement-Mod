@@ -9,7 +9,11 @@
 
 namespace {
 
+constexpr DWORD kKeepEveryMs = 5000;
+
 LPTOP_LEVEL_EXCEPTION_FILTER g_previousFilter = nullptr;
+DWORD g_keptAt = 0;
+volatile long g_inside = 0;
 
 std::string BuildDumpPath()
 {
@@ -60,6 +64,9 @@ void LogFaultLocation(EXCEPTION_POINTERS* exceptionInfo)
 
 LONG WINAPI UnhandledExceptionFilterProc(EXCEPTION_POINTERS* exceptionInfo)
 {
+	if (InterlockedExchange(&g_inside, 1) != 0)
+		return EXCEPTION_CONTINUE_SEARCH;
+
 	CreateModDirectories();
 	LogFaultLocation(exceptionInfo);
 	CrashContext::WriteAll();
@@ -90,4 +97,22 @@ LONG WINAPI UnhandledExceptionFilterProc(EXCEPTION_POINTERS* exceptionInfo)
 void InstallCrashHandler()
 {
 	g_previousFilter = SetUnhandledExceptionFilter(UnhandledExceptionFilterProc);
+}
+
+void KeepCrashHandler()
+{
+	const DWORD now = GetTickCount();
+
+	if (g_keptAt != 0 && now - g_keptAt < kKeepEveryMs)
+		return;
+
+	g_keptAt = now;
+
+	const LPTOP_LEVEL_EXCEPTION_FILTER current = SetUnhandledExceptionFilter(UnhandledExceptionFilterProc);
+
+	if (current == UnhandledExceptionFilterProc || current == nullptr || current == g_previousFilter)
+		return;
+
+	g_previousFilter = current;
+	LOG("Crash handler: another filter took over at 0x%p, the mod's is back in front and hands over to it", static_cast<void*>(current));
 }

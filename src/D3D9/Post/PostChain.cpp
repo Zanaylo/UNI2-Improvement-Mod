@@ -301,7 +301,7 @@ void DescribeRun(const int* stages, int drawn, int asked, unsigned width, unsign
 		return;
 	}
 
-	Report("%s over %ux%u, %d of %d stages ran - the rest have no shader on this device", list,
+	Report("%s over %ux%u, %d of %d stages ran (this device cannot run the rest)", list,
 		width, height, drawn, asked);
 }
 
@@ -399,7 +399,7 @@ void PostChain::Apply(IDirect3DDevice9* device)
 
 	if (resolved == 0)
 	{
-		Report("%d stage%s asked for and none of them has a shader on this device", count,
+		Report("%d stage%s turned on, but this device cannot run any of them", count,
 			count == 1 ? "" : "s");
 		return;
 	}
@@ -415,7 +415,7 @@ void PostChain::Apply(IDirect3DDevice9* device)
 	if (FAILED(backBuffer->GetDesc(&desc)) || !EnsureTargets(device, desc, resolved, bloom))
 	{
 		backBuffer->Release();
-		Report("no room for a %ux%u working copy", desc.Width, desc.Height);
+		Report("could not create a %ux%u working copy", desc.Width, desc.Height);
 		return;
 	}
 

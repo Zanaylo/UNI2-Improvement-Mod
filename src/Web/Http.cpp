@@ -298,7 +298,7 @@ bool Http::Download(const std::string& url, const std::string& path, Progress* p
 	if (total != 0 && received != total)
 	{
 		DeleteFileA(path.c_str());
-		outError = "the download stopped early - antivirus, a firewall or a proxy may have cut it";
+		outError = "the download stopped early. Antivirus, a firewall or a proxy may have blocked it";
 		return false;
 	}
 

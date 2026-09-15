@@ -210,7 +210,7 @@ void Rewrite(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
 
 	if (parameters.Windowed)
 	{
-		Decide("windowed - back buffer %ux%u, the compositor owns the rest",
+		Decide("windowed, back buffer %ux%u, Windows handles the rest",
 			parameters.BackBufferWidth, parameters.BackBufferHeight);
 		return;
 	}
@@ -240,8 +240,8 @@ void PresentTuning::Apply(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS&
 {
 	if (!g_modVals.displayTuning || Compat::SafeMode())
 	{
-		Decide(Compat::SafeMode() ? "safe mode - the host owns the presentation"
-			: "off - the game own parameters");
+		Decide(Compat::SafeMode() ? "safe mode, the host handles the display"
+			: "off, the game's own display settings");
 		RewriteMultiSample(parameters);
 		RewriteBackBufferSize(d3d9, adapter, parameters);
 		return;

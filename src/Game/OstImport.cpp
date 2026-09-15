@@ -524,8 +524,8 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 			reinterpret_cast<const uint8_t*>(ini.data()), ini.size());
 	}
 
-	sprintf_s(g_status, "%d track(s) installed, %d of them with a slot the game's own picker shows "
-		"- restart so the game reads the new bgm.txt", written, mirrored);
+	sprintf_s(g_status, "%d track(s) installed, %d of them in the game's own music list. "
+		"Restart the game so it reads the new bgm.txt", written, mirrored);
 	LOG("OstImport: %s", g_status);
 	return true;
 }
@@ -684,8 +684,8 @@ bool ImportMbtl(const std::string& folder)
 		std::string(reinterpret_cast<const char*>(table.data()),
 			table.size() < 512 ? table.size() : 512).find("IsLoop") == std::string::npos)
 	{
-		strncpy_s(g_status, "that MBTL build is newer than the index the mod carries, so its "
-			"tracks could not be located", _TRUNCATE);
+		strncpy_s(g_status, "that MBTL version is newer than the mod knows, so its tracks could "
+			"not be found", _TRUNCATE);
 		return false;
 	}
 
@@ -847,8 +847,8 @@ bool ImportDfci(const std::string& folder)
 	{
 		if (Exists(Combine(bgm, "music_themesong.at9")))
 		{
-			strncpy_s(g_status, "that is the PS4 build - its music is ATRAC9, not Ogg. "
-				"Point at the arcade build instead.", _TRUNCATE);
+			strncpy_s(g_status, "that is the PS4 version. Its music is ATRAC9, not Ogg. "
+				"Pick the arcade version instead.", _TRUNCATE);
 			return false;
 		}
 

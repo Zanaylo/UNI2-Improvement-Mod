@@ -1,4 +1,4 @@
-#include "Overlay/Window/MusicPanel.h"
+﻿#include "Overlay/Window/MusicPanel.h"
 
 #include "Game/BgmCatalog.h"
 #include "Game/BgmControl.h"
@@ -77,7 +77,7 @@ void DescribeScene(int id, char* out, int size)
 		return;
 	}
 
-	sprintf_s(out, size, "%s  -  %s", role, name);
+	sprintf_s(out, size, "%s: %s", role, name);
 }
 
 void DescribeRule(const BgmRules::Rule& rule, char* out, int size)
@@ -273,8 +273,10 @@ void MusicPanel::DrawStatus()
 		UiText::Muted("The game's own music is on hold until you stop or give it back.");
 
 		if (BgmCatalog::ShuffleEnabled())
-			UiText::Muted("The randomizer has the next screen - it lets your pick go.");
+			UiText::Muted("The randomizer picks the next screen's music, so your pick ends there.");
 	}
+
+	UiText::Muted("Why this one: %s", BgmControl::ReasonText());
 
 	ImGui::Text("Loaded characters: %s vs %s", CharacterName(BgmControl::GetCharacter(0)),
 		CharacterName(BgmControl::GetCharacter(1)));
@@ -288,10 +290,9 @@ void MusicPanel::DrawSoundpacks()
 	if (count == 0)
 	{
 		UiText::Muted("No soundpacks installed.");
-		UiText::Help("A soundpack is a folder with a theme.ini in it. The ini names the pack and "
-			"lists which scene each of its tracks stands in for, one 'scene = track' line per "
-			"track under a [Map] section. A track is either a vanilla slot number or the file name "
-			"of a track from a pack in the library folder.");
+		UiText::Help("A soundpack is a folder with a theme.ini. The ini names the pack and has a "
+			"[Map] section with one 'scene = track' line per track. A track is a vanilla slot "
+			"number or the file name of a track in the library folder.");
 		ImGui::TextWrapped("Looked in: %s", BgmThemes::ThemesPath());
 
 		if (ImGui::Button("Rescan folder"))
@@ -300,9 +301,8 @@ void MusicPanel::DrawSoundpacks()
 		return;
 	}
 
-	UiText::Help("Applying a soundpack points every screen at that game's music. It rewrites the "
-		"replace rules and nothing else, so switching is instant and rules you added yourself are "
-		"left alone.");
+	UiText::Help("Applying a soundpack sets every screen to that game's music. It only changes the "
+		"replace rules, so switching is instant and your own rules stay.");
 
 	const int apply = DrawSoundpackTable(count, active);
 
@@ -408,8 +408,8 @@ void MusicPanel::DrawPackBuilder()
 			SoundpackBuilder::Begin();
 
 		ImGui::SameLine();
-		UiText::Help("Start one and a Pack column appears in the list below. Tick the tracks you "
-			"want in it, choose which screen each one plays on, and save.");
+		UiText::Help("Adds a Pack column to the list below. Tick the tracks you want, pick the "
+			"screen each one plays on, then save.");
 
 		if (m_packStatus[0] != 0)
 			UiText::Muted("%s", m_packStatus);
@@ -508,12 +508,12 @@ void MusicPanel::DrawPackDraftTable(int count)
 void MusicPanel::DrawMyMusic()
 {
 	UiText::Muted("Add your own music");
-	UiText::Help("Pick an MP3, OGG or WAV and it is copied into the mod and listed in Browse. The "
-		"game will open a loose file only when it is OGG Vorbis, so anything else is re-encoded on "
-		"the way in - the converted copy sits in Music\\.cache and can be deleted at any time.");
+	UiText::Help("Pick an MP3, OGG or WAV file. It is copied into the mod and listed in Browse. "
+		"Anything that isn't OGG Vorbis is converted, and the copy in Music\\.cache can be deleted "
+		"at any time.");
 
 	Ui::SetItemWidth(kComboWidth);
-	ImGui::InputTextWithHint("Goes in", "Folder name", m_musicPack, IM_ARRAYSIZE(m_musicPack));
+	ImGui::InputTextWithHint("Folder", "Folder name", m_musicPack, IM_ARRAYSIZE(m_musicPack));
 
 	if (ImGui::Button("Import music"))
 		m_musicDialog.BeginOpen("Pick the music to add", UserMusic::SupportedFilter());
@@ -604,10 +604,9 @@ void MusicPanel::DrawMyMusicRow(const UserMusic::Entry& entry)
 
 void MusicPanel::DrawMyMusicTable()
 {
-	UiText::Help("Loop from is where the track restarts when it reaches the end, in seconds. Leave "
-		"it at 0 and the whole thing repeats, intro and all; set it past the intro and the loop "
-		"sounds like the game's own music. This is what a soundpack track carries as its loop "
-		"point.");
+	UiText::Help("Loop from is the point, in seconds, where the track restarts when it ends. At 0 "
+		"the whole track repeats, intro included. Set it past the intro to loop like the game's "
+		"own music; soundpacks save this as the track's loop point.");
 
 	if (!ImGui::BeginTable("##usermusic", 5,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
@@ -639,10 +638,10 @@ void MusicPanel::DrawMyMusicTable()
 void MusicPanel::DrawGetOst()
 {
 	UiText::Muted("Take the soundtrack from another game you own");
-	UiText::Help("Pick the folder that holds UNIclr.exe or UNIst.exe, MBTL.exe, or MBAA.exe. The "
-		"mod reads that game's music out of your own copy and installs it here as a soundpack, "
-		"with song titles and loop points. Nothing is downloaded, and running it twice on the "
-		"same game replaces what it added rather than doubling it.");
+	UiText::Help("Pick the folder with UNIclr.exe, UNIst.exe, MBTL.exe or MBAA.exe. The mod reads "
+		"that game's music from your copy and installs it as a soundpack, with song titles and loop "
+		"points. Nothing is downloaded, and running it again on the same game replaces what it "
+		"added.");
 
 	ImGui::BeginDisabled(OstImport::IsBusy());
 
@@ -676,10 +675,10 @@ void MusicPanel::DrawGetOst()
 
 void MusicPanel::DrawTransfer()
 {
-	UiText::Muted("Send your soundpacks to someone else");
-	UiText::Help("Export writes one zip holding everything a friend needs: the audio, the slot "
-		"table, the picker list and every soundpack. Import puts one back. Anything you dropped "
-		"in the Music folder yourself goes along too.");
+	UiText::Muted("Share your soundpacks");
+	UiText::Help("Export saves one zip with everything a friend needs: the audio, the slot table, "
+		"the picker list, every soundpack and anything you put in the Music folder yourself. "
+		"Import loads one back.");
 
 	ImGui::BeginDisabled(SoundpackTransfer::IsBusy());
 
@@ -778,10 +777,9 @@ void MusicPanel::DrawShuffle()
 			BgmControl::Reshuffle();
 	}
 
-	UiText::Help("While this is on, each screen that asks for music gets a random track from this "
-		"list instead. It draws once per screen and keeps it, so a round change or a training "
-		"reset does not move it - use Draw again for that. Rules are ignored until you turn it "
-		"off, and tracks you switch off below are never picked.");
+	UiText::Help("Each screen that asks for music gets a random track from this list. It picks once "
+		"per screen, so a new round or a training reset keeps the track; press Draw again to change "
+		"it. Rules are ignored while this is on, and tracks you switch off are never picked.");
 
 	ImGui::SameLine();
 
@@ -821,13 +819,12 @@ void MusicPanel::DrawBrowse()
 	ImGui::SameLine();
 	DrawTrackCount();
 
-	UiText::Muted("Play starts a track and holds it. The game gets its music back when you press "
-		"Stop.");
+	UiText::Muted("Play starts a track and keeps it playing. Press Stop to give the game its music "
+		"back.");
 
-	UiText::Help("Volume is remembered per track in bgm.ini and takes effect the moment you let go "
-		"of the slider. The engine can only hold a track back, never push it past the level it "
-		"was recorded at - so to hear one track better, raise the game's own BGM volume and pull "
-		"the ones that are then too loud down here.");
+	UiText::Help("Volume is saved per track in bgm.ini and applies when you let go of the slider. "
+		"It can only make a track quieter, never louder than it was recorded. To make one track "
+		"louder, raise the game's BGM volume and turn the others down here.");
 
 	if (BgmVolume::CustomCount() > 0)
 	{
@@ -840,7 +837,7 @@ void MusicPanel::DrawBrowse()
 		}
 
 		ImGui::SameLine();
-		UiText::Muted("%d track(s) held back", BgmVolume::CustomCount());
+		UiText::Muted("%d track(s) turned down", BgmVolume::CustomCount());
 	}
 
 	DrawTrackTable();
@@ -1003,9 +1000,9 @@ void MusicPanel::DrawRules()
 		BgmRules::Save();
 	}
 
-	UiText::Help("A rule swaps one track for another. Matchup and character rules only fire in "
-		"battle; a Replace rule can take over any screen. Off means the game plays what it "
-		"normally would. The randomizer in Browse overrides all of this while it is on.");
+	UiText::Help("A rule swaps one track for another. Matchup and Character rules only work in "
+		"battle, and a Replace rule works on any screen. With this off the game plays its normal "
+		"music, and the randomizer in Browse overrides rules while it is on.");
 
 	DrawRuleTransfer();
 
@@ -1013,8 +1010,8 @@ void MusicPanel::DrawRules()
 
 	if (count == 0)
 	{
-		UiText::Muted("No rules yet. The game ships exactly three matchup themes; this is the same "
-			"idea without the limit.");
+		UiText::Muted("No rules yet. The game has only three matchup themes; rules let you add as "
+			"many as you want.");
 		return;
 	}
 
@@ -1042,8 +1039,8 @@ void MusicPanel::DrawRuleTransfer()
 		m_rulesImportDialog.BeginOpen("Import rules", "Rule list\0*.txt\0\0");
 
 	ImGui::SameLine();
-	UiText::Help("Export writes your rule list to a text file you can send. Import adds the rules "
-		"in one to what you already have - it does not wipe them.");
+	UiText::Help("Export saves your rules to a text file you can share. Import adds the rules from "
+		"a file to the ones you already have, without removing any.");
 
 	std::string rulesPath;
 
@@ -1145,9 +1142,9 @@ void MusicPanel::DrawRuleEditor()
 	}
 	else
 	{
-		UiText::Help("Every screen with music is in this list: character select, the main menu, "
-			"the network menu, the VS screen, win demo, continue, game over, the story tracks and "
-			"every battle theme.");
+		UiText::Help("This list has every screen with music: character select, the main menu, the "
+			"network menu, the VS screen, win demo, continue, game over, the story tracks and every "
+			"battle theme.");
 		DrawTrackCombo("Replace", m_draft.a, true);
 	}
 
@@ -1156,7 +1153,7 @@ void MusicPanel::DrawRuleEditor()
 	const bool valid = BgmLibrary::IsPlayable(m_draft.bgm);
 
 	if (!valid)
-		UiText::Warn("There is no track behind that pick.");
+		UiText::Warn("That pick has no track.");
 
 	ImGui::BeginDisabled(!valid);
 

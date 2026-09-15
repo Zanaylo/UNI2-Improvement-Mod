@@ -309,7 +309,7 @@ void PaletteWindow::DrawFlatSwatches(int player, int chara)
 
 	if (count == 0)
 	{
-		ImGui::TextDisabled("every entry looks like padding - untick Filter junk colours");
+		ImGui::TextDisabled("every entry looks unused. Untick Filter junk colours to see them.");
 		return;
 	}
 
@@ -323,8 +323,8 @@ void PaletteWindow::DrawParts(int player)
 	if (!ImGui::CollapsingHeader("Whole parts"))
 		return;
 
-	ImGui::TextWrapped("Moves a part's whole ramp of shades at once, keeping the shading and "
-		"moving only the colour underneath.");
+	ImGui::TextWrapped("Changes a whole part at once. The shading stays and only the colour "
+		"changes.");
 
 	const int count = StockPalettes::GetCount(colours.chara);
 
@@ -497,7 +497,7 @@ void PaletteWindow::DrawGrid(int player, const unsigned char* entries, int count
 		}
 
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("entry %d%s", i, changed ? " - changed" : "");
+			ImGui::SetTooltip("entry %d%s", i, changed ? " (changed)" : "");
 
 		if (((n + 1) % kPerRow) != 0 && n + 1 < count)
 			ImGui::SameLine();
@@ -547,7 +547,7 @@ void PaletteWindow::DrawPicker(int player)
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Takes back the last change. %d to go.", m_historyCount[player]);
+		ImGui::SetTooltip("Undo the last change. %d left.", m_historyCount[player]);
 
 	if (undo)
 		Undo(player);
@@ -562,8 +562,8 @@ void PaletteWindow::DrawPicker(int player)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Puts the game's own colours back without losing what you have built, and "
-			"stops this character being dressed automatically next match.");
+		ImGui::SetTooltip("Goes back to the game's colours and keeps your edits. This character "
+			"will not wear it automatically next match.");
 	}
 
 	if (remove)
@@ -604,8 +604,8 @@ void PaletteWindow::DrawPicker(int player)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Takes the character's colours from the game again, for when the colour "
-			"they are wearing has been changed since this was opened. Your edits are kept.");
+		ImGui::SetTooltip("Reads the character's colours from the game again. Use it if they "
+			"changed colour after you opened this. Your edits are kept.");
 	}
 
 	if (!m_applied[player])
@@ -613,7 +613,7 @@ void PaletteWindow::DrawPicker(int player)
 	else if (PalettePaint::IsPainting(player))
 		ImGui::TextDisabled("worn");
 	else
-		ImGui::TextDisabled("applied - waiting for this character to draw");
+		ImGui::TextDisabled("applied, waiting for this character to appear");
 }
 
 void PaletteWindow::DrawEffects(int player)
@@ -693,14 +693,14 @@ void PaletteWindow::DrawEffects(int player)
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("entry %d - used by %d part%s%s%s%s", entry,
+			ImGui::SetTooltip("entry %d, used by %d part%s%s%s%s", entry,
 				PartColourTable::GetPartCount(chara, entry),
 				PartColourTable::GetPartCount(chara, entry) == 1 ? "" : "s",
-				observed ? "" : ", not drawn yet so the palette's own colour stands in",
+				observed ? "" : ", not seen yet so the palette colour is shown",
 				edited ? ", changed" : "",
 				EffectOwner::Claims(player == 0 ? 1 : 0, entry)
-					? "\nthe other character uses this entry too, so an effect neither "
-						"palette tells apart is left alone" : "");
+					? "\nthe other character uses this entry too, so effects that could "
+						"belong to either are left alone" : "");
 		}
 
 		if (((n + 1) % kPerRow) != 0 && n + 1 < count)
@@ -898,9 +898,8 @@ void PaletteWindow::DrawFiles(int player)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Applies an indexed PNG's own colour table straight to this character. "
-			"The PNG's entries have to already line up with the game's - this does not re-quantize "
-			"or reorder colours.");
+		ImGui::SetTooltip("Applies the colours of an indexed PNG to this character. The colours "
+			"must already be in the game's order. Nothing is converted or reordered.");
 	}
 
 	ImGui::SameLine();
@@ -926,8 +925,7 @@ void PaletteWindow::DrawFiles(int player)
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip(hasBase
-			? "Paints these colours onto this character's reference sheet and writes it wherever "
-			  "you choose."
+			? "Saves this character's reference sheet with these colours as a PNG."
 			: "This character has no reference sheet in this build.");
 	}
 

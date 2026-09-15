@@ -543,8 +543,8 @@ std::unique_ptr<PatchLibrary::Patch> PatchLibrary::Prepare(const std::string& fo
 
 	if (!LooksLikeData(folder))
 	{
-		strncpy_s(status, statusSize, "that does not look like a game data folder - it should hold "
-			"BaseData.HA6 and the character folders, or a data folder that does", _TRUNCATE);
+		strncpy_s(status, statusSize, "that is not a game data folder. It needs BaseData.HA6 and "
+			"the character folders, or a data folder that has them", _TRUNCATE);
 		return nullptr;
 	}
 
@@ -569,12 +569,12 @@ std::unique_ptr<PatchLibrary::Patch> PatchLibrary::Prepare(const std::string& fo
 
 	if (patch->coverage.files == 0)
 	{
-		strncpy_s(status, statusSize, "nothing in that folder answers a path the game asks for",
+		strncpy_s(status, statusSize, "nothing in that folder is a file the game uses",
 			_TRUNCATE);
 		return nullptr;
 	}
 
-	sprintf_s(status, statusSize, "added %s - %d file(s), %d of %d characters. Set its date.",
+	sprintf_s(status, statusSize, "added %s: %d file(s), %d of %d characters. Set its date.",
 		id.c_str(), patch->coverage.files, patch->coverage.characters,
 		patch->coverage.charactersWanted);
 

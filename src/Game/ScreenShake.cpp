@@ -18,7 +18,7 @@ typedef int(__fastcall* CameraQuakeFn)(void* self, void* unused, int time, int t
 
 CameraQuakeFn oCameraQuake = nullptr;
 int g_percent = ScreenShake::kFullPercent;
-char g_status[192] = "the camera's quake list is not where this build expects it";
+char g_status[192] = "the camera's quake list is not where this game version expects it";
 
 int Scaled(int value)
 {
@@ -66,7 +66,7 @@ void Summarise()
 {
 	if (oCameraQuake == nullptr)
 	{
-		strncpy_s(g_status, "the camera's quake list is not where this build expects it",
+		strncpy_s(g_status, "the screen shake data is not where this game version expects it",
 			_TRUNCATE);
 		return;
 	}
@@ -79,7 +79,7 @@ void Summarise()
 
 	if (g_percent <= 0)
 	{
-		strncpy_s(g_status, "screen shake is held off", _TRUNCATE);
+		strncpy_s(g_status, "screen shake is off", _TRUNCATE);
 		return;
 	}
 

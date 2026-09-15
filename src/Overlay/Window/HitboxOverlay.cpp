@@ -76,8 +76,8 @@ const CategoryInfo kCategories[HitboxOverlay::BoxCategory_COUNT] = {
 	{
 		"Hitbox", IM_COL32(255, 60, 60, 255),
 		"The attack itself.",
-		"Out only on the frames the attack can connect.\n\nA throw's grab range is one of these too - there "
-		"is no separate throw box."
+		"Out only on the frames the attack can connect.\n\nA throw's grab range is one of these too. "
+		"There is no separate throw box."
 	},
 	{
 		"Clash", IM_COL32(60, 220, 230, 255),
@@ -108,7 +108,7 @@ const CategoryInfo kCategories[HitboxOverlay::BoxCategory_COUNT] = {
 		"Pull box", IM_COL32(90, 200, 130, 255),
 		"Drags the opponent towards you.",
 		"Pulls them in while it overlaps their hurtbox. Nanase's 623 and the moves that copy it.\n\nOn a "
-		"chip-death knockdown it does not pull - it is where Phonon's throw rope attaches."
+		"chip-death knockdown it does not pull. It marks where Phonon's throw rope attaches."
 	},
 	{
 		"Marker", IM_COL32(150, 150, 160, 255),
@@ -131,7 +131,7 @@ const CategoryInfo kCategories[HitboxOverlay::BoxCategory_COUNT] = {
 	{
 		"Other", IM_COL32(230, 230, 60, 255),
 		"Boxes with no shared meaning.",
-		"Mostly effect anchors - Wagner's shield and sword, Eltnum's lasers.\n\nThe same number means "
+		"Mostly effect anchors, like Wagner's shield and sword or Eltnum's lasers.\n\nThe same number means "
 		"different things on different characters."
 	},
 };

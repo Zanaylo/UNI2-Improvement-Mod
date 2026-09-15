@@ -91,7 +91,7 @@ void EngineQuality::Apply()
 
 	g_forcing = true;
 
-	SetStatus("Character Visual Improvements held off");
+	SetStatus("Character Visual Improvements turned off");
 	LOG("[EngineQuality] %s", g_status);
 }
 
@@ -99,7 +99,7 @@ void EngineQuality::Restore()
 {
 	if (!g_forcing)
 	{
-		SetStatus("Character Visual Improvements left as the game has it");
+		SetStatus("Character Visual Improvements left as the game set it");
 		return;
 	}
 

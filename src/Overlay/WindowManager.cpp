@@ -1,4 +1,4 @@
-#include "Overlay/WindowManager.h"
+﻿#include "Overlay/WindowManager.h"
 
 #include "Core/KeyboardCapture.h"
 #include "Core/ProcessTuning.h"
@@ -16,6 +16,8 @@
 #include "Hooks/InputProbe.h"
 #include "Overlay/FrameMeterHud.h"
 #include "Overlay/NotificationBar.h"
+#include "Overlay/SubtitleHud.h"
+#include "D3D9/GraphicsWrapper.h"
 #include "Overlay/OverlayFont.h"
 #include "Palette/PaletteChoice.h"
 #include "Training/FrameMeter.h"
@@ -33,8 +35,33 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 namespace {
 
 constexpr float kReferenceFontSize = 13.0f;
+constexpr DWORD kFocusRecheckMs = 250;
+constexpr DWORD kRestoreRetryMs = 2000;
 
 WNDPROC g_originalWndProc = nullptr;
+
+bool ForegroundIsThisProcess()
+{
+	const HWND foreground = GetForegroundWindow();
+
+	if (foreground == nullptr)
+		return false;
+
+	DWORD process = 0;
+	GetWindowThreadProcessId(foreground, &process);
+	return process == GetCurrentProcessId();
+}
+
+void NoteKeyDown(UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (message != WM_KEYDOWN && message != WM_SYSKEYDOWN)
+		return;
+
+	if ((lParam & (1 << 30)) != 0)
+		return;
+
+	NoteHotkeyMessage(static_cast<int>(wParam));
+}
 
 bool WantsTextInputThisFrame()
 {
@@ -166,14 +193,16 @@ bool WindowManager::Initialize(HWND window, IDirect3DDevice9* device)
 	InstallWindowProc(window);
 	ProcessTuning::SetWindow(window);
 
-	m_hasFocus = GetForegroundWindow() == window;
+	m_hasFocus = ForegroundIsThisProcess();
+	m_focusCheckedAt = GetTickCount();
 	m_initialized = true;
 
 	NotificationBar::Add("%s %s loaded (press %s to open the main window)", UNI2_IM_NAME,
 		UNI2_IM_VERSION, GetNameFromVirtualKey(g_modVals.toggleOverlayKey));
 
-	LOG("WindowManager initialized (ImGui %s), window 0x%p, %s in front", IMGUI_VERSION,
-		(void*)window, GetForegroundWindow() == window ? "it is" : "something else is");
+	LOG("WindowManager initialized (ImGui %s), window 0x%p, root 0x%p, foreground 0x%p (%s)",
+		IMGUI_VERSION, (void*)window, (void*)GetAncestor(window, GA_ROOT),
+		(void*)GetForegroundWindow(), m_hasFocus ? "this process" : "another process");
 	return true;
 }
 
@@ -225,6 +254,7 @@ LRESULT WindowManager::HandleWindowMessage(HWND window, UINT message, WPARAM wPa
 
 	InputProbe::CountWindowMessage(message);
 	ObserveFocus(message, wParam);
+	NoteKeyDown(message, wParam, lParam);
 
 	if (!m_initialized)
 		return 0;
@@ -300,6 +330,42 @@ void WindowManager::ObserveFocus(UINT message, WPARAM wParam)
 		ProcessTuning::Reassert();
 }
 
+void WindowManager::RefreshFocus()
+{
+	const DWORD now = GetTickCount();
+
+	if (now - m_focusCheckedAt < kFocusRecheckMs)
+		return;
+
+	m_focusCheckedAt = now;
+
+	const bool focused = ForegroundIsThisProcess();
+
+	if (focused == m_hasFocus)
+		return;
+
+	m_hasFocus = focused;
+	LOG("WindowManager: %s", focused ? "the game is in front" : "another program is in front");
+}
+
+void WindowManager::RestoreDeviceObjects()
+{
+	const DWORD now = GetTickCount();
+
+	if (m_deviceObjectsValid || now - m_restoreTriedAt < kRestoreRetryMs)
+		return;
+
+	m_restoreTriedAt = now;
+
+	if (m_device == nullptr || m_device->TestCooperativeLevel() != D3D_OK)
+		return;
+
+	m_deviceObjectsValid = ImGui_ImplDX9_CreateDeviceObjects();
+
+	LOG("WindowManager: overlay device objects %s", m_deviceObjectsValid ? "restored" :
+		"still could not be created");
+}
+
 void WindowManager::OpenUpdateNotifier()
 {
 	if (m_container == nullptr)
@@ -333,14 +399,10 @@ void WindowManager::HandleHotkeys()
 	if (m_container == nullptr)
 		return;
 
+	RefreshFocus();
 
 	if (!m_hasFocus)
-	{
-		if (GetForegroundWindow() != m_window)
-			return;
-
-		m_hasFocus = true;
-	}
+		return;
 
 	if ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0 && IsHotkeyPressed(VK_F1))
 	{
@@ -450,9 +512,6 @@ void WindowManager::ScaleToBackBuffer()
 	ApplyScale(g_modVals.uiScale * scaleX);
 }
 
-// The style carries every padding, rounding and border in the same units the windows are laid out
-// in, so scaling the font alone leaves the text growing inside furniture that did not. Rebuilt from
-// the pristine copy each time rather than scaled again, because ScaleAllSizes multiplies in place.
 void WindowManager::ApplyScale(float scale)
 {
 	if (scale <= 0.0f || (scale == m_appliedScale && g_modVals.fontSize == m_appliedFontSize))
@@ -472,17 +531,40 @@ void WindowManager::ApplyScale(float scale)
 	m_appliedScale = scale;
 }
 
+namespace {
+
+bool WantsSoftwareCursor()
+{
+	if (g_modVals.overlayCursor == 1)
+		return true;
+
+	if (g_modVals.overlayCursor == 2)
+		return false;
+
+	return DeviceHooks::GetPresentParameters().Windowed == FALSE || GraphicsWrapper::IsPresent();
+}
+
+}
+
 void WindowManager::Render()
 {
 	PadInput::OnFrame();
 
-	if (!m_initialized || !m_deviceObjectsValid || IsIconic(m_window))
+	if (!m_initialized)
 	{
 		KeyboardCapture::ReleaseAll();
 		return;
 	}
 
 	HandleHotkeys();
+	RestoreDeviceObjects();
+
+	if (!m_deviceObjectsValid || IsIconic(m_window))
+	{
+		KeyboardCapture::ReleaseAll();
+		return;
+	}
+
 	AnnounceUpdate();
 	AnnouncePatch();
 
@@ -492,11 +574,13 @@ void WindowManager::Render()
 		KeyboardCapture::ReleaseAll();
 
 	const bool notifying = NotificationBar::HasPending();
-	if (!m_overlayActive && !notifying)
+	const bool subtitling = SubtitleHud::IsShowing();
+
+	if (!m_overlayActive && !notifying && !subtitling)
 		return;
 
 
-	ImGui::GetIO().MouseDrawCursor = DeviceHooks::GetPresentParameters().Windowed == FALSE;
+	ImGui::GetIO().MouseDrawCursor = WantsSoftwareCursor();
 
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -509,6 +593,7 @@ void WindowManager::Render()
 		m_container->UpdateAll();
 
 	NotificationBar::Draw();
+	SubtitleHud::Draw();
 
 	ImGui::EndFrame();
 

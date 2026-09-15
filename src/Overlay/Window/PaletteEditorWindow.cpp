@@ -140,7 +140,7 @@ void PaletteEditorWindow::DrawSwatches(const unsigned char* entries, int count)
 		}
 
 		if (!m_editEffect && ImGui::IsItemHovered())
-			ImGui::SetTooltip("entry %d%s", i, changed ? " - changed" : "");
+			ImGui::SetTooltip("entry %d%s", i, changed ? " (changed)" : "");
 
 		if (((n + 1) % 14) != 0 && n + 1 < count)
 			ImGui::SameLine();
@@ -428,8 +428,8 @@ void PaletteEditorWindow::DrawSide(int player)
 {
 	if (PaletteTexture::FindForPlayer(player) < 0)
 	{
-		ImGui::TextDisabled("no palette texture for this side yet - the characters have to have drawn "
-			"once");
+		ImGui::TextDisabled("no palette for this side yet. The characters need to appear on screen "
+			"first.");
 		return;
 	}
 
@@ -478,7 +478,7 @@ void PaletteEditorWindow::DrawEffectColors()
 		return;
 
 	DrawUndo("Undo the effect colors",
-		"Puts every effect color on this side back to the one its palette gives it.");
+		"Resets every effect color on this side to its palette color.");
 
 	DrawEffectEntries();
 	DrawSaving();
@@ -496,8 +496,7 @@ void PaletteEditorWindow::DrawCharacterColors()
 	}
 
 	DrawUndo("Undo the character colors",
-		"Puts this side's own colors back to the palette it is wearing. Effect colors are on "
-		"their own tab and are left alone.");
+		"Resets this side's colors to the palette it is wearing. Effect colors are not touched.");
 
 	ImGui::Checkbox("Flash the entry on the character", &m_flash);
 
@@ -511,9 +510,8 @@ void PaletteEditorWindow::DrawCharacterColors()
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Groups the entries the way the game's own color screen does - hair, "
-				"skin, boots - out of its color-edit table rather than by guessing which entries "
-				"look like padding.");
+			ImGui::SetTooltip("Groups the colors the same way the game's color screen does, like "
+				"hair, skin and boots.");
 		}
 	}
 
@@ -582,7 +580,7 @@ void PaletteEditorWindow::DrawCharacterColors()
 		}
 
 		if (count == 0)
-			ImGui::TextDisabled("every entry looks like padding - untick Filter colors");
+			ImGui::TextDisabled("every entry looks unused. Untick Filter colors to see them.");
 		else
 			DrawSwatches(flat, count);
 	}
@@ -630,9 +628,8 @@ void PaletteEditorWindow::DrawSaving()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Writes a .pal into this character's folder with both tabs' colors as "
-			"they are now - the character's own and any effect colors changed on this side. It is "
-			"the game's own palette format, so it opens in Hantei-kun too.");
+		ImGui::SetTooltip("Saves a .pal in this character's folder with the colors from both tabs. "
+			"It uses the game's palette format, so Hantei-kun can open it too.");
 	}
 
 	if (m_status[0] != '\0')

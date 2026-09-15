@@ -218,6 +218,17 @@ namespace GameOffsets
 
 	constexpr int kBgEmptyStage = 99;
 
+	constexpr uintptr_t kFnStageRandomPick = 0x242090;
+	constexpr uintptr_t kFnStageUnlocked = 0x11bbe0;
+	constexpr uintptr_t kStageRandomHeld = 0x641bd0;
+	constexpr uintptr_t kStageUnlockSwitch = 0x5de9d8;
+	constexpr uintptr_t kStageUnlocks = 0x5adc06;
+	constexpr uintptr_t kStageUnlocksAlternate = 0x5de9d9;
+	constexpr uintptr_t kStageUnlockOffset = 0x40;
+	constexpr uintptr_t kRandomIndex = 0x826670;
+	constexpr uintptr_t kRandomSlots = 0x826674;
+	constexpr uintptr_t kRandomDraws = 0x826754;
+
 	constexpr uintptr_t kBgClearColorImmediate = 0xcdf1a;
 	constexpr uint32_t kBgClearColorDefault = 0xff006400;
 
@@ -477,6 +488,15 @@ namespace GameOffsets
 	constexpr uintptr_t kReplayListCursor = 0x820d24;
 	constexpr uintptr_t kReplayRecordTable = 0x1b8a8fc;
 
+	constexpr uintptr_t kFnResolvePersonaName = 0x2f3170;
+	constexpr uintptr_t kFnSetFallbackName = 0x38e60;
+
+	constexpr uintptr_t kFnSetRoomRows = 0x2e4130;
+	constexpr size_t kRoomRowStride = 0x220;
+	constexpr size_t kRoomRowName = 0x8;
+	constexpr size_t kRoomRowNameSize = 0x10;
+	constexpr size_t kRoomRowNameCapacity = 0x14;
+
 	constexpr uintptr_t kPlayerInfoObjects = 0x1a351f0;
 	constexpr size_t kPlayerInfoStride = 0x4168;
 	constexpr uintptr_t kPlayerInfoHasId = 0x40e8;
@@ -636,6 +656,17 @@ namespace GameOffsets
 	constexpr uintptr_t kComBasePath = 0x5464a0;
 	constexpr uintptr_t kComBaseRoot = 0x5464b4;
 
+	constexpr uintptr_t kFnReloadBattleScripts = 0x4cf7d0;
+	constexpr uintptr_t kFnLoadVectorTable = 0x128b40;
+	constexpr uintptr_t kFnLoadBattleInfo = 0x12f2d0;
+	constexpr uintptr_t kBattleVmCreated = 0x3b2d614;
+	constexpr uintptr_t kVectorTable = 0x644980;
+	constexpr uintptr_t kRunningResourceThread = 0x8215d8;
+	constexpr size_t kVectorSetAt = 0x4;
+	constexpr size_t kVectorRecordsBeginAt = 0x10;
+	constexpr size_t kVectorRecordsEndAt = 0x14;
+	constexpr size_t kVectorRecordStride = 0x94;
+
 	constexpr uintptr_t kFnBgmCurrent = 0xd6cd0;
 	constexpr uintptr_t kFnBgmStart = 0xd6c20;
 	constexpr uintptr_t kFnBgmPause = 0xd6b90;
@@ -665,6 +696,12 @@ namespace GameOffsets
 
 	constexpr uintptr_t kFnMenuBgmChoose = 0x2cecb0;
 	constexpr uintptr_t kFnBgmSeek = 0xb2270;
+
+	constexpr uintptr_t kFnSePlay = 0xd9b40;
+	constexpr uintptr_t kFnBattlePlayerSeLoad = 0x1232a0;
+	constexpr uintptr_t kFnExStringText = 0x4220c0;
+	constexpr uintptr_t kFnCharaSetMessage = 0x478a90;
+	constexpr int kBattlePlayerSeSlots = 16;
 	constexpr uintptr_t kMenuBgmRemembered = 0x599f48;
 
 	constexpr uintptr_t kNetplayActive = 0x5969a0;
@@ -675,6 +712,96 @@ namespace GameOffsets
 	constexpr uintptr_t kGgpoSession = 0x3b49858;
 	constexpr uintptr_t kGgpoBackendVTable = 0x529900;
 	constexpr int kGgpoGetNetworkStats = 8;
+
+	constexpr uintptr_t kFnStartSessionFromDescription = 0x1bf4e0;
+	constexpr uintptr_t kFnStartSpectatorSession = 0x1bf070;
+	constexpr uintptr_t kFnChooseRoomSession = 0x2aa720;
+	constexpr uintptr_t kFnAddSpectatorEndpoint = 0x9cd50;
+	constexpr uintptr_t kFnRankMatchSetup = 0x2da1a0;
+	constexpr uintptr_t kFnMatchDispatch = 0x2daab0;
+	constexpr int kMatchCaseRank = 4;
+	constexpr int kMatchCasePlayer = 7;
+	constexpr int kMatchCaseMainMenu = 0xb;
+	constexpr uintptr_t kFnSessionTeardown = 0x1bd870;
+	constexpr uintptr_t kOnlineMatchFlag = 0x1a34115;
+	constexpr uintptr_t kStageSyncOption = 0x59a4b2;
+	constexpr uintptr_t kStageOwnPick = 0x3b49868;
+	constexpr uintptr_t kAfterMatchState = 0x821128;
+	constexpr int kAfterMatchAwaitRematch = 0x401;
+	constexpr int kBattleStartVsScreen = 2;
+	constexpr uintptr_t kReplayRecording = 0x1a64ac4;
+	constexpr uintptr_t kReplaySaveResult = 0x1b64bdc;
+	constexpr uintptr_t kFnApplyMatchBlock = 0x43c770;
+
+	constexpr uintptr_t kGgpoSynchronizing = 0x5d864;
+	constexpr uintptr_t kGgpoSpectatorCount = 0x5d85c;
+	constexpr uintptr_t kGgpoSpectatorEndpoints = 0xbdc;
+	constexpr size_t kGgpoEndpointStride = 0x2e64;
+	constexpr int kGgpoMostSpectators = 32;
+	constexpr uintptr_t kGgpoEndpointSteamLow = 0x18;
+	constexpr uintptr_t kGgpoEndpointSteamHigh = 0x1c;
+	constexpr uintptr_t kGgpoEndpointState = 0x888;
+	constexpr uintptr_t kGgpoEndpointSyncTimeout = 0x1f3c;
+	constexpr uintptr_t kGgpoEndpointShutdownAt = 0x1f40;
+	constexpr uint32_t kGgpoStateDisconnected = 3;
+	constexpr uint32_t kGgpoStateRunning = 2;
+	constexpr uintptr_t kGgpoEndpointPendingOutput = 0x1ea8;
+	constexpr uint32_t kGgpoLocalPort = 0xe4a;
+	constexpr uintptr_t kFnSendPendingOutput = 0xa27a0;
+
+	constexpr uintptr_t kFnSpectatorPoll = 0x9d6f0;
+	constexpr uintptr_t kFnSpectatorSyncInput = 0x9d660;
+	constexpr int kGgpoVTablePoll = 1;
+	constexpr int kGgpoNotReady = 4;
+	constexpr uintptr_t kSpectatorSynchronizing = 0x32b4;
+	constexpr uintptr_t kSpectatorNextFrame = 0x32c0;
+	constexpr uintptr_t kSpectatorInputs = 0x32c4;
+	constexpr size_t kSpectatorInputBytes = 0x2c;
+	constexpr int kSpectatorInputSlots = 64;
+
+	constexpr size_t kSessionDescriptionSize = 0x280;
+	constexpr size_t kSessionHolderSize = 0x908;
+	constexpr uintptr_t kDescriptionGgpo = 0x00;
+	constexpr uintptr_t kDescriptionLocalIndex = 0x08;
+	constexpr uintptr_t kDescriptionLocalPort = 0x0c;
+	constexpr uintptr_t kDescriptionFrameDelay = 0x10;
+	constexpr uintptr_t kDescriptionPadSlot = 0x14;
+	constexpr uintptr_t kDescriptionRemoteIp = 0x18;
+	constexpr size_t kDescriptionRemoteIpBytes = 0x40;
+	constexpr uintptr_t kDescriptionRemotePort = 0x58;
+	constexpr uintptr_t kDescriptionRemoteSteamLow = 0x5c;
+	constexpr uintptr_t kDescriptionRemoteSteamHigh = 0x60;
+	constexpr int kDescriptionSpectatorIndex = 2;
+	constexpr uintptr_t kInputDelayOption = 0x59a56a;
+	constexpr uintptr_t kNetplayPadSlot = 0x753df4;
+
+	constexpr uintptr_t kMatchRecords = 0x1a34860;
+	constexpr size_t kMatchRecordsSize = 0x80;
+	constexpr uintptr_t kMatchKind = 0x1a33be4;
+	constexpr int kMatchKindRank = 1;
+	constexpr uintptr_t kMatchLocalSide = 0x1a34048;
+	constexpr uintptr_t kMatchRemoteSide = 0x1a3404c;
+	constexpr int kMatchSpectatorSide = -1;
+	constexpr uintptr_t kMatchSettingsWin = 0x1a33bd4;
+	constexpr uintptr_t kMatchSeedCounter = 0x1a34108;
+	constexpr uintptr_t kRoomSettings = 0x1a34370;
+	constexpr size_t kRoomSettingsSize = 0x248;
+	constexpr uintptr_t kReadyFlags = 0x1a34154;
+	constexpr int kReadyPhasesPerSide = 3;
+	constexpr int kReadyBattleStart = 1;
+	constexpr int kReadyAfterMatch = 2;
+	constexpr uintptr_t kBattleStartState = 0x820e90;
+	constexpr uintptr_t kBattleSessionState = 0x3afc830;
+	constexpr uintptr_t kBattleCharaRecord = 0x754588;
+	constexpr size_t kBattleCharaRecordStride = 0x40;
+	constexpr uintptr_t kBattleCharaColor = 0x744c94;
+	constexpr uintptr_t kBattleCharaExtra = 0x744c9c;
+	constexpr size_t kBattleCharaSlotStride = 0x1c;
+	constexpr uintptr_t kBattleBgm = 0x3b49fe4;
+	constexpr uintptr_t kBattleRuleA = 0x3b497e8;
+	constexpr uintptr_t kBattleRuleB = 0x3b497ec;
+	constexpr uintptr_t kBattleRuleC = 0x3b49798;
+	constexpr uintptr_t kBattleRuleD = 0x3b4979c;
 
 	constexpr uintptr_t kFnOnLobbyChatUpdate = 0x101d80;
 	constexpr uintptr_t kLobbyChatUpdateUser = 0x08;

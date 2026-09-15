@@ -1,15 +1,20 @@
-#include "Overlay/Window/NetplayWindow.h"
+﻿#include "Overlay/Window/NetplayWindow.h"
 
 #include "Core/Settings.h"
 #include "Core/interfaces.h"
 #include "Game/CharaTables.h"
+#include "Game/NameCensor.h"
+#include "Game/RoomNameCensor.h"
 #include "Game/OpponentLog.h"
 #include "Network/RollbackStats.h"
 #include "Game/SteamNames.h"
+#include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
 #include "Network/RoomPing.h"
 #include "Network/OnlineSafety.h"
 #include "Network/RoomRoster.h"
+#include "Network/SpectateHost.h"
+#include "Network/SpectateViewer.h"
 #include "Overlay/UiScale.h"
 #include "Overlay/UiText.h"
 
@@ -95,6 +100,20 @@ void NetplayWindow::Draw()
 	if (!ImGui::BeginTabBar("##netplaytabs"))
 		return;
 
+	if (ImGui::BeginTabItem("Privacy"))
+	{
+		DrawPrivacyTab();
+		ImGui::Separator();
+		DrawRoomNamePrivacy();
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("Spectate"))
+	{
+		DrawSpectateTab();
+		ImGui::EndTabItem();
+	}
+
 	if (ImGui::BeginTabItem("Rollback"))
 	{
 		DrawRollbackTab();
@@ -120,8 +139,8 @@ void NetplayWindow::DrawRollbackTab()
 {
 	if (!RollbackStats::IsNetplayActive())
 	{
-		UiText::Muted("No netplay session. These numbers come from the game's own netplay counters "
-			"and from GGPO, so they only exist during an online match.");
+		UiText::Muted("This tab shows how smooth your online match is: ping, rollbacks and how far "
+			"each side is behind. It only fills in during an online match.");
 		ImGui::Separator();
 	}
 
@@ -141,24 +160,23 @@ void NetplayWindow::DrawRollbackTab()
 		ImGui::EndTable();
 	}
 
-	UiText::Help("Ping and the two frame-advantage numbers come from GGPO's own GetNetworkStats, so "
-		"they are measured, not an estimate from a ping location.");
+	UiText::Help("Ping and the two frames behind numbers come straight from GGPO, the game's "
+		"netcode. They are real measurements, not estimates.");
 
 	bool diagnostics = g_modVals.netplayDiagnostics;
-	if (ImGui::Checkbox("Ask GGPO for ping and frame advantage", &diagnostics))
+	if (ImGui::Checkbox("Get ping and frames behind from GGPO", &diagnostics))
 	{
 		g_modVals.netplayDiagnostics = diagnostics;
 		Settings::SaveInt("Netplay", "Diagnostics", diagnostics ? 1 : 0);
 	}
 
-	UiText::Help("Off by default, and off is the safe answer: the call lands on the netcode "
-		"thread's own object from the render thread. Off, the rollback and frame counters still "
-		"work - those are plain reads of the game's own globals and touch no session object.");
+	UiText::Help("Off by default, and off is safer, because asking GGPO touches the netcode while "
+		"it runs. With it off, the rollback and frame counters still work.");
 
 	if (g_modVals.netplayDiagnostics)
 	{
-		UiText::Warn("On. If a match drops or the room breaks, turn this off first and say whether "
-			"it stopped.");
+		UiText::Warn("On. If a match drops or the room breaks, turn this off first and tell us if "
+			"that fixed it.");
 	}
 
 	ImGui::Separator();
@@ -198,14 +216,14 @@ void NetplayWindow::DrawRollbackTab()
 void NetplayWindow::DrawStartCapture()
 {
 	ImGui::TextUnformatted("Match start");
-	UiText::Help("The first 15 seconds of the session, captured once and kept, because a rolling "
-		"window has always overwritten them by the time anyone looks.");
+	UiText::Help("Rollbacks from the first 15 seconds online, saved once so you can look at them "
+		"after the match.");
 
 	const int count = RollbackStats::StartCount();
 
 	if (count <= 1)
 	{
-		UiText::Muted("Nothing captured yet - it fills from the moment netplay starts.");
+		UiText::Muted("Nothing captured yet. It fills in when an online match starts.");
 		return;
 	}
 
@@ -244,22 +262,22 @@ void NetplayWindow::DrawStartCapture()
 	ImGui::Text("First 5 s: %d rollbacks     After that: %d", firstFiveSeconds, afterFiveSeconds);
 
 	if (firstFiveSeconds > afterFiveSeconds * 2 && afterFiveSeconds >= 0)
-		UiText::Warn("The session is settling, not staying bad - the cost is at the start.");
+		UiText::Warn("Most rollbacks came at the start. The connection settled after that.");
 
-	if (ImGui::Button("Capture the next start again"))
+	if (ImGui::Button("Capture the next match start"))
 		RollbackStats::ClearStartCapture();
 }
 
 void NetplayWindow::DrawRoomTab()
 {
-	ImGui::TextUnformatted("While a match is connected");
-	UiText::Help("Everything on this tab writes something the other people in the room receive, or "
-		"reads an object the netcode owns. On, none of it runs once a session is up - that is what "
-		"the mid-match disconnects were traced to. Off, each switch below decides for itself.");
+	ImGui::TextUnformatted("During a match");
+	UiText::Help("This tab holds the mod's fixes for online rooms. They send data to the room or "
+		"read the netcode, which caused mid-match disconnects. Turn this on to pause all of them "
+		"while a match is connected.");
 
 	bool guarded = OnlineSafety::IsGuarded();
 
-	if (ImGui::Checkbox("Hold the mod back during a session", &guarded))
+	if (ImGui::Checkbox("Pause room features during a match", &guarded))
 	{
 		OnlineSafety::SetGuarded(guarded);
 		g_modVals.onlineSafety = guarded;
@@ -274,12 +292,12 @@ void NetplayWindow::DrawRoomTab()
 	ImGui::Separator();
 
 	ImGui::TextUnformatted("Ghost members");
-	UiText::Help("The game removes a member only on an exact Left. Disconnected, Kicked and Banned "
-		"are ignored, so an alt-F4 or a kick leaves the member in the room forever. This routes "
-		"them all to the same handler.");
+	UiText::Help("The game only removes players who leave the room normally. Anyone who "
+		"disconnects, alt-F4s, or gets kicked or banned stays in the room list forever. This "
+		"removes them too.");
 
 	bool fix = RoomRoster::IsFixEnabled();
-	if (ImGui::Checkbox("Treat the member state change as a mask", &fix))
+	if (ImGui::Checkbox("Remove players who disconnect or get kicked", &fix))
 	{
 		RoomRoster::SetFixEnabled(fix);
 		g_modVals.roomRosterFix = fix;
@@ -287,15 +305,15 @@ void NetplayWindow::DrawRoomTab()
 	}
 
 	if (RoomRoster::IsHooked())
-		UiText::Good("Hooked. %d ghost(s) prevented.", RoomRoster::GetGhostsPrevented());
+		UiText::Good("Active. %d ghost(s) removed.", RoomRoster::GetGhostsPrevented());
 	else
-		UiText::Warn("Not hooked: %s", RoomRoster::GetStatusText());
+		UiText::Warn("Not active: %s", RoomRoster::GetStatusText());
 
 	ImGui::Separator();
 
-	ImGui::TextUnformatted("Who else is running the mod");
-	UiText::Help("Everyone running the mod publishes a marker on themselves in the room, so this "
-		"counts the people here who have it without sending anything to anyone.");
+	ImGui::TextUnformatted("Who in the room has the mod");
+	UiText::Help("Players with the mod leave a marker on themselves in the room. This reads those "
+		"markers, so it sends nothing.");
 
 	if (!ModPresence::InRoom())
 	{
@@ -315,20 +333,39 @@ void NetplayWindow::DrawRoomTab()
 			const std::string name = SteamNames::Resolve(member);
 
 			if (ModPresence::HasMod(i))
-				UiText::Good("  %s - %s", name.c_str(), ModPresence::VersionAt(i));
+				UiText::Good("  %s (%s)", name.c_str(), ModPresence::VersionAt(i));
 			else
-				UiText::Muted("  %s - no mod", name.c_str());
+				UiText::Muted("  %s (no mod)", name.c_str());
 		}
 	}
 
 	ImGui::Separator();
 
+	ImGui::TextUnformatted("Your opponent's mod");
+	UiText::Help("When a match connects, players with the mod say hello and share which patch and "
+		"battle data they have. Palettes are only sent to an opponent who said hello back.");
+
+	switch (ModHandshake::GetPeerState())
+	{
+	case ModHandshake::Peer_Modded:
+		UiText::Good("%s", ModHandshake::GetStatusText());
+		break;
+	case ModHandshake::Peer_Unmodded:
+		UiText::Warn("%s", ModHandshake::GetStatusText());
+		break;
+	default:
+		UiText::Muted("%s", ModHandshake::GetStatusText());
+		break;
+	}
+
+	ImGui::Separator();
+
 	ImGui::TextUnformatted("Room ping");
-	UiText::Help("Republishes your ping location so the estimate other players see stops going "
-		"stale. Unmodded clients in the room read the same key, so they benefit too.");
+	UiText::Help("Keeps your ping location fresh, so the ping other players see for you stays "
+		"accurate. This works for players without the mod too.");
 
 	bool republish = RoomPing::IsEnabled();
-	if (ImGui::Checkbox("Republish my ping location every 30 s", &republish))
+	if (ImGui::Checkbox("Update my ping location every 30 s", &republish))
 	{
 		RoomPing::SetEnabled(republish);
 		g_modVals.republishPingLocation = republish;
@@ -339,7 +376,7 @@ void NetplayWindow::DrawRoomTab()
 
 	if (RoomPing::InRoom())
 	{
-		ImGui::Text("Room %llu, last publish %u s ago",
+		ImGui::Text("Room %llu, last update %u s ago",
 			static_cast<unsigned long long>(RoomPing::GetLobbyId()),
 			RoomPing::GetSecondsSinceLastPublish());
 	}
@@ -350,7 +387,7 @@ void NetplayWindow::DrawRoomTab()
 
 	if (events == 0)
 	{
-		UiText::Muted("No member changes seen yet.");
+		UiText::Muted("No one has joined or left yet.");
 		return;
 	}
 
@@ -382,7 +419,7 @@ void NetplayWindow::DrawRoomTab()
 		ImGui::TableNextColumn();
 
 		if (event.rewritten)
-			UiText::Good("routed to Left");
+			UiText::Good("removed by the mod");
 		else if ((event.rawFlags & RoomRoster::StateChange_Entered) != 0)
 			ImGui::TextUnformatted("joined");
 		else
@@ -397,8 +434,8 @@ void NetplayWindow::DrawOpponentsTab()
 	const int count = OpponentLog::Count();
 
 	ImGui::Text("%d opponent(s) recorded", count);
-	UiText::Help("Built locally from the SteamID on GGPO's rollback channel. Steam has no profile "
-		"service for this game, so nothing here can come from anywhere else.");
+	UiText::Help("A list of everyone you played online, saved on your PC. Steam keeps no such "
+		"record for this game, so this is the only one.");
 
 	if (count == 0)
 	{
@@ -450,4 +487,246 @@ void NetplayWindow::DrawOpponentsTab()
 	}
 
 	ImGui::EndTable();
+}
+
+void NetplayWindow::DrawPrivacyTab()
+{
+	ImGui::TextUnformatted("Other people's names");
+	UiText::Help("Hides player names everywhere the game shows them: the room list, the lobby, the "
+		"player card, the replay list and above the health bars.");
+
+	bool censor = NameCensor::IsEnabled();
+
+	if (ImGui::Checkbox("Hide other players' names", &censor))
+	{
+		NameCensor::SetEnabled(censor);
+		g_modVals.censorNames = censor;
+		Settings::SaveInt("Privacy", "CensorOpponentNames", censor ? 1 : 0);
+	}
+
+	char mask[NameCensor::kMaskMax + 1] = {};
+	strncpy_s(mask, NameCensor::Mask(), _TRUNCATE);
+
+	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
+
+	if (ImGui::InputText("Shown instead", mask, sizeof(mask),
+		ImGuiInputTextFlags_EnterReturnsTrue) && mask[0] != 0)
+	{
+		NameCensor::SetMask(mask);
+		Settings::SaveString("Privacy", "CensorMask", mask);
+	}
+
+	UiText::Help("Press Enter to save it. The replacement is cut to the length of the name it "
+		"covers, so a two letter name shows only two letters of it.");
+
+	bool own = NameCensor::CoversOwnName();
+
+	if (ImGui::Checkbox("Cover my own name too", &own))
+	{
+		NameCensor::SetCoversOwnName(own);
+		g_modVals.censorOwnName = own;
+		Settings::SaveInt("Privacy", "CensorMyName", own ? 1 : 0);
+	}
+
+	ImGui::Separator();
+
+	if (!NameCensor::IsAvailable())
+	{
+		UiText::Warn("%s", NameCensor::StatusText());
+		return;
+	}
+
+	if (!NameCensor::IsEnabled())
+	{
+		UiText::Muted("%s", NameCensor::StatusText());
+		return;
+	}
+
+	UiText::Good("%s", NameCensor::StatusText());
+	ImGui::Text("%d name(s) covered this run.", NameCensor::Count());
+}
+
+void NetplayWindow::DrawRoomNamePrivacy()
+{
+	ImGui::TextUnformatted("Room names");
+	UiText::Help("Shows every room in the player match room search with the text in Shown instead. "
+		"Only your screen changes. Your own room keeps its name for everyone else.");
+
+	bool rooms = RoomNameCensor::IsEnabled();
+
+	if (ImGui::Checkbox("Hide room names in the room search", &rooms))
+	{
+		RoomNameCensor::SetEnabled(rooms);
+		g_modVals.censorRoomNames = rooms;
+		Settings::SaveInt("Privacy", "CensorRoomNames", rooms ? 1 : 0);
+	}
+
+	if (!RoomNameCensor::IsAvailable())
+	{
+		UiText::Warn("%s", RoomNameCensor::StatusText());
+		return;
+	}
+
+	if (!RoomNameCensor::IsEnabled())
+	{
+		UiText::Muted("%s", RoomNameCensor::StatusText());
+		return;
+	}
+
+	UiText::Good("%s", RoomNameCensor::StatusText());
+	ImGui::Text("%d room name(s) covered this run.", RoomNameCensor::Count());
+}
+
+namespace {
+
+const char* ViewerStateText(const SpectateHost::Viewer& viewer)
+{
+	if (viewer.watching)
+		return "watching";
+
+	switch (viewer.state)
+	{
+	case SpectateHost::Viewer_Pending:
+		return "wants to watch";
+	case SpectateHost::Viewer_Kicked:
+		return "removed";
+	default:
+		return "waiting for your next match";
+	}
+}
+
+void DrawViewerRow(const SpectateHost::Viewer& viewer)
+{
+	char key[32] = {};
+	sprintf_s(key, "%llu", static_cast<unsigned long long>(viewer.id));
+
+	ImGui::PushID(key);
+	ImGui::TableNextRow();
+
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(SteamNames::Resolve(viewer.id).c_str());
+
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(ViewerStateText(viewer));
+
+	ImGui::TableNextColumn();
+
+	if (viewer.state == SpectateHost::Viewer_Accepted)
+	{
+		if (ImGui::SmallButton("Kick"))
+			SpectateHost::Kick(viewer.id);
+
+		ImGui::PopID();
+		return;
+	}
+
+	if (ImGui::SmallButton("Let in"))
+		SpectateHost::Approve(viewer.id);
+
+	ImGui::SameLine();
+
+	if (ImGui::SmallButton(viewer.state == SpectateHost::Viewer_Pending ? "Decline" : "Forget"))
+		SpectateHost::Forget(viewer.id);
+
+	ImGui::PopID();
+}
+
+}
+
+void NetplayWindow::DrawSpectateTab()
+{
+	DrawSpectateHost();
+	ImGui::Separator();
+	DrawSpectateWatch();
+}
+
+void NetplayWindow::DrawSpectateHost()
+{
+	ImGui::TextUnformatted("Let people watch you");
+	UiText::Help("Players with the mod can watch your online matches without joining your room. Your "
+		"Steam friends see you in their list, and anyone you give your code to can watch too. They join "
+		"at the start of your next match.");
+
+	bool allowed = SpectateHost::IsAllowed();
+
+	if (ImGui::Checkbox("Allow spectators", &allowed))
+		SpectateHost::SetAllowed(allowed);
+
+	const char* const code = SpectateHost::Code();
+
+	if (code[0] != 0)
+	{
+		ImGui::Text("Your code: %s", code);
+		ImGui::SameLine();
+
+		if (ImGui::SmallButton("Copy"))
+			ImGui::SetClipboardText(code);
+	}
+
+	int most = SpectateHost::MaxViewers();
+	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
+
+	if (ImGui::SliderInt("Viewers at most", &most, 1, SpectateHost::kMostViewers))
+		SpectateHost::SetMaxViewers(most);
+
+	UiText::Muted("%s", SpectateHost::StatusText());
+
+	std::vector<SpectateHost::Viewer> viewers;
+	SpectateHost::Snapshot(viewers);
+
+	if (viewers.empty() || !ImGui::BeginTable("##viewers", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+		return;
+
+	ImGui::TableSetupColumn("Viewer");
+	ImGui::TableSetupColumn("State");
+	ImGui::TableSetupColumn("");
+	ImGui::TableHeadersRow();
+
+	for (const SpectateHost::Viewer& viewer : viewers)
+		DrawViewerRow(viewer);
+
+	ImGui::EndTable();
+}
+
+void NetplayWindow::DrawSpectateWatch()
+{
+	ImGui::TextUnformatted("Watch someone");
+	UiText::Help("Pick a Steam friend who allows spectators, or type the code someone gave you. You "
+		"cannot be in a room of your own while you watch.");
+
+	std::vector<SteamFriends::Friend> friends;
+	SpectateViewer::Friends(friends);
+
+	if (friends.empty())
+		UiText::Muted("None of your Steam friends allow spectators right now.");
+
+	for (const SteamFriends::Friend& buddy : friends)
+	{
+		ImGui::PushID(buddy.value);
+
+		if (ImGui::SmallButton("Watch"))
+			SpectateViewer::Watch(buddy.id);
+
+		ImGui::SameLine();
+		ImGui::TextUnformatted(buddy.name);
+		ImGui::PopID();
+	}
+
+	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
+	ImGui::InputTextWithHint("##spectatecode", "XXXX-XXXX-XXXXX", m_spectateCode, sizeof(m_spectateCode));
+	ImGui::SameLine();
+
+	if (ImGui::Button("Watch code"))
+		SpectateViewer::WatchCode(m_spectateCode);
+
+	if (SpectateViewer::GetState() == SpectateViewer::State_Idle)
+	{
+		UiText::Muted("%s", SpectateViewer::StatusText());
+		return;
+	}
+
+	ImGui::Text("%s: %s", SteamNames::Resolve(SpectateViewer::Host()).c_str(), SpectateViewer::StatusText());
+
+	if (ImGui::Button("Stop watching"))
+		SpectateViewer::Leave();
 }

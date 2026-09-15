@@ -1,4 +1,4 @@
-#include "Game/SeList.h"
+﻿#include "Game/SeList.h"
 
 #include "Core/TextEncoding.h"
 
@@ -125,6 +125,38 @@ std::string Note(const std::string& line)
 	return text.substr(head);
 }
 
+int Index(const std::string& line, size_t before)
+{
+	const size_t open = line.find('[');
+
+	if (open == std::string::npos || open >= before)
+		return -1;
+
+	const size_t close = line.find(']', open + 1);
+
+	if (close == std::string::npos || close >= before)
+		return -1;
+
+	int value = 0;
+	bool digits = false;
+
+	for (size_t at = open + 1; at < close; ++at)
+	{
+		const char c = line[at];
+
+		if (c == ' ' || c == '	')
+			continue;
+
+		if (isdigit(static_cast<unsigned char>(c)) == 0)
+			return -1;
+
+		value = value * 10 + (c - '0');
+		digits = true;
+	}
+
+	return digits ? value : -1;
+}
+
 int Path(const std::string& line)
 {
 	const size_t at = line.find(kPath);
@@ -235,6 +267,7 @@ void SeList::Parse(const std::string& text, File& out)
 		row.variable = Variable(line, named + strlen(kFile));
 		row.note = Note(line);
 		row.path = Path(line);
+		row.index = Index(line, named);
 
 		out.rows.push_back(row);
 	}

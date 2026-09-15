@@ -72,7 +72,7 @@ void ModsPanel::DrawTools()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Look again"))
+	if (ImGui::Button("Rescan"))
 	{
 		ModPacks::Scan();
 		ModFiles::Rescan();
@@ -181,7 +181,7 @@ void ModsPanel::DrawRow(int index)
 
 	if (pack->beaten > 0)
 	{
-		UiText::Warn("%d file(s) here are already answered by %s, which is higher up.",
+		UiText::Warn("%d file(s) here are overridden by %s, which is higher in the list.",
 			pack->beaten, pack->beatenBy.c_str());
 	}
 
@@ -192,12 +192,12 @@ void ModsPanel::DrawRow(int index)
 
 		if (other != nullptr)
 		{
-			UiText::Warn("Stage %d, the same number %s uses. Install one of them and it takes a "
-				"free number instead.", pack->stage, other->name.c_str());
+			UiText::Warn("Stage %d is also used by %s. Installing either one moves it to a free "
+				"number.", pack->stage, other->name.c_str());
 		}
 		else
 		{
-			UiText::Muted("Carries stage %d.", pack->stage);
+			UiText::Muted("Includes stage %d.", pack->stage);
 		}
 
 		ImGui::BeginDisabled(StageImport::IsBusy());
@@ -210,7 +210,7 @@ void ModsPanel::DrawRow(int index)
 			const bool started = StageImport::InstallFolder(folder, pack->name.c_str());
 
 			sprintf_s(m_status, "%s", started
-				? "installing - the stage list is read at startup, so restart when it finishes"
+				? "installing. Restart the game when it finishes."
 				: StageImport::StatusText());
 		}
 
@@ -218,8 +218,8 @@ void ModsPanel::DrawRow(int index)
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("A stage has to be registered, not just dropped in, and the game "
-				"reads its list once at startup. This copies it to the next free stage number.");
+			ImGui::SetTooltip("A stage must be installed, not just dropped in, and the game reads "
+				"its stage list only at startup. This copies it to the next free stage number.");
 		}
 	}
 
@@ -258,65 +258,63 @@ void ModsPanel::DrawFooter()
 		return;
 	}
 
-	UiText::Good("%d file(s) from %d mod(s) are answering for the game.", ModPacks::FileCount(),
+	UiText::Good("%d file(s) from %d mod(s) are in use.", ModPacks::FileCount(),
 		ModPacks::EnabledCount());
 }
 
 void ModsPanel::DrawHelp()
 {
-	ImGui::TextWrapped("A mod is a folder with the game's own paths inside it. One that replaces "
-		"Hyde's voice holds se\\battle_se\\chr000 and nothing else. Install a zip, or drop the "
-		"folder in yourself - either way it is in the list within a second, with no restart.");
+	ImGui::TextWrapped("A mod is a folder that uses the game's own file paths. For example, a mod "
+		"that replaces Hyde's voice only holds se\\battle_se\\chr000. Install a zip or drop the "
+		"folder in yourself. It shows up in the list within a second, with no restart.");
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("What a switch does");
+	ImGui::SeparatorText("Turning a mod off");
 
-	ImGui::TextWrapped("Switching one off gives the game its own file back the next time it opens "
-		"it - the next match, the next screen. Nothing is ever copied over the game and the d "
-		"archive is never touched, so removing every mod leaves the install exactly as Steam "
-		"put it there.");
-
-	ImGui::Spacing();
-	ImGui::SeparatorText("When two mods want the same file");
-
-	ImGui::TextWrapped("The one higher in the list wins that file, and only that file - the rest "
-		"of the mod below still applies. A row says so when it happens, naming the mod that beat "
-		"it, so Up and Down are how you choose between two mods that both replace Hyde's voice.");
+	ImGui::TextWrapped("The game uses its own file again the next time it loads it, on the next "
+		"match or screen. Nothing is copied over the game and the d archive is never touched, so "
+		"removing every mod leaves your install exactly as Steam put it.");
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("The whole reading order, first to last:");
+	ImGui::SeparatorText("When two mods change the same file");
+
+	ImGui::TextWrapped("The mod higher in the list wins that file only. The rest of the lower mod "
+		"still applies. The row tells you when this happens and names the winning mod, so use Up "
+		"and Down to choose which one wins.");
+
+	ImGui::Spacing();
+	ImGui::TextWrapped("Files are looked up in this order:");
 	ImGui::BulletText("a loaded game patch");
-	ImGui::BulletText("Your own files - the top row, the Mods folder");
+	ImGui::BulletText("Your own files (the top row, the Mods folder)");
 	ImGui::BulletText("this list, top to bottom");
-	ImGui::BulletText("the game's own d archive, which answers whatever is left");
+	ImGui::BulletText("the game's own d archive, for everything else");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Stages are different");
 
-	ImGui::TextWrapped("A stage is not just files: it has to be registered in the game's stage "
-		"list, and that list is read once when the game starts. So a mod carrying a stage gets an "
-		"Install as a stage button rather than working off the switch. Installing takes the next "
-		"free stage number, so two mods built on the same number stop fighting - the second one "
-		"lands somewhere else and both are playable.");
+	ImGui::TextWrapped("A stage must be added to the game's stage list, and that list is only read "
+		"when the game starts. So a mod with a stage gets an Install as a stage button instead of "
+		"using the switch. Installing picks the next free stage number, so two mods that use the "
+		"same number both end up playable.");
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Making one");
+	ImGui::SeparatorText("Making a mod");
 
-	ImGui::TextWrapped("Put your files at the paths the game knows them by, and add a mod.ini so "
-		"it has a name. A folder without one still works, listed under its folder name.");
+	ImGui::TextWrapped("Put your files at the same paths the game uses, and add a mod.ini to give "
+		"it a name. A folder without one still works and is listed by its folder name.");
 
 	ImGui::Spacing();
 	ImGui::TextUnformatted("[Mod]\nName = Hyde speaks UNI\nAuthor = you\nVersion = 1.0\n"
 		"Note = His UNI[st] voice, all 96 lines.");
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("The folder is the mod: whoever you send it to has what you have. Your "
-		"switches and your ordering stay yours, in your own ini.");
+	ImGui::TextWrapped("To share a mod, send the folder. Your switches and order stay in your own "
+		"ini.");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Online");
 
-	ImGui::TextWrapped("None of this is unloaded when you go online. Art and sound change nothing "
-		"anyone else sees, but a mod carrying data or script files is simulation and the other "
-		"player will desync.");
+	ImGui::TextWrapped("Mods stay loaded when you play online. Art and sound only change what you "
+		"see, but a mod with data or script files changes gameplay and will desync with the other "
+		"player.");
 }

@@ -126,7 +126,7 @@ bool ValidateZip(const std::string& path, std::string& outError)
 
 		if (!IsAllowedEntry(name))
 		{
-			outError = "the release zip carries '" + name + "', which this updater will not install";
+			outError = "the release zip contains '" + name + "', which the updater will not install";
 			return false;
 		}
 
@@ -327,8 +327,8 @@ bool StagePackage(const std::string& archive, const std::string& stage, Web::Job
 	if (Exists(UpdaterPath(stage)))
 		return true;
 
-	job.SetError("no " UNI2_IM_UPDATER_EXE " to hand the install to - download the release and "
-		"unzip it beside uni2.exe yourself");
+	job.SetError(UNI2_IM_UPDATER_EXE " is missing. Download the release and unzip it next to "
+		"uni2.exe yourself");
 	return false;
 }
 
@@ -346,7 +346,7 @@ bool RunJob(Web::Job& job)
 
 	if (package == nullptr)
 	{
-		job.SetError("that release carries no zip to install");
+		job.SetError("that release has no zip to install");
 		return false;
 	}
 
@@ -451,7 +451,7 @@ void UpdateInstall::OnFrame()
 
 	if (!LaunchUpdater())
 	{
-		g_job.SetError("the updater would not start - install the release by hand");
+		g_job.SetError("the updater did not start. Install the release by hand");
 		return;
 	}
 

@@ -78,11 +78,74 @@
     <ClCompile Include="src\Core\dllmain.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\GraphicsWrapper.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\DgVoodoo.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\RandomStage.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\SubtitlesWindow.cpp">
+      <Filter>Overlay\Window</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\BundledPack.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Json.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\NameCensor.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\RoomNameCensor.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SteamFriends.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectateCode.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\GgpoSpectators.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectateMatch.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectateHost.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectateViewer.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectateFeed.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectatorPacing.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\Spectate.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\ReadyFlags.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SubtitleTable.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SubtitleText.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\SubtitleWatch.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\SubtitleHud.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\SubtitlesPanel.cpp">
+      <Filter>Overlay\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\Web\Http.cpp">
       <Filter>Web</Filter>
@@ -204,6 +267,45 @@
     <ClCompile Include="src\Game\BgObjectFix.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\BbtagArt.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BbtagCrypt.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BbtagMmot.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BbtagMua.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BbtagPac.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BbtagScript.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BbtagStage.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\FbxExWriter.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgClear.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgMipmaps.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\DxtMips.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StagePlacement.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BgVertexProbe.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\BgGrade.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -241,6 +343,12 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\StageLibrary.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StageNote.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\StageReplacements.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\StageThumb.cpp">
@@ -476,6 +584,21 @@
     </ClCompile>
     <ClCompile Include="src\Network\PaletteShare.cpp">
       <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\ModChannel.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\ModHandshake.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\MatchKind.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\OnlinePatch.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\BattleDataReload.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="src\Palette\PaletteBinder.cpp">
       <Filter>Palette</Filter>
@@ -884,11 +1007,77 @@
     <ClInclude Include="src\Core\Settings.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\D3D9\GraphicsWrapper.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\DgVoodoo.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\RandomStage.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\SubtitlesWindow.h">
+      <Filter>Overlay\Window</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\BundledPack.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Json.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\NameCensor.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\RoomNameCensor.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SteamFriends.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectateCode.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectateWire.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\GgpoSpectators.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectateMatch.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectateHost.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectateViewer.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectateFeed.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectatorPacing.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\Spectate.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\ReadyFlags.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SubtitleTable.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SubtitleText.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\SubtitleWatch.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\SubtitleHud.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\SubtitlesPanel.h">
+      <Filter>Overlay\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Web\Http.h">
       <Filter>Web</Filter>
@@ -1004,6 +1193,48 @@
     <ClInclude Include="src\Game\BgObjectFix.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\BbtagArt.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BbtagCrypt.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BbtagMmot.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BbtagMua.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BbtagPac.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BbtagScript.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BbtagStage.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\FbxExWriter.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BbtagPaths.inc">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgClear.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgMipmaps.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\DxtMips.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StagePlacement.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BgVertexProbe.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\BgGrade.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -1041,6 +1272,12 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\StageLibrary.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StageNote.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\StageReplacements.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\StageThumb.h">
@@ -1345,6 +1582,21 @@
     </ClInclude>
     <ClInclude Include="src\Network\PaletteShare.h">
       <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\ModChannel.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\ModHandshake.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\MatchKind.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\OnlinePatch.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\BattleDataReload.h">
+      <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\PaletteBinder.h">
       <Filter>Palette</Filter>

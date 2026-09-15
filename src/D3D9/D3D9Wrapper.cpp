@@ -4,6 +4,7 @@
 #include "Core/logger.h"
 #include "D3D9/D3D9Proxy.h"
 #include "D3D9/DeviceHooks.h"
+#include "D3D9/DgVoodoo.h"
 #include "D3D9/PresentTuning.h"
 #include "Hooks/HookManager.h"
 
@@ -27,6 +28,19 @@ bool g_createDeviceHooked = false;
 
 IDirect3D9* g_seenD3D9 = nullptr;
 
+void LogAttempt(const char* what, HRESULT result, UINT adapter, D3DDEVTYPE deviceType,
+	DWORD behaviorFlags, const D3DPRESENT_PARAMETERS& parameters)
+{
+	LOG("CreateDevice %s (0x%08lx): adapter %u, type %d, flags 0x%lx, %ux%u format %d, windowed %d, "
+		"multisample %u quality %lu, swap %d, refresh %u, interval 0x%x", what,
+		static_cast<unsigned long>(result), adapter, static_cast<int>(deviceType), behaviorFlags,
+		parameters.BackBufferWidth, parameters.BackBufferHeight,
+		static_cast<int>(parameters.BackBufferFormat), parameters.Windowed,
+		static_cast<unsigned>(parameters.MultiSampleType), parameters.MultiSampleQuality,
+		static_cast<int>(parameters.SwapEffect), parameters.FullScreen_RefreshRateInHz,
+		parameters.PresentationInterval);
+}
+
 HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3DDEVTYPE deviceType,
 	HWND hFocusWindow, DWORD behaviorFlags, D3DPRESENT_PARAMETERS* presentParameters,
 	IDirect3DDevice9** ppReturnedDeviceInterface)
@@ -36,23 +50,43 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 	if (presentParameters != nullptr)
 	{
 		asked = *presentParameters;
-		PresentTuning::Apply(self, adapter, *presentParameters);
+
+		if (!DgVoodoo::IsRunning())
+			PresentTuning::Apply(self, adapter, *presentParameters);
 	}
 
 	HRESULT result = oCreateDevice(self, adapter, deviceType, hFocusWindow, behaviorFlags,
 		presentParameters, ppReturnedDeviceInterface);
 
-	// A refresh rate the adapter lists is not always a mode it will grant. Put the game back the way
-	// it asked and let it have its own device rather than failing to start.
 	if (FAILED(result) && presentParameters != nullptr &&
 		memcmp(&asked, presentParameters, sizeof(asked)) != 0)
 	{
-		LOG("CreateDevice refused the tuned parameters (0x%08lx), retrying with the game's own",
-			static_cast<unsigned long>(result));
+		LogAttempt("refused the tuned parameters, retrying with the game's own", result, adapter,
+			deviceType, behaviorFlags, *presentParameters);
 
 		*presentParameters = asked;
 		result = oCreateDevice(self, adapter, deviceType, hFocusWindow, behaviorFlags,
 			presentParameters, ppReturnedDeviceInterface);
+	}
+
+	if (FAILED(result) && presentParameters != nullptr)
+	{
+		LogAttempt("refused the game's own parameters", result, adapter, deviceType, behaviorFlags,
+			*presentParameters);
+	}
+
+	if (FAILED(result) && presentParameters != nullptr &&
+		presentParameters->MultiSampleType != D3DMULTISAMPLE_NONE)
+	{
+		presentParameters->MultiSampleType = D3DMULTISAMPLE_NONE;
+		presentParameters->MultiSampleQuality = 0;
+
+		result = oCreateDevice(self, adapter, deviceType, hFocusWindow, behaviorFlags,
+			presentParameters, ppReturnedDeviceInterface);
+
+		LogAttempt(SUCCEEDED(result) ? "took the parameters once back buffer multisampling was off"
+			: "refused them even without back buffer multisampling", result, adapter, deviceType,
+			behaviorFlags, *presentParameters);
 	}
 
 	if (SUCCEEDED(result) && ppReturnedDeviceInterface != nullptr && *ppReturnedDeviceInterface != nullptr)
@@ -98,10 +132,37 @@ bool HookCreateDeviceFrom(IDirect3D9* d3d9)
 	return true;
 }
 
+Direct3DCreate9_t Creator()
+{
+	static Direct3DCreate9_t dgVoodoo = nullptr;
+
+	if (dgVoodoo != nullptr)
+		return dgVoodoo;
+
+	const HMODULE module = DgVoodoo::Load();
+
+	if (module == nullptr)
+		return oDirect3DCreate9;
+
+	dgVoodoo = reinterpret_cast<Direct3DCreate9_t>(GetProcAddress(module, "Direct3DCreate9"));
+
+	if (dgVoodoo == nullptr)
+		LOG("dgVoodoo's D3D9.dll has no Direct3DCreate9, so the system's is used");
+
+	return dgVoodoo != nullptr ? dgVoodoo : oDirect3DCreate9;
+}
+
 void HookCreateDeviceThroughProbe()
 {
 	if (g_createDeviceHooked || oDirect3DCreate9 == nullptr)
 		return;
+
+	if (DgVoodoo::IsEnabled() && DgVoodoo::IsInstalled())
+	{
+		LOG("dgVoodoo is on, so CreateDevice is hooked on the game's own Direct3D object instead of "
+			"a probe");
+		return;
+	}
 
 	IDirect3D9* const probe = oDirect3DCreate9(D3D_SDK_VERSION);
 
@@ -122,7 +183,9 @@ void HookCreateDeviceThroughProbe()
 
 IDirect3D9* WINAPI HookedDirect3DCreate9(UINT sdkVersion)
 {
-	IDirect3D9* d3d9 = oDirect3DCreate9(sdkVersion);
+	LOG("Direct3DCreate9 asked for, sdk %u", sdkVersion);
+
+	IDirect3D9* d3d9 = Creator()(sdkVersion);
 
 	LOG("Direct3DCreate9 called, sdk %u -> 0x%p", sdkVersion, (void*)d3d9);
 

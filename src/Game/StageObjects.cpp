@@ -29,7 +29,7 @@ void* __fastcall HookedLoadPat(void* self, void* unused, const char* path)
 		InterlockedIncrement(&g_failures);
 
 	sprintf_s(g_status, "%s %s", path == nullptr ? "(no path)" : path,
-		result == nullptr ? "was refused, so the stage's objects are gone" : "loaded");
+		result == nullptr ? "did not load, so the stage has no objects" : "loaded");
 
 	LOG("StageObjects: %s", g_status);
 
@@ -44,7 +44,7 @@ bool StageObjects::Initialize()
 
 	if (!IsAddressInGameModule(address))
 	{
-		strncpy_s(g_status, "the object layer's loader was not where it was left", _TRUNCATE);
+		strncpy_s(g_status, "the stage object loader is not where this game version expects it", _TRUNCATE);
 		LOG("StageObjects: %s", g_status);
 		return false;
 	}
@@ -52,7 +52,7 @@ bool StageObjects::Initialize()
 	if (!HookManager::CreateAndEnableHook(reinterpret_cast<void*>(address), &HookedLoadPat,
 		reinterpret_cast<void**>(&oLoadPat), "StageObjectPat"))
 	{
-		strncpy_s(g_status, "the object layer's loader could not be hooked", _TRUNCATE);
+		strncpy_s(g_status, "the stage object loader could not be hooked", _TRUNCATE);
 		return false;
 	}
 

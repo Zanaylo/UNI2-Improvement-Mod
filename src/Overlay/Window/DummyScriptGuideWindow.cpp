@@ -65,8 +65,8 @@ void DummyScriptGuideWindow::Draw()
 	}
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("Directions are numpad numbers from the dummy's point of view - 4 is back, "
-		"6 is forward, and they swap when the sides do. Buttons are A, B, C and D.");
+	ImGui::TextWrapped("Directions are numpad numbers from the dummy's point of view: 4 is back, "
+		"6 is forward, and they swap when the sides swap. Buttons are A, B, C and D.");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("An example");
@@ -77,8 +77,8 @@ void DummyScriptGuideWindow::Draw()
 	ImGui::Spacing();
 	ImGui::SeparatorText("One tab per side");
 
-	ImGui::TextWrapped("Each side has its own script, name and saved list, and the two run "
-		"independently - set both going and a whole scenario plays out.");
+	ImGui::TextWrapped("Each side has its own script, name and saved list. The two run on their own, "
+		"so start both and a whole scenario plays out.");
 
 	ImGui::Spacing();
 
@@ -89,9 +89,9 @@ void DummyScriptGuideWindow::Draw()
 
 	ImGui::Spacing();
 	ImGui::TextWrapped("P2 also has a Slot, with Write to slot and Read from slot. Its Play writes "
-		"the slot and hands it to the game's own playback, so everything the playback menu gives it "
-		"comes too - repeat, on reversal, after a restart. P1 has no slot because the game's takes "
-		"only ever reach the dummy; its Play runs through Player Control instead.");
+		"the slot and uses the game's own playback, so the playback menu options work too (repeat, "
+		"on reversal, after a restart). P1 has no slot because the game only plays recordings on the "
+		"dummy. P1's Play goes through Player Control instead.");
 
 	ImGui::Spacing();
 	ImGui::TextWrapped("The number beside Play is how many frames the script is, or what went wrong "
@@ -100,8 +100,8 @@ void DummyScriptGuideWindow::Draw()
 	ImGui::Spacing();
 	ImGui::SeparatorText("Playing it back");
 
-	ImGui::TextWrapped("Play is usually all you need. Write to slot is for when you want the game's "
-		"own playback settings on it: write the slot, then set the dummy's action to a recorded "
-		"playback in the training menu. A slot the game has never recorded into is filled in for you, "
-		"so it stops being greyed out.");
+	ImGui::TextWrapped("Play is usually all you need. Use Write to slot when you want the game's "
+		"playback settings: write the slot, then set the dummy's action to recorded playback in the "
+		"training menu. If the slot was never recorded into, the mod fills it in so it is no longer "
+		"greyed out.");
 }

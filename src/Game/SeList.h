@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include <string>
@@ -12,6 +12,7 @@ namespace SeList
 		std::string note;
 		std::string variable;
 		int path;
+		int index;
 	};
 
 	struct File

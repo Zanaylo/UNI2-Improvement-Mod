@@ -206,7 +206,7 @@ bool DummyScript::WriteToSlot(int slot)
 {
 	if (g_count <= 0)
 	{
-		sprintf_s(g_status, "nothing to write - the script is empty");
+		sprintf_s(g_status, "the script is empty");
 		return false;
 	}
 
@@ -230,7 +230,7 @@ bool DummyScript::WriteToSlot(int slot)
 
 	if (g_count > GameOffsets::kRecorderSlotFrames)
 	{
-		sprintf_s(g_status, "script is %d frames, a slot holds %d", g_count,
+		sprintf_s(g_status, "the script is %d frames, but a slot holds %d", g_count,
 			GameOffsets::kRecorderSlotFrames);
 		return false;
 	}
@@ -246,7 +246,7 @@ bool DummyScript::WriteToSlot(int slot)
 
 		if (!TryWriteUnaligned(reinterpret_cast<void*>(data + static_cast<uintptr_t>(i) * 4), both))
 		{
-			sprintf_s(g_status, "the write failed %d frames in", i);
+			sprintf_s(g_status, "writing failed after %d frames", i);
 			return false;
 		}
 	}
@@ -257,7 +257,7 @@ bool DummyScript::WriteToSlot(int slot)
 
 	if (!wrote)
 	{
-		sprintf_s(g_status, "the take record could not be written");
+		sprintf_s(g_status, "could not save the recording to the slot");
 		return false;
 	}
 
@@ -574,7 +574,7 @@ bool DummyScript::ReadFromSlot(int slot, char* outText, int size)
 		}
 		else if (!recordSane)
 		{
-			sprintf_s(g_status, "slot %d has no take - start 0x%x length %u", slot + 1, start, bytes);
+			sprintf_s(g_status, "slot %d has no recording (start 0x%x, length %u)", slot + 1, start, bytes);
 			LOG("dummy script: %s", g_status);
 			return false;
 		}

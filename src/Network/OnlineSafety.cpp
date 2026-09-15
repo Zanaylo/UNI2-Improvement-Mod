@@ -70,8 +70,8 @@ void OnlineSafety::Update()
 	g_inSession = inSession;
 
 	strncpy_s(g_status, inSession
-		? "a session is up - the mod is holding its room writes back"
-		: "no session - the mod may write room state", _TRUNCATE);
+		? "in a session, the mod holds back its room writes"
+		: "no session, the mod can write room state", _TRUNCATE);
 
 	if (inSession && !g_logged)
 	{

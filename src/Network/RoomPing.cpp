@@ -147,6 +147,13 @@ uint64_t RoomPing::GetLobbyId()
 	return g_lobby;
 }
 
+uint64_t RoomPing::ReadLobbyNow()
+{
+	const uint64_t lobby = ReadLobbyId();
+
+	return LooksLikeLobby(lobby) ? lobby : 0;
+}
+
 bool RoomPing::InRoom()
 {
 	return g_lobby != 0;

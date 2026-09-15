@@ -1,7 +1,5 @@
 ﻿SETTING_STRING(dinputDllWrapper,    "Mod",      "DinputDllWrapper",     "")
 
-// Asks GitHub once, on a thread of its own, whether a newer release exists. Nothing is downloaded
-// and nothing is installed - a window offers the release page and that is all.
 SETTING_INT(checkForUpdates,        "Mod",      "CheckForUpdates",      1)
 
 SETTING_INT(settingsRevision,       "Mod",      "SettingsRevision",     2)
@@ -15,13 +13,8 @@ SETTING_STRING(nextPaletteKey,      "Keybinds", "NextPalette",          "F8")
 SETTING_STRING(prevPaletteKey,      "Keybinds", "PreviousPalette",      "F7")
 SETTING_STRING(hideHudKey,          "Keybinds", "HideHud",              "")
 
-// The fighting game shortcut: hold this and press the bound key. A keyboard bind asks for it by
-// carrying an "Fn+" prefix - "Fn+F8" - and a bind without the prefix is ignored while it is held, so
-// one key can serve both. Empty means no function key at all.
 SETTING_STRING(functionKey,         "Keybinds", "FunctionKey",          "")
 
-// Pad binds are always the function button plus one other. Names are XInput's: A, B, X, Y, LB, RB,
-// LT, RT, L3, R3, Start, Back, DPad Up/Down/Left/Right.
 SETTING_STRING(padFunctionButton,   "PadKeybinds", "FunctionButton",    "Back")
 SETTING_STRING(padToggleOverlay,    "PadKeybinds", "ToggleOverlay",     "A")
 SETTING_STRING(padToggleHitbox,     "PadKeybinds", "ToggleHitboxOverlay", "B")
@@ -32,291 +25,106 @@ SETTING_STRING(padNextPalette,      "PadKeybinds", "NextPalette",       "DPad Ri
 SETTING_STRING(padPrevPalette,      "PadKeybinds", "PreviousPalette",   "DPad Left")
 SETTING_STRING(padHideHud,          "PadKeybinds", "HideHud",           "")
 
-// 0 = Tick stop, 1 = Hitstun Stop. See src/Training/FrameStepper.h for the trade-off between them.
 SETTING_INT(freezeMode,             "Training", "FreezeMode",           0)
 
-// The exact numbers under each health bar. Off online, where knowing to the point whether a combo
-// kills is more than the bars themselves say. The two offsets nudge the text in pixels.
 SETTING_INT(showHealthValues,       "Training", "ShowHealthValues",     0)
 SETTING_INT(healthValuesX,          "Training", "HealthValuesX",        0)
 SETTING_INT(healthValuesY,          "Training", "HealthValuesY",        0)
 SETTING_INT(healthValuesScale,      "Training", "HealthValuesScale",  100)
 
-// The game's own gauge visibility, the field Cockpit_SetView writes. Held while a match runs, so a
-// move that shows the gauges again does not undo it.
 SETTING_INT(hideBattleHud,          "Training", "HideHud",              0)
 
-// Bit field: 1 watch P1, 2 watch P2, 4 stop on attacks, 8 stop on armoured moves. A file written
-// before the triggers existed carries only the player bits and is read as "stop on attacks".
 SETTING_INT(autoPauseMode,          "Training", "AutoPauseOnAttack",  0)
 
-// Up to four hit counts to stop at, comma separated - "3,20" stops on the third hit and again on
-// the twentieth. Zero or empty entries are ignored.
 SETTING_STRING(autoPauseComboStops, "Training", "AutoPauseComboStops",  "3")
 
 SETTING_STRING(autoPauseBlockStops, "Training", "AutoPauseBlockStops",  "3")
 
 SETTING_INT(resumeDelayFrames,      "Training", "ResumeDelayFrames",    60)
 
-// Holding the next-frame key keeps stepping. How long it has to be held before it starts, and how
-// long between steps after that, both in milliseconds - not in frames, because the game is frozen
-// while this matters and a frame has no length then.
 SETTING_INT(stepRepeatDelayMs,      "Training", "StepRepeatDelayMs",    250)
 SETTING_INT(stepRepeatIntervalMs,   "Training", "StepRepeatIntervalMs", 90)
 
-// RVA of the recorder's frame counter, zeroed when the recording lead-in ends so the countdown
-// frames stop counting against the take. 0 disables it. Left off by default because writing the
-// wrong field of the recorder object breaks the game's own playback - find it with the training
-// globals diff in the Memory debug window before setting it.
 SETTING_INT(recordFrameCounterRva,  "Training", "RecordFrameCounterRva", 0)
-
-// PlaceAutomatically keeps the meter centred near the bottom of whatever resolution the game runs
-// at and ignores the position below. Off, the position is the top-left corner in pixels - and -1 on
-// either axis means it has never been placed, so the meter takes the automatic spot once, writes it
-// here, and is draggable from there.
 
 SETTING_INT(frameMeterAuto,         "FrameMeter", "PlaceAutomatically",  0)
 SETTING_INT(frameMeterX,            "FrameMeter", "PositionX",          -1)
 SETTING_INT(frameMeterY,            "FrameMeter", "PositionY",          -1)
 SETTING_FLOAT(frameMeterScale,      "FrameMeter", "Scale",              1.5f)
 
-// The length of every finished band, printed inside the bar the way SF6 does it. A band too short to
-// hold its own number is left blank rather than drawn over its neighbour.
 SETTING_INT(frameMeterCounts,       "FrameMeter", "BandCounts",         1)
 
-// Blockstun, hitstun and the gap for the whole exchange, plus the super flash that side is running
-// or last ran, on its own line above P1's readout and below P2's so each side's numbers sit
-// together. The flash is the one the bar cannot carry, since it never gains a cell for one.
 SETTING_INT(frameMeterTotals,       "FrameMeter", "LineTotals",         1)
 
-// The thin row under each bar naming every invincibility in force on that frame. Off makes the meter
-// as short as it used to be; the invincibility is then not drawn at all, since the row is the only
-// place it goes.
 SETTING_INT(frameMeterAttributes,   "FrameMeter", "AttributeRow",       1)
 
-// How solid the meter is drawn, as a percentage, bars and numbers alike.
 SETTING_INT(frameMeterOpacity,      "FrameMeter", "Opacity",            100)
 
-// Whether a click that lands on the meter drags it. Off by default: the meter is drawn onto the back
-// buffer and has none of ImGui's hit testing, so with this on it moves whenever it is clicked through.
 SETTING_INT(frameMeterDrag,         "FrameMeter", "MouseDrag",          1)
 
-// Characters whose companion is drawn before the fighters are, by the number the game gives them -
-// Chaos is 15. Such a character binds its own palette texture first and reverses the order the two
-// sides are named by, so the palette editor has to read them the other way round when one of these is
-// on P1 and the other side is not. Comma separated; add a number here when a new character with a pet
-// ships rather than waiting for a build.
-//
-// The order is the game's own: Hyde 0, Linne 1, Waldstein 2, Carmine 3, Orie 4, Gordeau 5, Merkava 6,
-// Vatista 7, Seth 8, Yuzuriha 9, Hilda 10, Eltnum 11, Nanase 12, Byakuya 13, Akatsuki 14, Chaos 15,
-// Wagner 16, Enkidu 17, Londrekia 18, Tsurugi 19, Uzuki 20, Mika 21, Kaguya 22, Kuon 23, Phonon 24,
-// Ogre 25, Izumi 26.
 SETTING_STRING(paletteCompanions,   "Palette",  "CompanionCharacters",  "15")
 
-// The other player's side, in one decision: on, their palette is read as it arrives and worn, so
-// you see the colours they chose; off, their packets are dropped on landing and their side is left
-// alone, so it looks the way the game gives it.
-//
-// There is deliberately no third state where their side is painted with a choice made here - that
-// looked like seeing them without the mod and was not.
-//
-// Yours is sent either way. It costs nothing on their machine if they are not running the mod, and
-// refusing to read theirs is not a reason to hide yours.
 SETTING_INT(showOnlinePalettes,     "Palette",  "ShowOnlinePalettes",   1)
 
-// Texture owners taken from the renderer's own draw calls instead of the bind-order guess. 0 runs
-// the binder passively - it only logs where it disagrees with the guess - and 1 lets it name the
-// sides whenever it has seen a character draw, falling back to the guess when it has not.
-//
-// **A mirror match needs this on.** Mika against Mika is one texture read from two rows, and the
-// guess names one texture per side, so it cannot describe that at all: one side ends up with no
-// palette and the editor pulls somebody else's row. The draws say which row belongs to which side
-// and one texture can answer for both.
 SETTING_INT(paletteOwnersFromDraws, "Palette",  "OwnersFromDraws",      1)
 
-// Whether the colour comparison is allowed to *name* a side, or only to say what it thinks.
-//
-// **Off, and off for a measured reason.** Naming a texture by the colours it holds has now been
-// tried three times and come out backwards every time: it reversed a working Mika-against-Gordeau
-// match on 2026-08-14, and the two earlier attempts are recorded in the comment this feature
-// replaced. It also cannot survive a character whose companion carries the same palettes - a Chaos
-// mirror produced five textures all matching Chaos, each claim evicting the last, for ever.
-//
-// The comparison still runs and still logs, because what it says is the evidence for settling the
-// direction; it simply may not act. 1 lets it name sides again, for that experiment.
 SETTING_INT(paletteIdentifyByColours, "Palette", "IdentifyByColours",    0)
 
-// The chosen palettes painted outside a match as well - the character select portrait and the
-// lobby avatar wearing the character's remembered choice.
-//
-// **Off, and off by default on purpose.** It worked, but it is not wanted yet: palettes belong to
-// the match for now and the screens are a later version's problem. Everything behind it is still
-// here - the screens' textures are still tracked and still given owners - so turning this on is
-// all it takes to have it back. The key is deliberately not the one an earlier build wrote, so an
-// ini carrying the old switch does not quietly keep it on.
 SETTING_INT(paletteOutOfMatch,      "Palette",  "PaintOutOfMatch",      0)
 
-// Reserved, and it no longer does anything.
-//
-// It used to gate writing a palette's saved effect block into a row of the effect *texture*. Effects
-// do not sample that texture, so it painted nothing - the block is now applied where the colour is
-// really decided, one entry at a time into the table the draw is answered from. The switch is left
-// so an ini carrying it still loads.
 SETTING_INT(paletteEffectRows,      "Palette",  "PaintEffectRows",      1)
 
-// The first palette system is still compiled in and still works, but nothing in the interface
-// names it any more: the tab it lived in is hidden unless this is turned on. It is kept because
-// the replacement is not built yet and because the native tab exports into its folder. Turning
-// this on brings the tab back exactly as it was.
 SETTING_INT(showlegacypalettes,     "Palette",  "ShowLegacyTab",        0)
 
-// The editor's two view options. They live beside the button that opens it rather than inside
-// it, because they are about how you work rather than about a particular character.
 SETTING_INT(paletteGroupByPart,     "Palette",  "GroupByPart",          1)
 SETTING_INT(paletteFlashEntry,      "Palette",  "FlashEntry",           1)
 
-// Hide the entries no pixel of this character ever indexes, read off its own chrNNN.cg, plus the
-// pure green the unused slots are filled with. On by default. An entry the game's own colour screen
-// offers is never hidden, and nor is anything for a character the table does not cover.
 SETTING_INT(paletteFilterJunk,      "Palette",  "FilterJunk",           1)
 
-// The stage replaced by a flat colour, for keying a capture. The colour is 0xRRGGBB; the default is
-// the green the game already clears to, shifted to a full green because a dark one keys badly.
 SETTING_INT(stageFlatColour,        "Video",    "FlatStage",            0)
 SETTING_INT(stageFlatColourValue,   "Video",    "FlatStageColour",      0x00ff00)
 
-// How much of the game's own screen shake to keep, 0 to 100. Every shake - a move, Wald's walk,
-// a cutscene - is one call asking the camera to quake, and the slot it fills carries a percentage
-// the engine multiplies the amplitude by, so this rescales that and the shake keeps its shape and
-// its length. 0 forwards the call with a duration of zero, which is the engine's own way of
-// registering nothing.
 SETTING_INT(screenShake,            "Video",    "ScreenShake",          100)
 
-// Keep the menu music playing across Options, Customize and Gallery instead of letting it start
-// again. The game's menu BGM chooser (RVA 0x2cecb0) rebuilds the stream unless the music is still
-// running with the same id, and a scene change pauses it first, so the rebuild is guaranteed. On,
-// the mod reports the paused stream as running so the chooser keeps it, then resumes it.
 SETTING_INT(keepMenuMusic,          "Music",    "KeepMenuMusic",        1)
 
-// Hold 1 ms timer resolution and reassert it when the window regains focus. The game asks once at
-// startup and never again, and Windows takes the request back while the process sits in the
-// background - which is what an alt-tab leaves behind.
 SETTING_INT(timerResolution,        "Video",    "TimerResolution",      1)
 
-// Opt the process out of EcoQoS and of the background clamp on timer resolution.
 SETTING_INT(powerThrottlingOptOut,  "Video",    "PowerThrottlingOptOut", 1)
 
-// Rewrite the display parameters below before the game builds its device. Off leaves whatever the
-// game asked for.
 SETTING_INT(displayTuning,          "Video",    "DisplayTuning",        1)
 
-// Fullscreen refresh rate. 0 leaves the desktop's own mode alone, which is what you want with the
-// game's vsync off - the engine paces itself and the rate only decides how long a frame takes to
-// scan out. With vsync on and a rate that is not a whole multiple of 60, frames land unevenly, and
-// 0 then picks the highest listed multiple of 60 at or below the desktop rate. A number here forces
-// that rate. Exclusive fullscreen only; Direct3D requires 0 windowed.
 SETTING_INT(fullscreenRefreshHz,    "Video",    "FullscreenRefreshHz",  0)
 
-// A second back buffer. The game asks for one. A second only ever helps in exclusive fullscreen
-// with the game's vsync on, where a frame that misses the vblank has somewhere to wait instead of
-// costing a whole refresh - and it costs up to a frame of input latency to get. It is ignored
-// windowed and with vsync off, because there it buys nothing and costs the same.
-//
-// This is a new key. An older UNI2_IM.ini carrying BackBufferCount = 2 no longer does anything:
-// that default was wrong for everyone whose vsync is off, which is most people.
 SETTING_INT(extraBackBuffer,        "Video",    "ExtraBackBuffer",      0)
 
-// The game's two threads hand off once a frame through a SendMessage that only the message thread
-// can answer, and that thread is inside a Sleep(1) - fifteen milliseconds of one after an alt-tab
-// has clamped the timer. This waits on the handshake instead of on the clock. No CPU cost, no
-// engine code patched.
 SETTING_INT(pumpWait,               "Video",    "PumpWait",             0)
 
-// Wake that wait on every message rather than only on the handshake. Drains the pump instead of
-// taking one message per pass, which shortens overlay and window message latency, and costs CPU in
-// proportion to how much the mouse moves.
 SETTING_INT(pumpWaitAllInput,       "Video",    "PumpWaitAllInput",     0)
 
-// ---------------------------------------------------------------------------------------------
-// Graphics - POTATO MODE
-//
-// For a machine that cannot hold 60. Nothing here is an image improvement - the game already looks
-// better than anything the mod can do to it - and nothing here reaches the simulation, so a match
-// played on any of it is the same match.
-//
-// Set PotatoMode and forget the rest: it is a preset over the keys below and it puts them back when
-// it is turned off. They are here for taking one of them further than a preset does.
-// ---------------------------------------------------------------------------------------------
-
-// The size of the surface the finished frame is presented through, in pixels. 0 leaves the game's
-// own Display option alone, which is what Off means.
-//
-// This is the whole of POTATO MODE's picture setting and it is deliberately a size rather than a
-// percentage: 640x360 stays 640x360 whether the window is 720p or 1440p, so the window can be as
-// large as you like and the game still only ever draws that many pixels. The engine keeps drawing
-// exactly as it always does and Direct3D stretches the result to the window - nothing in the game
-// has to know, and nothing can end up in the wrong place. It gets soft, and that is all.
-//
-// Windowed and borderless only. Exclusive fullscreen has to name a mode the adapter really has, and
-// picking one for somebody is how a mod ends up owning their display.
 SETTING_INT(presentWidth,           "Graphics", "PresentWidth",         0)
 SETTING_INT(presentHeight,          "Graphics", "PresentHeight",        0)
 
-// Which of those sizes the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144.
-// The two keys above are what actually reaches Direct3D; this is the one the tab offers, so that
-// picking a level and picking how far it goes stay separate questions.
 SETTING_INT(potatoHeight,           "Graphics", "PotatoHeight",         360)
 
-// The Improvements tab, which is POTATO MODE the other way round: 0 off, 1 draws at 1080p, 2 at
-// 1440p and 3 at 4K, and lets Direct3D fit that to the window. It does not reach the five
-// 1280x720 scene targets, so it supersamples what is drawn straight into the back buffer and
-// nothing else. Offered only while PotatoMode is 0, and the size the two of them settle on is
-// what PresentWidth/PresentHeight hold.
 SETTING_INT(supersample,            "Graphics", "Supersample",          0)
 
-// Contrast adaptive sharpening over the finished frame, 0 to 100, 0 off. The softness in this game
-// is in the upscale rather than in the art - everything is rasterised at 1280x720 and blown up - so
-// putting the edge contrast back is most of what a higher resolution would have looked like. Drawn
-// from Present over the back buffer; it patches nothing and reads none of the game's shaders.
 SETTING_INT(sharpenStrength,        "Graphics", "Sharpen",              0)
 
-// An edge directed upscale of the scene target in place of the composite's linear filter, 0 off.
-// The engine rasterises into five 1280x720 targets and the composite is the only magnification in
-// the frame, so this is the one place a better kernel can reach. It runs FidelityFX EASU into a back
-// buffer sized copy and hands that to the composite, which then has nothing left to blur. Needs a
-// back buffer larger than 1280x720 to do anything, so it earns its keep with Supersample on.
 SETTING_INT(sceneUpscale,           "Graphics", "SceneUpscale",         0)
 
-// Which kernel magnifies the scene target on its way into the back buffer, in place of the
-// composite's own linear filter. 0 leaves the engine's bilinear alone, 1 Catmull-Rom bicubic,
-// 2 Lanczos, 3 FidelityFX EASU. It only does anything where the back buffer is larger than the
-// scene, so it is the partner of SceneTargetScale and Supersample rather than a setting of its own.
 SETTING_INT(upscaleFilter,          "Graphics", "UpscaleFilter",        0)
 
-// FXAA over the finished frame: 0 off, 1 low, 2 medium, 3 high, 4 ultra. Multisampling cannot reach
-// this game - a Direct3D 9 texture cannot be multisampled and the whole scene is drawn into
-// textures - so the two things that can antialias it are supersampling, which SceneTargetScale and
-// Supersample do, and a post filter, which is this.
 SETTING_INT(antiAliasing,           "Graphics", "AntiAliasing",         0)
 
-// Which kernel the sharpening pass uses: 0 contrast adaptive, 1 FidelityFX RCAS.
 SETTING_INT(sharpenMode,            "Graphics", "SharpenMode",          0)
 
-// Bloom over the finished frame: the bright parts of the picture are cut out, blurred at a quarter
-// of the size and screened back on. It is the one thing here that reads as lighting rather than as
-// filtering, and the neon in these stages and the EXS effects are what it is for. Off, and nothing
-// is drawn. Intensity and threshold are 0 to 100.
 SETTING_INT(bloomEnabled,           "Graphics", "Bloom",                0)
 SETTING_INT(bloomIntensity,         "Graphics", "BloomIntensity",       40)
 SETTING_INT(bloomThreshold,         "Graphics", "BloomThreshold",       75)
 
-// Whether the colour and display pass runs at all. Off, none of the values below is read and no pass
-// is drawn, whatever they hold.
 SETTING_INT(lookEnabled,            "Graphics", "Look",                 0)
 
-// The colour and display look, one pass over the finished frame, and every one of them neutral by
-// default so the pass does not run at all. Brightness, contrast, saturation, vibrance and
-// temperature are -100 to 100, gamma is a percentage of 1.0, vignette and scanlines are 0 to 100.
 SETTING_INT(lookBrightness,         "Graphics", "LookBrightness",       0)
 SETTING_INT(lookContrast,           "Graphics", "LookContrast",         0)
 SETTING_INT(lookGamma,              "Graphics", "LookGamma",            100)
@@ -327,152 +135,91 @@ SETTING_INT(lookVignette,           "Graphics", "LookVignette",         0)
 SETTING_INT(lookScanlines,          "Graphics", "LookScanlines",        0)
 SETTING_INT(lookDither,             "Graphics", "LookDither",           0)
 
-// The user shader pack that runs last in the chain, by file name, out of UNI2-IM/Shaders. Empty is
-// none. Compiling one needs d3dcompiler_47.dll; where it is missing the setting is ignored.
 SETTING_STRING(shaderPack,          "Graphics", "ShaderPack",           "")
 
 SETTING_INT(sceneScalePercent,      "Graphics", "SceneScale",           100)
 
-// Whether SceneScale also holds the engine's own 2D destination scale up. It reaches some 2D call
-// sites and not others - the menu's labels move and its bullets do not - so it is its own switch
-// rather than something SceneScale implies.
 SETTING_INT(sceneDrawScale,         "Graphics", "SceneDrawScale",       0)
 
-// Hold the second size pair and the projection block at 1280x720 while the targets grow. Measured
-// without it at 200%: the stage, the moon and the HUD are correct and the characters are drawn at
-// exactly twice their distance from the origin - x 0.334 of the screen becomes 0.676. The character
-// transform is the one thing that follows the projection, so this is what should stop it.
 SETTING_INT(scenePinProjection,     "Graphics", "ScenePinProjection",   0)
 
-// Scale the engine's four reference constants with the targets. The character sprite converts its
-// pixel position and its size into clip space with a hard coded 1/640 and 1/360 - RVAs 0x55bc78,
-// 0x55bc80, 0x55c0cc, 0x55c0d0 - while the block those pixels are computed through, 0x83a7e4 built
-// at 0x11b630, is derived from the physical render size. Two halves of one conversion that have to
-// agree and do not, which is what draws a character at twice its distance from the origin at 200%.
-// This is the second answer to that mismatch and ScenePinProjection is the first: that one holds the
-// block down to 1280x720, this one lets it follow the targets and moves the constants to meet it.
-// They are alternatives - measure with one or the other, not with both.
 SETTING_INT(sceneReferenceScale,    "Graphics", "SceneReferenceScale",  1)
 
-// The same correction for the second family. The engine spells half the reference width two ways -
-// the reciprocals above, and the plain literals 640.0 at 0x55c07c and 360.0 at 0x55c044, which the
-// character path divides by. Measured at 200%: everything derived from the camera block reads
-// 1/1280 and 1/720 correctly and both literals still read 640 and 360, which puts the sprite at
-// x/640-1 against a position already in the 2560 wide space - exactly where it is drawn. Separate
-// from the switch above because 360.0 has fourteen readers and some of them are degrees rather than
-// pixels, so the two families have to be measurable one at a time.
 SETTING_INT(sceneReferenceLiterals, "Graphics", "SceneReferenceLiterals", 1)
 
-// Ask Direct3D for a back buffer with no multisampling. A Direct3D 9 texture cannot be
-// multisampled, so the scene is never antialiased anyway and the samples are spent on the one quad
-// the finished frame is drawn with.
 SETTING_INT(disableBackBufferAa,    "Graphics", "DisableBackBufferAA",  0)
 
-// Hold the game's own Character Visual Improvements off. It selects the Filter techniques in
-// sh_chara.txt, which resolve nine palette lookups per character pixel where one would do, and what
-// it buys is a blur one source texel wide - about one screen pixel at 720p. The cheapest real win
-// on a weak card, and it is reasserted because the game's options screen writes the same global.
 SETTING_INT(disableCharacterFilter, "Graphics", "DisableCharacterFilter", 0)
 
-// Draw the empty stage instead of the built one. Characters and gameplay effects are untouched.
 SETTING_INT(simpleStage,            "Graphics", "SimpleStage",          0)
 
-// The preset over everything above. 0 off, 1 balanced, 2 potato. Setting it rewrites the keys it
-// covers; turning it off puts them back, which for the present size means back to the game's own
-// Display option.
+SETTING_INT(stageMipmaps,           "Graphics", "StageMipmaps",         1)
+
+SETTING_INT(advancedStages,         "Stages",   "AdvancedOptions",      0)
+
+SETTING_INT(stageTargetWidth,       "Stages",   "TargetWidth",          0)
+SETTING_INT(stageTargetHeight,      "Stages",   "TargetHeight",         0)
+
 SETTING_INT(potatoMode,             "Graphics", "PotatoMode",           0)
 
 SETTING_INT(blockGameMouse,         "Overlay",  "BlockGameMouse",       0)
 SETTING_FLOAT(uiScale,              "Overlay",  "UiScale",              1.0f)
 
-// The overlay's font. Empty picks the first scalable face the system has, which on Windows is Segoe
-// UI and under Proton is usually DejaVu Sans; a path to a .ttf overrides that. The stock Dear ImGui
-// font is a bitmap and it is what makes the overlay look broken at 1440p and 4K - it has one size
-// and everything above it is that size stretched.
 SETTING_STRING(fontPath,            "Overlay",  "FontPath",             "")
 SETTING_FLOAT(fontSize,             "Overlay",  "FontSize",             16.0f)
 
-// A second face merged behind the first one, for the characters it has no glyph for - Japanese
-// track titles, Japanese player names. It is only ever asked for a codepoint the main face does not
-// provide, so it cannot change how anything already on screen looks. Empty picks a system CJK face.
 SETTING_STRING(fallbackFontPath,    "Overlay",  "FallbackFontPath",     "")
 
-// The screen theme: a folder under UNI2-IM/Screens holding another French-Bread game's .pat files
-// and one screen.ini that says which of their patterns make up each screen and which UNI2 scene it
-// stands in for. Empty leaves every screen the game's own.
 SETTING_STRING(screenTheme,         "Theme",    "Screens",              "")
 
-// Draw the screen theme at all. The theme stays selected while this is off, so a screen that goes
-// wrong can be put aside without losing which theme was chosen.
 SETTING_INT(screenThemeDrawn,       "Theme",    "ScreensDrawn",         1)
 
-// Tell Windows the game handles its own scaling. Off, a display scale above 100% makes Windows
-// render the whole window small and stretch it, which is a second blur on top of everything else and
-// costs the overlay its sharpness. On, the window is laid out in real pixels. It is off by default
-// because the game was not written for it and its own window sizing has not been tested this way.
+SETTING_INT(overlayCursor,          "Overlay",  "SoftwareCursor",       0)
 SETTING_INT(dpiAware,               "Overlay",  "DpiAware",             0)
 
-// The line that slides across the top of the screen when the mod loads, naming the version and the
-// key that opens it. 0 silences it and anything else the mod would announce.
 SETTING_INT(notifications,          "Overlay",  "Notifications",        1)
 
-// The game's own pause menu stops the battle tick, and both overlays hide with it because a tick
-// that has stopped is usually a match that has ended. On, they keep drawing as long as the match is
-// still up - the characters are frozen behind the menu, not gone.
 SETTING_INT(drawWhilePaused,        "Overlay",  "DrawWhileGamePaused",  0)
 
-// File-only: no in-game control writes this. 1 loads the Memory debug window at all, opened with
-// Ctrl+F1. Off by default so the reads it does every frame cost nothing when nobody asked for it.
 SETTING_INT(memoryDebugEnabled,     "Debug",    "MemoryDebug",          0)
 
-// Per-section timing of the Present path and the game tick, plus a frame interval histogram, shown
-// in the Performance window. A disabled section scope costs one branch, so this is the switch to
-// turn on before changing anything for performance and off again after.
 SETTING_INT(profilerEnabled,        "Debug",    "Profiler",             0)
 
-// The frame meter's per-frame diagnostic capture, and the CSV it writes at the end of every
-// exchange.
-//
-// **Off, and off for a measured reason.** The write was happening inline on the game tick thread -
-// one fopen and up to twelve hundred fprintf calls in the middle of a match - which is exactly the
-// shape of the judder 4.C was chasing. With this on the capture still runs, but the CSV is handed to
-// a writer thread instead of stalling the tick.
 SETTING_INT(meterTrace,             "Debug",    "MeterTrace",           0)
 
 SETTING_INT(wineSafeMode,           "Compat",   "WineSafeMode",         -1)
 
-// Which player number the keyboard is: 0 leaves the game alone, 1 puts your own keys on 1P, 2 puts
-// them on 2P. Off 0, the keyboard shares the first pad's player number, which is why a keyboard and
-// a single controller drive the same character.
 SETTING_INT(keyboardSeat,           "Input",    "KeyboardSeat",         0)
 
-// Whether the seat above also writes the two sides' pad slots every frame of a match. Off, the seat
-// only makes the keyboard a player of its own and the game decides which side it lands on.
 SETTING_INT(keyboardSeatRouteSides, "Input",    "KeyboardSeatRouteSides", 1)
 
-// Every replay the game records **from now on** is also written to UNI2-IM\Replays as a file of its
-// own, named from the record: date, a per-day number, both players and both characters. 0 leaves the
-// game's single REP-DATA as the only copy.
-//
-// It never touches the records that were already in REP-DATA when the game started. Writing four
-// hundred files uninvited on the first frame is not what a switch called AutoExport should mean, and
-// the backlog is what the Export all button is for.
 SETTING_INT(replayAutoExport,       "Replays",  "AutoExport",           1)
 
 SETTING_INT(onlineSafety,           "Netplay",  "SafeOnline",           1)
 
-// The room roster removes a member only on an exact Left, so Disconnected, Kicked and Banned all
-// leave a ghost behind. On, those are routed to the same handler the game uses for Left.
 SETTING_INT(roomRosterFix,          "Netplay",  "RoomRosterFix",        1)
 
-// Republishes your SteamNetworkingPingLocation into the room every 30 s. The game publishes it
-// once, on join, and never again - which is the whole reason rejoining "resets" the ping.
 SETTING_INT(republishPingLocation,  "Netplay",  "RepublishPingLocation", 1)
 
-// Asks GGPO for ping and frame advantage once a frame. Off, the Netplay window still shows the
-// game's own rollback and frame counters, which are plain reads and touch no session object.
 SETTING_INT(netplayDiagnostics,     "Netplay",  "Diagnostics",          0)
 
 SETTING_INT(sharePalettes,          "Netplay",  "SharePalettes",        1)
 
+SETTING_INT(spectateAllow,          "Spectate", "AllowSpectators",      0)
+SETTING_INT(spectateMaxViewers,     "Spectate", "MaxViewers",           24)
 
+SETTING_INT(censorNames,            "Privacy",  "CensorOpponentNames",  0)
+SETTING_STRING(censorNameMask,      "Privacy",  "CensorMask",           "Player")
+SETTING_INT(censorOwnName,          "Privacy",  "CensorMyName",         0)
+
+SETTING_INT(censorRoomNames,        "Privacy",  "CensorRoomNames",      0)
+
+SETTING_INT(subtitles,              "Subtitles", "Subtitles",           0)
+SETTING_STRING(subtitlePack,        "Subtitles", "File",                "")
+
+SETTING_INT(subtitleHoldMs,         "Subtitles", "HoldMs",              2600)
+
+SETTING_INT(subtitleScale,          "Subtitles", "Scale",               140)
+SETTING_INT(subtitleY,              "Subtitles", "PositionY",           86)
+
+SETTING_INT(subtitleNames,          "Subtitles", "ShowSpeaker",         1)

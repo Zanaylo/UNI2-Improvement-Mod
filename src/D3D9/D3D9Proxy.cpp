@@ -4,6 +4,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/D3D9Wrapper.h"
+#include "D3D9/DgVoodoo.h"
 
 #include <d3d9.h>
 
@@ -47,9 +48,14 @@ void ResolveIdentity()
 
 bool LoadRealRuntime()
 {
-	const std::string path = GetSystemDirectoryPath() + kProxyName;
+	HMODULE loaded = DgVoodoo::Load();
 
-	HMODULE loaded = LoadLibraryA(path.c_str());
+	const std::string path = loaded != nullptr ? DgVoodoo::Folder() + kProxyName
+		: GetSystemDirectoryPath() + kProxyName;
+
+	if (loaded == nullptr)
+		loaded = LoadLibraryA(path.c_str());
+
 	if (loaded == nullptr)
 	{
 		LOG("d3d9 proxy: could not load the real runtime from %s (error %lu)", path.c_str(),

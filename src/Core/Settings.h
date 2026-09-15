@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <string>
 
@@ -89,6 +89,18 @@ struct ModValues
 	bool netplayDiagnostics;
 	bool sharePalettes;
 
+	bool advancedStages;
+
+	bool censorNames;
+	bool censorOwnName;
+	bool censorRoomNames;
+
+	bool subtitles;
+	int subtitleHoldMs;
+	int subtitleScale;
+	int subtitleY;
+	bool subtitleNames;
+
 	int presentWidth;
 	int presentHeight;
 	int potatoHeight;
@@ -124,6 +136,7 @@ struct ModValues
 
 	float uiScale;
 	float fontSize;
+	int overlayCursor;
 	bool dpiAware;
 	bool notifications;
 

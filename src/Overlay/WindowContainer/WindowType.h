@@ -14,6 +14,7 @@ enum WindowType
 	WindowType_Netplay,
 	WindowType_Music,
 	WindowType_Sound,
+	WindowType_Subtitles,
 	WindowType_Patches,
 	WindowType_Theme,
 	WindowType_Stages,

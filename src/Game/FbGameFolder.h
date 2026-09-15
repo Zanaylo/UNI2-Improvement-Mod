@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace FbGameFolder
 {
@@ -10,6 +10,8 @@ namespace FbGameFolder
 		Game_MBAA,
 		Game_DFCI,
 		Game_UNIEL,
+		Game_BBTAG,
+		Game_BBCF,
 	};
 
 	Game Detect(const char* folder);

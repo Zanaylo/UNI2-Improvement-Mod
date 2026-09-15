@@ -214,9 +214,8 @@ void PlayerControlWindow::DrawButtonCalibration()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Presses each pad button on its own and watches which one lands, so scripts "
-			"and Player Control get your character's A/B/C/D right even with a custom button layout. "
-			"Takes a few seconds - hold still.");
+		ImGui::SetTooltip("Presses each button to learn your layout, so scripts and Player Control use "
+			"the right A/B/C/D even with custom buttons. Takes a few seconds. Do not press anything.");
 	}
 
 	ImGui::SameLine();
@@ -254,7 +253,7 @@ void PlayerControlWindow::DrawKeyboard()
 	switch (mode)
 	{
 	case PlayerControl::Mode_Mine:
-		ImGui::TextDisabled("The game as it comes.");
+		ImGui::TextDisabled("Normal controls.");
 		break;
 
 	case PlayerControl::Mode_Other:
@@ -277,11 +276,10 @@ void PlayerControlWindow::DrawKeyboard()
 		ImGui::TextDisabled("Input lag: press a key or a button to measure");
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Wall clock from a physical press to this side's own input field "
-			"changing. Engine registration lag only, not full click-to-photon.\n\n"
-			"The keyboard and every pad are sampled here about a thousand times a second, not read "
-			"from the game's own once-a-frame poll - which would quantise every answer to 16.7 ms "
-			"and measure nothing.");
+		ImGui::SetTooltip("Time from pressing a key or button to the game registering it. Display "
+			"lag is not included.\n\n"
+			"The keyboard and pads are read about a thousand times a second, not once a frame like "
+			"the game does, so the result is not rounded to 16.7 ms.");
 
 	if (average >= 0.0f)
 	{

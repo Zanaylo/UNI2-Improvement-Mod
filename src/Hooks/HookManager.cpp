@@ -501,7 +501,7 @@ void UpdateIntegrityStatus(int removed)
 		return;
 	}
 
-	sprintf_s(g_integrityStatus, "%d of %d hook%s restored away by another engine", removed,
+	sprintf_s(g_integrityStatus, "%d of %d hook%s removed by another program", removed,
 		g_recordCount, plural);
 }
 

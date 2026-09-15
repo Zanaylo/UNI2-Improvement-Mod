@@ -361,7 +361,7 @@ bool Unpack(ZipArchive::Source& source, const std::string& root, Web::Job& job)
 		{
 			if (!WriteBlob(root, path, data))
 			{
-				job.SetError("the patch folders could not be written - check the disk has room");
+				job.SetError("the patch folders could not be written. Check that the disk has space");
 				return false;
 			}
 
@@ -631,7 +631,7 @@ void PatchPacks::OnFrame()
 			g_install.Read(status);
 
 			g_prepared.clear();
-			Say("the built-in patches could not be added - %s", status.error);
+			Say("the built-in patches could not be added: %s", status.error);
 			LOG("PatchPacks: %s", g_status);
 		}
 

@@ -24,10 +24,9 @@ void ThemeWindow::BeforeDraw()
 
 void ThemeWindow::Draw()
 {
-	UiText::Help("A theme draws another French-Bread game's screens over UNI2's. The game's own "
-		"screen keeps running underneath and keeps every input, so the theme changes what is seen "
-		"and nothing else. Themes live in UNI2-IM\\Screens; each carries that game's .pat files "
-		"and one screen.ini saying which patterns make up a screen.");
+	UiText::Help("A theme draws another French-Bread game's screens over UNI2's. Only the look "
+		"changes, the menus work the same. Themes go in UNI2-IM\\Screens, each with its .pat files "
+		"and a screen.ini.");
 
 	const int count = ScreenTheme::Count();
 	const int active = ScreenTheme::ActiveIndex();
@@ -60,9 +59,9 @@ void ThemeWindow::DrawCursorSearch()
 		return;
 
 	ImGui::Separator();
-	UiText::Help("Which of these follows the character-select cursor is not known yet. Move the "
-		"cursor and watch: the one whose value tracks the slot you are on is the answer, and it "
-		"goes in the log too.");
+	UiText::Help("It is not known yet which of these follows the character select cursor. Move the "
+		"cursor and look for the value that follows your slot. The answer is also written to the "
+		"log.");
 
 	if (!ImGui::BeginTable("##cursorsearch", 3,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp))

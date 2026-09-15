@@ -407,8 +407,8 @@ bool SceneScale::Install()
 
 	if (g_widthCount != kSitesPerAxis || g_heightCount != kSitesPerAxis)
 	{
-		snprintf(g_status, sizeof(g_status), "%d of %d width and %d of %d height sites matched - "
-			"refusing", g_widthCount, kSitesPerAxis, g_heightCount, kSitesPerAxis);
+		snprintf(g_status, sizeof(g_status), "%d of %d width and %d of %d height sites matched, "
+			"so nothing was changed", g_widthCount, kSitesPerAxis, g_heightCount, kSitesPerAxis);
 		LOG("[SceneScale] %s", g_status);
 		return false;
 	}
@@ -474,8 +474,8 @@ void SceneScale::Apply()
 	g_appliedPercent = percent;
 	g_framesUntilReassert = 0;
 
-	snprintf(g_status, sizeof(g_status), "%dx%d asked for (%d%%)%s%s, takes effect on the next "
-		"display build", width, height, percent,
+	snprintf(g_status, sizeof(g_status), "%dx%d (%d%%)%s%s, applies the next time the display "
+		"is rebuilt", width, height, percent,
 		g_pinsWritten ? ", projection pinned to 1280x720" : "",
 		g_referenceWritten ? ", reference space scaled with the targets" : "");
 

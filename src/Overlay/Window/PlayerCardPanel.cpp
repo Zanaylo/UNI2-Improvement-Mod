@@ -97,7 +97,7 @@ void PlayerCardPanel::DrawTitle()
 	const bool overflows = used > PlayerCard::kTitleMaxBytes;
 
 	if (overflows)
-		ImGui::TextColored(kWarning, "%zu / %zu - the tail will be cut",
+		ImGui::TextColored(kWarning, "%zu / %zu, the end will be cut off",
 			used, PlayerCard::kTitleMaxBytes);
 	else
 		ImGui::TextDisabled("%zu / %zu", used, PlayerCard::kTitleMaxBytes);
@@ -116,7 +116,7 @@ void PlayerCardPanel::DrawPlate()
 	ImGui::TextUnformatted("Plate");
 
 	if (!PlateCatalog::IsLoaded())
-		ImGui::TextDisabled("The game's plate lists could not be read - ids only.");
+		ImGui::TextDisabled("Could not read the game's plate lists. Showing ids only.");
 
 	for (int layer = 0; layer < PlayerCard::kLayerCount; ++layer)
 		DrawLayer(static_cast<PlayerCard::PlateLayer>(layer));
@@ -196,8 +196,8 @@ void PlayerCardPanel::DrawLayer(PlayerCard::PlateLayer layer)
 		else
 		{
 			SetStatus(PlateCatalog::IsLoaded() && !PlateCatalog::Contains(layer, m_pendingId[index])
-				? "That id is not in the game's list for this layer, so it will draw the 0000 "
-					"fallback."
+				? "That id is not in the game's list for this layer, so the 0000 plate will show "
+					"instead."
 				: "");
 		}
 	}
@@ -267,13 +267,13 @@ void PlayerCardPanel::PushTitle()
 
 	if (lossy)
 	{
-		SetStatus("Applied - some characters are not in the game's font and became '?'.");
+		SetStatus("Applied. Some characters are not in the game's font and became '?'.");
 		return;
 	}
 
 	if (truncated)
 	{
-		SetStatus("Applied - the line was cut to fit the card.");
+		SetStatus("Applied. The title was cut to fit the card.");
 		return;
 	}
 

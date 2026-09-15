@@ -1,9 +1,12 @@
-#include "Overlay/Window/GraphicsPanel.h"
+﻿#include "Overlay/Window/GraphicsPanel.h"
 
+#include "Core/AsyncFileDialog.h"
 #include "Core/DpiScaling.h"
 #include "Core/Settings.h"
 #include "Core/interfaces.h"
 #include "D3D9/DeviceHooks.h"
+#include "D3D9/DgVoodoo.h"
+#include "D3D9/GraphicsWrapper.h"
 #include "D3D9/Post/PostChain.h"
 #include "D3D9/Post/PostOptions.h"
 #include "D3D9/Post/SceneUpscale.h"
@@ -29,6 +32,9 @@ using UiText::Warn;
 namespace {
 
 constexpr float kSliderWidth = 240.0f;
+
+AsyncFileDialog g_dgVoodooDialog;
+char g_dgVoodooNote[256] = {};
 
 bool RadioRow(const char* id, int count, const char* (*name)(int), int current, int& outChosen)
 {
@@ -78,12 +84,9 @@ void DrawUpscaleFilter()
 		Settings::SaveInt("Graphics", "UpscaleFilter", chosen);
 	}
 
-	Help("The game rasterises the whole scene at 1280x720 and stretches it to your window with a "
-		"plain bilinear filter. That stretch is the only magnification in the frame, so it is the "
-		"one place a better kernel can reach. Nothing is patched: the engine draws as it always "
-		"does and is handed a texture already the size it is about to draw at.\n\n"
-		"It needs a back buffer larger than 1280x720, so it does nothing unless the present size "
-		"above is raised.");
+	Help("The game draws the scene at 1280x720 and stretches it to your window. This picks a "
+		"better filter for that stretch.\n\n"
+		"It does nothing until you raise the present size above 1280x720 on the Improvements tab.");
 
 	Muted("%s", UpscaleFilter::Describe(current));
 	Muted("%s", SceneUpscale::GetStatusText());
@@ -103,10 +106,8 @@ void DrawAntiAliasing()
 	}
 
 	Help("FXAA over the finished frame.\n\n"
-		"Multisampling is not offered because it cannot reach this game: a Direct3D 9 texture "
-		"cannot be multisampled and the whole scene is drawn into textures, so the samples would "
-		"be spent on the single quad the finished picture is drawn with. Supersampling - the "
-		"present size above - and this filter are the two things that can.");
+		"Multisampling cannot work here, because the game draws its scene into textures. For "
+		"smoother edges, use this or raise the present size on the Improvements tab.");
 
 	Muted("%s", AntiAlias::Describe(current));
 }
@@ -118,12 +119,10 @@ void DrawBloom()
 	if (ImGui::Checkbox("Bloom", &g_modVals.bloomEnabled))
 		Settings::SaveInt("Graphics", "Bloom", g_modVals.bloomEnabled ? 1 : 0);
 
-	Help("The bright parts of the picture are cut out, blurred at a quarter of the size and "
-		"screened back on. It is the one thing here that reads as lighting rather than as "
-		"filtering - the neon in these stages, the moon, and the glow on EXS and super effects are "
-		"what it is for.\n\n"
-		"Threshold is how bright a pixel has to be before it glows. Lower it and the whole frame "
-		"starts to haze; raise it and only the real highlights bloom.");
+	Help("Makes the bright parts of the picture glow: stage neon, the moon, EXS and super "
+		"effects.\n\n"
+		"Threshold is how bright a pixel must be to glow. Lower it and the whole picture gets "
+		"hazy. Raise it and only the real highlights glow.");
 
 	if (!g_modVals.bloomEnabled)
 		return;
@@ -147,9 +146,8 @@ void DrawSharpening()
 		Settings::SaveInt("Graphics", "SharpenMode", chosen);
 	}
 
-	Help("The softness in this game is in the stretch to your window rather than in the art, so "
-		"putting the edge contrast back is most of what a higher resolution would have looked "
-		"like. 40-60% is the useful range.");
+	Help("Most of the game's softness comes from stretching it to your window. Sharpening brings "
+		"the edges back. 40-60% works best.");
 
 	Muted("%s", SharpenMode::Describe(mode));
 
@@ -169,8 +167,8 @@ void DrawLook()
 	if (ImGui::Checkbox("Colour and display", &g_modVals.lookEnabled))
 		Settings::SaveInt("Graphics", "Look", g_modVals.lookEnabled ? 1 : 0);
 
-	Help("One pass over the finished frame. Off, none of the values below is read and no pass is "
-		"drawn.");
+	Help("Adjusts the colours of the finished frame. When it is off, the sliders below do "
+		"nothing.");
 
 	if (!g_modVals.lookEnabled)
 		return;
@@ -188,7 +186,7 @@ void DrawLook()
 	SavedSlider("Saturation", &g_modVals.lookSaturation, -100, 100, "LookSaturation", "%d");
 
 	SavedSlider("Vibrance", &g_modVals.lookVibrance, -100, 100, "LookVibrance", "%d");
-	Help("Saturation that leaves the colours already vivid alone and lifts the ones that are not.");
+	Help("Boosts dull colours and leaves colours that are already vivid alone.");
 
 	SavedSlider("Warmth", &g_modVals.lookTemperature, -100, 100, "LookTemperature", "%d");
 	SavedSlider("Vignette", &g_modVals.lookVignette, 0, 100, "LookVignette", "%d%%");
@@ -197,7 +195,7 @@ void DrawLook()
 	if (ImGui::Checkbox("Dither", &g_modVals.lookDither))
 		Settings::SaveInt("Graphics", "LookDither", g_modVals.lookDither ? 1 : 0);
 
-	Help("A pixel of noise under the banding a gradient picks up on an 8 bit back buffer.");
+	Help("Adds a tiny bit of noise to hide banding in smooth gradients.");
 
 	ImGui::Unindent();
 }
@@ -245,18 +243,60 @@ void DrawShaderPacks()
 	if (ImGui::Button("Rescan"))
 		ShaderPack::Refresh();
 
-	Help("Drop a shader in the Shaders folder beside the ini and pick it here. It is compiled when "
-		"you select it and runs last in the chain, over the finished frame.\n\n"
-		"Taken: .hlsl and .ps as they are, plus .fx, .slang, .glsl, .frag and .fsh. Everything but "
-		"HLSL is translated on the way in and the translation "
-		"is written to the Translated folder, so a shader that comes out wrong can be read and "
-		"fixed there.\n\n"
-		"It is one pass and nothing else: a shader that needs a second pass, a lookup texture, the "
-		"depth buffer or the previous frame will translate and then be wrong. The folder's README "
-		"has the bindings and what each format is given.\n\n"
-		"Compiling needs d3dcompiler_47.dll, which ships with Windows and with Proton.");
+	Help("Put a shader in the Shaders folder next to the ini and pick it here. It runs last, over "
+		"the finished frame.\n\n"
+		"Supported: .hlsl, .ps, .fx, .slang, .glsl, .frag and .fsh. Anything that is not HLSL is "
+		"translated and saved in the Translated folder, so you can fix it there.\n\n"
+		"Only single pass shaders work. See the README in the folder for details.\n\n"
+		"Needs d3dcompiler_47.dll, which comes with Windows and Proton.");
 
 	Muted("%s", ShaderPack::GetStatusText());
+}
+
+void DrawDgVoodooChoices()
+{
+	for (int i = 0; i < DgVoodoo::Choice_COUNT; ++i)
+	{
+		const DgVoodoo::Choice choice = static_cast<DgVoodoo::Choice>(i);
+		const int current = DgVoodoo::Chosen(choice);
+
+		Ui::SetItemWidth(kSliderWidth);
+
+		if (!ImGui::BeginCombo(DgVoodoo::ChoiceName(choice), DgVoodoo::ChoiceLabel(choice, current)))
+			continue;
+
+		for (int option = 0; option < DgVoodoo::ChoiceCount(choice); ++option)
+		{
+			if (ImGui::Selectable(DgVoodoo::ChoiceLabel(choice, option), option == current))
+				DgVoodoo::Choose(choice, option);
+		}
+
+		ImGui::EndCombo();
+	}
+
+	if (DgVoodoo::Chosen(DgVoodoo::Choice_Filtering) != 0)
+	{
+		Warn("Forcing a filter breaks the character colours. Keep it on The game's own.");
+	}
+
+	for (int i = 0; i < DgVoodoo::Flag_COUNT; ++i)
+	{
+		const DgVoodoo::Flag flag = static_cast<DgVoodoo::Flag>(i);
+		bool set = DgVoodoo::IsSet(flag);
+
+		if (ImGui::Checkbox(DgVoodoo::FlagName(flag), &set))
+			DgVoodoo::Set(flag, set);
+	}
+
+	int limit = DgVoodoo::FpsLimit();
+
+	Ui::SetItemWidth(kSliderWidth);
+
+	if (ImGui::SliderInt("Frame limit", &limit, 0, 360, limit == 0 ? "off" : "%d fps"))
+		DgVoodoo::SetFpsLimit(limit);
+
+	if (ImGui::IsItemDeactivatedAfterEdit())
+		DgVoodoo::Save();
 }
 
 }
@@ -265,10 +305,9 @@ bool GraphicsPanel::DrawEverythingOff()
 {
 	if (!ImGui::Button("Everything off"))
 	{
-		Help("Puts every graphics setting in the mod back to the game's own, on this tab and the "
-			"other two: present size, all five shader stages, the back buffer's multisampling, "
-			"Character Visual Improvements, the empty stage and POTATO MODE. After this the mod "
-			"draws nothing into the frame and reads nothing out of it.");
+		Help("Turns off every graphics option in the mod: present size, shaders, back buffer "
+			"multisampling, Character Visual Improvements, the empty stage and POTATO MODE. After "
+			"this the mod draws nothing into the frame.");
 		return false;
 	}
 
@@ -300,7 +339,7 @@ void GraphicsPanel::DrawShadersTab()
 	DrawEverythingOff();
 
 	ImGui::SameLine();
-	Muted("Nothing here reaches the simulation, the inputs, or anything an opponent sees.");
+	Muted("None of this changes gameplay, inputs or what your opponent sees.");
 
 	DrawUpscaleFilter();
 	DrawAntiAliasing();
@@ -310,7 +349,7 @@ void GraphicsPanel::DrawShadersTab()
 	DrawShaderPacks();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("In force now");
+	ImGui::SeparatorText("Active now");
 	Muted("%s", PostChain::GetStatusText());
 }
 
@@ -330,39 +369,104 @@ void GraphicsPanel::DrawOverlayAppearance()
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveFloat("Overlay", "FontSize", g_modVals.fontSize);
 
-	Help("Both are live. Set [Overlay] FontPath in the ini to use a .ttf of your own.");
+	Help("Both apply right away. To use your own .ttf font, set [Overlay] FontPath in the ini.");
 
 	Muted("%s", OverlayFont::GetStatusText());
-	Muted("Japanese and the rest fall back to %s", OverlayFont::GetFallbackText());
+	Muted("Japanese and other scripts fall back to %s", OverlayFont::GetFallbackText());
 
 	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
 	const float scale = DeviceHooks::GetOverlayScale();
 
 	if (scale > 1.01f && scale < 1.99f)
 	{
-		Warn("The frame is drawn at %ux%u and fitted to a smaller window, and that ratio is not a "
-			"whole number, so the overlay is resampled on the way down and its text softens. 4K "
-			"into a 1080p window is exact and stays sharp; 1440p into 1080p is not. Raise the font "
-			"size, or use 4K or Off.", present.BackBufferWidth, present.BackBufferHeight);
+		Warn("The frame is drawn at %ux%u and shrunk to your window by an uneven ratio, so the "
+			"overlay text looks soft. 4K into 1080p stays sharp, 1440p into 1080p does not. Raise "
+			"the font size, or use 4K or Off.", present.BackBufferWidth, present.BackBufferHeight);
 	}
 
 	const int dpi = DpiScaling::GetWindowDpi();
 
 	if (dpi > 96 && !DpiScaling::IsAware())
 	{
-		Warn("Windows is scaling this window by %d%%, so it renders small and is stretched - a "
-			"second resampling over everything.", dpi * 100 / 96);
+		Warn("Windows is scaling this window by %d%%, so everything is drawn small and stretched, "
+			"which blurs it.", dpi * 100 / 96);
 	}
 	else if (DpiScaling::IsAware())
 	{
 		Good("Real pixels at %d DPI.", dpi);
 	}
 
-	if (ImGui::Checkbox("Handle display scaling ourselves", &g_modVals.dpiAware))
+	if (ImGui::Checkbox("Let the mod handle display scaling", &g_modVals.dpiAware))
 		Settings::SaveInt("Overlay", "DpiAware", g_modVals.dpiAware ? 1 : 0);
 
-	Help("Takes effect on the next start, and it has to be set before the game makes its window. "
-		"The game was not written for it, so it is off by default.");
+	Help("Restart the game to apply. The game was not made for it, so it is off by default.");
 
 	Muted("%s", DpiScaling::Describe());
+
+	DrawMousePointer();
+}
+
+void GraphicsPanel::DrawMousePointer()
+{
+	ImGui::SeparatorText("Mouse pointer");
+
+	const char* const modes[] = { "Automatic", "Always the mod's", "Always the Windows pointer" };
+
+	Ui::SetItemWidth(kSliderWidth);
+
+	if (ImGui::Combo("Overlay pointer", &g_modVals.overlayCursor, modes, IM_ARRAYSIZE(modes)))
+		Settings::SaveInt("Overlay", "SoftwareCursor", g_modVals.overlayCursor);
+
+	Help("Automatic draws the mod's pointer in exclusive fullscreen and when a Direct3D wrapper "
+		"like dgVoodoo is running. In both cases the Windows pointer is hidden.");
+
+	if (GraphicsWrapper::IsPresent())
+		Warn("%s", GraphicsWrapper::StatusText());
+	else
+		Muted("%s", GraphicsWrapper::StatusText());
+}
+
+void GraphicsPanel::DrawDgVoodoo()
+{
+	ImGui::SeparatorText("dgVoodoo");
+
+	std::string picked;
+
+	if (g_dgVoodooDialog.TakeResult(picked) && !picked.empty())
+		DgVoodoo::InstallFrom(picked, g_dgVoodooNote, sizeof(g_dgVoodooNote));
+
+	bool enabled = DgVoodoo::IsEnabled();
+
+	ImGui::BeginDisabled(!DgVoodoo::IsInstalled());
+
+	if (ImGui::Checkbox("Run the game through dgVoodoo", &enabled))
+		DgVoodoo::SetEnabled(enabled);
+
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+
+	if (ImGui::Button("Pick the dgVoodoo folder...") && !g_dgVoodooDialog.IsRunning())
+		g_dgVoodooDialog.BeginFolder("Pick the folder you extracted dgVoodoo2 into");
+
+	Help("Download dgVoodoo2 yourself and extract it. Press \"Pick the dgVoodoo folder...\", tick "
+		"the box and restart the game. Every change here needs a restart.\n\n"
+		"The mod copies the dlls into UNI2-IM\\dgVoodoo and writes dgVoodoo.conf from these "
+		"options. Nothing in the game folder is touched.\n\n"
+		"Forcing texture filtering or anti-aliasing can break the character colours. Keep them on "
+		"the game's own or off unless you know you want them.");
+
+	if (g_dgVoodooNote[0] != 0)
+		Muted("%s", g_dgVoodooNote);
+
+	if (DgVoodoo::IsRunning())
+		Good("%s", DgVoodoo::StatusText());
+	else
+		Muted("%s", DgVoodoo::StatusText());
+
+	if (!DgVoodoo::IsEnabled())
+		return;
+
+	ImGui::Indent();
+	DrawDgVoodooChoices();
+	ImGui::Unindent();
 }

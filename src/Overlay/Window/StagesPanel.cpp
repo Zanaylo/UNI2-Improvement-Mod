@@ -1,16 +1,23 @@
-#include "Overlay/Window/StagesPanel.h"
+﻿#include "Overlay/Window/StagesPanel.h"
 
 #include "Game/BgGrade.h"
+#include "Game/FbGameFolder.h"
+#include "Game/BgMipmaps.h"
+#include "Game/ModFiles.h"
+#include "Game/StagePlacement.h"
 #include "Game/ExtraStages.h"
 #include "Game/GameRestart.h"
 #include "Game/BgCeiling.h"
 #include "Game/StageImport.h"
 #include "Game/StageLibrary.h"
 #include "Game/StageObjects.h"
+#include "Game/StageReplacements.h"
+#include "Core/interfaces.h"
 #include "Overlay/UiScale.h"
 #include "Overlay/UiText.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -25,11 +32,52 @@ constexpr float kNumberColumn = 60.0f;
 constexpr float kSizeColumn = 80.0f;
 constexpr float kActionColumn = 150.0f;
 constexpr float kCheckboxGap = 24.0f;
-constexpr float kPortedHeight = 300.0f;
-constexpr float kGradeColumn = 110.0f;
+constexpr float kPortedHeight = 330.0f;
+constexpr float kGradeColumn = 78.0f;
 constexpr float kInGameColumn = 70.0f;
+constexpr float kPlacementWidth = 260.0f;
+constexpr float kLeastScale = 0.05f;
+constexpr float kMostScale = 400.0f;
+constexpr float kScaleFloor = 0.1f;
+constexpr float kScaleCeiling = 4.0f;
+constexpr float kMostMove = 40.0f;
+
+constexpr float kMostGlow = 2.0f;
 
 const ImVec4 kPlayingText(0.45f, 0.90f, 0.50f, 1.0f);
+
+void Resize(StagePlacement::Place& place, float size)
+{
+	const float was = place.scale[0];
+
+	if (was <= 0.0f)
+	{
+		for (int i = 0; i < 3; ++i)
+			place.scale[i] = size;
+
+		return;
+	}
+
+	const float by = size / was;
+
+	for (int i = 0; i < 3; ++i)
+		place.scale[i] *= by;
+}
+
+void ScaleRange(int stage, float& low, float& high)
+{
+	StagePlacement::Place shipped = {};
+
+	if (!StagePlacement::Shipped(stage, shipped) || shipped.scale[0] <= 0.0f)
+	{
+		low = kLeastScale;
+		high = kMostScale;
+		return;
+	}
+
+	low = shipped.scale[0] * kScaleFloor;
+	high = shipped.scale[0] * kScaleCeiling;
+}
 
 void Megabytes(uint32_t bytes, char* out, size_t size)
 {
@@ -47,6 +95,7 @@ struct Listed
 	std::string name;
 	std::string from;
 	bool yours;
+	bool replaced;
 };
 
 int Order(const Listed& row)
@@ -73,6 +122,18 @@ void Gather(std::vector<Listed>& out)
 		row.name = stage->name.empty() ? stage->folder : stage->name;
 		row.from = "the game's own, bg\\" + stage->folder;
 		row.yours = false;
+
+		std::string replacement;
+		row.replaced = StageReplacements::Replaced(stage->number, replacement);
+
+		if (row.replaced)
+		{
+			char place[160] = {};
+			sprintf_s(place, "in place of %s, Mods\\bg\\bg%03d", row.name.c_str(), stage->number);
+
+			row.from = place;
+			row.name = replacement.empty() ? row.name : replacement;
+		}
 
 		out.push_back(row);
 	}
@@ -104,6 +165,36 @@ void Gather(std::vector<Listed>& out)
 		[](const Listed& a, const Listed& b) { return Order(a) < Order(b); });
 }
 
+}
+
+bool StagesPanel::Number(const char* id, float* value, float low, float high,
+	const char* format)
+{
+	ImGui::SetNextItemWidth(-1.0f);
+
+	const float was = *value;
+	const bool dragged = ImGui::SliderFloat(id, value, low, high, format);
+	const ImGuiID key = ImGui::GetItemID();
+
+	if (ImGui::IsItemActivated() && ImGui::GetIO().MouseClickedCount[ImGuiMouseButton_Left] < 2)
+	{
+		m_pressed = key;
+		m_pressedValue = was;
+	}
+
+	if (!ImGui::IsItemHovered() || !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) ||
+		ImGui::TempInputIsActive(key))
+	{
+		return dragged;
+	}
+
+	*value = m_pressed == key ? m_pressedValue : was;
+
+	ImGui::ClearActiveID();
+	ImGui::ActivateItemByID(key);
+	GImGui->NavNextActivateFlags = ImGuiActivateFlags_PreferInput;
+
+	return true;
 }
 
 void StagesPanel::SyncRows()
@@ -175,7 +266,7 @@ void StagesPanel::Draw()
 
 	if (ImGui::BeginTabBar("##stagetabs"))
 	{
-		if (ImGui::BeginTabItem("Installed Stages"))
+		if (ImGui::BeginTabItem("Installed stages"))
 		{
 			DrawHidden();
 
@@ -191,6 +282,9 @@ void StagesPanel::Draw()
 
 			ImGui::Separator();
 			DrawCustom();
+
+			ImGui::Separator();
+			DrawReplace();
 
 			ImGui::EndTabItem();
 		}
@@ -216,7 +310,7 @@ void StagesPanel::DrawHidden()
 
 	if (ExtraStages::Count() == 0)
 	{
-		ImGui::TextDisabled("This build hides no stage.");
+		ImGui::TextDisabled("This game version has no hidden stages.");
 		return;
 	}
 
@@ -254,10 +348,18 @@ void StagesPanel::DrawSource()
 
 	ImGui::BeginDisabled(StageImport::IsBusy());
 
-	if (ImGui::Button("Get stages from French-Bread games"))
+	if (ImGui::Button("Get stages from another fighting game"))
 		m_sourceDialog.BeginFolder("Pick the game folder to take a stage from");
 
 	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+	UiText::Help("Pick the folder a game is installed in and the mod reads its stage data. "
+		"Nothing is downloaded and no UNI2 file is replaced."
+		"\n\nFrench-Bread: UNI[st], UNI[cl-r], UNI Exe:Late, MELTY BLOOD: TYPE LUMINA, MELTY "
+		"BLOOD Actress Again Current Code and DENGEKI BUNKO FIGHTING CLIMAX IGNITION."
+		"\n\nArc System Works: BLAZBLUE CROSS TAG BATTLE and BLAZBLUE CENTRALFICTION, every "
+		"stage of both.");
 
 	std::string picked;
 
@@ -283,7 +385,27 @@ void StagesPanel::DrawSource()
 	}
 
 	UiText::Muted("%s", StageImport::StatusText());
+	DrawArcsys();
 	DrawOffers();
+}
+
+void StagesPanel::DrawArcsys()
+{
+	const FbGameFolder::Game game = StageImport::ScannedKind();
+
+	if (game != FbGameFolder::Game_BBTAG && game != FbGameFolder::Game_BBCF)
+		return;
+
+	UiText::Muted("These stages convert here, but the Mua add-on for Blender does a better job. It "
+		"reads the skeleton, the motions, the scripts and every sprite sheet. Here only one sheet is "
+		"used, so animated sprites stand still. Import what you make in Blender with the button "
+		"below.");
+
+	if (game != FbGameFolder::Game_BBCF)
+		return;
+
+	UiText::Warn("CENTRALFICTION stages can come out at the wrong size. If one does, set Size by "
+		"eye.");
 }
 
 void StagesPanel::DrawCustom()
@@ -303,6 +425,72 @@ void StagesPanel::DrawCustom()
 		StageImport::InstallFolder(picked.c_str(), nullptr);
 }
 
+void StagesPanel::DrawReplace()
+{
+	UiText::Muted("In place of one of the game's stages");
+
+	if (ExtraStages::StageCount() == 0)
+	{
+		ImGui::TextDisabled("The game has not read its stage list yet.");
+		return;
+	}
+
+	const auto titled = [](const ExtraStages::Stage& stage)
+	{
+		char title[160] = {};
+		sprintf_s(title, "%d  %s", stage.number, stage.name.empty() ? stage.folder.c_str() : stage.name.c_str());
+
+		return std::string(title);
+	};
+
+	std::vector<const ExtraStages::Stage*> own;
+	std::string preview = "Pick a stage";
+
+	for (int i = 0; i < ExtraStages::StageCount(); ++i)
+	{
+		const ExtraStages::Stage* const stage = ExtraStages::StageAt(i);
+
+		if (stage == nullptr || stage->number <= 0 || !StageLibrary::GameOwns(stage->number))
+			continue;
+
+		own.push_back(stage);
+
+		if (stage->number == m_replaceNumber)
+			preview = titled(*stage);
+	}
+
+	ImGui::SetNextItemWidth(Ui::Scaled(kPlacementWidth));
+
+	if (ImGui::BeginCombo("##replace", preview.c_str()))
+	{
+		for (const ExtraStages::Stage* stage : own)
+		{
+			if (ImGui::Selectable(titled(*stage).c_str(), stage->number == m_replaceNumber))
+				m_replaceNumber = stage->number;
+		}
+
+		ImGui::EndCombo();
+	}
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(StageImport::IsBusy() || m_replaceDialog.IsRunning() || m_replaceNumber <= 0);
+
+	if (ImGui::Button("Replace it with a stage folder"))
+		m_replaceDialog.BeginFolder("Pick the folder holding the stage's files");
+
+	ImGui::EndDisabled();
+
+	ImGui::SameLine();
+	UiText::Help("The stage keeps its number, card, walls and selection flags, so it needs no free "
+		"number. Only the look changes. An opponent without it sees the game's own stage."
+		"\n\nRestore, under Installed stages, brings the game's stage back.");
+
+	std::string picked;
+
+	if (m_replaceDialog.TakeResult(picked))
+		StageImport::ReplaceFolder(picked.c_str(), m_replaceNumber);
+}
+
 void StagesPanel::DrawOffers()
 {
 	if (StageImport::OfferCount() == 0)
@@ -316,12 +504,12 @@ void StagesPanel::DrawOffers()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Installs every stage listed, under the names shown, several at a "
-			"time. Any that the picker has no room for land in your library unticked.");
+		ImGui::SetTooltip("Installs every stage in the list with the names shown. Stages that don't "
+			"fit in the picker go into your library unticked.");
 	}
 
 	ImGui::SameLine();
-	UiText::Muted("Edit a name before you add it if you want to.");
+	UiText::Muted("You can edit a name before adding it.");
 
 	if (!ImGui::BeginTable("##stageoffers", 4,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
@@ -396,13 +584,71 @@ void StagesPanel::DrawRoom()
 	if (!BgCeiling::Lifted())
 		UiText::Warn("Stage table: %s", BgCeiling::StatusText());
 
-	if (!BgGrade::Reached())
+	if (BgGrade::Reached())
+		UiText::Muted("Colour: %s.", BgGrade::StatusText());
+	else
 		UiText::Warn("Colour: %s", BgGrade::StatusText());
+
+	const int scrolling = BgGrade::Scrolling();
+
+	if (scrolling != 0)
+		UiText::Muted("%d surface(s) of this stage scroll.", scrolling);
+
+	UiText::Muted("Mipmaps: %s.", BgMipmaps::StatusText());
+	UiText::Muted("Loading: %s.", ModFiles::LoadText());
 
 	UiText::Muted("%d/%d stages.", StageLibrary::Total(), BgCeiling::Numbers());
 
 	if (StageLibrary::ShownCount() >= budget)
-		UiText::Warn("The picker is full at %d stage(s). Take one out to put another in.", budget);
+		UiText::Warn("The picker is full at %d stage(s). Untick one to make room.", budget);
+
+	DrawPlacement();
+}
+
+void StagesPanel::DrawPlacement()
+{
+	if (!g_modVals.advancedStages)
+		return;
+
+	const int stage = StagePlacement::Current();
+
+	StagePlacement::Place place = {};
+
+	if (stage < 0 || !StagePlacement::Of(stage, place))
+		return;
+
+	if (!ImGui::CollapsingHeader("Stage scale and position"))
+		return;
+
+	UiText::Muted("Scale makes the stage bigger around the fight. Position moves it. The fighters "
+		"stay where they are, so a bigger scale makes them look smaller.");
+
+	bool changed = false;
+
+	float low = kLeastScale;
+	float high = kMostScale;
+	ScaleRange(stage, low, high);
+
+	ImGui::PushItemWidth(Ui::Scaled(kPlacementWidth));
+
+	changed |= ImGui::SliderFloat3("Scale##placescale", place.scale, low, high, "%.2f");
+	changed |= ImGui::SliderFloat3("Position##placemove", place.position, -kMostMove, kMostMove,
+		"%.2f");
+
+	ImGui::PopItemWidth();
+
+	if (changed)
+		StagePlacement::Set(stage, place);
+
+	if (StagePlacement::Edited(stage))
+	{
+		ImGui::SameLine();
+
+		if (ImGui::Button("Reset##placereset"))
+			StagePlacement::Forget(stage);
+	}
+
+	UiText::Muted("%s.", StagePlacement::StatusText());
 }
 
 void StagesPanel::DrawPorted()
@@ -417,7 +663,9 @@ void StagesPanel::DrawPorted()
 
 	DrawRoom();
 
-	if (!ImGui::BeginTable("##stageports", 6,
+	const bool advanced = g_modVals.advancedStages != 0;
+
+	if (!ImGui::BeginTable("##stageports", advanced ? 9 : 7,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
 		ImGuiTableFlags_ScrollY, ImVec2(0.0f, Ui::Scaled(kPortedHeight))))
 	{
@@ -425,11 +673,21 @@ void StagesPanel::DrawPorted()
 	}
 
 	ImGui::TableSetupColumn("Stage", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kNumberColumn));
-	ImGui::TableSetupColumn("Name");
+	ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.0f);
 	ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed,
 		Ui::Scaled(kInGameColumn));
+	ImGui::TableSetupColumn("Colour", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kInGameColumn));
 	ImGui::TableSetupColumn("Lift", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kGradeColumn));
 	ImGui::TableSetupColumn("Contrast", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kGradeColumn));
+
+	if (advanced)
+	{
+		ImGui::TableSetupColumn("Light", ImGuiTableColumnFlags_WidthFixed,
+			Ui::Scaled(kGradeColumn));
+		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,
+			Ui::Scaled(kGradeColumn));
+	}
+
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kActionColumn));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
@@ -474,19 +732,85 @@ void StagesPanel::DrawPorted()
 
 		ImGui::EndDisabled();
 
+		ImGui::TableNextColumn();
+
+		bool graded = !BgGrade::IsOff(row.key);
+
+		if (ImGui::Checkbox("##graded", &graded))
+			BgGrade::SetOff(row.key, !graded);
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Untick to show this stage in the game's own colour, without Lift, "
+				"Contrast or Light. Your values are kept for when you tick it again.");
+		}
+
 		BgGrade::Grade grade = BgGrade::Of(row.key);
 		bool changed = false;
 
-		ImGui::TableNextColumn();
-		ImGui::SetNextItemWidth(-1.0f);
-		changed = ImGui::SliderFloat("##lift", &grade.lift, 0.0f, 0.25f, "%.2f");
+		ImGui::BeginDisabled(!graded);
 
 		ImGui::TableNextColumn();
-		ImGui::SetNextItemWidth(-1.0f);
-		changed = ImGui::SliderFloat("##contrast", &grade.contrast, 0.5f, 3.0f, "%.2f") || changed;
+		changed = Number("##lift", &grade.lift, 0.0f, 0.25f, "%.2f");
+
+		ImGui::TableNextColumn();
+		changed = Number("##contrast", &grade.contrast, 0.5f, 3.0f, "%.2f") || changed;
+
+		ImGui::EndDisabled();
 
 		if (changed)
 			BgGrade::Set(row.key, grade);
+
+		float glow = BgGrade::GlowOf(row.key);
+		StagePlacement::Place place = {};
+		const bool placed = row.slot >= 0 && StagePlacement::Of(row.slot, place);
+
+		if (advanced)
+		{
+			ImGui::TableNextColumn();
+
+			ImGui::BeginDisabled(!graded);
+
+			if (Number("##glow", &glow, 0.0f, kMostGlow, "%.2f"))
+				BgGrade::SetGlow(row.key, glow);
+
+			ImGui::EndDisabled();
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Changes only the glowing parts of this stage, like lamps, glows "
+					"and flares. The rest keeps its brightness. UNI2's own stages have none, so this "
+					"does nothing on them.");
+			}
+
+			ImGui::TableNextColumn();
+
+			if (!placed)
+			{
+				ImGui::TextDisabled("-");
+			}
+			else
+			{
+				float size = place.scale[0];
+				float low = kLeastScale;
+				float high = kMostScale;
+
+				ScaleRange(row.slot, low, high);
+
+				if (Number("##size", &size, low, high, "%.2f"))
+				{
+					Resize(place, size);
+					StagePlacement::Set(row.slot, place);
+				}
+
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("How big the stage is around the fight. A bigger stage "
+						"makes the fighters look smaller. The slider goes from %.2f to %.2f; "
+						"double click it to type any number.", low, high);
+				}
+			}
+		}
 
 		ImGui::TableNextColumn();
 
@@ -501,11 +825,35 @@ void StagesPanel::DrawPorted()
 			ImGui::SameLine();
 		}
 
-		ImGui::BeginDisabled(grade.lift == BgGrade::DefaultOf(row.key).lift
-			&& grade.contrast == BgGrade::DefaultOf(row.key).contrast);
+		if (row.replaced)
+		{
+			ImGui::BeginDisabled(StageImport::IsBusy());
+
+			if (ImGui::SmallButton("Restore"))
+				StageImport::Restore(row.slot);
+
+			ImGui::EndDisabled();
+
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+				ImGui::SetTooltip("Deletes Mods\\bg\\bg%03d, so the game's own stage comes back.", row.slot);
+
+			ImGui::SameLine();
+		}
+
+		const BgGrade::Grade untouched = BgGrade::DefaultOf(row.key);
+		const bool moved = placed && StagePlacement::Edited(row.slot);
+
+		ImGui::BeginDisabled(grade.lift == untouched.lift
+			&& grade.contrast == untouched.contrast
+			&& glow == BgGrade::DefaultGlowOf(row.key) && !moved);
 
 		if (ImGui::SmallButton("Default"))
+		{
 			BgGrade::Forget(row.key);
+
+			if (moved)
+				StagePlacement::Forget(row.slot);
+		}
 
 		ImGui::EndDisabled();
 		ImGui::PopID();
@@ -526,46 +874,62 @@ void StagesPanel::DrawHelp()
 {
 	ImGui::SeparatorText("Adding a stage");
 
-	UiText::Muted("Take one out of MELTY BLOOD: TYPE LUMINA, UNI[st], UNI[cl-r], UNI Exe:Late or "
-		"DFCI, or import a folder you made in Blender. Nothing is downloaded and nothing the game "
-		"ships is replaced.");
+	UiText::Muted("Take one from MELTY BLOOD: TYPE LUMINA, UNI[st], UNI[cl-r], UNI Exe:Late, DFCI, "
+		"BLAZBLUE CROSS TAG BATTLE or BLAZBLUE CENTRALFICTION, or import a folder you made in "
+		"Blender. Nothing is downloaded and none of the game's files are replaced.");
 
 	ImGui::SeparatorText("Hidden stages");
 
-	UiText::Muted("The game builds two stages it leaves off every list - the altar it brought over "
-		"from UNI, and its own debug stage. Ticking one puts it back on the list.");
+	UiText::Muted("The game has two stages it never lists: the altar brought over from UNI and its "
+		"own debug stage. Tick one to put it back on the list.");
 
 	ImGui::SeparatorText("The picker");
 
-	UiText::Muted("Every stage you install stays in Mods\\bg for good, and there is no limit on "
-		"how many you keep. The picker is the part with a limit: it holds %d of your stages at a "
-		"time, and Enabled is which ones sit in it. Past that a new stage still installs, unticked "
-		"- untick one you are not playing and tick that one in. Nothing is deleted either way; "
-		"Remove is the one that deletes files.", StageLibrary::SlotBudget());
+	UiText::Muted("Installed stages stay in Mods\\bg, and you can keep as many as you like. The "
+		"picker holds %d of them at a time, and Enabled chooses which. When it is full, new stages "
+		"still install but unticked, so untick one you don't play and tick the new one. Only Remove "
+		"deletes files.", StageLibrary::SlotBudget());
 
 	ImGui::SeparatorText("Restarting");
 
-	UiText::Muted("The game reads its stage list once, on the way in, so a stage that has just "
-		"arrived or left needs the restart button at the bottom. Colour is the exception and "
-		"applies at once.");
+	UiText::Muted("The game reads its stage list only at startup. After adding or removing a "
+		"stage, use the restart button at the bottom. Colour changes apply right away.");
+
+	ImGui::SeparatorText("Typing a number");
+
+	UiText::Muted("Double click any slider in the list to type a value. A typed value can go past "
+		"the slider's range.");
 
 	ImGui::SeparatorText("Lift and Contrast");
 
-	UiText::Muted("Lift is flat light added to the whole stage - raise it and the stage washes "
-		"out, lower it and the blacks deepen. Contrast scales the colour on top of that, which is "
-		"what brightens a dark stage without washing out its blacks. Both apply mid-match, and "
-		"Default puts one stage back. DFCI ports start on different numbers on purpose - that is "
-		"what matches their colours to DFCI.");
+	UiText::Muted("Lift adds flat light to the whole stage: raise it to wash the stage out, lower "
+		"it for deeper blacks. Contrast scales the colour on top, which brightens a dark stage "
+		"without washing out its blacks. Both apply during a match, and Default resets one stage. "
+		"DFCI ports start with different values on purpose, to match DFCI's colours.");
+
+	ImGui::SeparatorText("Light and Size");
+
+	UiText::Muted("These columns only show when Advanced stage options is ticked, in the mod window "
+		"under Config. Light changes only the glowing parts of a stage, and UNI2's own stages have "
+		"none, so it does nothing on them. Size is how big the scenery is around the fight. Each "
+		"stage has its own default size, so the slider range is based on it.");
 
 	ImGui::SeparatorText("The list");
 
 	UiText::Muted("A green name is the stage playing right now. The game's own stages can be "
 		"recoloured but not removed.");
 
+	ImGui::SeparatorText("Replacing a game stage");
+
+	UiText::Muted("Add stages can put a stage folder in place of one of the game's own. It keeps the "
+		"game's number, card and walls. Restore brings the game's stage back.");
+
 	ImGui::SeparatorText("Online");
 
-	UiText::Muted("Stages are picture only, so the other player does not need yours, and colour is "
-		"never sent.");
+	UiText::Muted("An added stage is only on your machine, and an opponent without it can crash or land "
+		"on another stage. A replaced stage keeps the game's number, so an opponent without it sees the "
+		"game's own. Online, Random picks only from the game's own stages. Colour settings are never "
+		"sent.");
 
 	ImGui::SeparatorText("Blender");
 
@@ -579,8 +943,8 @@ void StagesPanel::DrawRestart()
 		return;
 
 	ImGui::Separator();
-	UiText::Warn("The game reads its stage list once, on the way in, so what you changed here "
-		"reaches the picker after a restart.");
+	UiText::Warn("The game reads its stage list only at startup. Restart to see your changes in "
+		"the picker.");
 
 	if (!GameRestart::CanSoftReset())
 	{

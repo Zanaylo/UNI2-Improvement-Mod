@@ -170,8 +170,8 @@ void FrameMeterLegendWindow::Draw()
 	ImGui::Spacing();
 	ImGui::SeparatorText("Status Row");
 
-	ImGui::TextWrapped("Everything in force on that frame at once, the cell split evenly between "
-		"them. White means nothing can connect and is drawn on its own.");
+	ImGui::TextWrapped("Shows every invincibility active on that frame, with the cell split evenly "
+		"between them. White means nothing can hit, and it is drawn alone.");
 
 	placed = 0;
 	for (int i = FrameMeter::kFirstInvulnMarker; i < FrameMeter::Marker_COUNT; ++i, ++placed)
@@ -187,14 +187,14 @@ void FrameMeterLegendWindow::Draw()
 	ImGui::Spacing();
 	ImGui::SeparatorText("The Number");
 
-	ImGui::BulletText("Startup - until the move can connect, first active frame included.");
-	ImGui::BulletText("Total - from the move starting to it ending.");
-	ImGui::BulletText("Advantage - who acts first, positive meaning you. The number in brackets is "
-		"the advantage you had before the opponent teched (can be inaccurate sometimes).");
-	ImGui::BulletText("Blockstun - how long the opponent was held after blocking.");
-	ImGui::BulletText("Hitstun - how long the opponent was held after being hit.");
-	ImGui::BulletText("Gap - free frames between two held runs.");
-	ImGui::BulletText("Flash - how long the super flash ran inside the move above it. The bar never "
-		"gains a cell for one, so this line is the only place its length is shown. A combo that "
-		"flashes twice reports the move you are reading, not the sum.");
+	ImGui::BulletText("Startup: frames until the move can hit, counting the first active frame.");
+	ImGui::BulletText("Total: from the start of the move to its end.");
+	ImGui::BulletText("Advantage: who can act first. Positive means you. The number in brackets is "
+		"your advantage before the opponent teched (not always accurate).");
+	ImGui::BulletText("Blockstun: how long the opponent was stuck after blocking.");
+	ImGui::BulletText("Hitstun: how long the opponent was stuck after being hit.");
+	ImGui::BulletText("Gap: free frames between two blockstun or hitstun runs.");
+	ImGui::BulletText("Flash: how long the super flash lasted in the move above. The bar has no "
+		"cells for it, so this is the only place it shows. If a combo flashes twice, you see the "
+		"move you are reading, not the total.");
 }

@@ -1,4 +1,4 @@
-#include "Core/TextEncoding.h"
+﻿#include "Core/TextEncoding.h"
 
 #include <Windows.h>
 
@@ -32,7 +32,8 @@ bool ToWide(UINT codePage, const char* text, int length, std::wstring& out)
 
 }
 
-bool TextEncoding::Utf8ToShiftJis(const std::string& utf8, std::string& out, bool* outLossy)
+bool TextEncoding::Utf8ToCodePage(const std::string& utf8, unsigned int codePage,
+	std::string& out, bool* outLossy)
 {
 	if (outLossy != nullptr)
 		*outLossy = false;
@@ -46,7 +47,7 @@ bool TextEncoding::Utf8ToShiftJis(const std::string& utf8, std::string& out, boo
 	if (!ToWide(CP_UTF8, utf8.c_str(), static_cast<int>(utf8.size()), wide))
 		return false;
 
-	const int needed = WideCharToMultiByte(kShiftJis, 0, wide.c_str(), static_cast<int>(wide.size()),
+	const int needed = WideCharToMultiByte(codePage, 0, wide.c_str(), static_cast<int>(wide.size()),
 		nullptr, 0, nullptr, nullptr);
 	if (needed <= 0)
 		return false;
@@ -56,7 +57,7 @@ bool TextEncoding::Utf8ToShiftJis(const std::string& utf8, std::string& out, boo
 	BOOL usedDefault = FALSE;
 	const char fallback = '?';
 
-	const int written = WideCharToMultiByte(kShiftJis, 0, wide.c_str(), static_cast<int>(wide.size()),
+	const int written = WideCharToMultiByte(codePage, 0, wide.c_str(), static_cast<int>(wide.size()),
 		&out[0], needed, &fallback, &usedDefault);
 	if (written != needed)
 	{
@@ -68,6 +69,11 @@ bool TextEncoding::Utf8ToShiftJis(const std::string& utf8, std::string& out, boo
 		*outLossy = usedDefault != FALSE;
 
 	return true;
+}
+
+bool TextEncoding::Utf8ToShiftJis(const std::string& utf8, std::string& out, bool* outLossy)
+{
+	return Utf8ToCodePage(utf8, kShiftJis, out, outLossy);
 }
 
 bool TextEncoding::ShiftJisToUtf8(const char* text, size_t maxBytes, std::string& out)

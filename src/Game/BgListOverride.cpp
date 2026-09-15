@@ -4,6 +4,7 @@
 #include "Core/utils.h"
 #include "Game/DataArchive.h"
 #include "Game/StageArchive.h"
+#include "Game/StageNote.h"
 
 #include <Windows.h>
 
@@ -381,6 +382,31 @@ void Restock(std::string& list, std::string& names, const std::vector<int>& owne
 	}
 }
 
+void Rework(std::string& list, std::string& names, const std::vector<BgListOverride::Reworked>& reworked)
+{
+	std::string original;
+
+	if (reworked.empty() || !Original(kList, original))
+		return;
+
+	for (const BgListOverride::Reworked& one : reworked)
+	{
+		size_t start = 0;
+		size_t end = 0;
+		size_t ownStart = 0;
+		size_t ownEnd = 0;
+
+		if (!Span(list, one.number, start, end) || !Span(original, one.number, ownStart, ownEnd))
+			continue;
+
+		list.replace(start, end - start,
+			StageNote::Rework(original.substr(ownStart, ownEnd - ownStart), one.note));
+
+		if (!one.shiftJisName.empty())
+			SetName(names, one.number, one.shiftJisName);
+	}
+}
+
 bool g_restart = false;
 
 bool Commit(const std::string& list, const std::string& names)
@@ -396,7 +422,8 @@ bool Commit(const std::string& list, const std::string& names)
 
 }
 
-bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned)
+bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned,
+	const std::vector<Reworked>& reworked)
 {
 	std::string list;
 	std::string names;
@@ -411,6 +438,8 @@ bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<in
 		DropEntry(list, number);
 		ClearName(names, number);
 	}
+
+	Rework(list, names, reworked);
 
 	std::vector<int> order;
 	size_t open = 0;

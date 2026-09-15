@@ -29,7 +29,7 @@ char g_status[160] = "no stage asks for one";
 
 bool ReadTint(int stage, uint32_t& out)
 {
-	const int id = StageLibrary::IdForSlot(stage);
+	const int id = StageLibrary::GameOwns(stage) ? stage : StageLibrary::IdForSlot(stage);
 	std::vector<uint8_t> blob;
 
 	if (id < 0 || !ReadWholeFile(StageLibrary::NoteOf(id), blob) || blob.empty())

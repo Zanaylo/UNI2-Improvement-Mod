@@ -45,6 +45,8 @@ private:
 	LPARAM ScaleMousePosition(LPARAM lParam) const;
 	void ApplyScale(float scale);
 	void ObserveFocus(UINT message, WPARAM wParam);
+	void RefreshFocus();
+	void RestoreDeviceObjects();
 	void InstallWindowProc(HWND window);
 	void RemoveWindowProc();
 
@@ -58,6 +60,8 @@ private:
 	bool m_blockGameMouse = false;
 	bool m_updateAnnounced = false;
 	bool m_hasFocus = true;
+	DWORD m_focusCheckedAt = 0;
+	DWORD m_restoreTriedAt = 0;
 	HWND m_window = nullptr;
 	IDirect3DDevice9* m_device = nullptr;
 	WNDPROC m_originalWndProc = nullptr;

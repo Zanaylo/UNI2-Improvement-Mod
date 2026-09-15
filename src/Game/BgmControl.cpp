@@ -1,4 +1,4 @@
-#include "Game/BgmControl.h"
+﻿#include "Game/BgmControl.h"
 
 #include "Core/CrashContext.h"
 #include "Core/logger.h"
@@ -13,10 +13,12 @@
 #include "Game/BgmVolume.h"
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
+#include "Game/SceneWatch.h"
 #include "Hooks/HookManager.h"
 
 #include <Windows.h>
 
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 
@@ -43,6 +45,7 @@ MenuBgm_t oMenuBgm = nullptr;
 
 constexpr int kIdleStartGrace = 4;
 constexpr int kIdleStartPeriod = 30;
+constexpr uint64_t kSelfStartGraceMs = 250;
 
 bool g_hooked = false;
 bool g_reported = false;
@@ -66,6 +69,11 @@ bool g_positionHeld = false;
 int g_idleSlot = -1;
 int g_idleStarts = 0;
 
+uint64_t g_selfStartedAt = 0;
+uint32_t g_pinnedScene = SceneWatch::kNone;
+
+char g_reason[128] = "the game's own";
+
 char g_status[256] = "not started";
 
 void* GameFunction(uintptr_t rva)
@@ -88,6 +96,21 @@ uint32_t ReadGlobal(uintptr_t rva)
 void WriteGlobal(uintptr_t rva, uint32_t value)
 {
 	TryWriteDword(reinterpret_cast<void*>(RvaToAddress(rva)), value);
+}
+
+const char* SlotName(int id)
+{
+	const char* const name = BgmTable::DescribeSlot(id);
+
+	return name != nullptr && name[0] != 0 ? name : "track";
+}
+
+void Explain(const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vsnprintf(g_reason, sizeof(g_reason), format, args);
+	va_end(args);
 }
 
 int SlotOf(int id)
@@ -302,6 +325,31 @@ int Shuffled(int asked)
 	return picked;
 }
 
+void __cdecl HookedBgmStart();
+
+void SelfStart()
+{
+	g_selfStartedAt = GetTickCount64();
+	HookedBgmStart();
+}
+
+bool GameStartIsRedundant()
+{
+	if (g_selfStartedAt == 0)
+		return false;
+
+	if (GetTickCount64() - g_selfStartedAt > kSelfStartGraceMs)
+	{
+		g_selfStartedAt = 0;
+		return false;
+	}
+
+	if (ReadGlobal(GameOffsets::kBgmState) != State_Playing)
+		return false;
+
+	return StillLoaded(g_playing);
+}
+
 bool __fastcall HookedBgmPlay(int id, void* edx)
 {
 	g_lastRequested = id;
@@ -312,6 +360,7 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 
 	if (g_pinned >= 0 && !BgmCatalog::ShuffleEnabled())
 	{
+		Explain("your pick, held over the %s the game asked for", SlotName(id));
 		LOG("BgmControl: game asked for %d, held back by your pick", id);
 		return true;
 	}
@@ -344,13 +393,23 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 	int chosen = asked;
 
 	if (BgmCatalog::ShuffleEnabled())
+	{
 		chosen = Shuffled(asked);
+		Explain("the randomizer, over the %s the game asked for", SlotName(asked));
+	}
 	else
 	{
 		const int resolved = BgmRules::Resolve(asked, left, right);
 
-		if (resolved >= 0)
+		if (resolved < 0)
+		{
+			Explain("the game's own %s", SlotName(asked));
+		}
+		else
+		{
 			chosen = resolved;
+			Explain("a rule of yours on the %s", SlotName(asked));
+		}
 	}
 
 	g_lastPlayed = chosen;
@@ -360,18 +419,23 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 	BgmTable::Entry current = {};
 	BgmTable::Read(static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)), current);
 
+	const uint32_t state = ReadGlobal(GameOffsets::kBgmState);
+
 	LOG("BgmControl: game asked for %d (chara %d vs %d), playing %d, already loaded %d, slot %d "
 		"holding '%s', state %u", id, left, right, chosen, loaded ? 1 : 0,
-		static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)), current.file,
-		ReadGlobal(GameOffsets::kBgmState));
+		static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)), current.file, state);
 
 	if (loaded)
 		return true;
 
-	return StartTrack(chosen, edx);
-}
+	if (!StartTrack(chosen, edx))
+		return false;
 
-void __cdecl HookedBgmStart();
+	if (state == State_Playing)
+		SelfStart();
+
+	return true;
+}
 
 void __fastcall HookedMenuBgm(void* self, void* unused, int scene)
 {
@@ -439,6 +503,13 @@ bool SkipIdleStart(int slot)
 
 void __cdecl HookedBgmStart()
 {
+	if (GameStartIsRedundant())
+	{
+		g_selfStartedAt = 0;
+		LOG("BgmControl: start ignored, the mod started %d a moment ago", g_playing);
+		return;
+	}
+
 	const uint32_t state = ReadGlobal(GameOffsets::kBgmState);
 
 	if (AlreadyRunning())
@@ -470,6 +541,14 @@ void __cdecl HookedBgmStart()
 	oBgmStart();
 }
 
+bool MayHoldPaused()
+{
+	if (!g_modVals.keepMenuMusic)
+		return false;
+
+	return !GameState::IsInMatch();
+}
+
 void __cdecl HookedBgmPause()
 {
 	const uint32_t before = ReadGlobal(GameOffsets::kBgmState);
@@ -478,8 +557,8 @@ void __cdecl HookedBgmPause()
 
 	const uint32_t after = ReadGlobal(GameOffsets::kBgmState);
 	const uint32_t stream = ReadGlobal(GameOffsets::kBgmPlayer);
-	const bool resume = before == State_Playing && after == State_Stopped && stream != 0 &&
-		g_playing >= 0;
+	const bool resume = MayHoldPaused() && before == State_Playing && after == State_Stopped &&
+		stream != 0 && g_playing >= 0;
 
 	if (before == State_Playing)
 	{
@@ -518,7 +597,7 @@ bool BgmControl::Initialize()
 
 	if (play == nullptr || pause == nullptr)
 	{
-		strncpy_s(g_status, "the BGM player is outside the game module", _TRUNCATE);
+		strncpy_s(g_status, "the music player is not where this game version expects it", _TRUNCATE);
 		LOG("BgmControl: %s", g_status);
 		return false;
 	}
@@ -544,7 +623,7 @@ bool BgmControl::Initialize()
 	if (!HookManager::CreateAndEnableHook(play, &HookedBgmPlay,
 		reinterpret_cast<void**>(&oBgmPlay), "BgmPlay"))
 	{
-		strncpy_s(g_status, "the BGM player could not be hooked", _TRUNCATE);
+		strncpy_s(g_status, "the music player could not be hooked", _TRUNCATE);
 		LOG("BgmControl: %s", g_status);
 		return false;
 	}
@@ -552,7 +631,7 @@ bool BgmControl::Initialize()
 	if (!HookManager::CreateAndEnableHook(pause, &HookedBgmPause,
 		reinterpret_cast<void**>(&oBgmPause), "BgmPause"))
 	{
-		strncpy_s(g_status, "the BGM pause call could not be hooked", _TRUNCATE);
+		strncpy_s(g_status, "music pause could not be hooked", _TRUNCATE);
 		LOG("BgmControl: %s", g_status);
 		return false;
 	}
@@ -561,7 +640,7 @@ bool BgmControl::Initialize()
 
 	CrashContext::Register("BGM", &BgmControl::WriteCrashReport);
 
-	_snprintf_s(g_status, _TRUNCATE, "hooked, %d rule(s), %s", BgmRules::Count(), BgmLibrary::StatusText());
+	_snprintf_s(g_status, _TRUNCATE, "on, %d rule(s), %s", BgmRules::Count(), BgmLibrary::StatusText());
 	LOG("BgmControl: %s", g_status);
 	return true;
 }
@@ -703,6 +782,25 @@ int BgmControl::PinnedId()
 	return g_pinned;
 }
 
+void BgmControl::OnFrame()
+{
+	if (g_pinned < 0)
+		return;
+
+	const uint32_t scene = SceneWatch::Current();
+
+	if (scene == SceneWatch::kNone || scene == g_pinnedScene)
+		return;
+
+	LOG("BgmControl: the screen changed, so your pick of %d is let go", g_pinned);
+	Release();
+}
+
+const char* BgmControl::ReasonText()
+{
+	return g_reason;
+}
+
 bool BgmControl::Play(int id)
 {
 	if (!g_hooked || oBgmPlay == nullptr)
@@ -728,6 +826,7 @@ bool BgmControl::Play(int id)
 
 	g_playing = -1;
 	g_pinned = id;
+	g_pinnedScene = SceneWatch::Current();
 
 	const bool loaded = StartTrack(id, nullptr);
 

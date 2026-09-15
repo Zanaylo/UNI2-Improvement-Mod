@@ -31,6 +31,11 @@
 #include "Game/UiAssets.h"
 #include "Game/PotatoMode.h"
 #include "Game/PumpWait.h"
+#include "Game/NameCensor.h"
+#include "Game/RoomNameCensor.h"
+#include "Game/RandomStage.h"
+#include "Game/SubtitleText.h"
+#include "Game/SubtitleWatch.h"
 #include "Game/ScreenShake.h"
 #include "Game/MemoryMap.h"
 #include "Training/FrameStepper.h"
@@ -228,6 +233,11 @@ void Stage_GameHooks()
 	ReplayFiles::Initialize();
 	BalanceRules::Install();
 	ScreenShake::Install();
+	NameCensor::Install();
+	RoomNameCensor::Install();
+	RandomStage::Install();
+	SubtitleWatch::Install();
+	SubtitleText::Install();
 	StageObjects::Initialize();
 	StageCards::Initialize();
 	BgmControl::Initialize();

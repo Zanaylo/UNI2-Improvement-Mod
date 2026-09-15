@@ -4,11 +4,14 @@
 #include "Core/logger.h"
 #include "Game/OpponentLog.h"
 #include "Network/RollbackStats.h"
+#include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
+#include "Network/OnlinePatch.h"
 #include "Network/OnlineSafety.h"
 #include "Network/PlayerCount.h"
 #include "Network/RoomPing.h"
 #include "Network/RoomRoster.h"
+#include "Network/Spectate.h"
 #include "Network/SteamInterfaces.h"
 #include "Network/SteamNetwork.h"
 
@@ -30,6 +33,8 @@ bool NetplayTick::Initialize()
 	RoomPing::SetEnabled(g_modVals.republishPingLocation);
 
 	OpponentLog::Initialize();
+	ModHandshake::Initialize();
+	Spectate::Initialize();
 
 	g_initialized = true;
 	LOG("NetplayTick: room roster, ping refresh and opponent log are up");
@@ -48,10 +53,13 @@ void NetplayTick::Update()
 		SteamNetwork::Initialize();
 
 	OnlineSafety::Update();
+	ModHandshake::Update();
+	Spectate::Update();
 
 	RollbackStats::Update();
 	RoomPing::Update();
 	ModPresence::Update();
+	OnlinePatch::Update();
 	PlayerCount::Update();
 	OpponentLog::Update();
 }

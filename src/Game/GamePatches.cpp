@@ -3,6 +3,7 @@
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Game/BalanceRules.h"
+#include "Game/BattleDataReload.h"
 #include "Game/BgmControl.h"
 #include "Game/DataSearchPath.h"
 #include "Game/GameOffsets.h"
@@ -26,6 +27,7 @@ int g_active = -1;
 int g_chosen = -1;
 int g_replay = -1;
 std::string g_bootId;
+std::string g_homeId;
 bool g_replayHeld = false;
 bool g_sawPlayback = false;
 bool g_loaded = false;
@@ -57,7 +59,7 @@ bool ApplyPatch(int index)
 
 	if (!DataSearchPath::Point(patch->prefix))
 	{
-		strncpy_s(g_status, "the game's data search path could not be written", _TRUNCATE);
+		strncpy_s(g_status, "the game's data path could not be changed", _TRUNCATE);
 		LOG("GamePatches: %s", g_status);
 		return false;
 	}
@@ -70,7 +72,7 @@ bool ApplyPatch(int index)
 	Take(index, prefix);
 	BalanceRules::SetVersion(patch->version);
 
-	sprintf_s(g_status, "reading %s - %d file(s), %d of %d characters", patch->name.c_str(),
+	sprintf_s(g_status, "using %s: %d file(s), %d of %d characters", patch->name.c_str(),
 		patch->coverage.files, patch->coverage.characters, patch->coverage.charactersWanted);
 
 	LOG("GamePatches: %s", g_status);
@@ -83,7 +85,7 @@ void ApplyInstalled()
 	BalanceRules::Release();
 	Take(-1, std::string());
 
-	strncpy_s(g_status, "reading the installed game", _TRUNCATE);
+	strncpy_s(g_status, "using the installed game", _TRUNCATE);
 	LOG("GamePatches: %s", g_status);
 }
 
@@ -129,13 +131,13 @@ void GuardOnline()
 	if (!here)
 		return;
 
-	const GamePatches::Patch* const patch = PatchLibrary::Get(g_active);
+	const GamePatches::Patch* const patch = PatchLibrary::Get(PatchLibrary::IndexOfId(g_homeId.c_str()));
 
 	if (patch == nullptr)
 		return;
 
-	Say(patch->name + " stays loaded online. The other side needs the same patch or they will "
-		"desync - a player match you have agreed, never ranked.");
+	Say(patch->name + " is only used online in a player match against someone with the mod "
+		"and the same patch. Any other match uses the installed game.");
 
 	LOG("GamePatches: the network menu opened while %s is loaded", patch->name.c_str());
 }
@@ -148,6 +150,19 @@ void RebuildTables()
 	const GamePatches::Patch* const patch = PatchLibrary::Get(g_active);
 
 	g_bootId = patch != nullptr ? patch->id : std::string();
+}
+
+void PointAt(int index)
+{
+	if (index < 0 || !ApplyPatch(index))
+		ApplyInstalled();
+}
+
+const char* NameOf(int index)
+{
+	const GamePatches::Patch* const patch = PatchLibrary::Get(index);
+
+	return patch != nullptr ? patch->name.c_str() : "the installed game";
 }
 
 void ApplyIndex(int index)
@@ -163,8 +178,7 @@ void ApplyIndex(int index)
 		InterlockedExchange(&g_missing, 0);
 	}
 
-	if (index < 0 || !ApplyPatch(index))
-		ApplyInstalled();
+	PointAt(index);
 
 	if (changed)
 	{
@@ -240,6 +254,46 @@ int GamePatches::BootIndex()
 	return PatchLibrary::IndexOfId(g_bootId.c_str());
 }
 
+int GamePatches::HomeIndex()
+{
+	return PatchLibrary::IndexOfId(g_homeId.c_str());
+}
+
+bool GamePatches::SwitchTables(int index, const char* why)
+{
+	const Patch* const patch = PatchLibrary::Get(index);
+	const int target = patch != nullptr ? index : -1;
+
+	if (target == BootIndex())
+		return true;
+
+	if (!BattleDataReload::CanRunNow())
+		return false;
+
+	const int from = BootIndex();
+
+	g_bootId = patch != nullptr ? patch->id : std::string();
+	PointAt(target);
+
+	if (g_active == target && BattleDataReload::Run())
+	{
+		LOG("GamePatches: %s - battle data %s -> %s", why, NameOf(from), NameOf(target));
+		Say(std::string("Battle data is now ") + NameOf(target) + " (" + why + ").");
+		return true;
+	}
+
+	LOG("GamePatches: %s - %s could not be rebuilt (%s), going back to the installed game", why,
+		NameOf(target), BattleDataReload::StatusText());
+
+	g_bootId.clear();
+	PointAt(-1);
+	BattleDataReload::Run();
+
+	Say(std::string("Could not switch battle data to ") + NameOf(target) +
+		", the installed game is loaded instead.");
+	return false;
+}
+
 int GamePatches::ReplayWanted()
 {
 	return g_replayHeld ? g_replay : -1;
@@ -256,6 +310,7 @@ void GamePatches::ApplyForReset(int index)
 
 	g_chosen = patch != nullptr ? index : -1;
 	g_bootId = patch != nullptr ? patch->id : std::string();
+	g_homeId = g_bootId;
 	g_replayHeld = false;
 	g_sawPlayback = false;
 
@@ -446,6 +501,7 @@ void GamePatches::ApplyRemembered()
 
 	g_chosen = PatchLibrary::IndexOfId(remembered.c_str());
 	g_bootId = g_chosen >= 0 ? remembered : std::string();
+	g_homeId = g_bootId;
 
 	if (!remembered.empty() && g_chosen < 0)
 		LOG("GamePatches: the remembered patch '%s' is not on the list any more", remembered.c_str());

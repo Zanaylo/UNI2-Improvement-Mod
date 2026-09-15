@@ -224,14 +224,22 @@ bool SteamNetwork::HasRecentPeerTraffic(unsigned withinMs)
 
 bool SteamNetwork::Send(const void* data, int size)
 {
-	if (!g_ready || data == nullptr || size <= 0 || !PeerIsFresh())
+	if (!PeerIsFresh())
+		return false;
+
+	return SendTo(g_peer, data, size);
+}
+
+bool SteamNetwork::SendTo(uint64_t steamId, const void* data, int size)
+{
+	if (!g_ready || steamId == 0 || data == nullptr || size <= 0)
 		return false;
 
 	auto send = reinterpret_cast<SendP2PPacket_t>(VTableEntry(g_networking, kSendP2PPacket));
 	if (send == nullptr)
 		return false;
 
-	return send(g_networking, nullptr, g_peer, data, static_cast<uint32_t>(size), kSendReliable,
+	return send(g_networking, nullptr, steamId, data, static_cast<uint32_t>(size), kSendReliable,
 		kChannel);
 }
 

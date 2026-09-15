@@ -59,6 +59,8 @@ constexpr int32_t kMostFrameDisp = -0x100;
 constexpr int kCellFunctions = 2;
 constexpr int kLeastCellSites = 2;
 constexpr int kMostCellSites = 12;
+constexpr int kLeastRandomArrays = 2;
+constexpr int kMostRandomArrays = 6;
 
 struct Bound
 {
@@ -313,7 +315,18 @@ bool Cellular(uint8_t* disp, Cell& out)
 	return false;
 }
 
-bool CellArray(uint8_t* low, uint8_t* high, int32_t& disp)
+bool Listed(const std::vector<int32_t>& disps, int32_t disp)
+{
+	for (const int32_t held : disps)
+	{
+		if (held == disp)
+			return true;
+	}
+
+	return false;
+}
+
+void CellArrays(uint8_t* low, uint8_t* high, std::vector<int32_t>& out)
 {
 	for (uint8_t* at = low; at + 7 <= high; ++at)
 	{
@@ -326,11 +339,33 @@ bool CellArray(uint8_t* low, uint8_t* high, int32_t& disp)
 		int32_t held = 0;
 		memcpy(&held, at + 3, sizeof(held));
 
-		if (held < kLeastFrameDisp || held > kMostFrameDisp)
+		if (held < kLeastFrameDisp || held > kMostFrameDisp || Listed(out, held))
 			continue;
 
-		disp = held;
-		return true;
+		out.push_back(held);
+	}
+}
+
+void Gather(uint8_t* low, uint8_t* high, int32_t disp, std::vector<Cell>& out)
+{
+	for (uint8_t* at = low + 2; at + sizeof(disp) <= high; ++at)
+	{
+		Cell cell = {};
+
+		if (Framed(at, disp) && Cellular(at, cell))
+			out.push_back(cell);
+	}
+}
+
+bool Claimed(const std::vector<std::vector<Cell> >& groups, const uint8_t* disp)
+{
+	for (const std::vector<Cell>& group : groups)
+	{
+		for (const Cell& cell : group)
+		{
+			if (cell.disp == disp)
+				return true;
+		}
 	}
 
 	return false;
@@ -374,24 +409,58 @@ void Cells(const std::vector<uint8_t*>& listSites, std::vector<std::vector<Cell>
 		if (already)
 			continue;
 
-		int32_t disp = 0;
+		std::vector<int32_t> disps;
+		CellArrays(low, high, disps);
 
-		if (!CellArray(low, high, disp))
+		if (disps.empty())
 			continue;
 
 		seen.push_back(low);
 
 		std::vector<Cell> found;
-
-		for (uint8_t* at = low + 2; at + sizeof(disp) <= high; ++at)
-		{
-			Cell cell = {};
-
-			if (Framed(at, disp) && Cellular(at, cell))
-				found.push_back(cell);
-		}
+		Gather(low, high, disps.front(), found);
 
 		out.push_back(found);
+	}
+}
+
+void TableCells(const std::vector<uint8_t*>& tableSites,
+	const std::vector<std::vector<Cell> >& claimed, std::vector<std::vector<Cell> >& out)
+{
+	std::vector<uint8_t*> seen;
+
+	for (uint8_t* const site : tableSites)
+	{
+		uint8_t* low = nullptr;
+		uint8_t* high = nullptr;
+		Extent(site, low, high);
+
+		bool already = false;
+
+		for (uint8_t* const held : seen)
+			already = already || held == low;
+
+		if (already)
+			continue;
+
+		seen.push_back(low);
+
+		std::vector<int32_t> disps;
+		CellArrays(low, high, disps);
+
+		for (const int32_t disp : disps)
+		{
+			std::vector<Cell> found;
+			Gather(low, high, disp, found);
+
+			if (found.empty() || Claimed(claimed, found.front().disp) ||
+				Claimed(out, found.front().disp))
+			{
+				continue;
+			}
+
+			out.push_back(found);
+		}
 	}
 }
 
@@ -443,14 +512,14 @@ bool BgCeiling::Initialize()
 {
 	if (!Wanted())
 	{
-		strncpy_s(g_status, "left at the game's own hundred, by request", _TRUNCATE);
+		strncpy_s(g_status, "off, the game keeps its 100 stage limit", _TRUNCATE);
 		LOG("BgCeiling: %s", g_status);
 		return false;
 	}
 
 	if (!TakeText())
 	{
-		strncpy_s(g_status, "the game's code section could not be read", _TRUNCATE);
+		strncpy_s(g_status, "the game's code could not be read", _TRUNCATE);
 		LOG("BgCeiling: %s", g_status);
 		return false;
 	}
@@ -460,7 +529,7 @@ bool BgCeiling::Initialize()
 
 	if (!IsAddressInGameModule(table) || !IsAddressInGameModule(list))
 	{
-		strncpy_s(g_status, "the stage table is not where this build expects it", _TRUNCATE);
+		strncpy_s(g_status, "the stage table is not where this game version expects it", _TRUNCATE);
 		LOG("BgCeiling: %s", g_status);
 		return false;
 	}
@@ -478,20 +547,41 @@ bool BgCeiling::Initialize()
 	std::vector<std::vector<Cell> > cells;
 	Cells(listSites, cells);
 
+	std::vector<std::vector<Cell> > randoms;
+	TableCells(tableSites, cells, randoms);
+
 	const int tableCount = static_cast<int>(tableSites.size());
 	const int listCount = static_cast<int>(listSites.size());
 	const int boundCount = static_cast<int>(bounds.size());
 	const int cellCount = static_cast<int>(cells.size());
+	const int randomCount = static_cast<int>(randoms.size());
 
 	LOG("BgCeiling: %d table reference(s), %d list reference(s), %d bound check(s), %d picker "
-		"list(s)", tableCount, listCount, boundCount, cellCount);
+		"list(s), %d random pick array(s)", tableCount, listCount, boundCount, cellCount,
+		randomCount);
+
+	bool randomsOk = randomCount >= kLeastRandomArrays && randomCount <= kMostRandomArrays;
+
+	for (const std::vector<Cell>& one : randoms)
+	{
+		const int found = static_cast<int>(one.size());
+		randomsOk = randomsOk && found >= kLeastCellSites && found <= kMostCellSites;
+	}
+
+	if (!randomsOk)
+	{
+		sprintf_s(g_status, "the random stage pick does not look the way the mod expects (%d list(s)), "
+			"so the 100 stage limit stays", randomCount);
+		LOG("BgCeiling: %s", g_status);
+		return false;
+	}
 
 	if (tableCount < kLeastTableSites || tableCount > kMostTableSites ||
 		listCount < kLeastListSites || listCount > kMostListSites ||
 		boundCount < kLeastBoundSites || boundCount > kMostBoundSites)
 	{
-		sprintf_s(g_status, "this build reads the stage table in ways the mod does not recognise "
-			"(%d/%d/%d), so the hundred stays", tableCount, listCount, boundCount);
+		sprintf_s(g_status, "this game version reads the stage table in a way the mod does not know "
+			"(%d/%d/%d), so the 100 stage limit stays", tableCount, listCount, boundCount);
 		LOG("BgCeiling: %s", g_status);
 		return false;
 	}
@@ -509,7 +599,7 @@ bool BgCeiling::Initialize()
 
 	if (empty == nullptr)
 	{
-		strncpy_s(g_status, "the empty stage record could not be allocated", _TRUNCATE);
+		strncpy_s(g_status, "the empty stage entry could not be created", _TRUNCATE);
 		LOG("BgCeiling: %s", g_status);
 		return false;
 	}
@@ -523,7 +613,7 @@ bool BgCeiling::Initialize()
 
 	if (wideTable == nullptr || wideList == nullptr || trampolines == nullptr)
 	{
-		strncpy_s(g_status, "the wider stage table could not be allocated", _TRUNCATE);
+		strncpy_s(g_status, "the bigger stage table could not be created", _TRUNCATE);
 		LOG("BgCeiling: %s", g_status);
 		return false;
 	}
@@ -537,8 +627,8 @@ bool BgCeiling::Initialize()
 
 	if (lifted != boundCount || repointed != tableCount + listCount)
 	{
-		sprintf_s(g_status, "only %d of %d bound check(s) and %d of %d reference(s) took the "
-			"write - the game is in a mixed state", lifted, boundCount, repointed,
+		sprintf_s(g_status, "only %d of %d limit check(s) and %d of %d reference(s) were changed, "
+			"so the game is only half changed", lifted, boundCount, repointed,
 			tableCount + listCount);
 		LOG("BgCeiling: %s", g_status);
 		return false;
@@ -551,11 +641,17 @@ bool BgCeiling::Initialize()
 	for (const std::vector<Cell>& one : cells)
 		g_restacked = g_restacked && Restack(one);
 
+	int randomsMoved = 0;
+
+	for (const std::vector<Cell>& one : randoms)
+		randomsMoved += Restack(one) ? 1 : 0;
+
 	sprintf_s(g_status, "%d stage numbers, %d picker entries (was %d)", kWideNumbers,
 		ListEntries(), kStockNumbers);
 
 	LOG("BgCeiling: %s - %d reference(s) repointed, %d bound check(s) lifted, %d picker list(s) "
-		"moved off the stack", g_status, repointed, lifted, g_restacked ? cellCount : 0);
+		"and %d of %d random pick array(s) moved off the stack", g_status, repointed, lifted,
+		g_restacked ? cellCount : 0, randomsMoved, randomCount);
 
 	return true;
 }

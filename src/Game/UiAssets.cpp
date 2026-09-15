@@ -85,7 +85,7 @@ void UiAssets::Ensure()
 	else if (!DataArchive::IsAvailable())
 		strncpy_s(g_status, "the game's d folder is not beside the DLL", _TRUNCATE);
 	else
-		sprintf_s(g_status, "only %d of %d found - the meter falls back to flat colours", present,
+		sprintf_s(g_status, "only %d of %d found, so the meter uses flat colours", present,
 			kAssetCount);
 
 	LOG("assets: %s", g_status);

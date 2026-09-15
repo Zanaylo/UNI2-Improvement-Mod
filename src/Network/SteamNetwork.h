@@ -24,6 +24,7 @@ namespace SteamNetwork
 	bool HasRecentPeerTraffic(unsigned withinMs);
 
 	bool Send(const void* data, int size);
+	bool SendTo(uint64_t steamId, const void* data, int size);
 
 	bool Receive(void* buffer, int capacity, int& outSize, uint64_t& outPeer);
 

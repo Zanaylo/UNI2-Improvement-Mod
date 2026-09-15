@@ -1,19 +1,24 @@
-#include "Game/StageImport.h"
+﻿#include "Game/StageImport.h"
 
 #include "Core/TextEncoding.h"
+#include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/BgGrade.h"
 #include "Game/BgListOverride.h"
+#include "Game/BgMipmaps.h"
 #include "Game/BgRecord.h"
 #include "Game/FbGameFolder.h"
 #include "Game/FbxExLocal.h"
 #include "Game/ModFiles.h"
 #include "Game/BgObjectFix.h"
 #include "Game/DataArchive.h"
+#include "Game/BbtagScript.h"
 #include "Game/StageArchive.h"
 #include "Game/StageCards.h"
 #include "Game/StageLibrary.h"
+#include "Game/StageNote.h"
+#include "Game/StageReplacements.h"
 #include "Game/StageThumb.h"
 
 #include <Windows.h>
@@ -31,16 +36,35 @@ namespace {
 constexpr const char* kObjectList = "object.txt";
 constexpr const char* kStageNote = "stage.txt";
 constexpr const char* kModelFile = "bg.fbx.bin";
+constexpr const char* kNodeList = "nodes.txt";
 constexpr const char* kImageFolder = "bg090";
 
-const char* const kStageImages[] = {
-	"stage_color.img", "stage_specular.img", "stage_bokashi_alpha.img"
+struct StageImage
+{
+	const char* name;
+	bool shared;
+};
+
+const StageImage kStageImages[] = {
+	{ "stage_color.img", true },
+	{ "stage_specular.img", false },
+	{ "stage_bokashi_alpha.img", false },
 };
 constexpr const char* kCustomGame = "Custom stage";
 constexpr size_t kNameBytes = 62;
 constexpr int kNoThumbnail = -1;
 constexpr int kDfciPriorityFloor = 700;
 constexpr size_t kFetchThreads = 4;
+constexpr const char* kLibraryFull = "the library is full, there is no free stage folder left";
+
+struct Spent
+{
+	DWORD open;
+	DWORD read;
+	DWORD write;
+	size_t bytes;
+	BgMipmaps::Tally mips;
+};
 
 const char* const kCarried[] = {
 	"Scale", "Position", "ViewGrid", "FOV", "ViewRotationX", "VanishingPoint",
@@ -51,6 +75,7 @@ const char* const kCarried[] = {
 	"BGBloomEnable", "BGBloomBlightness", "BGBloomPower", "BGBloomBiassR", "BGBloomBiassG",
 	"BGBloomBiassB", "BGBloomBlurRadius", "BGBloomTextureSize", "BGBloomAlpha",
 	"BGTinyFXAAEnable", "BGTinyFXAAThreshold", "BGTinyFXAALerpT",
+	"TargetW", "TargetH",
 };
 
 struct StageNameEntry
@@ -174,15 +199,20 @@ struct Job
 	std::string stage;
 	std::string name;
 	std::string list;
+	std::vector<float> flow;
+	std::vector<BbtagScript::Lamp> lamps;
 	int id;
+	bool fading;
 	bool removing;
 	bool custom;
 	bool fetched;
+	bool replacing = false;
 };
 
 std::vector<StageImport::Offer> g_offers;
 std::string g_scanFolder;
 std::string g_scanGame;
+FbGameFolder::Game g_scanKind = FbGameFolder::Game_None;
 
 char g_status[224] = "no game looked at yet";
 volatile long g_busy = 0;
@@ -263,7 +293,8 @@ FbGameFolder::Game GameNamed(const std::string& name)
 {
 	const FbGameFolder::Game games[] = {
 		FbGameFolder::Game_UNI, FbGameFolder::Game_UNIEL, FbGameFolder::Game_MBTL,
-		FbGameFolder::Game_MBAA, FbGameFolder::Game_DFCI
+		FbGameFolder::Game_MBAA, FbGameFolder::Game_DFCI, FbGameFolder::Game_BBTAG,
+		FbGameFolder::Game_BBCF
 	};
 
 	for (FbGameFolder::Game game : games)
@@ -301,6 +332,12 @@ const char* Tag(FbGameFolder::Game game)
 	if (game == FbGameFolder::Game_UNI)
 		return " (UNICLR)";
 
+	if (game == FbGameFolder::Game_BBTAG)
+		return " (BBTAG)";
+
+	if (game == FbGameFolder::Game_BBCF)
+		return " (BBCF)";
+
 	return "";
 }
 
@@ -317,6 +354,62 @@ std::string ShiftJis(const std::string& utf8)
 	return out;
 }
 
+constexpr int kTargetLeast = 1280;
+constexpr int kTargetMost = 3840;
+
+std::string Sharpened(const std::string& block)
+{
+	const int wide = g_settings.stageTargetWidth;
+	const int high = g_settings.stageTargetHeight;
+
+	if (wide <= kTargetLeast || high <= 0 || wide > kTargetMost)
+		return std::string();
+
+	std::string carried;
+
+	if (StageArchive::Field(block, "TargetW", carried))
+		return std::string();
+
+	char text[96] = {};
+	sprintf_s(text, "\t\tTargetW = %d,\r\n\t\tTargetH = %d,\r\n", wide, high);
+
+	return text;
+}
+
+void Carry(int id, const char* key, std::string value, std::string& out)
+{
+	if (Capped(key, value))
+		LOG("StageImport: stage %d asked for a bigger %s than the game's own stages use", id, key);
+
+	if (Floored(key, value))
+		LOG("StageImport: stage %d asked for a smaller %s than the game's own stages use, "
+			"which moves the walls", id, key);
+
+	out += std::string("\t\t") + key + " = " + value + ",\r\n";
+}
+
+void CarryPort(const std::string& block, int id, FbGameFolder::Game game, std::string& out)
+{
+	for (const char* key : kCarried)
+	{
+		std::string value;
+
+		if (CarriesField(game, key) && StageArchive::Field(block, key, value))
+			Carry(id, key, value, out);
+	}
+}
+
+void CarryCustom(const std::string& block, int id, std::string& out)
+{
+	std::vector<StageArchive::Pair> pairs;
+	StageNote::Values(block, pairs);
+
+	for (const StageArchive::Pair& pair : pairs)
+		Carry(id, pair.key.c_str(), pair.value, out);
+
+	LOG("StageImport: stage %d takes %d value(s) from its stage.txt", id, static_cast<int>(pairs.size()));
+}
+
 std::string EntryText(const std::string& block, const StageLibrary::Entry& entry,
 	const std::string& shiftJisName, int thumbnail, FbGameFolder::Game game)
 {
@@ -330,23 +423,10 @@ std::string EntryText(const std::string& block, const StageLibrary::Entry& entry
 	sprintf_s(data, "\",\r\n\t\tDataFile = \"bg%03d\",\r\n\r\n", entry.id);
 	out += data;
 
-	for (const char* key : kCarried)
-	{
-		std::string value;
-
-		if (!CarriesField(game, key) || !StageArchive::Field(block, key, value))
-			continue;
-
-		if (Capped(key, value))
-			LOG("StageImport: stage %d asked for a bigger %s than the game's own stages use",
-				entry.id, key);
-
-		if (Floored(key, value))
-			LOG("StageImport: stage %d asked for a smaller %s than the game's own stages use, "
-				"which moves the walls", entry.id, key);
-
-		out += std::string("\t\t") + key + " = " + value + ",\r\n";
-	}
+	if (game == FbGameFolder::Game_None)
+		CarryCustom(block, entry.id, out);
+	else
+		CarryPort(block, entry.id, game, out);
 
 	for (const Defaulted& fallback : kDefaults)
 	{
@@ -364,6 +444,8 @@ std::string EntryText(const std::string& block, const StageLibrary::Entry& entry
 		for (const Defaulted& forced : kForced)
 			out += std::string("\t\t") + forced.key + " = " + forced.value + ",\r\n";
 	}
+
+	out += Sharpened(block);
 
 	char tail[64] = {};
 	sprintf_s(tail, "\t\tStageSelTex = %d,\r\n\t}\r\n", thumbnail);
@@ -424,10 +506,14 @@ void RenameAny(int id, std::vector<uint8_t>& data)
 	data.assign(text.begin(), text.end());
 }
 
-bool Copy(StageArchive::Source& source, const Job& job)
+bool Copy(StageArchive::Source& source, const Job& job, Spent& spent)
 {
+	const DWORD listing = GetTickCount();
+
 	std::vector<std::string> files;
 	source.Files(job.stage, files);
+
+	spent.read += GetTickCount() - listing;
 
 	if (files.empty())
 	{
@@ -438,6 +524,7 @@ bool Copy(StageArchive::Source& source, const Job& job)
 	const std::string target = StageLibrary::FolderOf(job.id);
 	const FbGameFolder::Game game = FbGameFolder::Detect(job.folder.c_str());
 	CreateDirectoryTree(target);
+	BgMipmaps::Unmark(target);
 
 	int written = 0;
 	int done = 0;
@@ -453,8 +540,12 @@ bool Copy(StageArchive::Source& source, const Job& job)
 			continue;
 
 		std::vector<uint8_t> data;
+		const DWORD reading = GetTickCount();
+		const bool got = source.Read(job.stage, file, data);
 
-		if (!source.Read(job.stage, file, data) || !StageArchive::MagicOk(file, data))
+		spent.read += GetTickCount() - reading;
+
+		if (!got || !StageArchive::MagicOk(file, data))
 		{
 			LOG("StageImport: %s\\%s came out wrong and was left out", job.stage.c_str(),
 				file.c_str());
@@ -485,7 +576,15 @@ bool Copy(StageArchive::Source& source, const Job& job)
 			TrimTable(data);
 		}
 
-		if (WriteWhole(target + "\\" + file, data))
+		BgMipmaps::BakeInto(file, data, spent.mips);
+
+		const DWORD writing = GetTickCount();
+		const bool put = WriteWhole(target + "\\" + file, data);
+
+		spent.write += GetTickCount() - writing;
+		spent.bytes += data.size();
+
+		if (put)
 			++written;
 	}
 
@@ -509,12 +608,12 @@ int SourceNumber(const std::string& stage)
 std::string ImageDonor(FbGameFolder::Game game, const std::string& stage)
 {
 	if (game != FbGameFolder::Game_UNI && game != FbGameFolder::Game_UNIEL)
-		return kImageFolder;
+		return std::string();
 
 	const int number = SourceNumber(stage);
 
 	if (number < 0)
-		return kImageFolder;
+		return std::string();
 
 	char folder[16] = {};
 	sprintf_s(folder, "bg%03d", number);
@@ -524,35 +623,38 @@ std::string ImageDonor(FbGameFolder::Game game, const std::string& stage)
 
 void LiftImages(const std::string& target, const std::string& donor)
 {
-	for (const char* image : kStageImages)
+	for (const StageImage& image : kStageImages)
 	{
 		std::vector<uint8_t> stub;
-		DataArchive::Read(kImageFolder, image, stub);
+		DataArchive::Read(kImageFolder, image.name, stub);
+
+		const std::string path = target + "\\" + image.name;
+		std::vector<uint8_t> have;
+		const bool held = ReadWhole(path, have);
 
 		std::vector<uint8_t> wanted;
 
-		if (!DataArchive::Read(donor.c_str(), image, wanted) || wanted.empty())
+		if (!donor.empty())
+			DataArchive::Read(donor.c_str(), image.name, wanted);
+
+		if (wanted.empty() && image.shared)
 			wanted = stub;
 
 		if (wanted.empty())
 		{
-			LOG("StageImport: %s is not in the game's own data, so the port goes without it",
-				image);
+			if (held && have == stub && DeleteFileA(path.c_str()) != 0)
+				LOG("StageImport: %s was the one-pixel %s stub, and a stage renders better "
+					"without it than with it", image.name, kImageFolder);
+
 			continue;
 		}
 
-		const std::string path = target + "\\" + image;
-		std::vector<uint8_t> have;
-		const bool held = ReadWhole(path, have);
-
-		if (held && have == wanted)
-			continue;
-
-		if (held && have != stub)
+		if (held && (have == wanted || have != stub))
 			continue;
 
 		if (WriteWhole(path, wanted))
-			LOG("StageImport: %s comes from the game's own %s", image, donor.c_str());
+			LOG("StageImport: %s comes from the game's own %s", image.name,
+				donor.empty() ? kImageFolder : donor.c_str());
 	}
 }
 
@@ -563,17 +665,74 @@ void WriteNote(const std::string& target, const Job& job, const std::string& blo
 	std::string note = "// UNI2 Improvement Mod\r\n";
 	note += "Name = \"" + job.name + "\"\r\n";
 	note += "From = \"" + from + "\"\r\n";
-	note += "Source = \"" + job.stage + "\"\r\n\r\n";
+	note += "Source = \"" + job.stage + "\"\r\n";
+
+	if (!job.flow.empty())
+	{
+		note += "Flow = [ ";
+
+		for (size_t i = 0; i < job.flow.size(); ++i)
+		{
+			char rate[32] = {};
+			sprintf_s(rate, "%s%.8f", i == 0 ? "" : ", ", job.flow[i]);
+			note += rate;
+		}
+
+		note += " ]\r\n";
+	}
+
+	for (size_t i = 0; i < job.lamps.size(); ++i)
+	{
+		const BbtagScript::Lamp& lamp = job.lamps[i];
+
+		if (lamp.loop < 1 || lamp.ramp.empty())
+			continue;
+
+		char head[48] = {};
+		sprintf_s(head, "Lamp%d = [ %d", static_cast<int>(i), lamp.loop);
+		note += head;
+
+		for (const BbtagScript::Ramp& ramp : lamp.ramp)
+		{
+			char step[64] = {};
+			sprintf_s(step, ", %d, %d, %d", ramp.at, ramp.target, ramp.frames);
+			note += step;
+		}
+
+		note += " ]\r\n";
+	}
+
+	if (job.fading)
+		note += "VertexAlpha = 1\r\n";
+
+	note += "\r\n";
 	note += block;
 
 	WriteWhole(target + "\\" + kStageNote, std::vector<uint8_t>(note.begin(), note.end()));
+}
+
+bool Editing(const std::string& leaf)
+{
+	if (_stricmp(leaf.c_str(), kNodeList) == 0)
+		return true;
+
+	const size_t dot = leaf.rfind('.');
+
+	if (dot == std::string::npos)
+		return false;
+
+	const std::string tail = leaf.substr(dot);
+
+	return _stricmp(tail.c_str(), ".fbx") == 0 || _stricmp(tail.c_str(), ".json") == 0;
 }
 
 bool FetchFolder(Job& job)
 {
 	const std::string target = StageLibrary::FolderOf(job.id);
 	CreateDirectoryTree(target);
+	BgMipmaps::Unmark(target);
 
+	BgMipmaps::Tally mips = {};
 	WIN32_FIND_DATAA found = {};
 	const HANDLE search = FindFirstFileA((job.folder + "\\*").c_str(), &found);
 
@@ -585,6 +744,9 @@ bool FetchFolder(Job& job)
 	do
 	{
 		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+			continue;
+
+		if (Editing(found.cFileName))
 			continue;
 
 		std::vector<uint8_t> data;
@@ -601,12 +763,18 @@ bool FetchFolder(Job& job)
 		if (_stricmp(found.cFileName, kObjectList) == 0)
 			RenameAny(job.id, data);
 
+		BgMipmaps::BakeInto(found.cFileName, data, mips);
+
 		if (WriteWhole(target + "\\" + found.cFileName, data))
 			++written;
 	}
 	while (FindNextFileA(search, &found) != 0);
 
 	FindClose(search);
+
+	if (mips.files != 0)
+		LOG("BgMipmaps: %s baked %d file(s) in %lu ms at install", job.stage.c_str(), mips.files,
+			static_cast<unsigned long>(mips.milliseconds));
 
 	if (written == 0)
 	{
@@ -618,32 +786,75 @@ bool FetchFolder(Job& job)
 	return true;
 }
 
+void NameFromNote(Job& job)
+{
+	std::string name;
+
+	if (job.name != job.stage || !StageArchive::Field(job.list, "Name", name))
+		return;
+
+	const std::string unquoted = StageArchive::Unquoted(name);
+
+	if (!unquoted.empty())
+		job.name = unquoted;
+}
+
 bool Fetch(Job& job)
 {
+	const DWORD began = GetTickCount();
+
 	if (job.custom)
 	{
+		if (job.replacing)
+			DeleteTree(StageLibrary::FolderOf(job.id));
+
 		if (!FetchFolder(job))
 			return false;
 
-		LiftImages(StageLibrary::FolderOf(job.id), kImageFolder);
+		NameFromNote(job);
+
+		if (!job.replacing)
+			LiftImages(StageLibrary::FolderOf(job.id), std::string());
+
+		LOG("StageImport: %s took %lu ms from a folder", job.stage.c_str(),
+			static_cast<unsigned long>(GetTickCount() - began));
+
 		return true;
 	}
 
+	Spent spent = {};
+	const DWORD opening = GetTickCount();
 	StageArchive::Source* const source = StageArchive::Open(job.folder.c_str());
+
+	spent.open = GetTickCount() - opening;
 
 	if (source == nullptr)
 		return false;
 
-	const bool ok = Copy(*source, job);
+	const bool ok = Copy(*source, job, spent);
 
 	if (ok)
 	{
 		source->BgList(job.list);
+		source->Flow(job.stage, job.flow);
+		source->Lamps(job.stage, job.lamps);
+		job.fading = source->Fading(job.stage);
 		LiftImages(StageLibrary::FolderOf(job.id),
 			ImageDonor(FbGameFolder::Detect(job.folder.c_str()), job.stage));
 	}
 
 	delete source;
+
+	LOG("StageImport: %s took %lu ms - %lu opening the source, %lu converting and reading, %lu "
+		"writing %.1f MB", job.stage.c_str(),
+		static_cast<unsigned long>(GetTickCount() - began),
+		static_cast<unsigned long>(spent.open), static_cast<unsigned long>(spent.read),
+		static_cast<unsigned long>(spent.write),
+		static_cast<double>(spent.bytes) / (1024.0 * 1024.0));
+
+	if (spent.mips.files != 0)
+		LOG("BgMipmaps: %s baked %d file(s) in %lu ms at install", job.stage.c_str(),
+			spent.mips.files, static_cast<unsigned long>(spent.mips.milliseconds));
 
 	job.fetched = ok;
 	return ok;
@@ -680,6 +891,15 @@ void MakeCard(const Job& job, const std::string& block)
 
 bool Register(const Job& job)
 {
+	if (job.replacing)
+	{
+		WriteNote(StageLibrary::FolderOf(job.id), job, job.list);
+		sprintf_s(g_status, "%s is in place of stage %d", job.name.c_str(), job.id);
+
+		LOG("StageImport: %s", g_status);
+		return true;
+	}
+
 	std::string block;
 
 	if (job.custom)
@@ -715,6 +935,17 @@ bool Register(const Job& job)
 bool Drop(const Job& job)
 {
 	DeleteTree(StageLibrary::FolderOf(job.id));
+
+	if (job.replacing)
+	{
+		BgListOverride::Restore(job.id);
+		StageReplacements::Forget(job.id);
+		sprintf_s(g_status, "stage %d is the game's own again", job.id);
+
+		LOG("StageImport: %s", g_status);
+		return true;
+	}
+
 	StageThumb::Forget(job.id);
 	StageLibrary::Erase(job.id);
 	BgGrade::Forget(job.id);
@@ -937,6 +1168,33 @@ void Repoint()
 		StageCards::Repaint();
 }
 
+void RestoreStale()
+{
+	std::vector<int> stale;
+	StageReplacements::Stale(stale);
+
+	for (int number : stale)
+	{
+		BgListOverride::Restore(number);
+		StageReplacements::Forget(number);
+
+		LOG("StageImport: stage %d lost its stage.txt, so it is the game's own again", number);
+	}
+}
+
+std::vector<BgListOverride::Reworked> Reworks()
+{
+	std::vector<StageReplacements::Replacement> replaced;
+	StageReplacements::Snapshot(replaced);
+
+	std::vector<BgListOverride::Reworked> reworked;
+
+	for (const StageReplacements::Replacement& replacement : replaced)
+		reworked.push_back({ replacement.number, replacement.note, ShiftJis(replacement.name) });
+
+	return reworked;
+}
+
 void SyncList()
 {
 	std::vector<StageLibrary::Entry> entries;
@@ -972,7 +1230,8 @@ void SyncList()
 		ours.push_back(one);
 	}
 
-	BgListOverride::Sync(ours, owned);
+	RestoreStale();
+	BgListOverride::Sync(ours, owned, Reworks());
 }
 
 void Apply()
@@ -1021,6 +1280,43 @@ void Rehome()
 	}
 }
 
+DWORD WINAPI Backfill(void*)
+{
+	std::vector<StageLibrary::Entry> entries;
+	StageLibrary::Snapshot(entries);
+
+	const DWORD began = GetTickCount();
+	int baked = 0;
+
+	for (const StageLibrary::Entry& entry : entries)
+		baked += BgMipmaps::BakeFolder(StageLibrary::FolderOf(entry.id));
+
+	if (baked != 0)
+		LOG("BgMipmaps: %d file(s) across the installed stages baked in %lu ms, once", baked,
+			static_cast<unsigned long>(GetTickCount() - began));
+
+	InterlockedExchange(&g_busy, 0);
+	return 0;
+}
+
+void StartBackfill()
+{
+	if (!BgMipmaps::Enabled() || InterlockedCompareExchange(&g_busy, 1, 0) != 0)
+		return;
+
+	const HANDLE thread = CreateThread(nullptr, 0, &Backfill, nullptr, CREATE_SUSPENDED, nullptr);
+
+	if (thread == nullptr)
+	{
+		InterlockedExchange(&g_busy, 0);
+		return;
+	}
+
+	SetThreadPriority(thread, THREAD_PRIORITY_BELOW_NORMAL);
+	ResumeThread(thread);
+	CloseHandle(thread);
+}
+
 }
 
 void StageImport::Initialize()
@@ -1047,7 +1343,9 @@ void StageImport::Initialize()
 		StageLibrary::Put(entry);
 	}
 
+	StageReplacements::Load();
 	SyncList();
+	StartBackfill();
 }
 
 bool StageImport::Scan(const char* folder)
@@ -1058,14 +1356,16 @@ bool StageImport::Scan(const char* folder)
 	g_offers.clear();
 	g_scanFolder.clear();
 	g_scanGame.clear();
+	g_scanKind = FbGameFolder::Game_None;
 
 	const FbGameFolder::Game game = FbGameFolder::Detect(folder);
 
 	if (game != FbGameFolder::Game_MBTL && game != FbGameFolder::Game_UNI
-		&& game != FbGameFolder::Game_UNIEL && game != FbGameFolder::Game_DFCI)
+		&& game != FbGameFolder::Game_UNIEL && game != FbGameFolder::Game_DFCI
+		&& game != FbGameFolder::Game_BBTAG && game != FbGameFolder::Game_BBCF)
 	{
-		sprintf_s(g_status, "that folder holds %s, and its stages are not models the mod can "
-			"port", FbGameFolder::Name(game));
+		sprintf_s(g_status, "that folder holds %s, and the mod cannot port its stages",
+			FbGameFolder::Name(game));
 		return false;
 	}
 
@@ -1111,6 +1411,7 @@ bool StageImport::Scan(const char* folder)
 
 	g_scanFolder = folder;
 	g_scanGame = FbGameFolder::Name(game);
+	g_scanKind = game;
 
 	sprintf_s(g_status, "%d stage(s) in %s", static_cast<int>(g_offers.size()), g_scanGame.c_str());
 	return true;
@@ -1119,6 +1420,11 @@ bool StageImport::Scan(const char* folder)
 const char* StageImport::ScannedGame()
 {
 	return g_scanGame.c_str();
+}
+
+FbGameFolder::Game StageImport::ScannedKind()
+{
+	return g_scanKind;
 }
 
 int StageImport::OfferCount()
@@ -1162,8 +1468,7 @@ bool StageImport::InstallMany(const int* indices, const char* const* names, int 
 
 		if (id < 0)
 		{
-			strncpy_s(g_status, "the library is full - no stage folder is left to write into",
-				_TRUNCATE);
+			strncpy_s(g_status, kLibraryFull, _TRUNCATE);
 			break;
 		}
 
@@ -1177,6 +1482,7 @@ bool StageImport::InstallMany(const int* indices, const char* const* names, int 
 		job.removing = false;
 		job.custom = false;
 		job.fetched = false;
+		job.fading = false;
 
 		batch->jobs.push_back(job);
 	}
@@ -1195,44 +1501,72 @@ bool StageImport::InstallMany(const int* indices, const char* const* names, int 
 	return Start(batch);
 }
 
+namespace {
+
+std::string LeafOf(const char* folder)
+{
+	const std::string path = folder;
+	const size_t slash = path.find_last_of("\\/");
+
+	return slash == std::string::npos ? path : path.substr(slash + 1);
+}
+
+Job FolderJob(const char* folder, int id, const char* name)
+{
+	Job job;
+	job.folder = folder;
+	job.stage = LeafOf(folder);
+	job.name = name == nullptr || name[0] == 0 ? job.stage : name;
+	job.id = id;
+	job.fading = false;
+	job.removing = false;
+	job.custom = true;
+	job.fetched = false;
+
+	return job;
+}
+
+Job RemovalJob(int id, const std::string& name)
+{
+	Job job;
+	job.id = id;
+	job.name = name;
+	job.fading = false;
+	job.removing = true;
+	job.custom = false;
+	job.fetched = false;
+
+	return job;
+}
+
+bool StartOne(const Job& job)
+{
+	Batch* const batch = new Batch();
+	batch->next = 0;
+	batch->jobs.push_back(job);
+
+	return Start(batch);
+}
+
+}
+
 bool StageImport::InstallFolder(const char* folder, const char* name)
 {
 	if (folder == nullptr || folder[0] == 0)
 		return false;
 
-	std::string leaf = folder;
-	const size_t slash = leaf.find_last_of("\\/");
-
-	if (slash != std::string::npos)
-		leaf = leaf.substr(slash + 1);
-
-	const std::vector<int> none;
-	const int id = StageLibrary::FreeId(none);
+	const int id = StageLibrary::FreeId(std::vector<int>());
 
 	if (id < 0)
 	{
-		strncpy_s(g_status, "the library is full - no stage folder is left to write into",
-			_TRUNCATE);
+		strncpy_s(g_status, kLibraryFull, _TRUNCATE);
 		return false;
 	}
 
-	Batch* const batch = new Batch();
-	batch->next = 0;
-
-	Job job;
-	job.folder = folder;
-	job.stage = leaf;
-	job.name = name == nullptr || name[0] == 0 ? leaf : name;
-	job.id = id;
-	job.removing = false;
-	job.custom = true;
-	job.fetched = false;
-
-	batch->jobs.push_back(job);
-
+	const Job job = FolderJob(folder, id, name);
 	sprintf_s(g_status, "installing %s...", job.name.c_str());
 
-	return Start(batch);
+	return StartOne(job);
 }
 
 bool StageImport::Remove(int id)
@@ -1242,21 +1576,42 @@ bool StageImport::Remove(int id)
 	if (!StageLibrary::Of(id, entry))
 		return false;
 
-	Batch* const batch = new Batch();
-	batch->next = 0;
-
-	Job job;
-	job.id = entry.id;
-	job.name = entry.name;
-	job.removing = true;
-	job.custom = false;
-	job.fetched = false;
-
-	batch->jobs.push_back(job);
-
 	sprintf_s(g_status, "removing %s...", entry.name.c_str());
 
-	return Start(batch);
+	return StartOne(RemovalJob(entry.id, entry.name));
+}
+
+bool StageImport::ReplaceFolder(const char* folder, int number)
+{
+	if (folder == nullptr || folder[0] == 0 || number <= 0 || !StageLibrary::GameOwns(number))
+		return false;
+
+	if (_stricmp(folder, StageLibrary::FolderOf(number).c_str()) == 0)
+	{
+		strncpy_s(g_status, "that folder is the replacement itself. Pick the folder it came from",
+			_TRUNCATE);
+		return false;
+	}
+
+	Job job = FolderJob(folder, number, nullptr);
+	job.replacing = true;
+
+	sprintf_s(g_status, "putting %s in place of stage %d...", job.name.c_str(), number);
+
+	return StartOne(job);
+}
+
+bool StageImport::Restore(int number)
+{
+	if (number <= 0 || !StageLibrary::GameOwns(number))
+		return false;
+
+	Job job = RemovalJob(number, std::string());
+	job.replacing = true;
+
+	sprintf_s(g_status, "restoring stage %d...", number);
+
+	return StartOne(job);
 }
 
 bool StageImport::SetInGame(int id, bool inGame)
@@ -1271,7 +1626,7 @@ bool StageImport::SetInGame(int id, bool inGame)
 
 	if (inGame && StageLibrary::Room() == 0)
 	{
-		sprintf_s(g_status, "the picker holds %d stage(s) and they are all taken - take one out "
+		sprintf_s(g_status, "the picker holds %d stage(s) and all of them are in use. Take one out "
 			"first", StageLibrary::SlotBudget());
 
 		return false;
@@ -1297,6 +1652,7 @@ void StageImport::Update()
 		return;
 
 	StageLibrary::Load();
+	StageReplacements::Load();
 	ModFiles::Rescan();
 	Apply();
 }

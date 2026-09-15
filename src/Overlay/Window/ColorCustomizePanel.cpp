@@ -367,10 +367,10 @@ void ColorCustomizePanel::DrawPreview()
 	ImGui::Dummy(ImVec2(kGridColumns * cell, rows * cell));
 
 	if (!drawn)
-		ImGui::TextDisabled("The character's poses could not be read out of the game's archive.");
+		ImGui::TextDisabled("Could not read this character's poses from the game files.");
 
 	if (!ColorPartTable::IsLoaded())
-		ImGui::TextDisabled("The game's part lists could not be read - the parts are not shown.");
+		ImGui::TextDisabled("Could not read the game's part lists, so the parts are not shown.");
 }
 void ColorCustomizePanel::DrawSlot()
 {
@@ -515,11 +515,9 @@ void ColorCustomizePanel::DrawPick(int part)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Pick any colour for this part. It replaces the swatch the game shows "
-			"for it and carries the rest of its shades with it.\n\n"
-			"Everything the mod draws uses it, here and in a match once exported. The slot's own "
-			"byte still carries the stock colour, which is all a player without the mod can be "
-			"sent.");
+		ImGui::SetTooltip("Pick any colour for this part. Its other shades change to match.\n\n"
+			"The mod shows it here, and in matches once you export it. Players without the mod "
+			"see the stock colour.");
 	}
 
 	if (!picked)
@@ -550,8 +548,8 @@ void ColorCustomizePanel::DrawActions()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Writes the slot into the card block and tells the game its data "
-			"changed. Nothing above this point touches the game until you press it.");
+		ImGui::SetTooltip("Saves this slot to the game. Nothing above changes the game until you "
+			"press it.");
 	}
 
 	ImGui::SameLine();
@@ -564,7 +562,7 @@ void ColorCustomizePanel::DrawActions()
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Steps back through the changes made since this slot was opened.");
+		ImGui::SetTooltip("Undoes the changes made since you opened this slot.");
 
 	ImGui::SameLine();
 
@@ -584,7 +582,8 @@ void ColorCustomizePanel::DrawActions()
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Loads the colours the game ships this slot with. Still needs Save.");
+		ImGui::SetTooltip("Loads the game's default colours for this slot. Press Save to keep "
+			"them.");
 
 	ImGui::SameLine();
 
@@ -607,7 +606,7 @@ void ColorCustomizePanel::DrawActions()
 			for (int colour = 0; colour < colours; ++colour)
 				ColorCustomize::Unlock(m_chara, colour);
 
-			SetStatus("Unlocked. The game keeps this the same way it keeps the ones you earn.");
+			SetStatus("Unlocked. The game saves them just like colours you earn by playing.");
 		}
 	}
 
@@ -616,7 +615,7 @@ void ColorCustomizePanel::DrawActions()
 	if (!dirty)
 		return;
 
-	ImGui::TextColored(kWarning, "Unsaved - changing character or slot throws this away.");
+	ImGui::TextColored(kWarning, "Not saved. Changing the character or slot loses these changes.");
 }
 
 
@@ -632,9 +631,8 @@ void ColorCustomizePanel::DrawExport()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Writes the composed colours to this character's palette folder as a "
-			".pal, which the mod wears in a match. Without a "
-			"pick there is nothing to export that the slot does not already carry.");
+		ImGui::SetTooltip("Saves these colours as a .pal in this character's palette folder, so "
+			"the mod can use them in a match. Only needed if you picked your own colours.");
 	}
 
 	if (!save)
@@ -697,14 +695,14 @@ void ColorCustomizePanel::Save()
 
 	if (!ColorCustomize::SetEquipped(m_chara, m_edit.equipped))
 	{
-		SetStatus("The slot was written but the worn colour was not.");
+		SetStatus("The slot was saved, but the equipped colour was not.");
 		return;
 	}
 
 	m_saved = m_edit;
 	m_history.clear();
 
-	SetStatus("Saved. The game writes it to SYS-DATA on its own next save.");
+	SetStatus("Saved. The game writes it to SYS-DATA the next time it saves.");
 }
 
 void ColorCustomizePanel::Undo()

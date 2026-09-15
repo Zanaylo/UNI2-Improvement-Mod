@@ -44,34 +44,28 @@ const Option kOptions[] = {
 		&g_modVals.timerResolution,
 		"TimerResolution",
 		"Keep the Windows timer at 1 ms",
-		"Fixes what alt-tab leaves behind. No downside.",
-		"The game asks Windows for 1 ms timer resolution once, at startup, and never again. Since "
-		"Windows 10 2004 that request is per process and Windows takes it back while the process "
-		"sits in the background, so after an alt-tab every sleep in the engine can last 15.6 ms "
-		"instead of 1. This holds the request and asks again when the window comes back.",
+		"Fixes the slowdown after an alt-tab. No downside.",
+		"Windows takes the 1 ms timer away from the game while it is in the background, so after "
+		"an alt-tab the engine can sleep 15.6 ms instead of 1. This keeps the 1 ms timer and asks "
+		"for it again when you come back.",
 	},
 	{
 		&g_modVals.powerThrottlingOptOut,
 		"PowerThrottlingOptOut",
 		"Stop Windows throttling the game in the background",
-		"The other half of the same fix. Costs a little power out of focus.",
-		"EcoQoS parks a background process on the efficient cores and clamps its timer resolution. "
-		"Opting out keeps the game on the fast cores and keeps the millisecond timer above.",
+		"The other half of the same fix. Uses a bit more power while the game is in the background.",
+		"Windows moves background apps to the slow cores and limits their timer. This keeps the "
+		"game on the fast cores and keeps the 1 ms timer above.",
 	},
 	{
 		&g_modVals.pumpWait,
 		"PumpWait",
-		"Wake the input thread the moment the game asks it",
-		"Removes the waiting, and fixes what alt-tab leaves behind. No CPU cost.",
-		"The game runs its message pump on one thread and its frame on another, and every frame the "
-		"frame thread blocks on a SendMessage that only the pump can answer - it exists so the "
-		"keyboard is read on the thread that owns the input queue. Sleep does not service a sent "
-		"message, so that handshake waits out the pump whole Sleep(1), and fifteen milliseconds of "
-		"one after an alt-tab has clamped the timer.\n\n"
-		"This replaces that sleep with a wait that also wakes on a sent message. It costs no CPU, "
-		"patches no engine code, and switches off cleanly.\n\n"
-		"It matters most in exclusive fullscreen and after an alt-tab, where Windows clamps the "
-		"timer and that one millisecond becomes fifteen.",
+		"Wake the input thread right away",
+		"Removes a wait from every frame and fixes the slowdown after an alt-tab. No CPU cost.",
+		"Every frame, the game waits for its input thread, which sleeps 1 ms at a time. After an "
+		"alt-tab that sleep can grow to 15 ms.\n\n"
+		"This wakes the input thread as soon as the game needs it. It costs no CPU and does not "
+		"patch game code.",
 	},
 };
 
@@ -143,7 +137,7 @@ void DrawIntervalTable(const char* title, const Profiler::Stats& now, const Prof
 	if (withSpread)
 	{
 		StatRow("Spread (standard deviation)", now.stddevMs, before.stddevMs, hasBaseline);
-		StatRow("Off target, average", now.madMs, before.madMs, hasBaseline);
+		StatRow("Average distance from target", now.madMs, before.madMs, hasBaseline);
 	}
 
 	StatRow("99th percentile", now.p99Ms, before.p99Ms, hasBaseline);
@@ -154,7 +148,7 @@ void DrawIntervalTable(const char* title, const Profiler::Stats& now, const Prof
 	{
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Within half a ms of 16.67");
+		ImGui::TextUnformatted("Within 0.5 ms of 16.67 ms");
 		ImGui::TableNextColumn();
 
 		if (hasBaseline)
@@ -211,8 +205,8 @@ void DrawHistogram()
 	ImGui::PlotHistogram("##frameinterval", values, Profiler::kHistogramBuckets, 0, nullptr, 0.0f,
 		peak, ImVec2(-1.0f, Ui::Scaled(kHistogramHeight)));
 
-	Muted("Every frame since the last reset, in 1 ms buckets from 0 to 40 ms. This is where a "
-		"dropped frame shows up, as a tail to the right.");
+	Muted("Every frame since the last reset, in 1 ms steps from 0 to 40 ms. Dropped frames show up "
+		"as a tail on the right.");
 }
 
 void DrawFineHistogram()
@@ -232,9 +226,8 @@ void DrawFineHistogram()
 		ImVec2(-1.0f, Ui::Scaled(kHistogramHeight)));
 
 	const double base = Profiler::GetFineHistogramBaseMs();
-	Muted("The same frames in quarter-millisecond buckets from %.2f to %.2f ms. Smooth is one spike "
-		"in the middle. Two spikes either side of it is judder, and it is invisible to the median - "
-		"which is exactly how it went unnoticed.",
+	Muted("The same frames in 0.25 ms steps from %.2f to %.2f ms. Smooth play is one spike in the "
+		"middle. Two spikes on either side is judder, and the median hides it.",
 		base, base + Profiler::kFineBuckets * Profiler::kFineBucketMs);
 
 	double firstMs = 0.0;
@@ -243,17 +236,17 @@ void DrawFineHistogram()
 
 	if (Profiler::FindModes(firstMs, secondMs, separationMs))
 	{
-		Warn("Two clusters, %.2f ms and %.2f ms, %.2f ms apart. Frames are landing either side of "
-			"the target rather than on it.", firstMs, secondMs, separationMs);
+		Warn("Two clusters, %.2f ms and %.2f ms, %.2f ms apart. Frames land on either side of the "
+			"target instead of on it.", firstMs, secondMs, separationMs);
 	}
 }
 
 void DrawSections(bool hasBaseline)
 {
-	ImGui::SeparatorText("Where the time in a frame goes");
+	ImGui::SeparatorText("Where the frame time goes");
 
-	Muted("The mod's own work, in milliseconds, averaged over recent frames. The two named after "
-		"the game's functions - oPresent and oFrameUpdate - are the game itself, for comparison.");
+	Muted("The mod's own work in milliseconds, averaged over recent frames. oPresent and "
+		"oFrameUpdate are the game itself, shown for comparison.");
 
 	if (!ImGui::BeginTable("##sections", 4,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp))
@@ -434,6 +427,12 @@ void PerformanceWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
+	if (ImGui::BeginTabItem("dgVoodoo"))
+	{
+		GraphicsPanel::DrawDgVoodoo();
+		ImGui::EndTabItem();
+	}
+
 	if (ImGui::BeginTabItem("Metrics"))
 	{
 		DrawMetricsTab();
@@ -450,8 +449,8 @@ void PerformanceWindow::DrawWhatIsHappening()
 
 	if (present.BackBufferWidth == 0)
 	{
-		Warn("No Direct3D device found. Something else is wrapping Direct3D, and none of the "
-			"display settings below are in force.");
+		Warn("No Direct3D device found. Something else is wrapping Direct3D, so the display "
+			"settings below do nothing.");
 		return;
 	}
 
@@ -476,14 +475,14 @@ void PerformanceWindow::DrawWhatIsHappening()
 
 	if (present.Windowed)
 	{
-		Muted("Windowed, the desktop compositor owns the presentation, so the display settings "
-			"below do nothing. The game's own Video menu is where fullscreen is chosen.");
+		Muted("In a window, Windows handles the display, so the display settings below do nothing. "
+			"Pick fullscreen in the game's Video menu.");
 	}
 
 	if (!present.Windowed && VsyncIsOn(present) && present.FullScreen_RefreshRateInHz % 60 != 0)
 	{
-		Warn("%u Hz cannot show 60 frames a second evenly, so with vsync on they land alternately "
-			"early and late. Pick a refresh below that divides by 60, or turn the game's vsync off.",
+		Warn("%u Hz cannot show 60 frames a second evenly, so with vsync on frames stutter. Pick a "
+			"refresh rate below that divides by 60, or turn off the game's vsync.",
 			present.FullScreen_RefreshRateInHz);
 	}
 
@@ -528,14 +527,14 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	ImGui::BeginDisabled(windowed);
 
-	if (ImGui::Checkbox("Let the mod choose the display parameters", &g_modVals.displayTuning))
+	if (ImGui::Checkbox("Let the mod pick the display settings", &g_modVals.displayTuning))
 	{
 		SaveVideo("DisplayTuning", g_modVals.displayTuning ? 1 : 0);
 		changed = true;
 	}
 
-	Help("The game asks Direct3D for a hard-coded 60 Hz it never checks the adapter for, and for a "
-		"single back buffer. Off leaves both exactly as the game asked.");
+	Help("The game always asks for 60 Hz and one back buffer, without checking your monitor. Turn "
+		"this off to keep exactly what the game asks for.");
 
 	static std::vector<UINT> rates;
 	static DWORD ratesTick = 0;
@@ -545,7 +544,7 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	char preview[64] = {};
 	if (g_modVals.fullscreenRefreshHz == 0)
-		sprintf_s(preview, "Automatic - leave the desktop's own mode");
+		sprintf_s(preview, "Automatic (keep the desktop's mode)");
 	else
 		sprintf_s(preview, "%d Hz", g_modVals.fullscreenRefreshHz);
 
@@ -555,7 +554,7 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	if (ImGui::BeginCombo("Fullscreen refresh", preview))
 	{
-		if (ImGui::Selectable("Automatic - leave the desktop's own mode",
+		if (ImGui::Selectable("Automatic (keep the desktop's mode)",
 			g_modVals.fullscreenRefreshHz == 0))
 		{
 			g_modVals.fullscreenRefreshHz = 0;
@@ -579,34 +578,31 @@ bool PerformanceWindow::DrawDisplayGroup()
 		ImGui::EndCombo();
 	}
 
-	Help("With the game's vsync off the engine paces itself and Present never waits, so the refresh "
-		"rate only decides how long a frame takes to reach the glass - and leaving the desktop's own "
-		"mode alone is both the fastest and the cheapest to alt-tab out of.\n\n"
-		"With vsync on and a rate that does not divide by 60, frames land alternately early and "
-		"late. Automatic then picks the highest listed rate that does divide by 60.\n\n"
+	Help("With the game's vsync off, the refresh rate only changes how fast a frame reaches the "
+		"screen. Keeping the desktop's mode is the fastest and the easiest to alt-tab out of.\n\n"
+		"With vsync on, a rate that does not divide by 60 stutters. Automatic then picks the "
+		"highest rate that does.\n\n"
 		"Restart the game to apply.");
 
 	ImGui::BeginDisabled(!vsync);
 
-	if (ImGui::Checkbox("A second back buffer", &g_modVals.extraBackBuffer))
+	if (ImGui::Checkbox("Use a second back buffer", &g_modVals.extraBackBuffer))
 	{
 		SaveVideo("ExtraBackBuffer", g_modVals.extraBackBuffer ? 1 : 0);
 		changed = true;
 	}
 
-	Help("The game asks for one. A second gives a frame that misses the vblank somewhere to wait "
-		"instead of costing a whole refresh - and costs up to a frame of input latency to get.\n\n"
-		"It only does anything with vsync on. With vsync off there is no vblank to miss, so the "
-		"buffer becomes a queued frame of delay and nothing else. An earlier build of this mod "
-		"turned it on for everybody by default, which is what made the game feel worse.");
+	Help("With vsync on, a late frame can wait here instead of costing a whole refresh. It adds up "
+		"to a frame of input lag.\n\n"
+		"With vsync off it only adds a frame of delay, so leave it off.");
 
 	ImGui::EndDisabled();
 
 	if (!vsync)
 	{
 		ImGui::Indent();
-		Muted("Greyed out because the game's vsync is off, where a second buffer is pure latency. "
-			"Turn vsync on in the game's own Video menu to make this available.");
+		Muted("Greyed out because the game's vsync is off, and a second buffer would only add lag. "
+			"Turn on vsync in the game's Video menu to use it.");
 		ImGui::Unindent();
 	}
 
@@ -615,8 +611,8 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	if (windowed)
 	{
-		Muted("Greyed out because the game is windowed. Direct3D requires a zero refresh rate "
-			"there, and the compositor already holds a frame of its own.");
+		Muted("Greyed out because the game is windowed. A window cannot set its own refresh rate, "
+			"and Windows already holds a frame of its own.");
 	}
 
 	return changed;
@@ -629,16 +625,16 @@ bool PerformanceWindow::DrawAdvanced()
 
 	bool changed = false;
 
-	if (ImGui::Checkbox("Wake the input thread on every message, not only the handshake",
+	if (ImGui::Checkbox("Wake the input thread for every message",
 		&g_modVals.pumpWaitAllInput))
 	{
 		SaveVideo("PumpWaitAllInput", g_modVals.pumpWaitAllInput ? 1 : 0);
 		changed = true;
 	}
 
-	Help("The pump takes one message per pass, so a busy queue drains a message a millisecond. This "
-		"drains it as fast as it fills, which shortens window and overlay message latency and costs "
-		"CPU in proportion to how much the mouse moves. Needs the option above it switched on.");
+	Help("The input thread normally handles one message per millisecond. This handles them as fast "
+		"as they come, so the window and overlay respond faster, but moving the mouse uses more "
+		"CPU. Needs \"Wake the input thread right away\" on.");
 
 	return changed;
 }
@@ -657,13 +653,13 @@ bool PerformanceWindow::DrawPresets()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Everything above on, the display left as the desktop has it, and the "
-			"game's own single back buffer. Nothing here costs a core.");
+		ImGui::SetTooltip("Every option above on, the desktop's display mode and one back buffer. "
+			"None of it keeps a CPU core busy.");
 	}
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("As the game ships"))
+	if (ImGui::Button("Game defaults"))
 	{
 		ApplyPreset(false, false, false);
 		g_modVals.displayTuning = false;
@@ -672,7 +668,7 @@ bool PerformanceWindow::DrawPresets()
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Everything off. This is the thing to measure against.");
+		ImGui::SetTooltip("Everything off. Use this to measure against.");
 
 	return changed;
 }
@@ -680,11 +676,11 @@ bool PerformanceWindow::DrawPresets()
 void PerformanceWindow::DrawPerformanceTab()
 {
 	ImGui::Spacing();
-	ImGui::SeparatorText("What is actually happening");
+	ImGui::SeparatorText("Right now");
 	DrawWhatIsHappening();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Choices");
+	ImGui::SeparatorText("Options");
 
 	bool changed = DrawOptions();
 
@@ -716,13 +712,13 @@ void PerformanceWindow::DrawMetricsTab()
 		Settings::SaveInt("Debug", "Profiler", measuring ? 1 : 0);
 	}
 
-	Help("Times the gap between finished frames, how long Present blocks, and every step of the "
-		"mod's own work. Off by default so a session nobody is measuring pays nothing for it.");
+	Help("Times each frame, how long Present waits, and every step of the mod's own work. Off by "
+		"default, so it costs nothing when you are not measuring.");
 
 	if (!measuring)
 	{
 		ImGui::Spacing();
-		Muted("Nothing is being measured. Switch Measure on and play for a few seconds.");
+		Muted("Nothing is being measured. Turn on Measure and play for a few seconds.");
 		return;
 	}
 
@@ -755,9 +751,9 @@ void PerformanceWindow::DrawMetricsTab()
 
 	DrawIntervalTable("Frame interval", framePresent, frameBaseline, hasBaseline, true);
 
-	Muted("The gap between one finished frame and the next, which is what smoothness is. Median is "
-		"the typical frame; the spread and the off-target average are the judder. Frames over 20 ms "
-		"are dropped frames.");
+	Muted("The time between two finished frames, which is what smoothness means. Median is the "
+		"typical frame. Spread and distance from target show judder. Frames over 20 ms are "
+		"dropped frames.");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Frame interval, close up");
@@ -771,15 +767,15 @@ void PerformanceWindow::DrawMetricsTab()
 
 	DrawIntervalTable("Present", blockStats, Profiler::Stats(), false, false);
 
-	Muted("How long the call that hands the frame to the driver takes. With vsync on this is the "
-		"wait for the vblank, and two clusters here are a display that cannot divide 60 evenly.");
+	Muted("How long it takes to hand the frame to the driver. With vsync on this is the wait for "
+		"the monitor, and two clusters here mean the refresh rate does not divide by 60.");
 
 	ImGui::Spacing();
 
 	DrawIntervalTable("Battle tick", tickStats, tickBaseline, hasBaseline, false);
 
-	Muted("The gap between two runs of the simulation. Only runs during a match, and reads zero "
-		"while frame stepping has the game paused.");
+	Muted("The time between two game logic steps. Only counts during a match, and reads zero "
+		"while frame stepping pauses the game.");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Input lag");
@@ -798,10 +794,9 @@ void PerformanceWindow::DrawMetricsTab()
 		ImGui::TextDisabled("Open Player Control and press something to measure.");
 	}
 
-	Muted("Measured from a physical press to the character's own input field changing, so it is the "
-		"half of the delay the simulation can see. It cannot see the swap chain or the scan-out - "
-		"Direct3D 9 without the Ex interfaces reports neither - so the display half below is "
-		"arithmetic, not a measurement.");
+	Muted("Measured from a button press to the character reading it, which is the part of the delay "
+		"the game can see. Direct3D 9 cannot report the display part, so the number below is an "
+		"estimate.");
 
 	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
 	const double refresh = present.FullScreen_RefreshRateInHz != 0
@@ -872,9 +867,8 @@ void PerformanceWindow::DrawPotatoTab()
 {
 	ImGui::Spacing();
 
-	Muted("Every level here changes how the frame is drawn and nothing else. None of them reaches "
-		"the simulation, none of them is visible to an opponent, and the stage keeps drawing at all "
-		"of them.");
+	Muted("These levels only change how the frame is drawn. They do not change gameplay, your "
+		"opponent never sees them, and the stage is still drawn at every level.");
 
 	ImGui::Spacing();
 
@@ -901,10 +895,9 @@ void PerformanceWindow::DrawPotatoTab()
 
 	ImGui::Spacing();
 
-	Muted("The drawing size takes effect the next time the game builds its display - restart it, or "
-		"touch any video option in its own menu. Everything else is immediate. In exclusive "
-		"fullscreen the back buffer has to name a mode your monitor really has, so the size is "
-		"rounded up to the smallest listed one that fits - a 4:3 mode will letterbox or stretch.");
+	Muted("To apply the drawing size, restart the game or change any option in its Video menu. "
+		"Everything else applies right away. In exclusive fullscreen the size is rounded up to a "
+		"mode your monitor has, so a 4:3 mode will letterbox or stretch.");
 
 	ImGui::Spacing();
 
@@ -919,12 +912,12 @@ void PerformanceWindow::DrawPotatoTab()
 	}
 
 	ImGui::Indent();
-	Muted("Deliberately not part of any level above: a match with no background is a worse trade "
-		"than a soft one. Here for a machine that still cannot hold 60 on Potato.");
+	Muted("Not part of any level above, because a match with no background is worse than a blurry "
+		"one. Use it if your PC still cannot hold 60 fps on Potato.");
 	ImGui::Unindent();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("In force now");
+	ImGui::SeparatorText("Active now");
 
 	DrawPotatoState();
 
@@ -943,8 +936,8 @@ void PerformanceWindow::DrawImprovementsTab()
 	bool changed = GraphicsPanel::DrawEverythingOff();
 
 	ImGui::SameLine();
-	Muted("POTATO MODE the other way round: the frame is drawn larger than your window and fitted "
-		"back down.");
+	Muted("The opposite of POTATO MODE: the frame is drawn bigger than your window and scaled "
+		"down.");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Present size");
@@ -964,16 +957,14 @@ void PerformanceWindow::DrawImprovementsTab()
 		}
 	}
 
-	Help("Everything drawn straight into the back buffer - the HUD, the menus, the composite's "
-		"edges and this overlay - is supersampled. The characters and the stage are rasterised at "
-		"1280x720 first and stretched afterwards, so a sprite gains no detail from it. "
-		"Windowed only, takes effect after a restart, and it costs fill rate: 4K is nine times "
-		"720p.");
+	Help("Makes the HUD, the menus and this overlay sharper. Characters and stages are still drawn "
+		"at 1280x720 first, so sprites gain no detail. Windowed only, needs a restart, and 4K costs "
+		"nine times as much as 720p.");
 
 	Muted("%s", Improvements::Describe(Improvements::GetLevel()));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("In force now");
+	ImGui::SeparatorText("Active now");
 
 	DrawPotatoState();
 
@@ -1037,28 +1028,28 @@ void PerformanceWindow::DrawPotatoState()
 		}
 		else if (rounded)
 		{
-			ImGui::TextColored(kGoodColour, "Drawing at %ux%u - the smallest mode your monitor "
-				"lists at or above the %dx%d asked for", present.BackBufferWidth,
+			ImGui::TextColored(kGoodColour, "Drawing at %ux%u, the smallest mode your monitor "
+				"has that fits the %dx%d you asked for", present.BackBufferWidth,
 				present.BackBufferHeight, g_modVals.presentWidth, g_modVals.presentHeight);
 		}
 		else
 		{
-			Warn("Asked to draw at %dx%d, still drawing at %ux%u. The display is built once - "
-				"restart the game, or touch any video option in its own menu.",
+			Warn("Asked to draw at %dx%d, still drawing at %ux%u. Restart the game, or change "
+				"any option in its Video menu.",
 				g_modVals.presentWidth, g_modVals.presentHeight, present.BackBufferWidth,
 				present.BackBufferHeight);
 		}
 	}
 	else
 	{
-		ImGui::Text("Drawing at %ux%u, which is the game's own Display option",
+		ImGui::Text("Drawing at %ux%u, set by the game's Display option",
 			present.BackBufferWidth, present.BackBufferHeight);
 	}
 
 	if (!present.Windowed)
 	{
-		Muted("Exclusive fullscreen: the size names a real display mode, so your monitor changes "
-			"mode rather than the picture being stretched inside a window.");
+		Muted("Exclusive fullscreen: your monitor switches to this mode instead of stretching the "
+			"picture in a window.");
 	}
 
 	ImGui::Text("Back buffer multisampling %s",

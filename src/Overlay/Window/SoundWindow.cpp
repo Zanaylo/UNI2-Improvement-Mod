@@ -1,4 +1,4 @@
-#include "Overlay/Window/SoundWindow.h"
+﻿#include "Overlay/Window/SoundWindow.h"
 
 #include "Game/CharaSounds.h"
 #include "Game/CharaTables.h"
@@ -215,7 +215,7 @@ void SoundWindow::AskForPack(int index)
 		return;
 	}
 
-	sprintf_s(m_packName, "%s - mine", CharaTables::Name(m_chara));
+	sprintf_s(m_packName, "My %s", CharaTables::Name(m_chara));
 	m_askPack = true;
 }
 
@@ -339,9 +339,9 @@ void SoundWindow::DrawNewPack()
 	if (!ImGui::BeginPopupModal(kNewPackPopup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		return;
 
-	UiText::Muted("%s is still using the game's own sounds. Your changes have to live in a pack, "
-		"so give this one a name - it is the folder it will sit in, and what you would send to a "
-		"friend.", CharaTables::Name(m_chara));
+	UiText::Muted("%s still uses the game's own sounds. Your changes are saved in a pack, so give "
+		"it a name. The name is also its folder, which is what you send to a friend.",
+		CharaTables::Name(m_chara));
 
 	ImGui::Spacing();
 	ImGui::SetNextItemWidth(Ui::Scaled(280.0f));
@@ -349,7 +349,7 @@ void SoundWindow::DrawNewPack()
 
 	ImGui::Spacing();
 
-	if (ImGui::Button("Make it", Ui::Scaled(110.0f, 0.0f)))
+	if (ImGui::Button("Create", Ui::Scaled(110.0f, 0.0f)))
 	{
 		std::string id;
 
@@ -395,13 +395,10 @@ void SoundWindow::DrawGetVoice()
 	ImGui::EndDisabled();
 
 	ImGui::SameLine();
-	UiText::Help("Two things fit here. A folder holding UNIclr.exe, UNIst.exe or UNIEL.exe, and "
-		"the mod reads that game's voice for the character above out of your own copy, matching "
-		"each line by the text the game itself writes beside it. Or a voice mod for this game - "
-		"the kind you would drop into the game folder, with an se folder in it - and the mod takes "
-		"that character's sounds out of it instead of you moving files around. Either way it lands "
-		"as a pack of its own, worn by that character and nobody else, and running it again "
-		"replaces what it added.");
+	UiText::Help("Pick a folder with UNIclr.exe, UNIst.exe or UNIEL.exe to take that game's voice "
+		"for this character, matched line by line. Or pick a voice mod for this game (a folder "
+		"with an se folder inside) to take this character's sounds from it. Either way you get a "
+		"pack for this character only, and running it again replaces what it added.");
 
 	if (VoiceImport::IsBusy())
 	{
@@ -424,18 +421,18 @@ void SoundWindow::DrawGetVoice()
 
 	if (pack->converting > 0)
 	{
-		UiText::Warn("converting %d file(s) to Ogg - the voice works once this finishes",
+		UiText::Warn("converting %d file(s) to Ogg. The voice works once this is done.",
 			pack->converting);
 		return;
 	}
 
-	UiText::Good("%s is in place - leave the match and come back to hear it", pack->name.c_str());
+	UiText::Good("%s is ready. Leave the match and come back to hear it.", pack->name.c_str());
 }
 
 void SoundWindow::DrawReplace()
 {
-	UiText::Muted("Pick a character and the pack it wears, then give any one of its sounds a file "
-		"of your own. Back to original puts the game's own sound back.");
+	UiText::Muted("Pick a character and its pack, then give any of its sounds your own file. "
+		"Back to original restores the game's sound.");
 
 	ImGui::Spacing();
 	DrawPicker();
@@ -512,7 +509,7 @@ void SoundWindow::DrawRemovePack()
 	ImGui::TextUnformatted("Delete this pack and everything in it?");
 	UiText::Muted("%s", m_removing.c_str());
 	ImGui::Spacing();
-	UiText::Muted("The game's own sounds are not touched. Anyone wearing it goes back to them.");
+	UiText::Muted("The game's own sounds are not touched. Characters using it go back to them.");
 	ImGui::Spacing();
 
 	if (ImGui::Button("Delete", Ui::Scaled(110.0f, 0.0f)))
@@ -564,7 +561,7 @@ void SoundWindow::DrawPacks()
 
 	ImGui::TableSetupColumn("Pack");
 	ImGui::TableSetupColumn("From");
-	ImGui::TableSetupColumn("Carries");
+	ImGui::TableSetupColumn("Contains");
 	ImGui::TableSetupColumn("");
 	ImGui::TableHeadersRow();
 
@@ -603,7 +600,7 @@ void SoundWindow::DrawPacks()
 			UiText::Muted("converting %d to Ogg...", pack->converting);
 
 		if (pack->rejected > 0)
-			UiText::Warn("%d file(s) are not audio this can read", pack->rejected);
+			UiText::Warn("%d file(s) are not in a readable audio format", pack->rejected);
 
 		ImGui::TableNextColumn();
 
@@ -634,13 +631,13 @@ void SoundWindow::DrawPacks()
 
 void SoundWindow::DrawHowTo()
 {
-	UiText::Muted("The Replace tab is the short way: pick a character, load its sounds, press New "
-		"on the one you want and choose a file. The first change asks you to name a pack to keep "
-		"it in; everything after that goes into the same one.");
+	UiText::Muted("Replace is the quick way: pick a character, load its sounds, press New on the "
+		"one you want and choose a file. Your first change asks you to name a pack, and later "
+		"changes go into the same pack.");
 
 	ImGui::Spacing();
-	UiText::Muted("The folder layout a hand-made pack uses, what pack.ini holds, which formats "
-		"play, and how to send a pack to somebody is written out in full here:");
+	UiText::Muted("The readme explains the folder layout of a hand-made pack, what pack.ini holds, "
+		"which formats play and how to share a pack:");
 
 	ImGui::Spacing();
 	ImGui::TextUnformatted(SoundsReadme::Path().c_str());
@@ -662,8 +659,8 @@ void SoundWindow::DrawHowTo()
 	}
 
 	ImGui::Spacing();
-	UiText::Muted("A replaced sound is read when the character next loads it, so a change lands "
-		"the next time you enter a match or a menu.");
+	UiText::Muted("A replaced sound loads the next time the character loads its sounds, so you "
+		"hear it when you next enter a match or a menu.");
 }
 
 void SoundWindow::PumpDialogs()

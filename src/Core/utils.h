@@ -31,6 +31,8 @@ std::string ResourceFileName(const char* name);
 
 uintptr_t GetGameBaseAddress();
 size_t GetGameModuleSize();
+bool IsMeasuredGameBuild();
+uint32_t GetGameBuildStamp();
 uintptr_t RvaToAddress(uintptr_t rva);
 bool IsAddressInGameModule(uintptr_t address);
 bool IsReadableMemory(const void* address, size_t size);
@@ -45,6 +47,8 @@ bool TryReadUnaligned(const void* source, uint32_t& outValue);
 bool TryWriteUnaligned(void* address, uint32_t value);
 
 std::string GetSystemDirectoryPath();
+
+void NoteHotkeyMessage(int virtualKey);
 
 bool IsHotkeyPressed(int virtualKey);
 

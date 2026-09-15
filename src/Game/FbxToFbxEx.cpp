@@ -1,5 +1,7 @@
 #include "Game/FbxToFbxEx.h"
 
+#include "Game/FbxExWriter.h"
+
 #include "Game/FbxAscii.h"
 
 #include <algorithm>
@@ -10,8 +12,7 @@
 
 namespace {
 
-constexpr size_t kNameBytes = 128;
-constexpr size_t kVertexFloats = 12;
+constexpr size_t kVertexFloats = FbxExWriter::kVertexFloats;
 
 struct Matrix
 {
@@ -159,48 +160,6 @@ MaterialProps DefaultMaterial()
 		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 } };
 
 	return out;
-}
-
-void PutDword(std::vector<uint8_t>& out, uint32_t value)
-{
-	out.push_back(static_cast<uint8_t>(value));
-	out.push_back(static_cast<uint8_t>(value >> 8));
-	out.push_back(static_cast<uint8_t>(value >> 16));
-	out.push_back(static_cast<uint8_t>(value >> 24));
-}
-
-void PutInt(std::vector<uint8_t>& out, int value)
-{
-	PutDword(out, static_cast<uint32_t>(value));
-}
-
-void PutFloat(std::vector<uint8_t>& out, double value)
-{
-	const float narrow = static_cast<float>(value);
-	uint32_t bits = 0;
-	memcpy(&bits, &narrow, 4);
-	PutDword(out, bits);
-}
-
-void PutName(std::vector<uint8_t>& out, const std::string& text)
-{
-	for (size_t i = 0; i < kNameBytes; ++i)
-		out.push_back(i < text.size() ? static_cast<uint8_t>(text[i]) : 0);
-}
-
-void PutBlock(std::vector<uint8_t>& out, int count, const std::vector<uint8_t>& body)
-{
-	PutDword(out, static_cast<uint32_t>(body.size() + 8));
-	PutInt(out, count);
-	out.insert(out.end(), body.begin(), body.end());
-}
-
-void PutIdentity(std::vector<uint8_t>& out)
-{
-	const Matrix id = Identity();
-
-	for (int i = 0; i < 16; ++i)
-		PutFloat(out, id.m[i]);
 }
 
 const std::vector<double>* PropertyNumbers(const FbxAscii::Tree& tree, int model,
@@ -1272,87 +1231,56 @@ bool FbxToFbxEx::Convert(const uint8_t* fbx, size_t size, std::vector<uint8_t>& 
 	if (textureNames.empty())
 		textureNames.push_back(std::string());
 
-	out.clear();
-
-	const uint8_t magic[8] = { 'f', 'b', 'x', 'e', 'x', 0, 0, 0 };
-	out.insert(out.end(), magic, magic + 8);
-	PutDword(out, 0);
-	PutDword(out, 0);
-
-	std::vector<uint8_t> body;
-
-	for (const std::string& name : textureNames)
-		PutName(body, name);
-
-	PutBlock(out, static_cast<int>(textureNames.size()), body);
-
-	body.clear();
+	FbxExWriter::Model built;
+	built.textures = textureNames;
 
 	for (size_t i = 0; i < materials.size(); ++i)
 	{
-		PutName(body, materials[i].filename);
-		PutInt(body, static_cast<int>(i));
-		PutInt(body, materials[i].textureIndex);
+		FbxExWriter::Material material = {};
+		material.filename = materials[i].filename;
+		material.textureIndex = materials[i].textureIndex;
 
-		for (double each : materials[i].value)
-			PutFloat(body, each);
+		for (int k = 0; k < FbxExWriter::kMaterialValues; ++k)
+			material.value[k] = static_cast<float>(materials[i].value[k]);
+
+		built.materials.push_back(material);
 	}
 
-	PutBlock(out, static_cast<int>(materials.size()), body);
+	FbxExWriter::Node root = FbxExWriter::Branch();
+	root.child = nodes.empty() ? -1 : 1;
 
-	body.clear();
+	built.nodes.push_back(root);
 
-	PutInt(body, 16);
-	PutInt(body, 0);
-	PutInt(body, nodes.empty() ? -1 : 1);
-	PutInt(body, -1);
+	std::vector<float> rest;
+
+	for (int i = 0; i < FbxExWriter::kMatrixFloats; ++i)
+		rest.push_back((i % 5) == 0 ? 1.0f : 0.0f);
+
+	built.animes.push_back(rest);
 
 	for (const NodeOut& node : nodes)
 	{
-		std::vector<uint8_t> payload;
+		FbxExWriter::Node written = FbxExWriter::Branch();
+		written.type = node.type;
+		written.child = node.child >= 0 ? node.child + 1 : -1;
+		written.sibling = node.sibling >= 0 ? node.sibling + 1 : -1;
+		written.blendmode = node.blendmode;
+		written.vertices = node.vertices;
 
-		if (node.type == 1)
+		for (int i = 0; i < FbxExWriter::kMatrixFloats; ++i)
+			written.matrix[i] = static_cast<float>(node.world.m[i]);
+
+		for (const Submesh& submesh : node.submeshes)
 		{
-			PutInt(payload, node.blendmode);
-			PutInt(payload, 0);
+			FbxExWriter::Submesh part;
+			part.material = submesh.material;
+			part.indices = submesh.indices;
 
-			for (int i = 0; i < 16; ++i)
-				PutFloat(payload, node.world.m[i]);
-
-			PutInt(payload, static_cast<int>(node.vertices.size() / kVertexFloats));
-
-			for (float value : node.vertices)
-			{
-				uint32_t bits = 0;
-				memcpy(&bits, &value, 4);
-				PutDword(payload, bits);
-			}
-
-			PutInt(payload, static_cast<int>(node.submeshes.size()));
-
-			for (const Submesh& submesh : node.submeshes)
-			{
-				PutInt(payload, submesh.material);
-				PutInt(payload, static_cast<int>(submesh.indices.size()));
-
-				for (int index : submesh.indices)
-					PutInt(payload, index);
-			}
+			written.submeshes.push_back(part);
 		}
 
-		PutInt(body, static_cast<int>(payload.size()) + 16);
-		PutInt(body, node.type);
-		PutInt(body, node.child >= 0 ? node.child + 1 : -1);
-		PutInt(body, node.sibling >= 0 ? node.sibling + 1 : -1);
-		body.insert(body.end(), payload.begin(), payload.end());
+		built.nodes.push_back(written);
 	}
-
-	PutBlock(out, static_cast<int>(nodes.size()) + 1, body);
-
-	body.clear();
-
-	PutInt(body, 1);
-	PutIdentity(body);
 
 	for (size_t slotIndex = 0; slotIndex < walkOrder.size(); ++slotIndex)
 	{
@@ -1369,31 +1297,32 @@ bool FbxToFbxEx::Convert(const uint8_t* fbx, size_t size, std::vector<uint8_t>& 
 			nodeFrames = nodeFrames > kMaxFrames ? kMaxFrames : nodeFrames;
 		}
 
+		std::vector<float> track;
+
 		if (nodeFrames < 2)
 		{
-			PutInt(body, 1);
+			for (int i = 0; i < FbxExWriter::kMatrixFloats; ++i)
+				track.push_back(static_cast<float>(nodes[slotIndex].local.m[i]));
 
-			for (int i = 0; i < 16; ++i)
-				PutFloat(body, nodes[slotIndex].local.m[i]);
-
+			built.animes.push_back(track);
 			continue;
 		}
 
 		const int model = byName[name];
-
-		PutInt(body, nodeFrames);
 
 		for (int frame = 0; frame < nodeFrames; ++frame)
 		{
 			const Matrix posed = PosedLocal(tree, model, found->second,
 				FrameSeconds(first, frame, rate));
 
-			for (int i = 0; i < 16; ++i)
-				PutFloat(body, posed.m[i]);
+			for (int i = 0; i < FbxExWriter::kMatrixFloats; ++i)
+				track.push_back(static_cast<float>(posed.m[i]));
 		}
+
+		built.animes.push_back(track);
 	}
 
-	PutBlock(out, static_cast<int>(nodes.size()) + 1, body);
+	FbxExWriter::Build(built, out);
 
 	return true;
 }

@@ -139,9 +139,9 @@ void Compose(const char* file, char* out, int size)
 	if (ParseBattleFile(file, left, right))
 	{
 		if (right >= 0)
-			sprintf_s(out, size, "%s vs %s - %s", CharacterName(left), CharacterName(right), label);
+			sprintf_s(out, size, "%s vs %s: %s", CharacterName(left), CharacterName(right), label);
 		else
-			sprintf_s(out, size, "%s - %s", CharacterName(left), label);
+			sprintf_s(out, size, "%s: %s", CharacterName(left), label);
 
 		return;
 	}

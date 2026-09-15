@@ -134,8 +134,8 @@ void OverlayFont::Load()
 	ImGui::GetIO().Fonts->AddFontDefault();
 	AddFallback(size);
 
-	snprintf(g_status, sizeof(g_status), "no scalable face found in %s - using the stock bitmap "
-		"font, which will look soft above 1080p. Set [Overlay] FontPath to a .ttf.",
+	snprintf(g_status, sizeof(g_status), "no scalable font found in %s. Using the built-in "
+		"bitmap font, which looks soft above 1080p. Set [Overlay] FontPath to a .ttf file.",
 		directory.c_str());
 
 	LOG("[OverlayFont] %s", g_status);

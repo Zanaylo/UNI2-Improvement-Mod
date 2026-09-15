@@ -17,27 +17,27 @@ struct Preset
 const Preset kPresets[AntiAlias::Level_COUNT] = {
 	{
 		"Off",
-		"Nothing is drawn. The frame is the game's own.",
+		"No filter. You see the game's own picture.",
 		{ 0.0f, 0.0f, 0.0f, 0.0f },
 	},
 	{
 		"Low",
-		"Only edges with real contrast behind them, softest blend. Leaves fine detail alone.",
+		"Smooths only strong edges, lightly. Fine detail stays as it is.",
 		{ 0.250f, 0.0833f, 0.25f, 4.0f },
 	},
 	{
 		"Medium",
-		"The usual setting. Diagonals and character outlines lose their staircase.",
+		"The usual choice. Smooths jagged diagonals and character outlines.",
 		{ 0.166f, 0.0833f, 0.50f, 6.0f },
 	},
 	{
 		"High",
-		"Lower threshold, longer edge search. Follows shallow diagonals further, slightly softer.",
+		"Catches more edges and smooths shallow diagonals better. A little softer.",
 		{ 0.125f, 0.0625f, 0.75f, 9.0f },
 	},
 	{
 		"Ultra",
-		"Everything the filter can find. The smoothest and the blurriest.",
+		"Smooths every edge it can find. The smoothest, and the blurriest.",
 		{ 0.063f, 0.0312f, 1.00f, 11.0f },
 	},
 };
@@ -52,19 +52,19 @@ struct Kernel
 const Kernel kKernels[SharpenMode::Kind_COUNT] = {
 	{
 		"Off",
-		"Nothing is drawn. The frame is the game's own.",
+		"No filter. You see the game's own picture.",
 		nullptr,
 	},
 	{
 		"Contrast adaptive",
-		"AMD CAS. Measures local contrast first and sharpens least where the picture is already "
-		"busy, so it leaves no halo. The safe one.",
+		"AMD CAS. Sharpens less where the picture is already detailed, so it leaves no halos. "
+		"The safe choice.",
 		kSharpenShader,
 	},
 	{
 		"FSR (RCAS)",
-		"The sharpening half of FidelityFX Super Resolution, meant to follow an upscale. Stronger "
-		"on edges, quieter on flat colour. Pair it with the FSR upscale filter.",
+		"The sharpening part of AMD FSR, made to follow an upscale. Stronger on edges, gentler "
+		"on flat colour. Use it with the FSR upscale filter.",
 		kRcasShader,
 	},
 };

@@ -95,15 +95,15 @@ void OnlineState::Update()
 
 	//lembrar depois
 	if (online)
-		sprintf_s(g_status, "online - the game is talking to a peer (GGPO 0x%08x, %s)", pointer,
+		sprintf_s(g_status, "online, connected to a peer (GGPO 0x%08x, %s)", pointer,
 			backend);
 	else if (g_blind)
-		strncpy_s(g_status, "cannot tell - Steam networking never came up, assuming online",
+		strncpy_s(g_status, "unknown, Steam networking did not start, so assuming online",
 			_TRUNCATE);
 	else if (pointer == 0)
 		strncpy_s(g_status, "offline, no GGPO session", _TRUNCATE);
 	else
-		sprintf_s(g_status, "offline - GGPO session 0x%08x (%s), no peer traffic", pointer, backend);
+		sprintf_s(g_status, "offline, GGPO session 0x%08x (%s) has no peer traffic", pointer, backend);
 
 	LOG("OnlineState: %s", g_status);
 }

@@ -22,6 +22,7 @@ using SetLobbyMemberData_t = void(__cdecl*)(void*, uint64_t, const char*, const 
 using GetNumLobbyMembers_t = int(__cdecl*)(void*, uint64_t);
 using GetLobbyMemberByIndex_t = uint64_t(__cdecl*)(void*, uint64_t, int);
 using GetLobbyMemberData_t = const char*(__cdecl*)(void*, uint64_t, uint64_t, const char*);
+using GetLobbyData_t = const char*(__cdecl*)(void*, uint64_t, const char*);
 using GetNumberOfCurrentPlayers_t = uint64_t(__cdecl*)(void*);
 using IsAPICallCompleted_t = bool(__cdecl*)(void*, uint64_t, bool*);
 using GetAPICallResult_t = bool(__cdecl*)(void*, uint64_t, void*, int, int, bool*);
@@ -42,6 +43,7 @@ SetLobbyMemberData_t g_setLobbyMemberData = nullptr;
 GetNumLobbyMembers_t g_getNumLobbyMembers = nullptr;
 GetLobbyMemberByIndex_t g_getLobbyMemberByIndex = nullptr;
 GetLobbyMemberData_t g_getLobbyMemberData = nullptr;
+GetLobbyData_t g_getLobbyData = nullptr;
 GetNumberOfCurrentPlayers_t g_getNumberOfCurrentPlayers = nullptr;
 IsAPICallCompleted_t g_isApiCallCompleted = nullptr;
 GetAPICallResult_t g_getApiCallResult = nullptr;
@@ -111,6 +113,7 @@ bool SteamInterfaces::Initialize()
 		Resolve<GetLobbyMemberByIndex_t>("SteamAPI_ISteamMatchmaking_GetLobbyMemberByIndex");
 	g_getLobbyMemberData =
 		Resolve<GetLobbyMemberData_t>("SteamAPI_ISteamMatchmaking_GetLobbyMemberData");
+	g_getLobbyData = Resolve<GetLobbyData_t>("SteamAPI_ISteamMatchmaking_GetLobbyData");
 	g_getLocalPingLocation =
 		Resolve<GetLocalPingLocation_t>("SteamAPI_ISteamNetworkingUtils_GetLocalPingLocation");
 	g_convertPingLocation =
@@ -245,6 +248,30 @@ const char* SteamInterfaces::GetLobbyMemberData(uint64_t lobby, uint64_t member,
 	__try
 	{
 		value = g_getLobbyMemberData(matchmaking, lobby, member, key);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		value = nullptr;
+	}
+
+	return value != nullptr ? value : "";
+}
+
+const char* SteamInterfaces::GetLobbyData(uint64_t lobby, const char* key)
+{
+	if (!g_ready || g_getLobbyData == nullptr || lobby == 0 || key == nullptr)
+		return "";
+
+	void* const matchmaking = CallAccessor(g_matchmakingAccessor);
+
+	if (matchmaking == nullptr)
+		return "";
+
+	const char* value = nullptr;
+
+	__try
+	{
+		value = g_getLobbyData(matchmaking, lobby, key);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{

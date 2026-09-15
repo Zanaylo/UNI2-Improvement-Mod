@@ -723,7 +723,7 @@ bool SoundPacks::Remove(const std::string& id, char* status, int statusSize)
 
 	if (GetFileAttributesA(folder.c_str()) != INVALID_FILE_ATTRIBUTES)
 	{
-		sprintf_s(status, statusSize, "'%s' could not be deleted - a file in it may be open",
+		sprintf_s(status, statusSize, "'%s' could not be deleted. A file in it may be open",
 			id.c_str());
 		return false;
 	}

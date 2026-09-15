@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Overlay/Window/IWindow.h"
 
@@ -16,4 +16,11 @@ private:
 	void DrawStartCapture();
 	void DrawRoomTab();
 	void DrawOpponentsTab();
+	void DrawPrivacyTab();
+	void DrawRoomNamePrivacy();
+	void DrawSpectateTab();
+	void DrawSpectateHost();
+	void DrawSpectateWatch();
+
+	char m_spectateCode[32] = {};
 };

@@ -1,14 +1,3 @@
-"""Blender import and export for French-Bread's `fbxex` stage container (`bg.fbx.bin`).
-
-The codec is verified against the game itself: every one of the 28 shipped stages reads in and
-writes back out byte for byte.
-
-Export is **template based**: the file you imported from is kept and only the parts a scene can
-carry - a mesh node's vertices, its triangles and where it sits - are written back over it. The
-texture table, the material table, the node tree and the animation block come from the template, so
-editing one prop cannot disturb the rest of the stage, and a node you move keeps the motion it had.
-"""
-
 import math
 import os
 import struct
@@ -24,10 +13,10 @@ except ImportError:
     INSIDE_BLENDER = False
 
 bl_info = {
-    "name": "FbxExp stage (.fbx.bin)",
-    "description": "Import and export UNI2 / MBTL / UNI stage models",
-    "author": "UNI2 Improvement Mod",
-    "version": (1, 1, 0),
+    "name": "FbxExp model (.fbx.bin)",
+    "description": "Import and export stage models",
+    "author": "PrimoZanaylo",
+    "version": (0, 5, 0),
     "blender": (4, 0, 0),
     "location": "File > Import/Export",
     "category": "Import-Export",
@@ -101,7 +90,6 @@ MATERIAL_FIELDS = (
 
 
 def put_material_values(material, value):
-    """Hang an entry's own 17 floats on the Blender material so they can be edited."""
     at = 0
 
     for key, count in MATERIAL_FIELDS:
@@ -110,7 +98,6 @@ def put_material_values(material, value):
 
 
 def take_material_values(material):
-    """Read them back, or None when this material never came from a stage."""
     out = []
 
     for key, count in MATERIAL_FIELDS:
@@ -193,7 +180,27 @@ def read_animes(block):
     return out
 
 
+MODEL = "bg.fbx.bin"
+
+
+def resolve(path):
+    if os.path.isfile(path):
+        return path
+
+    if os.path.isdir(path):
+        return os.path.join(path, MODEL)
+
+    head, tail = os.path.split(path)
+
+    return os.path.join(head, MODEL) if not tail else path
+
+
 def read(path):
+    path = resolve(path)
+
+    if not os.path.isfile(path):
+        raise ValueError("No %s here. Pick a stage folder or the file itself" % MODEL)
+
     with open(path, "rb") as handle:
         blob = handle.read()
 
@@ -495,6 +502,7 @@ def stage_name(folder):
 
 
 def do_import(context, path):
+    path = resolve(path)
     model = read(path)
     folder = os.path.dirname(path)
     leaf = stage_name(folder) or os.path.basename(os.path.dirname(path)) or "stage"
@@ -686,7 +694,6 @@ def append_node(model, obj):
 
 
 def apply_materials(model, obj, mesh):
-    """The template owns the material table; an edited Blender material overwrites its entry."""
     for slot, submesh in enumerate(mesh["submeshes"]):
         index = submesh["material"]
 
@@ -769,7 +776,7 @@ def do_export(context, path, template_path):
 if INSIDE_BLENDER:
     class ImportFbxEx(bpy.types.Operator, ImportHelper):
         bl_idname = "import_scene.fbxex"
-        bl_label = "Import FbxExp stage"
+        bl_label = "Import FbxExp model"
         bl_options = {"REGISTER", "UNDO"}
 
         filename_ext = ".bin"
@@ -787,7 +794,7 @@ if INSIDE_BLENDER:
 
     class ExportFbxEx(bpy.types.Operator, ExportHelper):
         bl_idname = "export_scene.fbxex"
-        bl_label = "Export FbxExp stage"
+        bl_label = "Export FbxExp model"
         bl_options = {"REGISTER"}
 
         filename_ext = ".bin"
@@ -795,16 +802,16 @@ if INSIDE_BLENDER:
 
         template: bpy.props.StringProperty(
             name="Template",
-            description="The .bin this scene was imported from. Everything a scene cannot carry - "
-                        "the material table, the node tree, the animation - is kept from it. Leave "
-                        "empty to use the file the scene was imported from",
+            description="The .bin you imported. Blender can't hold the materials, the node tree "
+                        "or the animation, so they come from this file. Leave it empty to use "
+                        "the file you imported",
             default="")
 
         def execute(self, context):
-            template = self.template or context.scene.get("fbxex_source", "")
+            template = resolve(self.template or context.scene.get("fbxex_source", ""))
 
-            if not template or not os.path.exists(template):
-                self.report({"ERROR"}, "no template .bin to write over - set one")
+            if not template or not os.path.isfile(template):
+                self.report({"ERROR"}, "No template .bin to write over. Set one first")
                 return {"CANCELLED"}
 
             try:
@@ -818,10 +825,10 @@ if INSIDE_BLENDER:
             return {"FINISHED"}
 
     def menu_import(self, context):
-        self.layout.operator(ImportFbxEx.bl_idname, text="FbxExp stage (.fbx.bin)")
+        self.layout.operator(ImportFbxEx.bl_idname, text="FbxExp model (.fbx.bin)")
 
     def menu_export(self, context):
-        self.layout.operator(ExportFbxEx.bl_idname, text="FbxExp stage (.fbx.bin)")
+        self.layout.operator(ExportFbxEx.bl_idname, text="FbxExp model (.fbx.bin)")
 
     CLASSES = (ImportFbxEx, ExportFbxEx)
 

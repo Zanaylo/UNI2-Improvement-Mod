@@ -188,6 +188,39 @@ void GatherVoiceMod(const std::string& root, const std::string& relative, const 
 	FindClose(search);
 }
 
+int CopyAll(VoiceMap::Reader& theirs, const std::vector<VoiceMap::Copy>& copies,
+	const std::string& root)
+{
+	int written = 0;
+	int done = 0;
+
+	for (const VoiceMap::Copy& copy : copies)
+	{
+		std::vector<uint8_t> bytes;
+		++done;
+
+		InterlockedExchange(&g_progress,
+			20 + static_cast<long>((done * 70) / static_cast<int>(copies.size())));
+
+		if (!theirs.Read(copy.sourceFolder, copy.sourceFile, bytes) || bytes.empty())
+			continue;
+
+		if (WriteWhole(Combine(root, copy.target), bytes.data(), bytes.size()))
+			++written;
+	}
+
+	return written;
+}
+
+bool ReportTaken(int written, const char* source, int chara)
+{
+	sprintf_s(g_status, "%d sound(s) taken from %s for %s. Converting them to Ogg now", written,
+		source, CharaTables::Name(chara));
+
+	LOG("VoiceImport: %s", g_status);
+	return true;
+}
+
 bool RunVoiceMod(const std::string& folder, int chara)
 {
 	char leaf[16] = {};
@@ -213,24 +246,7 @@ bool RunVoiceMod(const std::string& folder, int chara)
 	RemoveTree(root);
 
 	VoiceMap::LooseReader theirs(folder);
-
-	int written = 0;
-	int done = 0;
-
-	for (const VoiceMap::Copy& copy : copies)
-	{
-		std::vector<uint8_t> bytes;
-		++done;
-
-		InterlockedExchange(&g_progress,
-			20 + static_cast<long>((done * 70) / static_cast<int>(copies.size())));
-
-		if (!theirs.Read(copy.sourceFolder, copy.sourceFile, bytes) || bytes.empty())
-			continue;
-
-		if (WriteWhole(Combine(root, copy.target), bytes.data(), bytes.size()))
-			++written;
-	}
+	const int written = CopyAll(theirs, copies, root);
 
 	if (written == 0)
 	{
@@ -245,11 +261,7 @@ bool RunVoiceMod(const std::string& folder, int chara)
 
 	WriteWhole(Combine(root, "pack.ini"), reinterpret_cast<const uint8_t*>(text), strlen(text));
 
-	sprintf_s(g_status, "%d sound(s) taken from %s for %s - converting them to Ogg now", written,
-		LeafOf(folder).c_str(), CharaTables::Name(chara));
-
-	LOG("VoiceImport: %s", g_status);
-	return true;
+	return ReportTaken(written, LeafOf(folder).c_str(), chara);
 }
 
 bool Run(const std::string& folder, int chara)
@@ -293,23 +305,7 @@ bool Run(const std::string& folder, int chara)
 	const std::string root = PackFolder(chara, *build);
 	RemoveTree(root);
 
-	int written = 0;
-	int done = 0;
-
-	for (const VoiceMap::Copy& copy : copies)
-	{
-		std::vector<uint8_t> bytes;
-		++done;
-
-		InterlockedExchange(&g_progress,
-			20 + static_cast<long>((done * 70) / static_cast<int>(copies.size())));
-
-		if (!theirs->Read(copy.sourceFolder, copy.sourceFile, bytes) || bytes.empty())
-			continue;
-
-		if (WriteWhole(Combine(root, copy.target), bytes.data(), bytes.size()))
-			++written;
-	}
+	const int written = CopyAll(*theirs, copies, root);
 
 	if (written == 0)
 	{
@@ -320,11 +316,7 @@ bool Run(const std::string& folder, int chara)
 
 	WritePackFile(root, chara, *build);
 
-	sprintf_s(g_status, "%d sound(s) taken from %s for %s - converting them to Ogg now", written,
-		build->tag, CharaTables::Name(chara));
-
-	LOG("VoiceImport: %s", g_status);
-	return true;
+	return ReportTaken(written, build->tag, chara);
 }
 
 DWORD WINAPI Worker(void* parameter)

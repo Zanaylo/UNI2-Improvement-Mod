@@ -44,7 +44,7 @@ void UpdateNotifierWindow::DrawProgress(const UpdateInstall::Snapshot& snapshot)
 	}
 
 	if (job.source[0] != '\0')
-		UiText::Muted("%s - from %s", job.step, job.source);
+		UiText::Muted("%s (from %s)", job.step, job.source);
 	else if (job.step[0] != '\0')
 		UiText::Muted("%s", job.step);
 
@@ -118,6 +118,6 @@ void UpdateNotifierWindow::Draw()
 		Close();
 	}
 
-	ImGui::TextDisabled("The game locks the mod while it runs, so an update that is installed by "
-		"hand needs the game closed first.");
+	ImGui::TextDisabled("To install an update by hand, close the game first. The mod files are "
+		"locked while it runs.");
 }

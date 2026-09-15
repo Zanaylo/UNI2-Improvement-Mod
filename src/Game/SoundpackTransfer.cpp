@@ -15,22 +15,22 @@
 namespace {
 
 const char* const kReadme =
-	"UNI2 Improvement Mod - soundpacks\r\n"
-	"=================================\r\n"
+	"UNI2 Improvement Mod soundpacks\r\n"
+	"===============================\r\n"
 	"\r\n"
 	"Extract this over the folder that holds uni2.exe, keeping the folder structure, or import it\r\n"
 	"from the mod: F1 -> Music -> Open music -> Soundpacks -> Import.\r\n"
 	"\r\n"
 	"  UNI2-IM/Mods/Bgm/          the tracks and the slot table the game reads at boot\r\n"
 	"  UNI2-IM/Mods/grpdat/CSel/  the game's own BGM picker list\r\n"
-	"  UNI2-IM/library/           the mod's catalogue - titles, loop points, slot numbers\r\n"
-	"  UNI2-IM/Music/             your own music - MP3, OGG or WAV, loose or a folder per pack\r\n"
+	"  UNI2-IM/library/           the mod's catalogue: titles, loop points, slot numbers\r\n"
+	"  UNI2-IM/Music/             your own music (MP3, OGG or WAV), loose or a folder per pack\r\n"
 	"  UNI2-IM/Soundpacks/        the packs you can pick in the overlay\r\n"
 	"\r\n"
 	"You need the mod installed first; this is only the music.\r\n"
 	"\r\n"
-	"The music is cosmetic. It is not part of the rollback state, so you and your opponent can run\r\n"
-	"different packs, or none, with no risk to a match.\r\n";
+	"Music only changes what you hear. It does not affect the match, so you and your opponent can\r\n"
+	"use different packs, or none.\r\n";
 
 char g_status[256] = "idle";
 volatile long g_busy = 0;
@@ -128,7 +128,7 @@ bool RunImport(const std::string& path)
 
 	InterlockedExchange(&g_finished, 1);
 
-	sprintf_s(g_status, "%s - restart the game so it reads the new bgm.txt", detail);
+	sprintf_s(g_status, "%s. Restart the game so it reads the new bgm.txt", detail);
 	LOG("SoundpackTransfer: %s", g_status);
 	return true;
 }

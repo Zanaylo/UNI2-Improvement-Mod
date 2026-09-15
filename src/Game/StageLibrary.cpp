@@ -180,23 +180,27 @@ std::string Unquoted(const std::string& note, const char* key)
 {
 	std::string value;
 
-	if (!StageArchive::Field(note, key, value))
-		return std::string();
+	return StageArchive::Field(note, key, value) ? StageArchive::Unquoted(value) : std::string();
+}
 
-	if (!value.empty() && value.front() == '"')
-		value = value.substr(1, value.size() - (value.back() == '"' ? 2 : 1));
+bool NoteText(int id, std::string& out)
+{
+	std::vector<uint8_t> blob;
 
-	return value;
+	if (!ReadWholeFile(StageLibrary::NoteOf(id), blob) || blob.empty())
+		return false;
+
+	out.assign(blob.begin(), blob.end());
+	return true;
 }
 
 void ReadNote(StageLibrary::Entry& entry)
 {
-	std::vector<uint8_t> blob;
+	std::string note;
 
-	if (!ReadWholeFile(StageLibrary::NoteOf(entry.id), blob) || blob.empty())
+	if (!NoteText(entry.id, note))
 		return;
 
-	const std::string note(blob.begin(), blob.end());
 	const std::string name = Unquoted(note, "Name");
 	const std::string from = Unquoted(note, "From");
 	const std::string source = Unquoted(note, "Source");
@@ -368,6 +372,28 @@ void Adopt()
 	FindClose(search);
 }
 
+void Rename()
+{
+	for (StageLibrary::Entry& entry : g_entries)
+	{
+		std::string note;
+
+		if (!NoteText(entry.id, note))
+			continue;
+
+		const std::string name = Unquoted(note, "Name");
+
+		if (name.empty() || name == entry.name)
+			continue;
+
+		LOG("StageLibrary: bg%03d is '%s' now, as its stage.txt says, not '%s'", entry.id,
+			name.c_str(), entry.name.c_str());
+
+		entry.name = name;
+		Save(entry);
+	}
+}
+
 }
 
 void StageLibrary::Load()
@@ -382,6 +408,7 @@ void StageLibrary::Load()
 
 	Prune();
 	Adopt();
+	Rename();
 
 	std::sort(g_entries.begin(), g_entries.end(),
 		[](const Entry& a, const Entry& b) { return a.id < b.id; });

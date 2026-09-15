@@ -1,10 +1,14 @@
 ﻿#include "D3D9/DeviceHooks.h"
 
 #include "Core/Profiler.h"
+#include "Core/crashdump.h"
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/CharaSounds.h"
+#include "Game/BgmControl.h"
+#include "Game/SubtitleWatch.h"
+#include "D3D9/GraphicsWrapper.h"
 #include "Game/GameOffsets.h"
 #include "D3D9/PresentTuning.h"
 #include "D3D9/Post/SceneUpscale.h"
@@ -26,6 +30,10 @@
 #include "Game/MusicRefresh.h"
 #include "Game/OstImport.h"
 #include "Game/BgGrade.h"
+#include "Game/BgClear.h"
+#include "Game/BgMipmaps.h"
+#include "Game/StagePlacement.h"
+#include "Game/BgVertexProbe.h"
 #include "Game/BattleCockpit.h"
 #include "Game/CharaTint.h"
 #include "Game/StageCards.h"
@@ -42,6 +50,7 @@
 #include "Game/ModFiles.h"
 #include "Training/StageColor.h"
 #include "D3D9/FrozenFrame.h"
+#include "Network/ModChannel.h"
 #include "Network/PaletteShare.h"
 #include "Web/UpdateInstall.h"
 #include "Palette/PaletteBinder.h"
@@ -248,19 +257,24 @@ HRESULT STDMETHODCALLTYPE HookedClear(IDirect3DDevice9* device, DWORD count, con
 	const bool stillLearning = g_clearSeenCount < kMaxClearSignatures &&
 		g_clearLearnFrames < kClearLearnFrames;
 
-	if (device == g_device && (flags & D3DCLEAR_TARGET) != 0 && count == 0 &&
-		(recolouring || stillLearning))
+	if (device == g_device && (flags & D3DCLEAR_TARGET) != 0)
 	{
-		unsigned width = 0;
-		unsigned height = 0;
-		bool isBackBuffer = false;
-		const bool fullFrame = TargetIsFullFrame(device, width, height, isBackBuffer);
+		if (count == 0 && (recolouring || stillLearning))
+		{
+			unsigned width = 0;
+			unsigned height = 0;
+			bool isBackBuffer = false;
+			const bool fullFrame = TargetIsFullFrame(device, width, height, isBackBuffer);
 
-		if (stillLearning)
-			NoteClear({ flags, color, width, height, isBackBuffer });
+			if (stillLearning)
+				NoteClear({ flags, color, width, height, isBackBuffer });
 
-		if (recolouring && fullFrame)
-			color = StageColor::GetClearColor();
+			if (recolouring && fullFrame)
+				color = StageColor::GetClearColor();
+		}
+
+		if (!recolouring)
+			color = BgClear::Behind(color);
 	}
 
 	return oClear(device, count, rects, flags, color, z, stencil);
@@ -286,6 +300,7 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
 	UINT startIndex, UINT primitiveCount)
 {
 	PaletteDrawProbe::OnDraw();
+	BgVertexProbe::OnDraw(device);
 	return oDrawIndexedPrimitive(device, type, baseVertexIndex, minVertexIndex, numVertices,
 		startIndex, primitiveCount);
 }
@@ -306,6 +321,58 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitiveUP(IDirect3DDevice9* device,
 		indexData, indexFormat, vertexData, stride);
 }
 
+constexpr int kOverlayRetryFrames = 120;
+constexpr int kOverlayRetryAttempts = 10;
+
+int g_overlayRetryIn = kOverlayRetryFrames;
+int g_overlayAttempts = 0;
+
+HWND ResolveGameWindow(IDirect3DDevice9* device)
+{
+	if (g_gameProc.hWndGame != nullptr)
+		return g_gameProc.hWndGame;
+
+	uint32_t handle = 0;
+
+	if (TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kWindowHandle)), handle) &&
+		handle != 0)
+	{
+		return reinterpret_cast<HWND>(static_cast<uintptr_t>(handle));
+	}
+
+	D3DDEVICE_CREATION_PARAMETERS creation = {};
+
+	if (SUCCEEDED(device->GetCreationParameters(&creation)) && creation.hFocusWindow != nullptr)
+		return creation.hFocusWindow;
+
+	return g_presentParameters.hDeviceWindow;
+}
+
+void RetryOverlay(IDirect3DDevice9* device)
+{
+	WindowManager& manager = WindowManager::GetInstance();
+
+	if (manager.IsInitialized() || g_overlayAttempts >= kOverlayRetryAttempts)
+		return;
+
+	if (--g_overlayRetryIn > 0)
+		return;
+
+	g_overlayRetryIn = kOverlayRetryFrames;
+	++g_overlayAttempts;
+
+	const HWND window = ResolveGameWindow(device);
+
+	LOG("The overlay is not up, attempt %d of %d with window 0x%p", g_overlayAttempts,
+		kOverlayRetryAttempts, static_cast<void*>(window));
+
+	if (window == nullptr)
+		return;
+
+	g_gameProc.hWndGame = window;
+	manager.Initialize(window, device);
+}
+
 bool FrozenFrameCouldBeReplayed()
 {
 	return FrameStepper::IsImplemented() && GameState::AllowsTrainingTools() &&
@@ -317,6 +384,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 {
 	InterlockedIncrement(&g_presentCount);
 
+	GraphicsWrapper::Detect(device);
 	SceneWatch::OnFrame();
 
 	if (!ScreenDirector::kOnHold)
@@ -331,6 +399,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 		{
 			Profiler::Scope scope(Profiler::Section_PresentOnline);
+			KeepCrashHandler();
 			OnlineState::Update();
 			NetplayTick::Update();
 			GamePatches::Update();
@@ -343,6 +412,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			OstImport::Update();
 			StageImport::Update();
 			BgGrade::Update();
+			BgClear::Update();
+			BgMipmaps::Assert(device);
+			StagePlacement::Update();
 			BattleCockpit::Update();
 			CharaTint::Update();
 			StageCards::OnFrame();
@@ -353,6 +425,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 				MusicRefresh::Reindex();
 
 			CharaSounds::Update();
+			SubtitleWatch::Update();
+			BgmControl::OnFrame();
 
 			if (SoundPacks::ConsumeScanRequest())
 				SoundPacks::Scan();
@@ -388,6 +462,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 		{
 			Profiler::Scope scope(Profiler::Section_PresentOverlay);
+			RetryOverlay(device);
 			WindowManager::GetInstance().Render();
 		}
 	}
@@ -420,6 +495,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	{
 		Profiler::Scope scope(Profiler::Section_PresentShare);
+		ModChannel::Pump();
 		PaletteShare::OnFrame();
 	}
 

@@ -1,9 +1,11 @@
-#include "Game/StageArchive.h"
+﻿#include "Game/StageArchive.h"
 
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/FbGameFolder.h"
 #include "Game/FbxExLocal.h"
+#include "Game/BbtagCrypt.h"
+#include "Game/BbtagStage.h"
 #include "Game/FbxToFbxEx.h"
 #include "Game/MbtlCipher.h"
 #include "Game/UnielCipher.h"
@@ -726,6 +728,73 @@ bool KeyAt(const std::string& text, size_t at, const char* key, size_t length)
 		isalnum(static_cast<unsigned char>(after)) == 0 && after != '_';
 }
 
+size_t SkipComment(const std::string& text, size_t at)
+{
+	if (text[at] == '"')
+	{
+		const size_t close = text.find_first_of("\"\n", at + 1);
+		return close == std::string::npos ? text.size() : close;
+	}
+
+	if (text[at] != '/' || at + 1 >= text.size())
+		return at;
+
+	if (text[at + 1] == '/')
+	{
+		const size_t line = text.find('\n', at);
+		return line == std::string::npos ? text.size() : line;
+	}
+
+	if (text[at + 1] != '*')
+		return at;
+
+	const size_t close = text.find("*/", at + 2);
+	return close == std::string::npos ? text.size() : close + 1;
+}
+
+bool IsKeyByte(char c)
+{
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+bool IsKeyStart(const std::string& text, size_t at)
+{
+	return IsKeyByte(text[at]) && (text[at] < '0' || text[at] > '9') &&
+		(at == 0 || !IsKeyByte(text[at - 1]));
+}
+
+size_t PairStart(const std::string& block, size_t after)
+{
+	const size_t anyLine = Skip(block, after, " \t\r\n");
+
+	if (anyLine < block.size() && (block[anyLine] == '[' || block[anyLine] == '{'))
+		return anyLine;
+
+	return Skip(block, after, " \t");
+}
+
+size_t PairEnd(const std::string& block, size_t value)
+{
+	if (value >= block.size())
+		return value;
+
+	if (block[value] == '{')
+		return StageArchive::MatchPair(block, value);
+
+	if (block[value] == '"')
+	{
+		const size_t close = block.find('"', value + 1);
+		return close == std::string::npos ? std::string::npos : close + 1;
+	}
+
+	size_t end = ValueEnd(block, value);
+
+	while (end != std::string::npos && end > value && (block[end - 1] == ' ' || block[end - 1] == '\t'))
+		--end;
+
+	return end;
+}
+
 class FolderSource : public StageArchive::Source
 {
 public:
@@ -1058,6 +1127,386 @@ void UnielSource::Decode(std::vector<uint8_t>& data) const
 	UnielCipher::Decrypt(data);
 }
 
+class BbtagSource : public StageArchive::Source
+{
+public:
+	explicit BbtagSource(const std::string& folder);
+
+	void Stages(std::vector<StageArchive::Stage>& out) override;
+	void Files(const std::string& stage, std::vector<std::string>& out) override;
+	bool Read(const std::string& stage, const std::string& file,
+		std::vector<uint8_t>& out) override;
+	bool BgList(std::string& out) override;
+
+	bool Flow(const std::string& stage, std::vector<float>& out);
+	bool Lamps(const std::string& stage, std::vector<BbtagScript::Lamp>& out) override;
+	bool Fading(const std::string& stage) override;
+
+	bool IsOpen() const { return !m_stage.empty(); }
+
+private:
+	struct Held
+	{
+		std::string relative;
+		uint32_t bytes;
+	};
+
+	void Sweep();
+	void Listed();
+	void Hashed();
+	bool Whole(const std::string& relative, std::vector<uint8_t>& out) const;
+	const std::string* Encrypted(const std::string& relative) const;
+	bool Built(const std::string& stage);
+
+	std::string m_root;
+	std::map<std::string, Held> m_stage;
+	std::map<std::string, std::string> m_hashed;
+	std::string m_ready;
+	BbtagStage::Result m_result;
+};
+
+#include "Game/BbtagPaths.inc"
+
+std::string StageOf(const std::string& stem)
+{
+	const size_t slash = stem.find_last_of('/');
+
+	return slash == std::string::npos ? stem : stem.substr(slash + 1);
+}
+
+std::string Readable(const std::string& stage)
+{
+	const std::string body = stage.compare(0, 3, "bg_") == 0 ? stage.substr(3) : stage;
+	std::string out;
+	bool lead = true;
+
+	for (char letter : body)
+	{
+		if (letter == '_')
+		{
+			out.push_back(' ');
+			lead = true;
+			continue;
+		}
+
+		if (lead && letter >= 'a' && letter <= 'z')
+			out.push_back(static_cast<char>(letter - 'a' + 'A'));
+		else
+			out.push_back(letter);
+
+		lead = false;
+	}
+
+	return out;
+}
+
+uint32_t BytesOf(const std::string& path)
+{
+	WIN32_FILE_ATTRIBUTE_DATA info = {};
+
+	if (GetFileAttributesExA(path.c_str(), GetFileExInfoStandard, &info) == 0)
+		return 0;
+
+	return info.nFileSizeLow;
+}
+
+BbtagSource::BbtagSource(const std::string& folder)
+	: m_root(folder)
+{
+	Sweep();
+
+	if (m_stage.empty())
+		Listed();
+}
+
+void BbtagSource::Sweep()
+{
+	const std::string bg = Combine(Combine(m_root, "data"), "bg");
+
+	WIN32_FIND_DATAA group = {};
+	const HANDLE walk = FindFirstFileA(Combine(bg, "*").c_str(), &group);
+
+	if (walk == INVALID_HANDLE_VALUE)
+		return;
+
+	do
+	{
+		if ((group.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+			continue;
+
+		const std::string name = group.cFileName;
+
+		if (name == "." || name == "..")
+			continue;
+
+		WIN32_FIND_DATAA found = {};
+		const HANDLE inside = FindFirstFileA(Combine(Combine(bg, name), "*_vtx.pac").c_str(),
+			&found);
+
+		if (inside == INVALID_HANDLE_VALUE)
+			continue;
+
+		do
+		{
+			const std::string leaf = Lowered(found.cFileName);
+			const std::string tail = "_vtx.pac";
+
+			if (leaf.size() <= tail.size()
+				|| leaf.compare(leaf.size() - tail.size(), tail.size(), tail) != 0)
+			{
+				continue;
+			}
+
+			const std::string stage = leaf.substr(0, leaf.size() - tail.size());
+			Held held;
+			held.relative = "data/bg/" + Lowered(name) + "/" + stage;
+			held.bytes = found.nFileSizeLow
+				+ BytesOf(Combine(Combine(bg, name), stage + ".pac"))
+				+ BytesOf(Combine(Combine(bg, name), stage + "_img.pac"));
+
+			m_stage[stage] = held;
+		}
+		while (FindNextFileA(inside, &found) != 0);
+
+		FindClose(inside);
+	}
+	while (FindNextFileA(walk, &group) != 0);
+
+	FindClose(walk);
+}
+
+void BbtagSource::Listed()
+{
+	Hashed();
+
+	if (m_hashed.empty())
+		return;
+
+	for (const char* stem : kBbtagStages)
+	{
+		const std::string relative = std::string("data/bg/") + stem;
+		const std::string* const geometry = Encrypted(relative + "_vtx.pac");
+
+		if (geometry == nullptr)
+			continue;
+
+		Held held;
+		held.relative = relative;
+		held.bytes = BytesOf(*geometry);
+
+		const std::string* const scene = Encrypted(relative + ".pac");
+		const std::string* const art = Encrypted(relative + "_img.pac");
+
+		held.bytes += scene == nullptr ? 0 : BytesOf(*scene);
+		held.bytes += art == nullptr ? 0 : BytesOf(*art);
+
+		m_stage[StageOf(stem)] = held;
+	}
+}
+
+void BbtagSource::Hashed()
+{
+	std::vector<std::string> pending;
+	pending.push_back(Combine(m_root, "data"));
+
+	while (!pending.empty() && m_hashed.size() < 200000)
+	{
+		const std::string folder = pending.back();
+		pending.pop_back();
+
+		WIN32_FIND_DATAA found = {};
+		const HANDLE walk = FindFirstFileA(Combine(folder, "*").c_str(), &found);
+
+		if (walk == INVALID_HANDLE_VALUE)
+			continue;
+
+		do
+		{
+			const std::string name = found.cFileName;
+
+			if (name == "." || name == "..")
+				continue;
+
+			if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+			{
+				pending.push_back(Combine(folder, name));
+				continue;
+			}
+
+			if (name.size() != 32)
+				continue;
+
+			m_hashed[Lowered(name)] = Combine(folder, name);
+		}
+		while (FindNextFileA(walk, &found) != 0);
+
+		FindClose(walk);
+	}
+}
+
+const std::string* BbtagSource::Encrypted(const std::string& relative) const
+{
+	const std::map<std::string, std::string>::const_iterator found =
+		m_hashed.find(BbtagCrypt::NameOf(relative));
+
+	return found == m_hashed.end() ? nullptr : &found->second;
+}
+
+bool BbtagSource::Whole(const std::string& relative, std::vector<uint8_t>& out) const
+{
+	out.clear();
+
+	std::string plain = relative;
+
+	for (char& letter : plain)
+	{
+		if (letter == '/')
+			letter = '\\';
+	}
+
+	if (ReadWholeFile(Combine(m_root, plain), out))
+		return true;
+
+	const std::string* const hashed = Encrypted(relative);
+
+	if (hashed == nullptr || !ReadWholeFile(*hashed, out))
+		return false;
+
+	BbtagCrypt::Decrypt(Lowered(BbtagCrypt::NameOf(relative)), out);
+	return true;
+}
+
+bool BbtagSource::Built(const std::string& stage)
+{
+	if (m_ready == stage)
+		return !m_result.model.empty();
+
+	m_ready.clear();
+	m_result.model.clear();
+	m_result.images.clear();
+
+	const std::map<std::string, Held>::const_iterator held = m_stage.find(Lowered(stage));
+
+	if (held == m_stage.end())
+		return false;
+
+	BbtagStage::Source source;
+
+	if (!Whole(held->second.relative + "_vtx.pac", source.geometry))
+		return false;
+
+	Whole(held->second.relative + ".pac", source.scene);
+	Whole(held->second.relative + "_img.pac", source.art);
+
+	if (!BbtagStage::Convert(source, m_result))
+	{
+		LOG("StageArchive: %s could not be read as a BBTAG stage", stage.c_str());
+		return false;
+	}
+
+	m_ready = stage;
+	return true;
+}
+
+void BbtagSource::Stages(std::vector<StageArchive::Stage>& out)
+{
+	out.clear();
+
+	for (const std::pair<const std::string, Held>& held : m_stage)
+	{
+		StageArchive::Stage stage;
+		stage.folder = held.first;
+		stage.name = Readable(held.first);
+		stage.bytes = held.second.bytes;
+
+		out.push_back(stage);
+	}
+}
+
+void BbtagSource::Files(const std::string& stage, std::vector<std::string>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return;
+
+	out.push_back(kModel);
+
+	for (const std::pair<const std::string, std::vector<uint8_t> >& image : m_result.images)
+		out.push_back(image.first);
+}
+
+bool BbtagSource::Read(const std::string& stage, const std::string& file,
+	std::vector<uint8_t>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	if (_stricmp(file.c_str(), kModel) == 0)
+	{
+		out = m_result.model;
+		return true;
+	}
+
+	const BbtagStage::Images::const_iterator image = m_result.images.find(Lowered(file));
+
+	if (image == m_result.images.end())
+		return false;
+
+	out = image->second;
+	return true;
+}
+
+bool BbtagSource::Flow(const std::string& stage, std::vector<float>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	out = m_result.flow;
+	return !out.empty();
+}
+
+bool BbtagSource::Lamps(const std::string& stage, std::vector<BbtagScript::Lamp>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	out = m_result.lamps;
+	return !out.empty();
+}
+
+bool BbtagSource::Fading(const std::string& stage)
+{
+	return Built(stage) && m_result.fading;
+}
+
+bool BbtagSource::BgList(std::string& out)
+{
+	out.clear();
+
+	int index = 0;
+
+	for (const std::pair<const std::string, Held>& held : m_stage)
+	{
+		char header[64] = {};
+		sprintf_s(header, "\tBg_%03d =\r\n\t{\r\n\t\tName = \"", index++);
+
+		out += header;
+		out += Readable(held.first);
+		out += "\",\r\n\t\tDataFile = \"" + held.first + "\",\r\n\r\n";
+		out += BbtagStage::Block();
+		out += "\t}\r\n";
+	}
+
+	return !out.empty();
+}
+
 template <typename T>
 StageArchive::Source* Opened(const char* folder)
 {
@@ -1090,6 +1539,10 @@ StageArchive::Source* StageArchive::Open(const char* folder)
 
 	case FbGameFolder::Game_DFCI:
 		return Opened<DfciSource>(folder);
+
+	case FbGameFolder::Game_BBTAG:
+	case FbGameFolder::Game_BBCF:
+		return Opened<BbtagSource>(folder);
 
 	default:
 		return nullptr;
@@ -1143,52 +1596,73 @@ size_t StageArchive::MatchPair(const std::string& text, size_t open)
 
 bool StageArchive::Block(const std::string& bgList, const std::string& stage, std::string& out)
 {
+	const std::string named = "\"" + stage + "\"";
 	const int number = NumberOf(stage);
 
-	if (number < 0)
-		return false;
-
-	for (size_t at = bgList.find("Bg_"); at != std::string::npos; at = bgList.find("Bg_", at + 3))
+	for (int pass = 0; pass < 2; ++pass)
 	{
-		size_t digits = at + 3;
-
-		while (digits < bgList.size() && isdigit(static_cast<unsigned char>(bgList[digits])) != 0)
-			++digits;
-
-		if (digits == at + 3 || atoi(bgList.c_str() + at + 3) != number)
-			continue;
-
-		size_t open = digits;
-		int equals = 0;
-
-		while (open < bgList.size() && bgList[open] != '{')
-		{
-			const char c = bgList[open];
-
-			if (c == '=')
-				++equals;
-			else if (c != ' ' && c != '\t' && c != '\r' && c != '\n')
-				break;
-
-			++open;
-		}
-
-		if (open >= bgList.size() || bgList[open] != '{' || equals != 1)
-			continue;
-
-		const size_t end = MatchPair(bgList, open);
-
-		if (end == std::string::npos)
+		if (pass == 1 && number < 0)
 			return false;
 
-		out = bgList.substr(open + 1, end - open - 2);
-		return true;
+		for (size_t at = bgList.find("Bg_"); at != std::string::npos;
+			at = bgList.find("Bg_", at + 3))
+		{
+			size_t digits = at + 3;
+
+			while (digits < bgList.size()
+				&& isdigit(static_cast<unsigned char>(bgList[digits])) != 0)
+			{
+				++digits;
+			}
+
+			if (digits == at + 3)
+				continue;
+
+			if (pass == 1 && atoi(bgList.c_str() + at + 3) != number)
+				continue;
+
+			size_t open = digits;
+			int equals = 0;
+
+			while (open < bgList.size() && bgList[open] != '{')
+			{
+				const char c = bgList[open];
+
+				if (c == '=')
+					++equals;
+				else if (c != ' ' && c != '\t' && c != '\r' && c != '\n')
+					break;
+
+				++open;
+			}
+
+			if (open >= bgList.size() || bgList[open] != '{' || equals != 1)
+				continue;
+
+			const size_t end = MatchPair(bgList, open);
+
+			if (end == std::string::npos)
+				return false;
+
+			const std::string body = bgList.substr(open + 1, end - open - 2);
+
+			if (pass == 0)
+			{
+				std::string data;
+
+				if (!Field(body, "DataFile", data) || data != named)
+					continue;
+			}
+
+			out = body;
+			return true;
+		}
 	}
 
 	return false;
 }
 
-bool StageArchive::Field(const std::string& block, const char* key, std::string& out)
+bool StageArchive::FieldSpan(const std::string& block, const char* key, size_t& valueAt, size_t& valueEnd)
 {
 	const size_t length = strlen(key);
 
@@ -1202,21 +1676,105 @@ bool StageArchive::Field(const std::string& block, const char* key, std::string&
 		if (equals >= block.size() || block[equals] != '=')
 			continue;
 
-		const size_t value = ValueStart(block, equals + 1);
-		const size_t end = ValueEnd(block, value);
+		valueAt = ValueStart(block, equals + 1);
+		valueEnd = ValueEnd(block, valueAt);
 
-		if (end == std::string::npos)
+		if (valueEnd == std::string::npos)
 			return false;
 
-		out = block.substr(value, end - value);
+		while (valueEnd > valueAt && (block[valueEnd - 1] == ' ' || block[valueEnd - 1] == '\t'))
+			--valueEnd;
 
-		while (!out.empty() && (out.back() == ' ' || out.back() == '\t'))
-			out.pop_back();
-
-		return !out.empty();
+		return valueEnd > valueAt;
 	}
 
 	return false;
+}
+
+bool StageArchive::Field(const std::string& block, const char* key, std::string& out)
+{
+	size_t valueAt = 0;
+	size_t valueEnd = 0;
+
+	if (!FieldSpan(block, key, valueAt, valueEnd))
+		return false;
+
+	out = block.substr(valueAt, valueEnd - valueAt);
+	return true;
+}
+
+void StageArchive::Pairs(const std::string& block, std::vector<Pair>& out)
+{
+	out.clear();
+
+	for (size_t at = 0; at < block.size(); ++at)
+	{
+		const uint8_t byte = static_cast<uint8_t>(block[at]);
+
+		if (LeadByte(byte))
+		{
+			++at;
+			continue;
+		}
+
+		const size_t skipped = SkipComment(block, at);
+
+		if (skipped != at)
+		{
+			at = skipped;
+			continue;
+		}
+
+		if (byte == '{' || byte == '[')
+		{
+			const size_t close = MatchPair(block, at);
+
+			if (close == std::string::npos)
+				return;
+
+			at = close - 1;
+			continue;
+		}
+
+		if (!IsKeyStart(block, at))
+			continue;
+
+		size_t end = at;
+
+		while (end < block.size() && IsKeyByte(block[end]))
+			++end;
+
+		const size_t equals = Skip(block, end, " \t");
+
+		if (equals >= block.size() || block[equals] != '=')
+		{
+			at = end - 1;
+			continue;
+		}
+
+		const size_t valueAt = PairStart(block, equals + 1);
+		const size_t valueEnd = PairEnd(block, valueAt);
+
+		if (valueEnd == std::string::npos)
+			return;
+
+		if (valueEnd <= valueAt)
+		{
+			at = valueAt - 1;
+			continue;
+		}
+
+		out.push_back({ block.substr(at, end - at), block.substr(valueAt, valueEnd - valueAt) });
+		at = valueEnd - 1;
+	}
+}
+
+std::string StageArchive::Unquoted(const std::string& value)
+{
+	if (value.empty() || value.front() != '"')
+		return value;
+
+	return value.substr(1, value.size() - (value.size() > 1 && value.back() == '"' ? 2 : 1));
 }
 
 int StageArchive::CardIndex(const std::string& bgList, const std::string& stage)

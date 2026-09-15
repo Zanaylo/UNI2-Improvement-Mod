@@ -190,8 +190,8 @@ bool CompileSelected(IDirect3DDevice9* device)
 			errors != nullptr ? static_cast<const char*>(errors->GetBufferPointer())
 			: "no message",
 			ShaderSource::IsNative(format)
-				? "" : " - the translated HLSL is in the Translated folder, and the line numbers "
-					"are its own");
+				? "" : " (line numbers refer to the translated copy in the Translated "
+					"folder)");
 
 		LOG("[ShaderPack] %s", g_status);
 
@@ -215,7 +215,7 @@ bool CompileSelected(IDirect3DDevice9* device)
 	if (FAILED(created))
 	{
 		g_shader = nullptr;
-		Report("the device refused %s - it needs pixel shader 3.0", name.c_str());
+		Report("the device refused %s (it needs pixel shader 3.0)", name.c_str());
 		LOG("[ShaderPack] %s", g_status);
 		return false;
 	}
@@ -223,9 +223,9 @@ bool CompileSelected(IDirect3DDevice9* device)
 	g_compiled = g_selected;
 
 	if (ShaderSource::IsNative(format))
-		Report("%s compiled and running", name.c_str());
+		Report("%s is running", name.c_str());
 	else
-		Report("%s compiled and running - %s", name.c_str(), note.c_str());
+		Report("%s is running (%s)", name.c_str(), note.c_str());
 	LOG("[ShaderPack] %s", g_status);
 	return true;
 }
@@ -259,107 +259,103 @@ void SaveTranslated(const std::string& name, const std::string& hlsl)
 void WriteReadme()
 {
 	const char* const text =
-		"UNI2 Improvement Mod - shader packs\r\n"
+		"UNI2 Improvement Mod: shader packs\r\n"
 		"\r\n"
-		"A shader pack is one file in this folder that runs over the finished frame, last in the chain, after\r\n"
-		"everything else the mod draws. This file explains how to install one, where to get them, and what to\r\n"
-		"do when one does not work.\r\n"
+		"A shader pack is a single file in this folder. It runs over the finished frame, after everything\r\n"
+		"else the mod draws. This file explains how to install one and what to do when one does not work.\r\n"
 		"\r\n"
 		"\r\n"
 		"HOW TO INSTALL A SHADER\r\n"
 		"\r\n"
-		"  1. Put the file in this folder. That is the folder this README is in:\r\n"
+		"  1. Put the file in this folder (the one this README is in):\r\n"
 		"\r\n"
 		"         <the game folder>\\UNI2-IM\\Shaders\r\n"
 		"\r\n"
-		"     Do not put it in a subfolder - only the top of this folder is looked at. The name does not\r\n"
-		"     matter, only the extension.\r\n"
+		"     Subfolders are not scanned. The file name does not matter, only the extension.\r\n"
 		"\r\n"
 		"  2. Start the game, open the mod overlay (F1 by default) and go to Graphics -> Shaders.\r\n"
 		"\r\n"
-		"  3. At the bottom of that tab is \"Shader pack\". If the game was already running when you dropped\r\n"
-		"     the file in, press Rescan. Then open the drop down and pick your file.\r\n"
+		"  3. Find \"Shader pack\" at the bottom of that tab. If the game was already running when you\r\n"
+		"     added the file, press Rescan. Then pick your file from the drop down.\r\n"
 		"\r\n"
-		"  4. It is compiled the moment you pick it. The line under the drop down tells you what happened:\r\n"
+		"  4. The shader compiles as soon as you pick it. The line under the drop down shows the result:\r\n"
 		"\r\n"
-		"         crt-lottes.slang compiled and running - GLSL fragment stage, one pass\r\n"
+		"         crt-lottes.slang is running (GLSL fragment stage, one pass)\r\n"
 		"\r\n"
-		"     and the picture changes. To turn it off again, pick \"Off\" in the same drop down.\r\n"
+		"     and the picture changes. To turn it off, pick \"Off\" in the same drop down.\r\n"
 		"\r\n"
-		"  5. The pick is remembered in UNI2_IM.ini as [Graphics] ShaderPack, so it comes back next launch.\r\n"
+		"  5. Your pick is saved in UNI2_IM.ini as [Graphics] ShaderPack and comes back next launch.\r\n"
 		"\r\n"
-		"Nothing is installed, unpacked or registered. A shader is one file; deleting it removes it.\r\n"
+		"Nothing gets installed, unpacked or registered. To remove a shader, delete its file.\r\n"
 		"\r\n"
 		"\r\n"
-		"WHICH FILES ARE TAKEN\r\n"
+		"SUPPORTED FILES\r\n"
 		"\r\n"
-		"  .hlsl .ps      HLSL. Compiled exactly as written\r\n"
+		"  .hlsl .ps      HLSL, compiled as written\r\n"
 		"  .fx            effect format: HLSL with annotations and techniques\r\n"
 		"  .slang         Vulkan GLSL with #pragma parameters\r\n"
 		"  .glsl          OpenGL GLSL, modern or legacy\r\n"
-		"  .frag .fsh     the same GLSL path\r\n"
+		"  .frag .fsh     also GLSL\r\n"
 		"\r\n"
-		"Everything except .hlsl and .ps is TRANSLATED into HLSL when you pick it, and the translation is\r\n"
-		"written next to it as:\r\n"
+		"Every format except .hlsl and .ps is TRANSLATED into HLSL when you pick it. The translation is\r\n"
+		"saved as:\r\n"
 		"\r\n"
 		"    UNI2-IM\\Shaders\\Translated\\<the file name>.hlsl\r\n"
 		"\r\n"
-		"That file is what the compiler was actually given. It is worth opening at least once.\r\n"
+		"That is the file the compiler actually gets. It is worth opening at least once.\r\n"
 		"\r\n"
 		"\r\n"
-		"WHY IT HAS TO BE TRANSLATED\r\n"
+		"WHY SHADERS ARE TRANSLATED\r\n"
 		"\r\n"
-		"This game is Direct3D 9. A shader that runs here has to be HLSL compiled to pixel shader 3.0, and\r\n"
-		"there is one slot for it, over the finished frame.\r\n"
+		"This game uses Direct3D 9. It can only run HLSL compiled to pixel shader 3.0, and there is one\r\n"
+		"slot for it, over the finished frame.\r\n"
 		"\r\n"
-		"  - A .fx is HLSL, but it is not a pixel shader: it is a small program describing uniforms,\r\n"
-		"    annotations, textures, samplers, and techniques made of passes, and something has to resolve\r\n"
-		"    that before anything is compiled. The maths inside the pass is fine; everything around it\r\n"
-		"    has to be answered by something.\r\n"
-		"  - A .slang is Vulkan GLSL, and a .glsl is OpenGL GLSL. Direct3D cannot compile GLSL at all,\r\n"
-		"    and a preset usually chains several passes together.\r\n"
+		"  * A .fx file is HLSL, but not a plain pixel shader. It also describes uniforms, annotations,\r\n"
+		"    textures, samplers and techniques made of passes, and all of that has to be resolved\r\n"
+		"    before anything compiles. The maths inside the pass is fine as it is.\r\n"
+		"  * A .slang file is Vulkan GLSL and a .glsl file is OpenGL GLSL. Direct3D cannot compile GLSL\r\n"
+		"    at all, and a preset usually chains several passes.\r\n"
 		"\r\n"
-		"So neither can be handed to D3D9 as it stands. The mod rewrites it instead: uniforms become their\r\n"
-		"default values, samplers become the frame, the resolution and time uniforms become the two\r\n"
-		"constants below, and the GLSL is rewritten as HLSL. The alternative is shipping a full effect\r\n"
-		"runtime - a GLSL compiler, multi-pass rendering, its own render targets - which is not a\r\n"
-		"training mod.\r\n"
+		"So neither can be given to Direct3D 9 as it is, and the mod rewrites them: uniforms become their\r\n"
+		"default values, samplers read the frame, resolution and time uniforms use the two constants\r\n"
+		"listed below, and GLSL is rewritten as HLSL. The other option would be a full effect runtime (a\r\n"
+		"GLSL compiler, multi-pass rendering, its own render targets), which is too much for a training\r\n"
+		"mod.\r\n"
 		"\r\n"
-		"That is also the limit. ONE PASS OVER THE FINISHED FRAME IS THE WHOLE BUDGET. A shader that wants a\r\n"
-		"second pass, a lookup texture, the depth buffer or the previous frame will translate and then be\r\n"
-		"wrong. The big multi pass CRT shaders are exactly that, and they will not survive the trip. The\r\n"
-		"single pass ones do.\r\n"
+		"That is also the limit: ONE PASS OVER THE FINISHED FRAME. A shader that needs a second pass, a\r\n"
+		"lookup texture, the depth buffer or the previous frame will translate but look wrong. The big\r\n"
+		"multi-pass CRT shaders are like that and will not work. The single pass ones do.\r\n"
 		"\r\n"
 		"\r\n"
 		"WHEN IT DOES NOT WORK\r\n"
 		"\r\n"
-		"The tab prints the compiler's own error. When the file was translated it also says that the line\r\n"
-		"numbers belong to the translated copy, so:\r\n"
+		"The tab shows the compiler's error. For a translated file, the line numbers refer to the\r\n"
+		"translated copy, so:\r\n"
 		"\r\n"
 		"  1. Open UNI2-IM\\Shaders\\Translated\\<your file>.hlsl.\r\n"
-		"  2. Go to the line the error names. The top of that file is the block of #define lines the mod\r\n"
-		"     added, so you can see exactly what each of the original's uniforms was replaced with.\r\n"
-		"  3. Fix it there, save the fixed file into the Shaders folder as a .hlsl of your own, and pick\r\n"
-		"     that instead. It is compiled as it stands from then on.\r\n"
+		"  2. Go to the line in the error. The #define lines at the top were added by the mod and show\r\n"
+		"     what each uniform of the original was replaced with.\r\n"
+		"  3. Fix it there, save it into the Shaders folder as your own .hlsl file, and pick that one\r\n"
+		"     instead. From then on it is compiled as written.\r\n"
 		"\r\n"
-		"The usual causes, in order:\r\n"
+		"Common causes, most likely first:\r\n"
 		"\r\n"
-		"  - the shader wanted a second pass or a texture, and one of them is now a constant 0\r\n"
-		"  - it used a GLSL feature with no HLSL equivalent\r\n"
-		"  - a #include the mod dropped defined something the shader needed\r\n"
+		"  * the shader needs a second pass or a texture, which is now a constant 0\r\n"
+		"  * it uses a GLSL feature that HLSL does not have\r\n"
+		"  * a #include the mod removed defined something the shader needs\r\n"
 		"\r\n"
 		"\r\n"
-		"WHAT THE MOD BINDS\r\n"
+		"WHAT THE MOD PROVIDES\r\n"
 		"\r\n"
 		"  sampler2D Frame  : register(s0);   the frame so far\r\n"
 		"  float4 FrameSize : register(c0);   xy = 1/width, 1/height   zw = width, height\r\n"
 		"  float4 FrameTime : register(c1);   x  = seconds since load  y = frames since load\r\n"
 		"\r\n"
-		"Nothing else is set. There is no vertex shader of yours, no second pass, no copy of the previous\r\n"
-		"frame and no depth buffer. uv runs 0 to 1 across the window.\r\n"
+		"Nothing else is set: no vertex shader of your own, no second pass, no previous frame and no\r\n"
+		"depth buffer. uv goes from 0 to 1 across the window.\r\n"
 		"\r\n"
 		"\r\n"
-		"WHAT A TRANSLATED SHADER IS GIVEN\r\n"
+		"WHAT A TRANSLATED SHADER GETS\r\n"
 		"\r\n"
 		"  .fx        BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT, BUFFER_PIXEL_SIZE,\r\n"
 		"             BUFFER_SCREEN_SIZE, BUFFER_ASPECT_RATIO, and the back buffer, pixel size and screen\r\n"
@@ -377,7 +373,7 @@ void WriteReadme()
 		"             or a time is answered from FrameSize and FrameTime. Everything else becomes 0\r\n"
 		"\r\n"
 		"\r\n"
-		"WRITING ONE YOURSELF\r\n"
+		"WRITING YOUR OWN\r\n"
 		"\r\n"
 		"The smallest pack that works, saved as anything.hlsl:\r\n"
 		"\r\n"
@@ -388,13 +384,12 @@ void WriteReadme()
 		"      return float4(tex2D(Frame, uv).rgb, 1.0f);\r\n"
 		"  }\r\n"
 		"\r\n"
-		"Entry point main, target ps_3_0, one pass, pixel shader only. Copy 01_passthrough.hlsl and start\r\n"
-		"from there.\r\n"
+		"Entry point main, target ps_3_0, one pass, pixel shader only. Copy 01_passthrough.hlsl to start.\r\n"
 		"\r\n"
-		"The one thing that will bite you: Frame is sampled with POINT filtering, not linear. Reading\r\n"
-		"straight through at uv is then exact, which is what a pixel art game wants. But a pack that bends\r\n"
-		"the coordinates - curvature, wobble, zoom - has to filter for itself, or the picture crawls with\r\n"
-		"aliasing. 12_crt.hlsl has the four tap bilinear that fixes it, in SampleFrame.\r\n"
+		"Watch out: Frame is sampled with POINT filtering, not linear. Reading straight at uv is exact,\r\n"
+		"which suits pixel art. But a pack that moves the coordinates (curvature, wobble, zoom) has to\r\n"
+		"filter on its own, or the picture shimmers. 12_crt.hlsl has a four tap bilinear filter for this,\r\n"
+		"in SampleFrame.\r\n"
 		"\r\n"
 		"\r\n"
 		"THE FILES IN THIS FOLDER\r\n"
@@ -412,8 +407,7 @@ void WriteReadme()
 		"  11_outline.hlsl           a Sobel edge detector inking the picture\r\n"
 		"  12_crt.hlsl               curvature, scanlines, phosphor mask, bleed and vignette\r\n"
 		"\r\n"
-		"One per format the mod takes, so you can see what each one looks like before the translation and\r\n"
-		"after it:\r\n"
+		"One example per supported format, so you can compare each file with its translation:\r\n"
 		"\r\n"
 		"  13_reshade_tonemap.fx     .fx: annotated uniforms, a sampler and a technique\r\n"
 		"  14_slang_scanlines.slang  .slang: #pragma parameters, a UBO, two stages\r\n"
@@ -422,18 +416,18 @@ void WriteReadme()
 		"  17_dot_matrix.frag        modern GLSL: in, out, texture(), a sampler uniform\r\n"
 		"  18_bloom_glow.fsh         old GLSL: varying, gl_FragColor, texture2D, precision qualifiers\r\n"
 		"\r\n"
-		"The twelve .hlsl ones keep their settings as #define lines at the top: edit those, then reselect the\r\n"
-		"pack on the tab to compile it again. The last six are there to be read next to what the Translated\r\n"
-		"folder makes of them.\r\n"
+		"The twelve .hlsl files keep their settings as #define lines at the top. Edit those, then pick the\r\n"
+		"pack again on the tab to recompile it. The last six are meant to be read side by side with their\r\n"
+		"copies in the Translated folder.\r\n"
 		"\r\n"
-		"Files you add or edit are never overwritten, and a file you delete stays deleted until the mod\r\n"
+		"Files you add or edit are never overwritten. A file you delete stays deleted until the mod\r\n"
 		"updates.\r\n"
 		"\r\n"
 		"\r\n"
 		"IF NOTHING COMPILES AT ALL\r\n"
 		"\r\n"
-		"Compilation needs d3dcompiler_47.dll, which ships with Windows and with Proton. Without it the tab\r\n"
-		"says so, this folder is still listed and nothing is compiled - the rest of the tab is unaffected.\r\n";
+		"Compiling needs d3dcompiler_47.dll, which comes with Windows and with Proton. Without it the tab\r\n"
+		"says so, the folder is still listed and nothing compiles. The rest of the tab still works.\r\n";
 
 	WriteBytes(g_folder + kReadmeName, text, strlen(text));
 }
@@ -560,7 +554,7 @@ IDirect3DPixelShader9* ShaderPack::Acquire(IDirect3DDevice9* device)
 
 	if (!EnsureCompiler())
 	{
-		Report("d3dcompiler_47.dll is not on this system, so user shaders cannot be compiled");
+		Report("d3dcompiler_47.dll is missing, so shaders cannot be compiled");
 		g_compileFailed = true;
 		return nullptr;
 	}

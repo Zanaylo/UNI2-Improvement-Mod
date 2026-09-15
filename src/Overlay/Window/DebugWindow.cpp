@@ -195,8 +195,8 @@ void DebugWindow::Draw()
 	char version[32] = {};
 	const bool hasVersion = MemoryMap::GetGameVersion(version, sizeof(version));
 
-	ImGui::Text("Module base: 0x%p   version: %s", (void*)GetGameBaseAddress(),
-		hasVersion ? version : "<unreadable>");
+	ImGui::Text("Module base: 0x%p   version: %s   build %08x", (void*)GetGameBaseAddress(),
+		hasVersion ? version : "<unreadable>", GetGameBuildStamp());
 	ImGui::Text("MemoryMap: %s", MemoryMap::GetStatusText());
 	ImGui::Text("Running on: %s%s", Compat::Describe(),
 		Compat::SafeMode() ? "   [compatibility safe mode]" : "");
@@ -265,7 +265,7 @@ void DebugWindow::Draw()
 	if (m_captureRemaining > 0)
 	{
 		ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f),
-			"RECORDING - do the move now. %d frame(s) left, %d slot(s) seen active.",
+			"RECORDING. Do the move now. %d frame(s) left, %d slot(s) seen active.",
 			m_captureRemaining, m_capturePeakActive);
 	}
 	else if (ImGui::Button("Record 5s of hitbox data to log (press, then do the move)"))
@@ -439,8 +439,8 @@ void DebugWindow::DrawPaletteOwnerSection()
 		EffectPaint::SetForced(m_forceEffectTint, nullptr, m_forceEffectEntry);
 	}
 
-	ImGui::TextDisabled("-1 is every entry. This ignores who owns the effect: if nothing on screen "
-		"changes, no amount of attribution will help.");
+	ImGui::TextDisabled("-1 means every entry. This ignores who owns the effect, so if nothing on "
+		"screen changes, fixing the owner will not help.");
 
 	int byWorn = 0;
 	int byStock = 0;
@@ -579,7 +579,7 @@ void DebugWindow::DrawPaletteOwnerSection()
 
 	if (count == 0)
 	{
-		ImGui::TextDisabled("nothing seen yet - tick the box and let a match draw a few frames");
+		ImGui::TextDisabled("nothing seen yet. Tick the box and play a few frames of a match.");
 		return;
 	}
 
@@ -657,7 +657,7 @@ void DebugWindow::DrawSaveSection()
 		state.headerValid ? "ok" : "bad", state.size, GameOffsets::kSaveFileSize);
 
 	if (!state.enabled)
-		ImGui::TextDisabled("saving is switched off - the dirty flag reads as 0 while it is");
+		ImGui::TextDisabled("saving is switched off, so the dirty flag reads 0");
 
 	if (state.mode == 0)
 		ImGui::TextDisabled("the pump is skipped while the mode is idle, so a request may wait");
@@ -1073,8 +1073,8 @@ void DebugWindow::DrawMeterComparisonSection()
 
 	if (!m_hasLastGameDisplay)
 	{
-		ImGui::TextDisabled("the game's frame display has not been readable yet - open training mode "
-			"with Frame info. enabled");
+		ImGui::TextDisabled("could not read the game's frame display yet. Open training mode with "
+			"Frame info. enabled.");
 	}
 
 	int startup = 0;

@@ -539,7 +539,7 @@ std::string ReplayFiles::AccountLabel(int index)
 		return std::string();
 
 	char text[96] = {};
-	sprintf_s(text, "%s%s - %d replays", account->id.c_str(), account->own ? " (this account)" : "",
+	sprintf_s(text, "%s%s, %d replays", account->id.c_str(), account->own ? " (this account)" : "",
 		ReplayArchive::Used(index));
 
 	return text;
@@ -916,8 +916,7 @@ bool ReplayFiles::Import(const std::string& path, std::string& outError)
 
 	if (record.size() != kRecordSize)
 	{
-		outError = "that is a bare replay file - it can be played, but it carries no record header "
-			"to put in a slot";
+		outError = "that replay file has no header, so it can be played but not put in a slot";
 		return false;
 	}
 
@@ -948,16 +947,16 @@ bool ReplayFiles::Import(const std::string& path, std::string& outError)
 
 	const bool persisted = WriteRepData();
 
-	sprintf_s(g_status, "loaded%s - look for %s",
-		persisted ? "" : " (this session only - REP-DATA could not be rewritten)",
+	sprintf_s(g_status, "loaded%s. Look for %s",
+		persisted ? "" : " (this session only, REP-DATA could not be saved)",
 		DescribeSlot(info).c_str());
 
 	LOG("replay files: %s", g_status);
 
 	if (here != 0 && incoming != 0 && static_cast<int>(incoming) != here)
 	{
-		outError = "loaded, but it was recorded on replay format " + std::to_string(incoming) +
-			" and this game writes " + std::to_string(here) + " - it will probably desync";
+		outError = "loaded, but it uses replay format " + std::to_string(incoming) +
+			" and this game uses " + std::to_string(here) + ". It will probably desync";
 	}
 
 	return true;
@@ -1056,7 +1055,7 @@ bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError
 	if (!CanPlay())
 	{
 		outError = GameState::IsInMatch()
-			? "a match is running - leave it first"
+			? "leave the match first"
 			: "the game is not ready to play a replay";
 		return false;
 	}
@@ -1082,7 +1081,7 @@ bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError
 		if (!GameRestart::CanSoftReset())
 		{
 			outError = std::string("this replay is from ") + name +
-				" and the game started on something else - reload into it first";
+				", but the game started on something else. Load that first";
 			return false;
 		}
 
@@ -1319,7 +1318,7 @@ void ReplayFiles::OnGameFrame()
 
 	if (GameState::IsInMatch())
 	{
-		sprintf_s(g_status, "a match started before the replay could - nothing was done");
+		sprintf_s(g_status, "a match started before the replay could, so nothing was done");
 		return;
 	}
 

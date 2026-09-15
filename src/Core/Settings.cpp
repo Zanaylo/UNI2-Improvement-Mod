@@ -1,4 +1,4 @@
-#include "Core/Settings.h"
+﻿#include "Core/Settings.h"
 
 #include "Core/Profiler.h"
 #include "Core/default_ini.h"
@@ -11,6 +11,10 @@
 #include "Game/KeyboardSeat.h"
 #include "Game/PotatoMode.h"
 #include "Game/ReplayFiles.h"
+#include "Game/NameCensor.h"
+#include "Game/RoomNameCensor.h"
+#include "Game/SubtitleTable.h"
+#include "Game/SubtitleWatch.h"
 #include "Game/ScreenShake.h"
 #include "Training/FrameMeter.h"
 #include "Training/StageColor.h"
@@ -543,6 +547,7 @@ void Settings::ApplySettings()
 	if (!(g_modVals.fontSize >= 8.0f) || g_modVals.fontSize > 64.0f)
 		g_modVals.fontSize = 16.0f;
 
+	g_modVals.overlayCursor = ClampRange(g_settings.overlayCursor, 0, 2);
 	g_modVals.dpiAware = g_settings.dpiAware != 0;
 
 	g_modVals.notifications = g_settings.notifications != 0;
@@ -552,6 +557,27 @@ void Settings::ApplySettings()
 	g_modVals.republishPingLocation = g_settings.republishPingLocation != 0;
 	g_modVals.netplayDiagnostics = g_settings.netplayDiagnostics != 0;
 	g_modVals.sharePalettes = g_settings.sharePalettes != 0;
+
+	g_modVals.advancedStages = g_settings.advancedStages != 0;
+
+	g_modVals.censorNames = g_settings.censorNames != 0;
+	g_modVals.censorOwnName = g_settings.censorOwnName != 0;
+	NameCensor::SetMask(g_settings.censorNameMask.c_str());
+	NameCensor::SetCoversOwnName(g_modVals.censorOwnName);
+	NameCensor::SetEnabled(g_modVals.censorNames);
+
+	g_modVals.censorRoomNames = g_settings.censorRoomNames != 0;
+	RoomNameCensor::SetEnabled(g_modVals.censorRoomNames);
+
+	g_modVals.subtitles = g_settings.subtitles != 0;
+	g_modVals.subtitleHoldMs = g_settings.subtitleHoldMs;
+	g_modVals.subtitleScale = ClampRange(g_settings.subtitleScale, 50, 400);
+	g_modVals.subtitleY = ClampRange(g_settings.subtitleY, 5, 98);
+	g_modVals.subtitleNames = g_settings.subtitleNames != 0;
+
+	SubtitleTable::Choose(g_settings.subtitlePack.c_str());
+	SubtitleWatch::SetHoldMs(g_modVals.subtitleHoldMs);
+	SubtitleWatch::SetEnabled(g_modVals.subtitles);
 
 	g_modVals.memoryDebugEnabled = g_settings.memoryDebugEnabled != 0;
 	g_modVals.profilerEnabled = g_settings.profilerEnabled != 0;

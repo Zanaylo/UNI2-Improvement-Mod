@@ -201,7 +201,7 @@ bool ParseWav(const std::vector<uint8_t>& file, WavView& out, char* status, int 
 
 	if (!WalkChunks(file, out))
 	{
-		strncpy_s(status, statusSize, "is a WAV the mod cannot read - save it as plain PCM",
+		strncpy_s(status, statusSize, "is a WAV the mod cannot read. Save it as plain PCM",
 			_TRUNCATE);
 		return false;
 	}
@@ -607,11 +607,11 @@ const char* AudioFile::WhyItCannotPlay(Format format)
 {
 	if (format == Format_OggOther)
 	{
-		return "an .ogg holding Opus or FLAC, which the game cannot decode - re-encode it as "
+		return "an .ogg with Opus or FLAC inside, which the game cannot play. Convert it to "
 			"Vorbis or MP3";
 	}
 
-	return "not audio the mod can read - use MP3, OGG Vorbis or WAV";
+	return "not audio the mod can read. Use MP3, OGG Vorbis or WAV";
 }
 
 bool AudioFile::PlaysAsIs(Format format)

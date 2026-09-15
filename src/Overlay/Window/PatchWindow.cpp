@@ -68,7 +68,8 @@ void PatchWindow::Draw()
 {
 	if (!GamePatches::IsSupported())
 	{
-		UiText::Warn("The game's data search path is not where this build expects it.");
+		UiText::Warn("Patches are unavailable: this mod version can't find the game's data "
+			"search path.");
 		return;
 	}
 
@@ -111,11 +112,17 @@ void PatchWindow::DrawRestart()
 		else
 			UiText::Warn("%s is picked but not loaded.", NameOf(target));
 
-		UiText::Muted("A patch only loads from a fresh start.");
+		UiText::Muted("A patch only loads when the game restarts.");
+	}
+
+	if (chosen != boot)
+	{
+		UiText::Muted("Offline Training doesn't need a restart. Entering it switches the battle data "
+			"to %s, and leaving it switches back.", NameOf(GamePatches::Get(chosen)));
 	}
 
 	char label[96] = {};
-	sprintf_s(label, "Reload into %s", NameOf(GamePatches::Get(wanted)));
+	sprintf_s(label, "Reload with %s", NameOf(GamePatches::Get(wanted)));
 
 	ImGui::BeginDisabled(!GameRestart::CanSoftReset());
 
@@ -127,22 +134,22 @@ void PatchWindow::DrawRestart()
 
 	ImGui::EndDisabled();
 
-	UiText::Help("Sends the game back to the loading screen it started on, so it reads the "
-		"patch the way a fresh launch would. From training it leaves the battle first.");
+	UiText::Help("Sends the game back to its first loading screen, so it loads the patch like a "
+		"fresh launch. In training it leaves the battle first.");
 
 	if (GameRestart::StatusText()[0] != '\0')
 		UiText::Muted("%s", GameRestart::StatusText());
 
-	if (boot >= 0)
+	if (GamePatches::HomeIndex() >= 0)
 	{
-		UiText::Warn("Online: %s stays loaded, so both sides need it. A player match you have "
-			"agreed is fine; anybody on the installed game desyncs, and ranked is never safe.",
-			NameOf(GamePatches::Get(boot)));
+		UiText::Warn("Online: %s is only used in player matches where the other player has the mod "
+			"and the same patch. Ranked, casual and everyone else get the installed game, "
+			"switched before the match starts.", NameOf(GamePatches::Get(GamePatches::HomeIndex())));
 	}
 
 	bool automatic = GamePatches::IsAuto();
 
-	if (ImGui::Checkbox("Name the patch a replay wants", &automatic))
+	if (ImGui::Checkbox("Find the patch each replay was recorded on", &automatic))
 		GamePatches::SetAuto(automatic);
 }
 
@@ -160,7 +167,7 @@ void PatchWindow::DrawCoverage(const GamePatches::Patch& patch)
 		coverage.charactersWanted);
 
 	if (coverage.characters < coverage.charactersWanted)
-		UiText::Warn("Missing characters fall back to a newer build.");
+		UiText::Warn("Missing characters use data from a newer version.");
 }
 
 void PatchWindow::DrawEngine(const GamePatches::Patch* patch)
@@ -170,7 +177,7 @@ void PatchWindow::DrawEngine(const GamePatches::Patch* patch)
 
 	if (patch->version == 0)
 	{
-		UiText::Warn("No version number in the name, so the engine numbers stay as they are.");
+		UiText::Warn("The name has no version number, so engine values stay as they are.");
 		return;
 	}
 
@@ -179,9 +186,9 @@ void PatchWindow::DrawEngine(const GamePatches::Patch* patch)
 		const BalanceRules::Rule* const rule = BalanceRules::Get(i);
 
 		if (BalanceRules::IsActive(i))
-			UiText::Good("%s - on", rule->name);
+			UiText::Good("%s: on", rule->name);
 		else
-			UiText::Muted("%s - the game ships it from %d.%02d", rule->name, rule->since / 100,
+			UiText::Muted("%s: off, the game adds it in %d.%02d", rule->name, rule->since / 100,
 				rule->since % 100);
 	}
 }
@@ -265,7 +272,7 @@ void PatchWindow::DrawRow(int index)
 		if (ParseDate(edit, parsed))
 			GamePatches::SetDate(index, parsed);
 		else
-			strncpy_s(m_status, "a date reads like 2025-08-18", _TRUNCATE);
+			strncpy_s(m_status, "type a date like 2025-08-18", _TRUNCATE);
 	}
 
 	ImGui::TableNextColumn();
@@ -308,7 +315,7 @@ void PatchWindow::DrawTable()
 	}
 
 	ImGui::TableSetupColumn("Patch", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(84.0f));
-	ImGui::TableSetupColumn("Observation");
+	ImGui::TableSetupColumn("Notes");
 	ImGui::TableSetupColumn("Released", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(100.0f));
 	ImGui::TableSetupColumn("Cast", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
 	ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
@@ -340,7 +347,7 @@ void PatchWindow::DrawInstall()
 	UiText::Muted("Add a patch");
 
 	Ui::SetItemWidth(kFieldWidth);
-	ImGui::InputTextWithHint("Called", "1.05", m_name, IM_ARRAYSIZE(m_name));
+	ImGui::InputTextWithHint("Name", "1.05", m_name, IM_ARRAYSIZE(m_name));
 
 	if (ImGui::Button("Pick a folder"))
 		m_folderDialog.BeginFolder("Pick the patch's data folder");
@@ -353,8 +360,8 @@ void PatchWindow::DrawInstall()
 			m_name[0] = '\0';
 	}
 
-	UiText::Help("The folder holding data and script. Name it after the version so the engine "
-		"numbers follow it.");
+	UiText::Help("Pick the folder that holds data and script. Name the patch after its version "
+		"so the engine values match it.");
 
 	if (m_status[0] != '\0')
 		UiText::Muted("%s", m_status);

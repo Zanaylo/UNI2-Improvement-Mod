@@ -50,7 +50,7 @@ bool EnterStart()
 		return false;
 	}
 
-	sprintf_s(g_status, "sent back to scene %u, where this launch started", scene);
+	sprintf_s(g_status, "back to scene %u, where the game started", scene);
 	LOG("GameRestart: %s", g_status);
 	return true;
 }
@@ -69,13 +69,13 @@ bool GameRestart::SoftReset()
 {
 	if (SceneWatch::First() == SceneWatch::kNone)
 	{
-		strncpy_s(g_status, "the mod has not seen this session start yet", _TRUNCATE);
+		strncpy_s(g_status, "the mod has not seen the game start yet", _TRUNCATE);
 		return false;
 	}
 
 	if (OnlineState::IsOnline())
 	{
-		strncpy_s(g_status, "not while a netplay match is running", _TRUNCATE);
+		strncpy_s(g_status, "not during an online match", _TRUNCATE);
 		return false;
 	}
 
@@ -98,7 +98,7 @@ bool GameRestart::SoftReset()
 	g_pending = true;
 	g_waited = kLeaveFrames;
 
-	strncpy_s(g_status, "leaving training, then back to the start", _TRUNCATE);
+	strncpy_s(g_status, "leaving training, then going back to the start", _TRUNCATE);
 	LOG("GameRestart: %s", g_status);
 	return true;
 }
@@ -115,7 +115,7 @@ void GameRestart::OnFrame()
 
 		g_pending = false;
 
-		strncpy_s(g_status, "the match would not end, nothing was done", _TRUNCATE);
+		strncpy_s(g_status, "the match did not end, so nothing was done", _TRUNCATE);
 		LOG("GameRestart: %s", g_status);
 		return;
 	}

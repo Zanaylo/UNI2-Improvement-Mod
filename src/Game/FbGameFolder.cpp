@@ -1,4 +1,4 @@
-#include "Game/FbGameFolder.h"
+﻿#include "Game/FbGameFolder.h"
 
 #include <string>
 
@@ -41,6 +41,11 @@ FbGameFolder::Game FbGameFolder::Detect(const char* folder)
 
 	if (Exists(root, "Bgm\\bgm.txt") && (Exists(root, "RingGame.exe") || Exists(root, "eboot.bin")))
 		return Game_DFCI;
+	if (Exists(root, "BBTAG.exe"))
+		return Game_BBTAG;
+
+	if (Exists(root, "BBCF.exe"))
+		return Game_BBCF;
 
 	return Game_None;
 }
@@ -59,6 +64,10 @@ const char* FbGameFolder::Name(Game game)
 		return "DENGEKI BUNKO FIGHTING CLIMAX IGNITION";
 	case Game_UNIEL:
 		return "UNDER NIGHT IN-BIRTH Exe:Late";
+	case Game_BBTAG:
+		return "BLAZBLUE CROSS TAG BATTLE";
+	case Game_BBCF:
+		return "BLAZBLUE CENTRALFICTION";
 	default:
 		return "nothing the mod knows";
 	}

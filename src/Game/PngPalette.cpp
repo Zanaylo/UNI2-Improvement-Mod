@@ -279,7 +279,7 @@ bool PngPalette::Read(const std::string& path, uint8_t* outRgba, std::string& ou
 		at = chunkData + length + 4;
 	}
 
-	outError = "this PNG has no embedded palette - export it as an indexed / 8-bit image, not RGB";
+	outError = "this PNG has no palette. Save it as an indexed 8-bit image, not RGB";
 	return false;
 }
 

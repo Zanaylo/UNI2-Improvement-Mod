@@ -253,7 +253,7 @@ void FinishCalibration()
 
 	if (!ok)
 	{
-		sprintf_s(g_status, "calibration could not find all four buttons - kept the previous mapping");
+		sprintf_s(g_status, "calibration could not find all four buttons, kept the old mapping");
 		LOG("player control: %s", g_status);
 		return;
 	}

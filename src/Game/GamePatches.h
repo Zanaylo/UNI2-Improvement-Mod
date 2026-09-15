@@ -27,6 +27,9 @@ namespace GamePatches
 	int ActiveIndex();
 	int ChosenIndex();
 	int BootIndex();
+	int HomeIndex();
+
+	bool SwitchTables(int index, const char* why);
 
 	int ReplayWanted();
 	bool TablesAgreeWith(int index);

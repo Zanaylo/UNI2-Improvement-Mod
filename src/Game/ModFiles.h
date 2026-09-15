@@ -13,5 +13,6 @@ namespace ModFiles
 	int Hits();
 
 	const char* Root();
+	const char* LoadText();
 	const char* StatusText();
 }

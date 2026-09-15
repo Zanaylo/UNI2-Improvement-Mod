@@ -19,29 +19,28 @@ struct Kernel
 const Kernel kKernels[UpscaleFilter::Kind_COUNT] = {
 	{
 		"Off",
-		"The engine's own bilinear stretch. Nothing is substituted and no pass is drawn.",
+		"The game's own bilinear stretch. No extra pass is drawn.",
 		nullptr,
 		true,
 	},
 	{
 		"Bicubic",
-		"Catmull-Rom over a 4x4 neighbourhood, nine taps. Sharper than bilinear at about the same "
-		"cost and it never invents an edge. The safe choice.",
+		"Catmull-Rom bicubic. Sharper than bilinear for about the same cost, and it never adds "
+		"fake edges. The safe choice.",
 		kBicubicShader,
 		true,
 	},
 	{
 		"Lanczos",
-		"A windowed sinc over the same 4x4, sixteen taps. The sharpest, and the one that rings - a "
-		"bright line beside a dark one gets a faint halo.",
+		"The sharpest option, but it can ring: a bright line next to a dark one gets a faint "
+		"halo.",
 		kLanczosShader,
 		false,
 	},
 	{
 		"FSR (EASU)",
-		"AMD FidelityFX EASU. Reads the gradient of the neighbourhood and stretches its kernel "
-		"along the edge it finds, so a diagonal comes out as a line rather than a staircase. The "
-		"best of these on hand drawn art.",
+		"AMD FSR upscaling. It follows the direction of each edge, so diagonals come out as clean "
+		"lines instead of steps. The best of these for hand drawn art.",
 		kSceneUpscaleShader,
 		false,
 	},

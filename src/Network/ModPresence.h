@@ -18,6 +18,9 @@ namespace ModPresence
 
 	bool PeerHasMod(uint64_t id);
 	const char* VersionAt(int index);
+	const char* PickAt(int index);
+
+	bool RoomAgrees(const char* pick);
 
 	const char* GetStatusText();
 }

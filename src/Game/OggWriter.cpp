@@ -97,7 +97,7 @@ bool OggWriter::Begin(const std::string& path, int channels, int rate, char* sta
 
 	if (!SettingsAreUsable(channels, rate))
 	{
-		sprintf_s(status, statusSize, "%d channel(s) at %d Hz is not something the encoder takes",
+		sprintf_s(status, statusSize, "the encoder cannot take %d channel(s) at %d Hz",
 			channels, rate);
 		return false;
 	}

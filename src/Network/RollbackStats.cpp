@@ -1,5 +1,6 @@
 #include "Network/RollbackStats.h"
 
+#include "Core/Profiler.h"
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -47,6 +48,13 @@ float g_rollbacksPerSecond = 0.0f;
 char g_status[128] = "no netplay";
 
 constexpr int kStatsEveryFrames = 20;
+constexpr float kSlowFrameMs = 20.0f;
+constexpr int kSummaryBytes = 1024;
+
+bool g_profilerLent = false;
+int g_slowFrames = 0;
+float g_worstFrameMs = 0.0f;
+float g_peakRollbacksPerSecond = 0.0f;
 
 int g_statsCountdown = 1;
 GgpoNetworkStats g_lastStats = {};
@@ -181,9 +189,50 @@ void OnNetplayStarted()
 	g_rateAnchorRollbacks = 0;
 	g_haveStats = false;
 	g_statsCountdown = 1;
+	g_slowFrames = 0;
+	g_worstFrameMs = 0.0f;
+	g_peakRollbacksPerSecond = 0.0f;
 	QueryPerformanceCounter(&g_rateAnchor);
+
+	g_profilerLent = !Profiler::IsEnabled();
+
+	if (g_profilerLent)
+		Profiler::SetEnabled(true);
+
 	LOG("RollbackStats: netplay started, capturing the first %d frames",
 		RollbackStats::kStartSamples);
+}
+
+void OnNetplayEnded()
+{
+	char summary[kSummaryBytes] = {};
+	Profiler::BuildSummary(summary, sizeof(summary));
+
+	LOG("RollbackStats: netplay ended after %d frames and %d rollbacks, peak %.1f rollbacks per "
+		"second, %d frame(s) over %.0f ms, worst %.1f ms, last ping %d ms", g_latest.frame,
+		g_latest.rollbacks, g_peakRollbacksPerSecond, g_slowFrames, kSlowFrameMs, g_worstFrameMs,
+		g_latest.ping);
+
+	LOG_RAW("%s", summary);
+	Profiler::DumpToLog();
+
+	if (!g_profilerLent)
+		return;
+
+	g_profilerLent = false;
+	Profiler::SetEnabled(false);
+}
+
+void Track(const RollbackStats::Sample& sample)
+{
+	if (sample.frameMs > kSlowFrameMs)
+		++g_slowFrames;
+
+	if (sample.frameMs > g_worstFrameMs)
+		g_worstFrameMs = sample.frameMs;
+
+	if (sample.rollbacksPerSecond > g_peakRollbacksPerSecond)
+		g_peakRollbacksPerSecond = sample.rollbacksPerSecond;
 }
 
 }
@@ -201,6 +250,9 @@ void RollbackStats::Update()
 
 	if (g_active && !g_wasActive)
 		OnNetplayStarted();
+
+	if (!g_active && g_wasActive)
+		OnNetplayEnded();
 
 	g_wasActive = g_active;
 
@@ -259,6 +311,8 @@ void RollbackStats::Update()
 		sprintf_s(g_status, "frame %d, %d rollbacks, no GGPO stats", sample.frame,
 			sample.rollbacks);
 	}
+
+	Track(sample);
 
 	g_latest = sample;
 	PushLive(sample);

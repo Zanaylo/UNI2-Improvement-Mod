@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace BgmControl
 {
@@ -9,6 +9,7 @@ namespace BgmControl
 	void Stop();
 	void Release();
 
+	void OnFrame();
 	void Reshuffle();
 
 	bool IsPinned();
@@ -26,4 +27,5 @@ namespace BgmControl
 	int GetCharacter(int side);
 
 	const char* GetStatusText();
+	const char* ReasonText();
 }

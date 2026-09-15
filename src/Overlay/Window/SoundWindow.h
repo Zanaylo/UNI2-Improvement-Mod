@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/AsyncFileDialog.h"
 #include "Overlay/Window/IWindow.h"

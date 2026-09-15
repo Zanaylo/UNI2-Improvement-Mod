@@ -109,7 +109,7 @@ bool ScriptReload::Run()
 {
 	if (!IsSupported())
 	{
-		strncpy_s(g_status, "this game build does not name the battle scripts where expected",
+		strncpy_s(g_status, "the battle scripts are not where this game version expects them",
 			_TRUNCATE);
 		return false;
 	}
@@ -124,7 +124,7 @@ bool ScriptReload::Run()
 
 	if (context == nullptr)
 	{
-		strncpy_s(g_status, "the game has not built its battle script context yet", _TRUNCATE);
+		strncpy_s(g_status, "the game has not loaded its battle scripts yet", _TRUNCATE);
 		return false;
 	}
 
@@ -143,7 +143,7 @@ bool ScriptReload::Run()
 			continue;
 		}
 
-		sprintf_s(g_status, "%s would not compile - the tables are half rebuilt, restart the game",
+		sprintf_s(g_status, "%s did not compile. The tables are half rebuilt, restart the game",
 			script.expectedPath);
 
 		LOG("ScriptReload: %s", g_status);

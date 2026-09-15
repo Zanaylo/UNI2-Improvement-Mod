@@ -96,17 +96,18 @@ void Summarise()
 {
 	if (oMinDamage == nullptr)
 	{
-		strncpy_s(g_status, "the damage routine is not where this build expects it", _TRUNCATE);
+		strncpy_s(g_status, "the damage code is not where this game version expects it", _TRUNCATE);
 		return;
 	}
 
 	if (!g_active[0])
 	{
-		strncpy_s(g_status, "off - the game's own numbers", _TRUNCATE);
+		strncpy_s(g_status, "off, using the game's own numbers", _TRUNCATE);
 		return;
 	}
 
-	sprintf_s(g_status, "running version %d.%02d's damage floor", g_version / 100, g_version % 100);
+	sprintf_s(g_status, "using the minimum damage of version %d.%02d", g_version / 100,
+		g_version % 100);
 }
 
 }

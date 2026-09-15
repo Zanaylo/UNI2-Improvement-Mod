@@ -336,9 +336,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 
 	if (!Apply(handoff))
 	{
-		MessageBoxW(nullptr, L"The UNI2 Improvement Mod update could not be applied. "
-			L"UNI2-IM\\Updater\\logs\\updater.log says why, and the previous files are still in "
-			L"place.", L"UNI2 Improvement Mod", MB_ICONERROR | MB_OK);
+		MessageBoxW(nullptr, L"The UNI2 Improvement Mod update could not be applied. Your "
+			L"previous files are still in place. See UNI2-IM\\Updater\\logs\\updater.log for "
+			L"details.", L"UNI2 Improvement Mod", MB_ICONERROR | MB_OK);
 
 		return 1;
 	}

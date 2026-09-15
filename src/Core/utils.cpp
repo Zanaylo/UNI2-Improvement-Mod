@@ -1,6 +1,7 @@
 ﻿#include "Core/utils.h"
 
 #include "Core/KeyboardCapture.h"
+#include "Core/info.h"
 
 #include <Psapi.h>
 #include <ShlObj.h>
@@ -16,6 +17,8 @@ namespace {
 HMODULE g_modModule = nullptr;
 uintptr_t g_gameBase = 0;
 size_t g_gameSize = 0;
+uint32_t g_gameStamp = 0;
+bool g_gameMeasured = false;
 
 void ResolveGameModule()
 {
@@ -30,8 +33,19 @@ void ResolveGameModule()
 	if (!GetModuleInformation(GetCurrentProcess(), hGame, &info, sizeof(info)))
 		return;
 
-	g_gameBase = reinterpret_cast<uintptr_t>(info.lpBaseOfDll);
+	const uintptr_t base = reinterpret_cast<uintptr_t>(info.lpBaseOfDll);
+	const IMAGE_DOS_HEADER* const dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+	const IMAGE_NT_HEADERS32* const nt = reinterpret_cast<const IMAGE_NT_HEADERS32*>(base + dos->e_lfanew);
+
+	if (dos->e_magic == IMAGE_DOS_SIGNATURE && nt->Signature == IMAGE_NT_SIGNATURE)
+	{
+		g_gameStamp = nt->FileHeader.TimeDateStamp;
+		g_gameMeasured = g_gameStamp == UNI2_IM_SUPPORTED_GAME_STAMP &&
+			nt->OptionalHeader.SizeOfImage == UNI2_IM_SUPPORTED_GAME_IMAGE_SIZE;
+	}
+
 	g_gameSize = info.SizeOfImage;
+	g_gameBase = base;
 }
 
 }
@@ -237,13 +251,26 @@ size_t GetGameModuleSize()
 	return g_gameSize;
 }
 
+bool IsMeasuredGameBuild()
+{
+	ResolveGameModule();
+	return g_gameMeasured;
+}
+
+uint32_t GetGameBuildStamp()
+{
+	ResolveGameModule();
+	return g_gameStamp;
+}
+
 uintptr_t RvaToAddress(uintptr_t rva)
 {
-	const uintptr_t base = GetGameBaseAddress();
-	if (base == 0)
+	ResolveGameModule();
+
+	if (g_gameBase == 0 || !g_gameMeasured)
 		return 0;
 
-	return base + rva;
+	return g_gameBase + rva;
 }
 
 bool IsAddressInGameModule(uintptr_t address)
@@ -362,6 +389,31 @@ bool TryWriteUnaligned(void* address, uint32_t value)
 	}
 }
 
+namespace {
+
+constexpr DWORD kKeyMessageFreshMs = 250;
+
+volatile LONG g_keyMessageTick[256] = {};
+
+bool TakeKeyMessage(int virtualKey)
+{
+	const DWORD at = static_cast<DWORD>(InterlockedExchange(&g_keyMessageTick[virtualKey], 0));
+
+	return at != 0 && GetTickCount() - at < kKeyMessageFreshMs;
+}
+
+}
+
+void NoteHotkeyMessage(int virtualKey)
+{
+	if (virtualKey <= 0 || virtualKey > 255)
+		return;
+
+	const DWORD now = GetTickCount();
+
+	InterlockedExchange(&g_keyMessageTick[virtualKey], static_cast<LONG>(now != 0 ? now : 1));
+}
+
 bool IsHotkeyPressed(int virtualKey)
 {
 	if (virtualKey <= 0 || virtualKey > 255)
@@ -371,12 +423,14 @@ bool IsHotkeyPressed(int virtualKey)
 
 	const bool isDown = (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 	const bool wasDown = previousState[virtualKey];
-	previousState[virtualKey] = isDown;
+	const bool messageEdge = TakeKeyMessage(virtualKey) && !wasDown;
+
+	previousState[virtualKey] = isDown || messageEdge;
 
 	if (KeyboardCapture::OwnsKeyboard())
 		return false;
 
-	return isDown && !wasDown;
+	return (isDown && !wasDown) || messageEdge;
 }
 
 bool IsHotkeyHeld(int virtualKey)

@@ -1,4 +1,6 @@
-#pragma once
+﻿#pragma once
+
+#include "Game/FbGameFolder.h"
 
 #include <cstdint>
 #include <string>
@@ -17,6 +19,7 @@ namespace StageImport
 	bool Scan(const char* folder);
 
 	const char* ScannedGame();
+	FbGameFolder::Game ScannedKind();
 	int OfferCount();
 	const Offer* OfferAt(int index);
 
@@ -24,6 +27,9 @@ namespace StageImport
 	bool InstallMany(const int* indices, const char* const* names, int count);
 	bool InstallFolder(const char* folder, const char* name);
 	bool Remove(int id);
+
+	bool ReplaceFolder(const char* folder, int number);
+	bool Restore(int number);
 
 	bool SetInGame(int id, bool inGame);
 

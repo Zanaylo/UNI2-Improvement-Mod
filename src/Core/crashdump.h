@@ -5,4 +5,5 @@
 #include <Windows.h>
 
 void InstallCrashHandler();
+void KeepCrashHandler();
 LONG WINAPI UnhandledExceptionFilterProc(EXCEPTION_POINTERS* exceptionInfo);

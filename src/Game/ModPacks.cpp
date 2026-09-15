@@ -377,7 +377,7 @@ bool ModPacks::Install(const std::string& zip, char* status, int statusSize)
 
 	if (!ZipArchive::Extract(zip, folder, files, note, sizeof(note)))
 	{
-		sprintf_s(status, statusSize, "the zip could not be unpacked - %s", note);
+		sprintf_s(status, statusSize, "the zip could not be unpacked: %s", note);
 		return false;
 	}
 
