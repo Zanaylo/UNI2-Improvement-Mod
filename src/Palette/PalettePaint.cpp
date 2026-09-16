@@ -3,7 +3,9 @@
 #include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/GameOffsets.h"
 #include "Game/GameState.h"
+#include "Game/MemoryMap.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteSeat.h"
@@ -254,6 +256,47 @@ const uint8_t* SourceFor(const Player& entry)
 	return nullptr;
 }
 
+int ReadBaseX(int player)
+{
+	void* const chara = MemoryMap::GetCharaSlot(player);
+	uint32_t x = 0;
+
+	if (chara == nullptr || !MemoryMap::ReadStructDword(chara, GameOffsets::kPlayerDataBaseX, x))
+		return 0;
+
+	return static_cast<int>(x);
+}
+
+int FindPointerIn(int player, uintptr_t value)
+{
+	void* const chara = MemoryMap::GetCharaSlot(player);
+
+	if (chara == nullptr)
+		return -1;
+
+	uint32_t data[GameOffsets::kPlayerDataSize / 4] = {};
+
+	if (!TryReadMemory(data, chara, sizeof(data)))
+		return -1;
+
+	for (int i = 0; i < static_cast<int>(GameOffsets::kPlayerDataSize / 4); ++i)
+	{
+		if (data[i] == value)
+			return i * 4;
+	}
+
+	return -1;
+}
+
+void LogLatch(int player, uintptr_t owner)
+{
+	LOG("palette latch: p%d takes owner 0x%08x  screen side %d  seat side %d  x %d vs %d  "
+		"in p0 at %d  in p1 at %d", player, static_cast<unsigned>(owner),
+		PlayerSides::ScreenSideOf(player), PaletteSeat::GetSideByOwner(owner),
+		ReadBaseX(player), ReadBaseX(player == 0 ? 1 : 0),
+		FindPointerIn(0, owner), FindPointerIn(1, owner));
+}
+
 uintptr_t OwnerFor(int player)
 {
 	const int side = PlayerSides::ScreenSideOf(player);
@@ -276,8 +319,11 @@ void PalettePaint::Stage(int player, const uint8_t* colours)
 
 	const uintptr_t owner = OwnerFor(player);
 
-	if (owner != 0)
-		entry.owner = owner;
+	if (owner == 0 || owner == entry.owner)
+		return;
+
+	LogLatch(player, owner);
+	entry.owner = owner;
 }
 
 void PalettePaint::StageCompanion(int player, const uint8_t* colours)
@@ -469,6 +515,7 @@ void PalettePaint::OnFrame()
 
 			if (fresh != 0 && fresh != entry.owner && fresh != theirs)
 			{
+				LogLatch(player, fresh);
 				Release(entry);
 				entry.owner = fresh;
 			}

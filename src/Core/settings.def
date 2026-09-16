@@ -58,6 +58,8 @@ SETTING_INT(frameMeterTotals,       "FrameMeter", "LineTotals",         1)
 
 SETTING_INT(frameMeterAttributes,   "FrameMeter", "AttributeRow",       1)
 
+SETTING_INT(frameMeterAttackRow,    "FrameMeter", "AttackRow",          1)
+
 SETTING_INT(frameMeterOpacity,      "FrameMeter", "Opacity",            100)
 
 SETTING_INT(frameMeterDrag,         "FrameMeter", "MouseDrag",          1)

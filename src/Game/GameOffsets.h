@@ -90,7 +90,7 @@ namespace GameOffsets
 	constexpr uint32_t kMoveCode7AirAssault = 0x2;
 	constexpr uint32_t kMoveCode7AssaultLimitAirAtk = 0x800 | 0x1000;
 
-	constexpr uintptr_t kPlayerDataCommand = 0x68c;
+	constexpr uintptr_t kPlayerDataCommand = 0x698;
 
 	constexpr uint32_t kCommandAssaultAir = 0x18d;
 	constexpr uint32_t kCommandDashForward = 0x190;
@@ -348,13 +348,14 @@ namespace GameOffsets
 	constexpr uintptr_t kFnPopCharaData = 0x4812e0;
 
 	constexpr uintptr_t kComboRecordBase = 0x859ad8;
-	constexpr uintptr_t kComboRecordStride = 0xb0;
+	constexpr uintptr_t kComboRecordStride = 0xd8;
 	constexpr uintptr_t kComboRecordValid = 0x10;
 
 	constexpr uintptr_t kComboHitCount = 0x28;
-	constexpr uintptr_t kComboCandidateB = 0x4c;
+	constexpr uintptr_t kComboDamageTotal = 0x4c;
 	constexpr uintptr_t kComboCandidateC = 0x78;
 	constexpr uintptr_t kComboViewValue = 0x2c;
+	constexpr uintptr_t kComboCandidateE = 0x3c;
 	constexpr uintptr_t kCharaSideIndex = 0x434;
 
 	constexpr uintptr_t kPlayerDataHp = 0x8c;

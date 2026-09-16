@@ -3,6 +3,8 @@
 #include "Core/logger.h"
 #include "Core/Settings.h"
 #include "Core/utils.h"
+#include "Game/GameOffsets.h"
+#include "Game/MemoryMap.h"
 #include "Game/PartColourTable.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteControl.h"
@@ -284,10 +286,46 @@ void Follow(int player)
 	Dress(player, chara);
 }
 
+bool DistinctSides()
+{
+	void* const first = MemoryMap::GetCharaSlot(0);
+	void* const second = MemoryMap::GetCharaSlot(1);
+
+	if (first == nullptr || second == nullptr)
+		return false;
+
+	if (first == second)
+		return false;
+
+	uint32_t sideA = 0;
+	uint32_t sideB = 0;
+
+	if (!MemoryMap::ReadStructDword(first, GameOffsets::kCharaSideIndex, sideA) ||
+		!MemoryMap::ReadStructDword(second, GameOffsets::kCharaSideIndex, sideB))
+	{
+		return false;
+	}
+
+	return (sideA & 0xff) != (sideB & 0xff);
+}
+
 }
 
 void PaletteChoice::OnFrame()
 {
+	static bool s_undecided = false;
+
+	if (!DistinctSides())
+	{
+		if (!s_undecided)
+			LOG("palettes: the two player slots have not settled into distinct sides yet, skipping");
+
+		s_undecided = true;
+		return;
+	}
+
+	s_undecided = false;
+
 	for (int player = 0; player < kPlayers; ++player)
 		Follow(player);
 }

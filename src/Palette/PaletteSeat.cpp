@@ -1,5 +1,6 @@
 #include "Palette/PaletteSeat.h"
 
+#include "Core/logger.h"
 #include "Training/FrameStepper.h"
 #include "Core/utils.h"
 
@@ -190,7 +191,15 @@ void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int row)
 
 	Seat& entry = g_seats[seat];
 
-	entry.side = row & 1;
+	const int side = row & 1;
+
+	if (entry.draws > 0 && entry.side != side)
+	{
+		LOG("palette seat: owner 0x%08x moved from side %d to side %d at frame %d",
+			static_cast<unsigned>(owner), entry.side, side, g_frame);
+	}
+
+	entry.side = side;
 
 	if (row < 32)
 		entry.rows |= 1u << row;

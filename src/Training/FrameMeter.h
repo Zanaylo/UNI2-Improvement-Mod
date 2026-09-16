@@ -45,6 +45,10 @@ namespace FrameMeter
 		bool airJumpOK;
 
 		uint16_t pattern;
+
+		uint8_t attackMark;
+
+		bool hitStart;
 	};
 
 	constexpr int kComboStops = 8;
@@ -143,6 +147,13 @@ namespace FrameMeter
 	int GetBlockedRun(int player);
 	int GetBlockedTotal(int player);
 
+	int GetComboDamage(int player);
+	int GetDotDamage(int player);
+	const char* GetDotName(int player);
+	int GetSelfDamage(int player);
+	int GetHealing(int player);
+	int GetChipDamage(int player);
+
 	int GetFlashFrames(int player);
 	bool IsSuperFlashRunning();
 
@@ -175,6 +186,20 @@ namespace FrameMeter
 	};
 
 	constexpr int kFirstInvulnMarker = Marker_FullInvuln;
+
+	enum AttackMark
+	{
+		AttackMark_Head,
+		AttackMark_Foot,
+		AttackMark_Air,
+
+		AttackMark_COUNT
+	};
+
+	uint8_t GetAttackMarkBit(AttackMark mark);
+
+	const char* GetAttackMarkName(AttackMark mark);
+	uint32_t GetAttackMarkColor(AttackMark mark);
 
 	uint16_t GetMarkerInvulnBit(Marker marker);
 

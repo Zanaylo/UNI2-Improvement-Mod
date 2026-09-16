@@ -57,6 +57,7 @@ const char* const kDefaultIniLines[] = {
 	"BandCounts = 1",
 	"LineTotals = 1",
 	"AttributeRow = 1",
+	"AttackRow = 1",
 	"Opacity = 100",
 	"MouseDrag = 1",
 	"",

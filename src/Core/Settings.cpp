@@ -413,6 +413,7 @@ void Settings::ApplySettings()
 	g_modVals.frameMeterCounts = g_settings.frameMeterCounts != 0;
 	g_modVals.frameMeterTotals = g_settings.frameMeterTotals != 0;
 	g_modVals.frameMeterAttributes = g_settings.frameMeterAttributes != 0;
+	g_modVals.frameMeterAttackRow = g_settings.frameMeterAttackRow != 0;
 	g_modVals.frameMeterOpacity = g_settings.frameMeterOpacity;
 	if (g_modVals.frameMeterOpacity < 10 || g_modVals.frameMeterOpacity > 100)
 		g_modVals.frameMeterOpacity = 100;

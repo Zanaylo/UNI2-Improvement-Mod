@@ -10,6 +10,7 @@
 #include "Game/GameTables.h"
 #include "Game/GameState.h"
 #include "Game/MemoryMap.h"
+#include "Game/PlayerHealth.h"
 #include "Game/PlayerState.h"
 #include "Training/FrameStepper.h"
 #include "Training/SuperFlash.h"
@@ -25,6 +26,8 @@ constexpr int kIdleFramesToEnd = 24;
 
 constexpr int kIdlePadding = 3;
 
+constexpr int kStanceHoldFrames = 20;
+
 constexpr uint16_t kGuardPatternStand = 17;
 constexpr uint16_t kGuardPatternCrouch = 18;
 constexpr uint16_t kGuardPatternAir = 19;
@@ -37,6 +40,40 @@ bool IsGuardPattern(uint16_t pattern)
 }
 
 constexpr int kBlockConfirmFrames = 3;
+
+constexpr int kDotQuietFrames = 90;
+constexpr int kCarmineQuietFrames = 180;
+constexpr int kTopOffHealStep = 50;
+
+constexpr int kCarmineCharaNumber = 3;
+constexpr int kCarmineHpCosts[] = { 150, 200, 250, 300, 400, 500 };
+
+struct RunningTotal
+{
+	int value = 0;
+	int quiet = 0;
+	int quietLimit = 0;
+
+	explicit RunningTotal(int limit) : quiet(limit + 1), quietLimit(limit) {}
+
+	void Tick()
+	{
+		if (quiet <= quietLimit)
+			++quiet;
+	}
+
+	void Add(int amount)
+	{
+		if (quiet > quietLimit)
+			value = 0;
+
+		value += amount;
+		quiet = 0;
+	}
+};
+
+constexpr int kWagnerCharaNumber = 16;
+constexpr int kUzukiCharaNumber = 20;
 
 struct Tracked
 {
@@ -52,6 +89,10 @@ struct Tracked
 
 	uint32_t lastMvCountFrame;
 	bool hasMvCountFrame;
+
+	uint16_t lastFrameIndex;
+	bool looping;
+	int stillFrames;
 
 	bool wasAirJumpOK;
 	int landingSlack;
@@ -78,6 +119,7 @@ struct Tracked
 	int charaNumber = -1;
 
 	uint32_t lastHitstop;
+	bool hitPending;
 	int comboCount;
 	int blockedRun;
 	int blockedTotal;
@@ -90,6 +132,20 @@ struct Tracked
 	FrameMeter::State airKind;
 
 	bool heldPending;
+
+	int comboDamage = 0;
+	bool comboEnded = false;
+	RunningTotal dotDamage{ kDotQuietFrames };
+	RunningTotal selfDamage{ kCarmineQuietFrames };
+	RunningTotal healing{ kCarmineQuietFrames };
+	int chipDamage = 0;
+
+	int lastHp = -1;
+	bool hasHp = false;
+	uint32_t damageHitstop = 0;
+
+	uint32_t lastComboHits = 0;
+	bool hadValidRecord = false;
 };
 
 struct MoveSpan
@@ -555,13 +611,38 @@ uint16_t DrawnInvuln(const PlayerState::State& state, FrameMeter::State classifi
 	return invuln;
 }
 
+constexpr uint32_t kAttackMarkHitCheck[FrameMeter::AttackMark_COUNT] =
+{
+	GameOffsets::kHitCheckHead,
+	GameOffsets::kHitCheckLegs,
+	GameOffsets::kHitCheckAirDive,
+};
+
+uint8_t DrawnAttackMark(const PlayerState::State& state)
+{
+	if (state.attackBoxes <= 0 || state.attackAttrs == 0)
+		return 0;
+
+	uint8_t mark = 0;
+
+	for (int m = 0; m < FrameMeter::AttackMark_COUNT; ++m)
+	{
+		if ((state.attackAttrs & kAttackMarkHitCheck[m]) != 0)
+			mark |= FrameMeter::GetAttackMarkBit(static_cast<FrameMeter::AttackMark>(m));
+	}
+
+	return mark;
+}
+
 FrameMeter::State Classify(int player, const PlayerState::State& state)
 {
 	Tracked& tracked = g_tracked[player];
 
 	UpdateCanAct(tracked, state);
 
-	if (state.pattern != tracked.pattern)
+	const bool samePattern = state.pattern == tracked.pattern;
+
+	if (!samePattern)
 	{
 		tracked.pattern = state.pattern;
 		tracked.sawActive = false;
@@ -580,6 +661,19 @@ FrameMeter::State Classify(int player, const PlayerState::State& state)
 
 	tracked.lastMvCountFrame = state.mvCountFrame;
 	tracked.hasMvCountFrame = true;
+
+	if (!samePattern || newMove)
+	{
+		tracked.looping = false;
+		tracked.stillFrames = 0;
+	}
+	else
+	{
+		++tracked.stillFrames;
+		tracked.looping = tracked.looping || state.frameIndex < tracked.lastFrameIndex;
+	}
+
+	tracked.lastFrameIndex = state.frameIndex;
 
 	if (newMove)
 	{
@@ -687,6 +781,23 @@ FrameMeter::State Classify(int player, const PlayerState::State& state)
 	}
 
 	return state.armor ? FrameMeter::State::Armor : FrameMeter::State::Startup;
+}
+
+bool IsHoldingStance(int player, const PlayerState::State& state, FrameMeter::State classified)
+{
+	const Tracked& tracked = g_tracked[player];
+
+	if (state.attackBoxes > 0 || state.projectileActive || state.hitstop > 0 || state.stunTimer > 0)
+		return false;
+
+	if (classified == FrameMeter::State::Cancellable && tracked.stillFrames >= kStanceHoldFrames)
+		return true;
+
+	if (!tracked.looping)
+		return false;
+
+	return classified == FrameMeter::State::Startup || classified == FrameMeter::State::Armor ||
+		classified == FrameMeter::State::Recovery || classified == FrameMeter::State::Cancellable;
 }
 
 bool IsMoveCell(FrameMeter::State state)
@@ -864,6 +975,154 @@ int ReadComboCount(void* entity)
 	return static_cast<int>(hits);
 }
 
+bool HasDamageOverTime(int charaNumber)
+{
+	return charaNumber == kWagnerCharaNumber || charaNumber == kUzukiCharaNumber;
+}
+
+void ReadComboHits(uint32_t* hits, bool* valid)
+{
+	for (int side = 0; side < FrameMeter::kPlayers; ++side)
+	{
+		const uintptr_t record = RvaToAddress(GameOffsets::kComboRecordBase) +
+			side * GameOffsets::kComboRecordStride;
+
+		uint32_t open = 0;
+		if (!MemoryMap::ReadDwordAt(record + GameOffsets::kComboRecordValid, open) || open == 0)
+			continue;
+
+		valid[side] = MemoryMap::ReadDwordAt(record + GameOffsets::kComboHitCount, hits[side]);
+	}
+}
+
+bool IsCarmineHpCost(int amount)
+{
+	for (int cost : kCarmineHpCosts)
+	{
+		if (cost == amount)
+			return true;
+	}
+
+	return false;
+}
+
+bool IsSelfDamage(const Tracked& defender, const Tracked& attacker, int amount)
+{
+	if (defender.charaNumber != kCarmineCharaNumber)
+		return false;
+
+	return !HasDamageOverTime(attacker.charaNumber) || IsCarmineHpCost(amount);
+}
+
+void NoteHealing(Tracked& tracked, const PlayerHealth::Health& health, int amount)
+{
+	if (tracked.charaNumber != kCarmineCharaNumber)
+		return;
+
+	if (health.current >= health.max && amount > kTopOffHealStep)
+		return;
+
+	tracked.healing.Add(amount);
+}
+
+void UpdateDamage(const PlayerState::State* states, const bool* valid)
+{
+	uint32_t hits[FrameMeter::kPlayers] = {};
+	bool hitsValid[FrameMeter::kPlayers] = {};
+	ReadComboHits(hits, hitsValid);
+
+	bool freshHit[FrameMeter::kPlayers] = {};
+
+	for (int side = 0; side < FrameMeter::kPlayers && side < g_trackedCount; ++side)
+	{
+		Tracked& tracked = g_tracked[side];
+
+		tracked.dotDamage.Tick();
+		tracked.selfDamage.Tick();
+		tracked.healing.Tick();
+
+		if (!valid[side])
+			continue;
+
+		freshHit[side] = states[side].hitstop > tracked.damageHitstop;
+		tracked.damageHitstop = states[side].hitstop;
+	}
+
+	for (int side = 0; side < FrameMeter::kPlayers && side < g_trackedCount; ++side)
+	{
+		Tracked& defender = g_tracked[side];
+
+		PlayerHealth::Health health = {};
+		if (!PlayerHealth::Read(defender.entity, health))
+			continue;
+
+		const int delta = defender.lastHp - health.current;
+		const bool first = !defender.hasHp;
+
+		defender.lastHp = health.current;
+		defender.hasHp = true;
+
+		if (first || delta == 0)
+			continue;
+
+		if (delta < 0)
+		{
+			NoteHealing(defender, health, -delta);
+			continue;
+		}
+
+		const int attackerSide = side == 0 ? 1 : 0;
+		if (attackerSide >= g_trackedCount)
+			continue;
+
+		Tracked& attacker = g_tracked[attackerSide];
+
+		const uint32_t baseline = attacker.hadValidRecord ? attacker.lastComboHits : 0;
+		const bool hitLanded = freshHit[side] ||
+			(hitsValid[attackerSide] && hits[attackerSide] > baseline);
+
+		if (!hitLanded)
+		{
+			if (IsSelfDamage(defender, attacker, delta))
+				defender.selfDamage.Add(delta);
+			else if (HasDamageOverTime(attacker.charaNumber))
+				attacker.dotDamage.Add(delta);
+
+			continue;
+		}
+
+		if (valid[side] && IsGuardPattern(states[side].pattern))
+		{
+			defender.chipDamage += delta;
+			continue;
+		}
+
+		if (attacker.comboEnded)
+		{
+			attacker.comboDamage = 0;
+			attacker.comboEnded = false;
+		}
+
+		attacker.comboDamage += delta;
+
+		for (int p = 0; p < g_trackedCount; ++p)
+			g_tracked[p].chipDamage = 0;
+	}
+
+	for (int side = 0; side < FrameMeter::kPlayers && side < g_trackedCount; ++side)
+	{
+		Tracked& tracked = g_tracked[side];
+
+		if (tracked.hadValidRecord && !hitsValid[side])
+			tracked.comboEnded = true;
+
+		tracked.hadValidRecord = hitsValid[side];
+
+		if (hitsValid[side])
+			tracked.lastComboHits = hits[side];
+	}
+}
+
 void UpdateCounters(const PlayerState::State* states, const bool* valid,
 	const FrameMeter::State* classified, int count)
 {
@@ -889,6 +1148,9 @@ void UpdateCounters(const PlayerState::State* states, const bool* valid,
 		Tracked& tracked = g_tracked[p];
 		const uint32_t previousHitstop = tracked.lastHitstop;
 		tracked.lastHitstop = states[p].hitstop;
+
+		if (states[p].hitstop > previousHitstop)
+			tracked.hitPending = true;
 
 		const int other = p == 0 ? 1 : 0;
 		const bool otherValid = other < count && valid[other];
@@ -1397,6 +1659,7 @@ void FrameMeter::SampleFromGameThread()
 	PlayerState::State states[kPlayers] = {};
 	bool valid[kPlayers] = {};
 	State classified[kPlayers] = {};
+	bool busy[kPlayers] = {};
 	bool anyBusy = false;
 
 	{
@@ -1405,6 +1668,8 @@ void FrameMeter::SampleFromGameThread()
 		for (int p = 0; p < kPlayers && p < g_trackedCount; ++p)
 			valid[p] = PlayerState::Read(g_tracked[p].entity, states[p]);
 	}
+
+	UpdateDamage(states, valid);
 
 	int frozen = 0;
 	int live = 0;
@@ -1440,11 +1705,19 @@ void FrameMeter::SampleFromGameThread()
 			g_tracked[p].lastCommand = 0;
 		}
 
-		if (classified[p] != State::Idle ||
-			(states[p].actionKind & GameOffsets::kActionKindTechAction) != 0)
-		{
-			anyBusy = true;
-		}
+		busy[p] = classified[p] != State::Idle ||
+			(states[p].actionKind & GameOffsets::kActionKindTechAction) != 0;
+	}
+
+	for (int p = 0; p < kPlayers && p < g_trackedCount; ++p)
+	{
+		const int other = p == 0 ? 1 : 0;
+		const bool otherBusy = other < g_trackedCount && valid[other] && busy[other];
+
+		if (busy[p] && !otherBusy && IsHoldingStance(p, states[p], classified[p]))
+			continue;
+
+		anyBusy = anyBusy || busy[p];
 	}
 
 	if (!g_recording)
@@ -1544,6 +1817,8 @@ void FrameMeter::SampleFromGameThread()
 				frame.invuln = 0;
 				frame.airJumpOK = false;
 				frame.pattern = 0;
+				frame.attackMark = 0;
+				frame.hitStart = false;
 			}
 			else
 			{
@@ -1553,6 +1828,9 @@ void FrameMeter::SampleFromGameThread()
 				frame.airJumpOK = states[p].airJumpOK != 0;
 				frame.pattern = states[p].pattern;
 				frame.invuln = DrawnInvuln(states[p], classified[p]);
+				frame.attackMark = DrawnAttackMark(states[p]);
+				frame.hitStart = g_tracked[p].hitPending;
+				g_tracked[p].hitPending = false;
 			}
 		}
 
@@ -1761,6 +2039,54 @@ int FrameMeter::GetBlockedTotal(int player)
 		return 0;
 
 	return g_tracked[player].blockedTotal;
+}
+
+int FrameMeter::GetComboDamage(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return 0;
+
+	return g_tracked[player].comboDamage;
+}
+
+int FrameMeter::GetDotDamage(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return 0;
+
+	return g_tracked[player].dotDamage.value;
+}
+
+int FrameMeter::GetSelfDamage(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return 0;
+
+	return g_tracked[player].selfDamage.value;
+}
+
+int FrameMeter::GetHealing(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return 0;
+
+	return g_tracked[player].healing.value;
+}
+
+const char* FrameMeter::GetDotName(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return "";
+
+	return g_tracked[player].charaNumber == kUzukiCharaNumber ? "poison" : "burn";
+}
+
+int FrameMeter::GetChipDamage(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return 0;
+
+	return g_tracked[player].chipDamage;
 }
 
 int FrameMeter::PackAutoPause(const AutoPauseConfig& config)
@@ -2033,16 +2359,16 @@ const char* FrameMeter::GetMarkerName(Marker marker)
 	{
 	case Marker_Projectile:       return "Projectile Active";
 	case Marker_Tech:             return "Teching";
-	case Marker_FullInvuln:       return "Full Invincibility";
-	case Marker_StrikeInvuln:     return "Strike Invincibility";
-	case Marker_ThrowInvuln:      return "Throw Invincibility";
-	case Marker_ProjectileInvuln: return "Projectile Invincibility";
-	case Marker_HeadInvuln:       return "Head Invincibility";
-	case Marker_BodyInvuln:       return "Body Invincibility";
-	case Marker_LegsInvuln:       return "Legs Invincibility";
-	case Marker_DiveInvuln:       return "Air Dive Invincibility";
-	case Marker_HighMidInvuln:    return "High and Mid Invincibility";
-	case Marker_LowMidInvuln:     return "Low and Mid Invincibility";
+	case Marker_FullInvuln:       return "Everything";
+	case Marker_StrikeInvuln:     return "Strike";
+	case Marker_ThrowInvuln:      return "Throw";
+	case Marker_ProjectileInvuln: return "Projectile";
+	case Marker_HeadInvuln:       return "Head";
+	case Marker_BodyInvuln:       return "Body";
+	case Marker_LegsInvuln:       return "Foot";
+	case Marker_DiveInvuln:       return "Air";
+	case Marker_HighMidInvuln:    return "High and Mid";
+	case Marker_LowMidInvuln:     return "Low and Mid";
 	default:                      return "";
 	}
 }
@@ -2085,5 +2411,32 @@ uint32_t FrameMeter::GetMarkerColor(Marker marker)
 	case Marker_HighMidInvuln:    return Argb(90, 200, 220);
 	case Marker_LowMidInvuln:     return Argb(220, 60, 60);
 	default:                      return Argb(255, 255, 255);
+	}
+}
+
+uint8_t FrameMeter::GetAttackMarkBit(AttackMark mark)
+{
+	return static_cast<uint8_t>(1u << mark);
+}
+
+const char* FrameMeter::GetAttackMarkName(AttackMark mark)
+{
+	switch (mark)
+	{
+	case AttackMark_Head: return "Head";
+	case AttackMark_Foot: return "Foot";
+	case AttackMark_Air:  return "Air";
+	default:              return "";
+	}
+}
+
+uint32_t FrameMeter::GetAttackMarkColor(AttackMark mark)
+{
+	switch (mark)
+	{
+	case AttackMark_Head: return GetMarkerColor(Marker_HeadInvuln);
+	case AttackMark_Foot: return GetMarkerColor(Marker_LegsInvuln);
+	case AttackMark_Air:  return GetMarkerColor(Marker_DiveInvuln);
+	default:              return Argb(255, 255, 255);
 	}
 }

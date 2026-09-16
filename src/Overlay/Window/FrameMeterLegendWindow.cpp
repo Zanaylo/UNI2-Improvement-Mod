@@ -23,6 +23,9 @@ const Sample kSample[] = {
 constexpr int kSampleInvulnFrom = 1;
 constexpr int kSampleInvulnTo = 7;
 
+constexpr int kSampleActiveFrom = 6;
+constexpr int kSampleActiveTo = 8;
+
 const FrameMeter::State kStates[] = {
 	FrameMeter::State::Startup,
 	FrameMeter::State::Active,
@@ -58,14 +61,24 @@ void Cell(ImDrawList* draw, ImVec2 at, float width, float height, unsigned int c
 	draw->AddRectFilledMultiColor(at, ImVec2(at.x + width, at.y + height), top, top, bottom, bottom);
 }
 
+void DrawThinRow(ImDrawList* draw, ImVec2 origin, float cellW, float gap, float height, int from,
+	int to, unsigned int color)
+{
+	for (int cell = from; cell <= to; ++cell)
+	{
+		const ImVec2 at(origin.x + cell * cellW, origin.y);
+		draw->AddRectFilled(at, ImVec2(at.x + cellW - gap, at.y + height), Rgba(color));
+	}
+}
+
 void DrawSampleMeter()
 {
 	const float scale = Ui::Scale();
 	const float cellW = 11.0f * scale;
 	const float gap = 1.0f * scale;
 	const float rowH = 20.0f * scale;
-	const float attrH = 9.0f * scale;
-	const float attrGap = 3.0f * scale;
+	const float thinH = 9.0f * scale;
+	const float thinGap = 3.0f * scale;
 
 	int total = 0;
 	for (int i = 0; i < IM_ARRAYSIZE(kSample); ++i)
@@ -75,44 +88,76 @@ void DrawSampleMeter()
 
 	ImDrawList* const draw = ImGui::GetWindowDrawList();
 	const ImVec2 origin = ImGui::GetCursorScreenPos();
+	const ImVec2 bar(origin.x, origin.y + thinH + thinGap);
+
+	DrawThinRow(draw, origin, cellW, gap, thinH, kSampleActiveFrom, kSampleActiveTo,
+		FrameMeter::GetAttackMarkColor(FrameMeter::AttackMark_Head));
 
 	int cell = 0;
 	for (int i = 0; i < IM_ARRAYSIZE(kSample); ++i)
 	{
 		for (int f = 0; f < kSample[i].frames; ++f, ++cell)
-		{
-			const ImVec2 at(origin.x + cell * cellW, origin.y);
-			Cell(draw, at, cellW - gap, rowH, FrameMeter::GetStateColor(kSample[i].state));
-
-			if (cell < kSampleInvulnFrom || cell > kSampleInvulnTo)
-				continue;
-
-			const ImVec2 attrAt(at.x, origin.y + rowH + attrGap);
-			draw->AddRectFilled(attrAt, ImVec2(attrAt.x + cellW - gap, attrAt.y + attrH),
-				Rgba(FrameMeter::GetMarkerColor(FrameMeter::Marker_StrikeInvuln)));
-		}
+			Cell(draw, ImVec2(bar.x + cell * cellW, bar.y), cellW - gap, rowH,
+				FrameMeter::GetStateColor(kSample[i].state));
 	}
 
-	draw->AddRect(ImVec2(origin.x - 1.0f, origin.y - 1.0f),
-		ImVec2(origin.x + width, origin.y + rowH + 1.0f), IM_COL32(255, 255, 255, 48));
+	draw->AddRect(ImVec2(bar.x - 1.0f, bar.y - 1.0f), ImVec2(bar.x + width, bar.y + rowH + 1.0f),
+		IM_COL32(255, 255, 255, 48));
 
-	ImGui::Dummy(ImVec2(width, rowH + attrGap + attrH));
+	DrawThinRow(draw, ImVec2(bar.x, bar.y + rowH + thinGap), cellW, gap, thinH, kSampleInvulnFrom,
+		kSampleInvulnTo, FrameMeter::GetMarkerColor(FrameMeter::Marker_StrikeInvuln));
+
+	const float labelX = origin.x + width + Ui::Scaled(10.0f);
+	const float lineH = ImGui::GetTextLineHeight();
+	const ImU32 labelColor = ImGui::GetColorU32(ImGuiCol_TextDisabled);
+
+	draw->AddText(ImVec2(labelX, origin.y + (thinH - lineH) * 0.5f), labelColor, "Attack Row");
+	draw->AddText(ImVec2(labelX, bar.y + (rowH - lineH) * 0.5f), labelColor, "Bar");
+	draw->AddText(ImVec2(labelX, bar.y + rowH + thinGap + (thinH - lineH) * 0.5f), labelColor,
+		"Invincibility Row");
+
+	ImGui::Dummy(ImVec2(width, thinH + thinGap + rowH + thinGap + thinH));
 }
 
-void Entry(unsigned int color, const char* name, float columnWidth)
+struct Swatch
 {
-	const ImVec2 at = ImGui::GetCursorScreenPos();
-	const float size = ImGui::GetTextLineHeight();
+	unsigned int color;
+	const char* name;
+};
 
-	ImGui::GetWindowDrawList()->AddRectFilled(at, ImVec2(at.x + size, at.y + size), Rgba(color));
-	ImGui::GetWindowDrawList()->AddRect(at, ImVec2(at.x + size, at.y + size),
-		IM_COL32(0, 0, 0, 160));
+void SwatchGrid(const Swatch* swatches, int count)
+{
+	const float box = ImGui::GetTextLineHeight();
+	const float boxGap = Ui::Scaled(6.0f);
+	const float columnGap = Ui::Scaled(18.0f);
 
-	ImGui::Dummy(ImVec2(size, size));
-	ImGui::SameLine(0.0f, Ui::Scaled(6.0f));
-	ImGui::TextUnformatted(name);
-	ImGui::SameLine(0.0f, 0.0f);
-	ImGui::Dummy(ImVec2(columnWidth - (ImGui::GetItemRectMax().x - at.x), 0.0f));
+	float widest = 0.0f;
+	for (int i = 0; i < count; ++i)
+	{
+		const float w = ImGui::CalcTextSize(swatches[i].name).x;
+		if (w > widest)
+			widest = w;
+	}
+
+	const float column = box + boxGap + widest + columnGap;
+	const float available = ImGui::GetContentRegionAvail().x;
+	const int perRow = available < column * 2.0f ? 1 : static_cast<int>(available / column);
+	const float startX = ImGui::GetCursorPosX();
+
+	for (int i = 0; i < count; ++i)
+	{
+		if (i % perRow != 0)
+			ImGui::SameLine(startX + column * static_cast<float>(i % perRow));
+
+		const ImVec2 at = ImGui::GetCursorScreenPos();
+		ImDrawList* const draw = ImGui::GetWindowDrawList();
+		draw->AddRectFilled(at, ImVec2(at.x + box, at.y + box), Rgba(swatches[i].color));
+		draw->AddRect(at, ImVec2(at.x + box, at.y + box), IM_COL32(0, 0, 0, 160));
+
+		ImGui::Dummy(ImVec2(box, box));
+		ImGui::SameLine(0.0f, boxGap);
+		ImGui::TextUnformatted(swatches[i].name);
+	}
 }
 
 }
@@ -143,58 +188,75 @@ void FrameMeterLegendWindow::Draw()
 	DrawSampleMeter();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("The bar");
+	ImGui::SeparatorText("Bar");
+	ImGui::TextWrapped("One cell per frame. What the character is doing.");
 
-	const float column = 190.0f;
-	const int perRow = 3;
+	Swatch bar[IM_ARRAYSIZE(kStates) + FrameMeter::kFirstInvulnMarker] = {};
+	int count = 0;
 
-	int placed = 0;
-	for (int i = 0; i < IM_ARRAYSIZE(kStates); ++i, ++placed)
-	{
-		if (placed % perRow != 0)
-			ImGui::SameLine(0.0f, Ui::Scaled(8.0f));
+	for (int i = 0; i < IM_ARRAYSIZE(kStates); ++i)
+		bar[count++] = { FrameMeter::GetStateColor(kStates[i]), FrameMeter::GetStateName(kStates[i]) };
 
-		Entry(FrameMeter::GetStateColor(kStates[i]), FrameMeter::GetStateName(kStates[i]), column);
-	}
-
-	for (int i = 0; i < FrameMeter::kFirstInvulnMarker; ++i, ++placed)
+	for (int i = 0; i < FrameMeter::kFirstInvulnMarker; ++i)
 	{
 		const FrameMeter::Marker marker = static_cast<FrameMeter::Marker>(i);
-
-		if (placed % perRow != 0)
-			ImGui::SameLine(0.0f, Ui::Scaled(8.0f));
-
-		Entry(FrameMeter::GetMarkerColor(marker), FrameMeter::GetMarkerName(marker), column);
+		bar[count++] = { FrameMeter::GetMarkerColor(marker), FrameMeter::GetMarkerName(marker) };
 	}
 
+	SwatchGrid(bar, count);
+
 	ImGui::Spacing();
-	ImGui::SeparatorText("Status Row");
+	ImGui::SeparatorText("Attack Row (above the bar)");
+	ImGui::TextWrapped("Only on active frames. The attack's properties.");
 
-	ImGui::TextWrapped("Shows every invincibility active on that frame, with the cell split evenly "
-		"between them. White means nothing can hit, and it is drawn alone.");
+	Swatch attack[FrameMeter::AttackMark_COUNT] = {};
+	for (int i = 0; i < FrameMeter::AttackMark_COUNT; ++i)
+	{
+		const FrameMeter::AttackMark mark = static_cast<FrameMeter::AttackMark>(i);
+		attack[i] = { FrameMeter::GetAttackMarkColor(mark), FrameMeter::GetAttackMarkName(mark) };
+	}
 
-	placed = 0;
-	for (int i = FrameMeter::kFirstInvulnMarker; i < FrameMeter::Marker_COUNT; ++i, ++placed)
+	SwatchGrid(attack, FrameMeter::AttackMark_COUNT);
+
+	ImGui::BulletText("Head: whiffs on head invincibility.");
+	ImGui::BulletText("Foot: whiffs on foot invincibility.");
+	ImGui::BulletText("Air: whiffs on air invincibility.");
+	ImGui::TextWrapped("Two or more split the cell.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Invincibility Row (under the bar)");
+	ImGui::TextWrapped("What can't hit the character on that frame. Same colours as the attack row, so "
+		"a Head attack whiffs on a Head cell.");
+
+	Swatch invuln[FrameMeter::Marker_COUNT - FrameMeter::kFirstInvulnMarker] = {};
+	count = 0;
+
+	for (int i = FrameMeter::kFirstInvulnMarker; i < FrameMeter::Marker_COUNT; ++i)
 	{
 		const FrameMeter::Marker marker = static_cast<FrameMeter::Marker>(i);
-
-		if (placed % perRow != 0)
-			ImGui::SameLine(0.0f, Ui::Scaled(8.0f));
-
-		Entry(FrameMeter::GetMarkerColor(marker), FrameMeter::GetMarkerName(marker), column);
+		invuln[count++] = { FrameMeter::GetMarkerColor(marker), FrameMeter::GetMarkerName(marker) };
 	}
 
-	ImGui::Spacing();
-	ImGui::SeparatorText("The Number");
+	SwatchGrid(invuln, count);
 
-	ImGui::BulletText("Startup: frames until the move can hit, counting the first active frame.");
-	ImGui::BulletText("Total: from the start of the move to its end.");
-	ImGui::BulletText("Advantage: who can act first. Positive means you. The number in brackets is "
-		"your advantage before the opponent teched (not always accurate).");
-	ImGui::BulletText("Blockstun: how long the opponent was stuck after blocking.");
-	ImGui::BulletText("Hitstun: how long the opponent was stuck after being hit.");
-	ImGui::BulletText("Gap: free frames between two blockstun or hitstun runs.");
-	ImGui::BulletText("Flash: how long the super flash lasted in the move above. The bar has no "
-		"cells for it, so this is the only place it shows. If a combo flashes twice, you see the "
-		"move you are reading, not the total.");
+	ImGui::BulletText("Everything: nothing can hit. Drawn alone.");
+	ImGui::BulletText("Two or three at once split the cell.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Numbers");
+
+	ImGui::BulletText("Startup: frames until the move can hit, first active frame included.");
+	ImGui::BulletText("Total: start of the move to its end.");
+	ImGui::BulletText("Advantage: who acts first. Positive means you.");
+	ImGui::BulletText("Advantage in brackets: before the opponent teched. Can be off.");
+	ImGui::BulletText("Blockstun: stun from the last hit blocked.");
+	ImGui::BulletText("Hitstun: stun from the last hit taken.");
+	ImGui::BulletText("Gap: free frames before the last hit. None means it was airtight.");
+	ImGui::BulletText("Flash: super flash length in the move shown. Not on the bar.");
+	ImGui::BulletText("Damage: hit damage of the last combo. Starts over with the next combo.");
+	ImGui::BulletText("Burn / Poison: everything Wagner's burn or Uzuki's poison did, in a combo, on block or in neutral. Starts over when a new one is applied.");
+	ImGui::BulletText("Chip: damage from blocked hits. Starts over when either side gets hit.");
+	ImGui::BulletText("Self: HP Carmine spent on his own moves.");
+	ImGui::BulletText("Heal: HP Carmine got back. Training mode's refill is not counted.");
+	ImGui::TextWrapped("Self and Heal start over after 3 seconds without a change.");
 }

@@ -53,6 +53,7 @@ struct ModValues
 	bool frameMeterCounts;
 	bool frameMeterTotals;
 	bool frameMeterAttributes;
+	bool frameMeterAttackRow;
 	int frameMeterOpacity;
 	bool frameMeterDrag;
 

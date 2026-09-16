@@ -1233,15 +1233,17 @@ void DebugWindow::DrawMeterComparisonSection()
 	ImGui::Spacing();
 	ImGui::TextUnformatted("Combo hit count");
 
-	if (ImGui::BeginTable("combofields", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+	if (ImGui::BeginTable("combofields", 8, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
 		ImGuiTableFlags_SizingStretchProp))
 	{
 		ImGui::TableSetupColumn("side");
 		ImGui::TableSetupColumn("blocked");
 		ImGui::TableSetupColumn("valid");
-		ImGui::TableSetupColumn("+0x28");
-		ImGui::TableSetupColumn("+0x4c");
+		ImGui::TableSetupColumn("+0x28 hits");
+		ImGui::TableSetupColumn("+0x4c dmg");
 		ImGui::TableSetupColumn("+0x78");
+		ImGui::TableSetupColumn("+0x2c hosei");
+		ImGui::TableSetupColumn("+0x3c hosei");
 		ImGui::TableHeadersRow();
 
 		for (int side = 0; side < 2; ++side)
@@ -1253,11 +1255,15 @@ void DebugWindow::DrawMeterComparisonSection()
 			uint32_t a = 0;
 			uint32_t b = 0;
 			uint32_t c = 0;
+			uint32_t d = 0;
+			uint32_t e = 0;
 
 			MemoryMap::ReadDwordAt(record + GameOffsets::kComboRecordValid, valid);
 			MemoryMap::ReadDwordAt(record + GameOffsets::kComboHitCount, a);
-			MemoryMap::ReadDwordAt(record + GameOffsets::kComboCandidateB, b);
+			MemoryMap::ReadDwordAt(record + GameOffsets::kComboDamageTotal, b);
 			MemoryMap::ReadDwordAt(record + GameOffsets::kComboCandidateC, c);
+			MemoryMap::ReadDwordAt(record + GameOffsets::kComboViewValue, d);
+			MemoryMap::ReadDwordAt(record + GameOffsets::kComboCandidateE, e);
 
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -1272,6 +1278,10 @@ void DebugWindow::DrawMeterComparisonSection()
 			ImGui::Text("%u", b);
 			ImGui::TableNextColumn();
 			ImGui::Text("%u", c);
+			ImGui::TableNextColumn();
+			ImGui::Text("%u", d);
+			ImGui::TableNextColumn();
+			ImGui::Text("%u", e);
 		}
 
 		ImGui::EndTable();

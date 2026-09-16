@@ -283,6 +283,63 @@ void DrawAttributeTrack(float x, float y, float s, int player, int length)
 	QuadRenderer::StrokeRect(x - s, y - s, kTrackWidth * s + s * 2.0f, rowH + s * 2.0f, s, Fade(kCellEdge));
 }
 
+void DrawAttackMarkTrack(float x, float y, float s, int player, int length)
+{
+	const float cellW = (kCellWidth - kCellGap) * s;
+	const float rowH = kAttrRowHeight * s;
+
+	for (int i = 0; i < kVisibleFrames; ++i)
+		QuadRenderer::FillRect(x + i * kCellWidth * s, y, cellW, rowH, Fade(kEmptyCell));
+
+	for (int slot = 0; slot < kVisibleFrames; ++slot)
+	{
+		int index = 0;
+		bool previousLap = false;
+		if (!TrackSlot(length, slot, index, previousLap))
+			continue;
+
+		FrameMeter::Frame frame = {};
+		if (!FrameMeter::GetFrame(player, index, frame) || frame.attackMark == 0)
+			continue;
+
+		int slices = 0;
+		for (int m = 0; m < FrameMeter::AttackMark_COUNT; ++m)
+		{
+			if ((frame.attackMark & FrameMeter::GetAttackMarkBit(static_cast<FrameMeter::AttackMark>(m))) != 0)
+				++slices;
+		}
+
+		if (slices == 0)
+			continue;
+
+		const float cellX = x + slot * kCellWidth * s;
+		const float dim = previousLap ? 0.45f : 1.0f;
+		const float sliceH = rowH / static_cast<float>(slices);
+
+		int drawn = 0;
+		for (int m = 0; m < FrameMeter::AttackMark_COUNT; ++m)
+		{
+			const FrameMeter::AttackMark mark = static_cast<FrameMeter::AttackMark>(m);
+			if ((frame.attackMark & FrameMeter::GetAttackMarkBit(mark)) == 0)
+				continue;
+
+			const float sliceY = y + drawn * sliceH;
+			QuadRenderer::FillRect(cellX, sliceY, cellW, sliceH,
+				Shade(FrameMeter::GetAttackMarkColor(mark), dim));
+
+			if (drawn + 1 < slices)
+			{
+				QuadRenderer::FillRect(cellX, sliceY + sliceH - kAttrSliceEdge * s, cellW,
+					kAttrSliceEdge * s, Fade(kAttrSliceEdgeColor));
+			}
+
+			++drawn;
+		}
+	}
+
+	QuadRenderer::StrokeRect(x - s, y - s, kTrackWidth * s + s * 2.0f, rowH + s * 2.0f, s, Fade(kCellEdge));
+}
+
 bool RunAt(int length, int player, int slot, int& outEnd, FrameMeter::State& outState,
 	bool& outPreviousLap)
 {
@@ -369,13 +426,24 @@ void DrawRunCounts(float x, float y, float s, int player, int length)
 	}
 }
 
-bool DrawLineTotals(float x, float y, float s, int player, int length)
+struct LastHit
 {
-	int blockstun = 0;
-	int hitstun = 0;
+	int stun = 0;
+	bool blocked = false;
 	int gap = 0;
-	int pendingGap = 0;
-	bool held = false;
+};
+
+bool IsStunCell(FrameMeter::State state)
+{
+	return state == FrameMeter::State::Blockstun || state == FrameMeter::State::Hitstun;
+}
+
+LastHit ReadLastHit(int player, int length)
+{
+	LastHit hit;
+	int freeSinceStun = 0;
+	bool seenStun = false;
+	bool inStun = false;
 
 	for (int i = 0; i < length; ++i)
 	{
@@ -383,30 +451,55 @@ bool DrawLineTotals(float x, float y, float s, int player, int length)
 		if (!FrameMeter::GetFrame(player, i, frame))
 			continue;
 
-		if (frame.state == FrameMeter::State::Blockstun ||
-			frame.state == FrameMeter::State::Hitstun)
+		if (!IsStunCell(frame.state))
 		{
-			if (frame.state == FrameMeter::State::Blockstun)
-				++blockstun;
-			else
-				++hitstun;
-
-			gap += pendingGap;
-			pendingGap = 0;
-			held = true;
+			freeSinceStun += seenStun ? 1 : 0;
+			inStun = false;
 			continue;
 		}
 
-		if (held)
-			++pendingGap;
+		if (!inStun)
+		{
+			hit.gap = seenStun ? freeSinceStun : 0;
+			hit.stun = 0;
+		}
+		else if (frame.hitStart)
+		{
+			hit.gap = 0;
+			hit.stun = 0;
+		}
+
+		++hit.stun;
+		hit.blocked = frame.state == FrameMeter::State::Blockstun;
+		freeSinceStun = 0;
+		seenStun = true;
+		inStun = true;
 	}
 
+	return hit;
+}
+
+bool DrawLineTotals(float x, float y, float s, int player, int length)
+{
+	const LastHit hit = ReadLastHit(player, length);
+	const int blockstun = hit.blocked ? hit.stun : 0;
+	const int hitstun = hit.blocked ? 0 : hit.stun;
+	const int gap = hit.gap;
+
 	const int flash = FrameMeter::GetFlashFrames(player);
+	const int damage = FrameMeter::GetComboDamage(player);
+	const int dotDamage = FrameMeter::GetDotDamage(player);
+	const int chipDamage = FrameMeter::GetChipDamage(player);
+	const int selfDamage = FrameMeter::GetSelfDamage(player);
+	const int healing = FrameMeter::GetHealing(player);
 
-	if (blockstun == 0 && hitstun == 0 && flash == 0)
+	if (blockstun == 0 && hitstun == 0 && flash == 0 && damage == 0 && dotDamage == 0 &&
+		chipDamage == 0 && selfDamage == 0 && healing == 0)
+	{
 		return false;
+	}
 
-	char text[128] = {};
+	char text[192] = {};
 	int at = 0;
 
 	if (blockstun > 0)
@@ -423,6 +516,24 @@ bool DrawLineTotals(float x, float y, float s, int player, int length)
 
 	if (flash > 0)
 		at += sprintf_s(text + at, sizeof(text) - at, "%sflash %d", at > 0 ? "  " : "", flash);
+
+	if (damage > 0)
+		at += sprintf_s(text + at, sizeof(text) - at, "%sdamage %d", at > 0 ? "  " : "", damage);
+
+	if (dotDamage > 0)
+	{
+		at += sprintf_s(text + at, sizeof(text) - at, "%s%s %d", at > 0 ? "  " : "",
+			FrameMeter::GetDotName(player), dotDamage);
+	}
+
+	if (chipDamage > 0)
+		at += sprintf_s(text + at, sizeof(text) - at, "%schip %d", at > 0 ? "  " : "", chipDamage);
+
+	if (selfDamage > 0)
+		at += sprintf_s(text + at, sizeof(text) - at, "%sself %d", at > 0 ? "  " : "", selfDamage);
+
+	if (healing > 0)
+		at += sprintf_s(text + at, sizeof(text) - at, "%sheal %d", at > 0 ? "  " : "", healing);
 
 	DrawShadowedText(text, x, y, kTextScale * s, kActionName);
 	return true;
@@ -615,8 +726,10 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 	const float totalsHeight = g_modVals.frameMeterTotals ? (lineHeight + kTextGap * s) * 2.0f : 0.0f;
 	const float attrHeight = g_modVals.frameMeterAttributes
 		? (kAttrRowHeight + kAttrRowGap) * s : 0.0f;
+	const float attackRowHeight = g_modVals.frameMeterAttackRow
+		? (kAttrRowHeight + kAttrRowGap) * s : 0.0f;
 	const float height = lineHeight * 2.0f + kTextGap * s * 2.0f
-		+ kRowHeight * s * 2.0f + kRowGap * s + attrHeight * 2.0f + totalsHeight;
+		+ kRowHeight * s * 2.0f + kRowGap * s + (attrHeight + attackRowHeight) * 2.0f + totalsHeight;
 
 	const float autoX = (viewport.Width - width) * 0.5f;
 	const float autoY = viewport.Height * 0.87f - height;
@@ -663,6 +776,12 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 		DrawReadout(x, cursor, s, 0);
 		cursor += lineHeight + kTextGap * s;
 
+		if (g_modVals.frameMeterAttackRow)
+		{
+			DrawAttackMarkTrack(x, cursor, s, 0, length);
+			cursor += kAttrRowHeight * s + kAttrRowGap * s;
+		}
+
 		DrawTrack(x, cursor, s, 0, length);
 		if (g_modVals.frameMeterCounts)
 			DrawRunCounts(x, cursor, s, 0, length);
@@ -677,6 +796,12 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 		}
 
 		cursor += kRowGap * s;
+
+		if (g_modVals.frameMeterAttackRow)
+		{
+			DrawAttackMarkTrack(x, cursor, s, 1, length);
+			cursor += kAttrRowHeight * s + kAttrRowGap * s;
+		}
 
 		DrawTrack(x, cursor, s, 1, length);
 		if (g_modVals.frameMeterCounts)

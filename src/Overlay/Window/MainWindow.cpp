@@ -1077,20 +1077,26 @@ void MainWindow::DrawFrameMeterControls()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Adds a line with the blockstun, hitstun and gap for the whole exchange, and "
-			"the super flash length. It sits above P1's numbers and below P2's. The bar has no cells "
-			"for the flash, so this line is the only place it shows.");
+		ImGui::SetTooltip("Adds a line with the last hit's blockstun or hitstun, the gap before it, "
+			"the flash length and the damage.");
 	}
 
-	if (ImGui::Checkbox("Status Bar", &g_modVals.frameMeterAttributes))
+	if (ImGui::Checkbox("Invincibility Row", &g_modVals.frameMeterAttributes))
 		Settings::SaveInt("FrameMeter", "AttributeRow", g_modVals.frameMeterAttributes ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Adds a thin row under each bar showing what the character is invincible to "
-			"on each frame: throw, projectile, head, legs, air dive and two partial heights. White "
-			"means nothing can hit. This row is the only place invincibility shows. Frame Meter Doc. "
-			"lists every colour.");
+		ImGui::SetTooltip("Thin row under each bar.\nWhat the character can't be hit by on each frame.\n"
+			"White means nothing can hit.");
+	}
+
+	if (ImGui::Checkbox("Attack Row", &g_modVals.frameMeterAttackRow))
+		Settings::SaveInt("FrameMeter", "AttackRow", g_modVals.frameMeterAttackRow ? 1 : 0);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Thin row above each bar.\nOn active frames, the attack's Head, Foot or Air "
+			"property.");
 	}
 
 	if (ImGui::Checkbox("Place automatically", &g_modVals.frameMeterAuto))
