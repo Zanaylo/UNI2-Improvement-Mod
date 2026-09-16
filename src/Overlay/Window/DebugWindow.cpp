@@ -64,7 +64,7 @@ DebugWindow::DebugWindow(const std::string& title, bool closable, ImGuiWindowFla
 	, m_structFirstOffset(0)
 	, m_structRowCount(48)
 	, m_hasSnapshot(false)
-	, m_followOffset(0x648)
+	, m_followOffset(GameOffsets::kCharaFrameObject)
 	, m_followRows(32)
 {
 	memset(m_snapshot, 0, sizeof(m_snapshot));
@@ -1815,7 +1815,8 @@ void DebugWindow::DrawPointerSection()
 		m_followOffset = (uintptr_t)(offset < 0 ? 0 : offset) & ~3u;
 
 	ImGui::SameLine();
-	ImGui::TextDisabled("(+0x648 is passed to the collision routine)");
+	ImGui::TextDisabled("(+0x%x is passed to the collision routine)",
+			static_cast<unsigned>(GameOffsets::kCharaFrameObject));
 
 	ImGui::SliderInt("rows", &m_followRows, 8, 128);
 

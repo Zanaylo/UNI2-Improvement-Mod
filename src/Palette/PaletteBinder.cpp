@@ -25,7 +25,7 @@ constexpr int kNameEveryFrames = 15;
 constexpr unsigned kSeatVotesNeeded = 60;
 constexpr unsigned kSeatMajority = 4;
 
-constexpr int kCharaCount = 27;
+constexpr int kCharaCount = 28;
 constexpr int kSignatureEntries = 16;
 constexpr int kSignatureBytes = kSignatureEntries * 3;
 

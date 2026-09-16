@@ -133,27 +133,59 @@ To see them, unhide `<stage>_bones` in the outliner, select it and open the **NL
 one track per script. `Tab` on a strip enters tweak mode and the Dope Sheet shows that take's keys.
 Wall lamps have keys too, on `mua_ramp`. You don't need any of this to watch it, just press `Space`.
 
-**Materials are opaque unless something is really see-through.** Stages keep 255 in vertex alpha
-and use it to fade the odd sprite. A lobby avatar has 127, 63 and 0 in there and isn't see-through at
-all. So vertex alpha only counts as opacity when a model uses the top of the range. This only matters
-in the viewport, where a material with transparency gets EEVEE's dithering all over the model.
-Materials are named `mNNN <texture>` when opaque, with ` alpha` added when they fade and ` add` when
-they're additive.
+**The model says how every surface is drawn, and nothing is guessed.** Each mesh's skeleton record
+carries the blend mode BBTAG's own draw puts on it (`UNI2-docs/BBTAG-DECOMPILE.md`):
 
-**Light quads are drawn additive**, like the game does. Stage lights are a bright middle on black,
-so blended normally they'd be black slabs with a glow in them. Those materials end in ` add`, and
-`fbxex_blendmode` on the object says `1` for additive and `0` for blended.
+- `0` is **opaque**. The game still throws away texels whose alpha is exactly 0, so a cut-out
+  texture keeps its holes. The material is named `mNNN <texture>` and drawn Dithered, which for a
+  0-or-1 alpha is a clean cut-out.
+- `2` is **additive**, named ` add`, scaled by its alpha the way BBTAG adds, so light rays fade at
+  their edges. `fbxex_blendmode` on the object says `1`.
+- `4` is **subtractive**, named ` sub`. Blender can't subtract, so it darkens what's behind it.
+- **Anything else**, the "not set" value on most meshes and every mesh of Tower Center included, is
+  **alpha blended**. That is the game's default for a model, not a judgement about the texture.
+  BBTAG still writes depth for it, and Blender has no blending that writes depth, so the add-on
+  picks the closer of Blender's two ways:
+  - ` alpha`, drawn Dithered, when the surface is fully there or fully gone. Depth is right, so
+    nothing shows through the wall in front of it.
+  - ` blend`, drawn Blended, when it's really see-through: a texture that is mostly soft alpha,
+    vertex alpha that fades, or a script that holds it half faded. Every surface of it draws, so
+    a glow card or a shadow behind another one still shows through.
+  - ` sheer`, drawn Blended, when the skeleton's flags turn depth writing off (`0x2000`).
+  - ` add`, when nothing about the surface is see-through but it draws black at every vertex while
+    its texture has light in it: Central Station's lens flares, Station 2's search light, Duel
+    Field's run lights and the boss stage's fireballs. BBTAG's draw doesn't mark them, but the game
+    shows them without a black card, so they're added like a light.
+
+**A glow card whose polygon stops before its texture fades out** keeps a faint alpha along its
+border, and Blender draws that as a hard edge the game doesn't show (Tower Center's street lights,
+Riverside's lamps). The add-on measures the alpha left along the mesh's border and puts it in
+`mua_rim`, and the ` blend` and ` sheer` materials take it off, so the border lands on exactly 0.
+It only does that when the texture's own outer ring is clear and what's left is a faint tail, at
+most about a fifth of the texture's strongest alpha. Set `mua_rim` to `0` to see the card as it is.
+
+The object keeps the number in `mua_blend`, the skeleton's flag word in `mua_flags` and the border
+trim in `mua_rim`. A mesh whose
+flags hide it (`0x20`) isn't built.
+
+**A material can have up to three textures.** The first slot is the base. The third is a reflection,
+added on top as a sphere map: that's what lights Ishana's crystals and Snowtown's icicles. A texture
+in an unused slot, like Lakeside's missing `zhong.dds`, is skipped.
 
 **The material does what the game's shader does**: texture times vertex colour, with the alpha
-coming from both. The mapping node is left at identity so it can carry the UV scroll. `Workbench`
-ignores that node, so if a flat render and the viewport ever disagree, check the mapping node.
+coming from both. The vertex colour is decoded before it multiplies, since the game multiplies the
+raw bytes, and the scene is set to the `Standard` view, since Blender's default `AgX` dulls every
+colour. The mapping node carries the UV animation exactly as the game's vertex shader applies it:
+u moves against the animated offset, v with it, and the scale divides. `Workbench` ignores that
+node, so if a flat render and the viewport ever disagree, check the mapping node.
 
 **The armature is hidden after import**, so you see the model instead of a pile of bones. The meshes
 still deform. Unhide `<stage>_bones` to pose it.
 
 **8x8 DDS textures are decoded by the add-on.** Blender can't open any of the fourteen the two games
 ship, and Cycles paints them magenta (`bg_snowtown`'s icicles use one). Bigger ones are loaded by
-Blender itself.
+Blender itself. A texture whose header wrongly marks it as a volume, like Station's `mirror_sky.dds`,
+is loaded from a copy with that mark cleared and packed into the file.
 
 **Textures somewhere else.** A character or effect `MUA` only carries texture *names*. Point
 **Textures from** at the folder or the archives that have them. The import tells you how many it
@@ -185,23 +217,39 @@ The objects use the **same attribute names** as the FbxExp add-on (`Shade`, `fbx
 
 ## What the scripts do
 
+**Each script runs the way BBTAG runs it**, one copy per skeleton, frame by frame
+(`BB_CEventInstance`, `UNI2-docs/BBTAG-DECOMPILE.md`). `0x03` waits for a frame, `0x15` pauses the
+script's clock while its sprites and ramp keep going, `0x0f` jumps back, `0x13` rolls a branch and
+`0x05` starts a label whose `0x0b` holds play in order. What comes out is keyed and loops on the
+script's own period, so Central Station's trains take turns every 6001 frames, the way the game
+counts them.
+
+- **`0x13` rolls a branch.** The roll uses a fixed seed per skeleton, so an import always comes out
+  the same but every skeleton rolls its own: Town's lightning bolts strike at different times and
+  every TV in Midnight Ring picks its own channel. A script that keeps rolling is keyed for a minute
+  and repeats. When a roll would hide the object for good, like Garden's rabbits, which BBTAG skips
+  half the time, it rolls again so you get to see it. The stage importer in the mod rolls the same
+  way, so a port matches Blender.
 - **`0x06` picks a motion.** Each script that uses it gets an **NLA track** with the strips where the
-  script puts them, so Central Station's two trains take turns like in BBTAG instead of running at
-  the same time. A pick naming a motion the stage doesn't ship (the parked trains) leaves a gap, and
-  that gap is the parked pose.
-- **`0x12` is a ramp.** It becomes a keyed `mua_ramp` on the objects the script drives, 0 to 1,
-  looping with the script. The sixteen wall lamps and the door lights at Central Station get one. It
-  isn't wired to a shader, it's just a number you can read.
-- **`0x12` also marks a light.** A mesh whose script ramps its brightness is drawn additive, which is
-  what makes the beach's sea foam look like foam instead of a black slab. Same for a surface that
-  fades to black in its vertex colours with no alpha, with a quarter of its vertices pure black and a
-  bright peak. Tower Center's road is 3% black and stays solid.
-- **`0x0b` is a sprite rectangle.** The quad gets one copy per rectangle, each with its UV window set
-  and its visibility keyed so only the current one shows. That's Central Station's departure board,
-  on the 6000 frame loop the script sets. The second value is the **sheet**: `0` is the material's own
-  texture, a name table indexes that, and anything else is the numbered texture next to it. That's
-  how the beach bunny cycles through `usagi_00.dds` to `usagi_07.dds`. A script without `0x0f` loops
-  on the sum of its own holds.
+  script puts them. A pick naming a motion the stage doesn't ship (the parked trains) leaves a gap,
+  and that gap is the parked pose.
+- **`0x12` is a ramp on the alpha.** It's keyed on `mua_ramp`, which the material multiplies in, so
+  lamps, sea foam and the P4 crowd fade in and out. A ramp that never loops plays once: Lakeside
+  starts in daylight and its day copies fade out around frame 2500. While a ramp sits at 0 the
+  object is hidden too, so it can't black out the copy underneath it.
+- **`0x0b` is a sprite rectangle.** The mesh gets one copy per rectangle, each with its UV window set
+  and its visibility keyed so only the current one shows, and every copy carries the ramp. That's
+  Central Station's departure board and vending machine buttons, and every TV in Midnight Ring. The
+  second value is the **sheet**, and the script names its sheets itself: the first name block of the
+  `.evb` lists them in order (`usagi.evb` lists `usagi_00.dds` to `_07`, `saru_B.evb`
+  `mob_saruB_0` and `_1`, `tv1.evb` `TV_suna`, `TV_base`, `TV_A_00`...). That is the texture the
+  game binds, so nothing is looked up by name.
+- **The rectangle is applied to the mesh's own UVs**, not stretched over them. The beach bunny's
+  reflection samples the strip drawn under the bunny on the same sheet, so it comes out upside down
+  like in the game.
+- **A sheet a rectangle doesn't fit in is the live screen.** Duel Field's monitors cut 640 by 360
+  pieces out of a 1280 by 720 frame, and BBTAG fills them with what's happening in the match.
+  Blender can't do that, so those monitors keep the picture the stage ships.
 - **`bgobj` containers are listed too.** `scr/scr.bin` is a script with named commands (`EventHead`,
   `create`, `set_model`, `set_evt`, `setposx`, `setvel`, `req_se`, `particle`, `wait`) that places
   objects in the stage. `col/*.jonbin` is collision: the bitmap it was drawn over, the canvas and a
@@ -261,7 +309,7 @@ These paths assume a BBTAG install with its `data` folder decrypted.
 1. **Back up the archive.** Copy `...\BBTAG\data\bg\main_uni\bg_odaiba_vtx.pac` to
    `bg_odaiba_vtx.pac.bak`, because the export writes over the game's file. If you repacked that
    archive by hand before, start from a clean copy, since other repackers lay it out differently.
-2. **Install the add-on.** It should show up as **Mua model (.mua) 0.5.0**.
+2. **Install the add-on.** It should show up as **Mua model (.mua) 0.9.0**.
 3. **Import** `bg_odaiba_vtx.pac`.
 4. **Export it straight back** without changing anything. The dialog opens on the archive you came
    from, so keep the name and save over it. The result is identical to the original, so if something

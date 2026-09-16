@@ -4,6 +4,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/BgCeiling.h"
+#include "Game/BgListOverride.h"
 #include "Game/ExtraStages.h"
 #include "Game/FbGameFolder.h"
 #include "Game/StageArchive.h"
@@ -29,16 +30,53 @@ std::vector<int> g_slots;
 int g_bySlot[StageLibrary::kSlotLast + 1] = {};
 SRWLOCK g_lock = SRWLOCK_INIT;
 
+bool g_ownedKnown = false;
+bool g_slotsFromOwned = false;
+bool g_owned[StageLibrary::kSlotLast + 1] = {};
+int g_ownEntries = kOwnEntries;
+
+void LearnOwned()
+{
+	if (g_ownedKnown)
+		return;
+
+	std::vector<int> numbers;
+
+	if (!BgListOverride::OwnNumbers(numbers))
+		return;
+
+	int highest = -1;
+
+	for (int number : numbers)
+	{
+		if (number < 0 || number > StageLibrary::kSlotLast)
+			continue;
+
+		g_owned[number] = true;
+		highest = number > highest ? number : highest;
+	}
+
+	g_ownEntries = static_cast<int>(numbers.size());
+	g_ownedKnown = true;
+
+	LOG("StageLibrary: the game's own list claims %d stage(s), up to bg%03d", g_ownEntries,
+		highest);
+}
+
 const std::vector<int>& Slots()
 {
-	if (!g_slots.empty())
+	if (!g_slots.empty() && g_slotsFromOwned == g_ownedKnown)
 		return g_slots;
+
+	g_slots.clear();
 
 	for (int slot = StageLibrary::kSlotFirst; slot <= StageLibrary::kSlotLast; ++slot)
 	{
 		if (StageLibrary::Bindable(slot))
 			g_slots.push_back(slot);
 	}
+
+	g_slotsFromOwned = g_ownedKnown;
 
 	return g_slots;
 }
@@ -420,7 +458,12 @@ void StageLibrary::Load()
 
 bool StageLibrary::GameOwns(int number)
 {
-	return number < kSlotFirst || number == kTrainingStage || number == kDebugStage;
+	LearnOwned();
+
+	if (number < kSlotFirst || number == kTrainingStage || number == kDebugStage)
+		return true;
+
+	return number >= 0 && number <= kSlotLast && g_owned[number];
 }
 
 bool StageLibrary::Bindable(int slot)
@@ -431,8 +474,10 @@ bool StageLibrary::Bindable(int slot)
 
 int StageLibrary::SlotBudget()
 {
+	LearnOwned();
+
 	const int slots = static_cast<int>(Slots().size());
-	const int room = BgCeiling::ListEntries() - kOwnEntries;
+	const int room = BgCeiling::ListEntries() - g_ownEntries;
 
 	return slots < room ? slots : room;
 }

@@ -26,6 +26,7 @@ static const OwnStageName kOwnStageNames[] = {
 	{ 25, "North Metropolis - Central Street" },
 	{ 26, "Deep Azure Aquarium" },
 	{ 27, "Tower in the Dark Night - Under Construction" },
+	{ 28, "Seaside Warehouse District" },
 	{ 90, "Training Stage" },
 	{ 99, "Debug Stage" },
 };

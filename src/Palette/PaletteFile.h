@@ -25,4 +25,7 @@ namespace PaletteFile
 		bool* outHasEffect = nullptr);
 	bool Save(const std::string& path, const uint8_t* colors, const Info& info,
 		const uint8_t* effectColors = nullptr);
+
+	std::string CompanionOf(const std::string& file);
+	bool IsCompanion(const char* file);
 }

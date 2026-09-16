@@ -1071,6 +1071,41 @@ bool PaletteTexture::GetShape(int index, unsigned& width, unsigned& height, unsi
 	return true;
 }
 
+bool PaletteTexture::WriteRowSet(int index, const unsigned* rows, const uint8_t* const* colors,
+	int count)
+{
+	IDirect3DTexture9* const texture = Live(index);
+
+	if (texture == nullptr || rows == nullptr || colors == nullptr || count <= 0)
+		return false;
+
+	D3DLOCKED_RECT locked = {};
+
+	if (FAILED(texture->LockRect(0, &locked, nullptr, 0)))
+		return false;
+
+	for (int i = 0; i < count; ++i)
+	{
+		const unsigned row = rows[i];
+
+		if (row >= kRows || colors[i] == nullptr)
+			continue;
+
+		uint8_t* const at = static_cast<uint8_t*>(locked.pBits) + row * locked.Pitch;
+
+		if (!g_backup[index][row].taken)
+		{
+			memcpy(g_backup[index][row].colors, at, kRowBytes);
+			g_backup[index][row].taken = true;
+		}
+
+		memcpy(at, colors[i], kRowBytes);
+	}
+
+	texture->UnlockRect(0);
+	return true;
+}
+
 bool PaletteTexture::ReadRow(int index, unsigned row, uint8_t* out)
 {
 	IDirect3DTexture9* const texture = Live(index);

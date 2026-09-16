@@ -34,7 +34,7 @@ constexpr int kSecondSideY = 650;
 constexpr int kNoSound = -1;
 constexpr int kCommonMessage = 0;
 constexpr uintptr_t kSideAt = 4;
-constexpr uintptr_t kParentAt = 0x3f8;
+constexpr uintptr_t kParentAt = GameOffsets::kCharaOwner;
 constexpr long kDrawsReported = 16;
 
 struct Recent

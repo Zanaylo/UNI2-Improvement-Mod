@@ -168,6 +168,28 @@ bool WriteEffectBlock(FILE* file, const uint8_t* effectColors)
 
 }
 
+std::string PaletteFile::CompanionOf(const std::string& file)
+{
+	const size_t dot = file.find_last_of('.');
+
+	return (dot == std::string::npos ? file : file.substr(0, dot)) + "_p1" + kExtension;
+}
+
+bool PaletteFile::IsCompanion(const char* file)
+{
+	if (file == nullptr)
+		return false;
+
+	const std::string name = file;
+	const size_t dot = name.find_last_of('.');
+
+	if (dot == std::string::npos || dot < 3)
+		return false;
+
+	return name[dot - 3] == '_' && name[dot - 2] == 'p'
+		&& name[dot - 1] >= '0' && name[dot - 1] <= '9';
+}
+
 bool PaletteFile::Load(const std::string& path, uint8_t* colors, Info& info, uint8_t* effectColors,
 	bool* outHasEffect)
 {

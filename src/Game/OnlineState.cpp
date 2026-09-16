@@ -11,7 +11,7 @@
 
 namespace {
 
-constexpr uintptr_t kSession = 0x3b49858;
+constexpr uintptr_t kSession = 0x4448858;
 
 constexpr uintptr_t kBackendVTables[] = {
 	0x529900,

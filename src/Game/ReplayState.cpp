@@ -10,7 +10,7 @@
 
 namespace {
 
-constexpr uintptr_t kBattleMode = 0x597948;
+constexpr uintptr_t kBattleMode = 0x5a5978;
 constexpr uint32_t kBattleModeReplay = 1;
 
 const char* ModeName(uint32_t mode)

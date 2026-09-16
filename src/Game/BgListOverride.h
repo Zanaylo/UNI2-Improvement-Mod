@@ -39,6 +39,8 @@ namespace BgListOverride
 
 	bool OwnName(int number, std::string& out);
 
+	bool OwnNumbers(std::vector<int>& out);
+
 	bool SetNames(const std::vector<std::pair<int, std::string> >& named);
 
 	bool NeedsRestart();

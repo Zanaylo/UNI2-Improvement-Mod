@@ -296,7 +296,8 @@ DWORD WINAPI InitThread(LPVOID)
 	OpenLogger();
 	InstallCrashHandler();
 
-	LOG("%s %s starting, loaded as %s", UNI2_IM_NAME, UNI2_IM_VERSION, D3D9Proxy::LoadedAs());
+	LOG("%s %s starting, loaded as %s, built %s %s", UNI2_IM_NAME, UNI2_IM_VERSION,
+		D3D9Proxy::LoadedAs(), __DATE__, __TIME__);
 
 	Compat::Detect();
 

@@ -39,7 +39,7 @@ const uint8_t* Owner(const uint8_t* chara)
 
 	uint32_t redirect = 0;
 
-	if (TryReadDword(chara + 0x3f8, redirect) && redirect != 0)
+	if (TryReadDword(chara + GameOffsets::kCharaOwner, redirect) && redirect != 0)
 		return reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(redirect));
 
 	return chara;

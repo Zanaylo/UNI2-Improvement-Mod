@@ -43,6 +43,9 @@ void Fill(Shelf& shelf, int chara)
 		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
 			continue;
 
+		if (PaletteFile::IsCompanion(found.cFileName))
+			continue;
+
 		if (shelf.count >= PaletteLibrary::kMaxFiles)
 			break;
 

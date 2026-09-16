@@ -9,7 +9,7 @@ evb -> scripts
 bl_info = {
     "name": "Mua model (.mua)",
     "author": "PrimoZanaylo",
-    "version": (0, 5, 0),
+    "version": (0, 9, 0),
     "blender": (4, 2, 0),
     "location": "File > Import > Mua model",
     "description": "Import a Mua model with its animation and scripts",
@@ -19,6 +19,7 @@ bl_info = {
 import hashlib
 import math
 import os
+import re
 import struct
 import zlib
 
@@ -53,10 +54,31 @@ MOTION_BONES, MOTION_LIST, MOTION_KEYS, MOTION_INFO, MOTION_STRINGS = 1, 2, 3, 8
 
 EVB_RECORD = 0x20
 EVB_BLOCKS = 0x30
-EVB_OPEN, EVB_YIELD, EVB_TIME, EVB_CLOSE, EVB_GROUP = 0x01, 0x02, 0x03, 0x04, 0x05
+EVB_YIELD, EVB_TIME, EVB_CLOSE, EVB_GROUP = 0x02, 0x03, 0x04, 0x05
 EVB_MOTION, EVB_BEGIN, EVB_END, EVB_RECT, EVB_LOOP, EVB_RAMP = 0x06, 0x09, 0x0a, 0x0b, 0x0f, 0x12
+EVB_RANDOM, EVB_RANDOM_END, EVB_PAUSE = 0x13, 0x14, 0x15
+EVB_TAKEN, EVB_SKIPPED, EVB_DONE = 2, 1, 3
 EVB_FRAMES = 12000
+EVB_ROLLED_FRAMES = 3600
+ROLL_TRIES = 16
+LCG_MULTIPLY, LCG_ADD, LCG_MASK = 1103515245, 12345, 0xffffffff
 EVB_NONE = 0xffffffff
+RAMP_FULL = 1000.0
+RAMP_EPSILON = 1e-6
+
+BLEND_OPAQUE, BLEND_ADD, BLEND_SUBTRACT, BLEND_UNSET = 0, 2, 4, 0x7fffffff
+BASE_LAYER, SHINE_LAYER = 1, 3
+HIDDEN_FLAG = 0x20
+NO_DEPTH_WRITE_FLAG = 0x2000
+SOFT_SHARE = 0.5
+GLOW_SOLID = 0.01
+GLOW_SOFT = 0.05
+SOFT_SAMPLES = 4096
+CARD_BLACK = 8.0 / 255.0
+RIM_TAIL = 48.0 / 255.0
+RIM_STEPS = 16
+BLENDED_KINDS = ("add", "sub", "blend", "sheer")
+SOFT_KINDS = ("blend", "sheer")
 
 KEY = bytes((
     0xf5, 0x5c, 0x84, 0x2a, 0xad, 0x61, 0x54, 0xe7, 0x0a, 0xfc, 0x99, 0x6b, 0xd5, 0xa4, 0xd3, 0xd8,
@@ -69,23 +91,13 @@ PACKED = b"DFAS"
 
 IDENTITY = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
-SOFT_LOW = 16
-SOFT_HIGH = 239
-SOFT_SHARE = 0.5
-GLOW_SOLID = 0.01
-GLOW_SOFT = 0.05
-GREY_SPREAD = 6.0
-MASK_LEVEL = 0.15
-BACK_CLEAR = 8
-BACK_SHARE = 0.05
-BACK_LOW = 8.0
-BACK_HIGH = 64.0
-ADDS_MOST = 128
-ADDS_SPAN = 2.0
 WINDOW_COVER = 0.9
 WINDOW_BAND = 0.6
 WINDOW_MATCH = 0.25
 WINDOW_BANDS = 8
+SHADE_GAMMA = 2.2
+DDS_CAPS2 = 0x70
+VIEW_TRANSFORM = "Standard"
 
 
 def dword(blob, at):
@@ -389,24 +401,30 @@ class Model(object):
 
     def _materials(self):
         assign = []
+        layer = []
         self.flow = []
         self.value = []
 
         for i in range(self._count(ASSIGN)):
             at = self._at(ASSIGN, i, 0x20)
-            assign.append(struct.unpack_from("<2i", self.blob, at)[1])
+            slot, texture = struct.unpack_from("<2i", self.blob, at)
+            assign.append(texture)
+            layer.append(slot)
             count, first = struct.unpack_from("<2i", self.blob, at + 8)
             self.flow.append([self._uvkey(first + k) for k in range(count)
                               if 0 <= first + k < self._count(UVANIM)])
 
         self.material = []
+        self.materialLayers = []
         self.materialFlow = []
 
         for i in range(self._count(MATERIAL)):
             at = self._at(MATERIAL, i, 0x50)
             count, first = struct.unpack_from("<2i", self.blob, at)
-            taken = [first + k for k in range(count) if 0 <= first + k < len(assign)]
+            taken = sorted((first + k for k in range(count) if 0 <= first + k < len(assign)),
+                           key=lambda k: layer[k] != BASE_LAYER)
             self.material.append([assign[k] for k in taken])
+            self.materialLayers.append(dict((layer[k], assign[k]) for k in taken))
             self.materialFlow.append(self.flow[taken[0]] if taken else [])
             self.value.append(list(struct.unpack_from("<18f", self.blob, at + 8)))
 
@@ -434,11 +452,15 @@ class Model(object):
 
         self.skeleton = []
         self.skeletonScript = []
+        self.skeletonBlend = []
+        self.skeletonFlags = []
 
         for i in range(self._count(SKELETON)):
             at = self._at(SKELETON, i, 0x20)
             self.skeleton.append(struct.unpack_from("<2I", self.blob, at))
             self.skeletonScript.append(struct.unpack_from("<i", self.blob, at + 8)[0])
+            self.skeletonBlend.append(dword(self.blob, at + 0xc))
+            self.skeletonFlags.append(dword(self.blob, at + 0x10))
 
         self.script = [self._name(dword(self.blob, self._at(SCRIPT, i, 0x10)))
                        for i in range(self._count(SCRIPT))]
@@ -547,8 +569,9 @@ class Model(object):
         return self.chain(first, local, [self.bone[first + i]["matrix"] for i in range(count)])
 
     def scriptOf(self, mesh):
-        which = mesh["skeleton"]
+        return self.scriptAt(mesh["skeleton"])
 
+    def scriptAt(self, which):
         if not 0 <= which < len(self.skeletonScript):
             return ""
 
@@ -560,152 +583,67 @@ class Model(object):
         named = self.script[index]
 
         return named.rsplit(".", 1)[0]
+
+    def blendOf(self, mesh):
+        which = mesh["skeleton"]
+
+        if not 0 <= which < len(self.skeletonBlend):
+            return BLEND_UNSET
+
+        return self.skeletonBlend[which]
+
+    def flagsOf(self, mesh):
+        which = mesh["skeleton"]
+
+        if not 0 <= which < len(self.skeletonFlags):
+            return 0
+
+        return self.skeletonFlags[which]
         
 #Todo: optimize the load script processing + 
 
 
+def evb_names(blob, at, count, stride):
+    out = []
+
+    for index in range(count):
+        where = at + index * stride
+
+        if where + stride > len(blob):
+            break
+
+        out.append(blob[where:where + stride].split(b"\x00")[0].decode("ascii", "replace"))
+
+    return out
+
+
 class Script(object):
-    #EVT0 7 blocks 0x20, Names in 0x22, records off 0x10
+    #EVT0 7 blocks 0x20, sheets in 0x20, names in 0x22, records off 0x10
 
     def __init__(self, blob):
         if blob[:4] != b"EVT0":
             raise ValueError("not an EVT0 script")
 
         _version, _names, self.last, commands, stride = struct.unpack_from("<5I", blob, 4)
-        skipped, count = struct.unpack_from("<2H", blob, 0x20)
+        counts = struct.unpack_from("<7H", blob, 0x20)
 
-        self.named = []
-        at = EVB_BLOCKS + skipped * stride
+        self.sheets = evb_names(blob, EVB_BLOCKS, counts[0], stride)
+        self.named = evb_names(blob, EVB_BLOCKS + counts[0] * stride, counts[1], stride)
+        record = [struct.unpack_from("<8I", blob, where)
+                  for where in range(commands, len(blob) - EVB_RECORD + 1, EVB_RECORD)]
+        ended = next((at for at, fields in enumerate(record) if fields[0] == EVB_NONE), len(record))
+        self.record = record[:ended + 1]
 
-        for _ in range(count):
-            if at + stride > len(blob):
-                break
+    def run(self, label):
+        instance = Instance(self, label)
+        played = instance.played()
+        played.rolled = instance.rolled
 
-            raw = blob[at:at + stride].split(b"\x00")[0]
-
-            if not all(0x20 <= letter < 0x7f for letter in raw):
-                break
-
-            self.named.append(raw.decode("ascii"))
-            at += stride
-
-        self.record = [struct.unpack_from("<8I", blob, where)
-                       for where in range(commands, len(blob) - EVB_RECORD + 1, EVB_RECORD)]
-
-    def timeline(self, opcode):
-        #'Usagi.evb' still broken
-        #cmds in 0x03, 0x0f  script loop, 0x09 own clock -> ai ai viu
-        out = []
-        loop = 0
-        time = 0
-
-        for fields in self.record:
-            code = fields[0]
-
-            if code in (EVB_NONE, EVB_YIELD):
-                break
-
-            if code == EVB_TIME:
-                time = fields[1]
-            elif code == EVB_LOOP:
-                loop = time
-                break
-            elif code == opcode:
-                out.append((time,) + fields[1:])
-
-        if loop > EVB_FRAMES:
-            return 0, []
-
-        return loop, out
-
-    def picks(self):
-        loop, entries = self.timeline(EVB_MOTION)
-
-        if loop < 2:
-            return 0, []
-
-        out = []
-
-        for fields in entries:
-            index = fields[1]
-
-            if 0 <= index < len(self.named):
-                out.append((fields[0], self.named[index]))
-
-        return (loop, out) if out else (0, [])
-
-    def ramps(self):
-        loop, entries = self.timeline(EVB_RAMP)
-
-        if loop < 2 or not entries:
-            return 0, []
-
-        return loop, [(f[0], f[1], max(1, f[2])) for f in entries]
-
-    def rects(self):
-        #0x0b group -> 0x05 select: own f counts and cycling
-        loop, entries = self.timeline(EVB_GROUP)
-
-        if not entries:
-            return 0, []
-
-        groups = {}
-        current = None
-
-
-        for fields in self.record:
-            code = fields[0]
-
-            if code == EVB_NONE:
-                break
-
-            if code == EVB_BEGIN:
-                current = fields[1]
-                groups.setdefault(current, [])
-            elif code == EVB_END:
-                current = None
-            elif code == EVB_RECT and current is not None:
-                groups[current].append((fields[1], fields[2], fields[3], fields[4], fields[5],
-                                        fields[6]))
-
-        if loop < 2:
-            spans = [sum(row[0] for row in held) for held in groups.values() if held]
-            loop = max(spans) if spans else 0
-
-        if loop < 2 or loop > EVB_FRAMES:
-            return 0, []
-
-        out = []
-
-        for frame in range(loop):
-            chosen = None
-            began = 0
-
-            for at, group in ((f[0], f[1]) for f in entries):
-                if at <= frame:
-                    chosen = group
-                    began = at
-
-            held = groups.get(chosen) or []
-            span = sum(r[0] for r in held)
-
-            if not held or span <= 0:
-                out.append(None)
-                continue
-
-            step = (frame - began) % span
-
-            for stay, sheet, x, y, w, h in held:
-                if step < stay:
-                    out.append((sheet, x, y, w, h))
-                    break
-
-                step -= stay
-
-        return loop, out
+        return played
 
     def listing(self):
-        out = ["names: %s" % (", ".join(self.named) or "-"), ""]
+        out = ["sheets: %s" % (", ".join(self.sheets) or "-"),
+               "names: %s" % (", ".join(self.named) or "-"), ""]
 
         for fields in self.record:
             if fields[0] == EVB_NONE:
@@ -716,6 +654,286 @@ class Script(object):
             out.append("op 0x%02x  %s" % (fields[0], args))
 
         return "\n".join(out) + "\n"
+
+def signed(value):
+    return value - 0x100000000 if value >= 0x80000000 else value
+
+
+class Dice(object):
+    def __init__(self, label):
+        self.state = zlib.crc32(label.encode("utf-8")) & LCG_MASK
+
+    def percent(self):
+        self.state = (self.state * LCG_MULTIPLY + LCG_ADD) & LCG_MASK
+
+        return ((self.state >> 16) & 0x7fff) % 100
+
+
+class Instance(object):
+    def __init__(self, script, label):
+        self.record = script.record
+        self.named = script.named
+        self.dice = Dice(label)
+        self.labels = {}
+
+        for at, fields in enumerate(self.record):
+            if fields[0] == EVB_BEGIN:
+                self.labels.setdefault(fields[1], at)
+
+        self.frame = 0
+        self.jump = -1
+        self.pause = 0
+        self.resume = 0
+        self.label = -1
+        self.cursor = -1
+        self.held = 0
+        self.rect = None
+        self.ramp = RAMP_FULL
+        self.target = RAMP_FULL
+        self.left = 0
+        self.step = 0.0
+        self.picked = None
+        self.rolled = False
+
+    def played(self):
+        self.interpret()
+        self.walk()
+        samples = []
+        seen = {}
+
+        for tick in range(EVB_FRAMES):
+            if tick:
+                self.tick()
+
+            samples.append(self.sample())
+            self.picked = None
+
+            if self.rolled and not self.ended():
+                if tick + 1 >= EVB_ROLLED_FRAMES:
+                    return Run(samples, True, self.named)
+
+                continue
+
+            state = self.state()
+
+            if state in seen:
+                return repeating(samples, seen[state], tick, self.named)
+
+            seen[state] = tick
+
+        return Run(samples, False, self.named)
+
+    def sample(self):
+        if self.ramp <= 0.0:
+            return (None, 0.0, self.picked)
+
+        return (self.rect, self.ramp, self.picked)
+
+    def ended(self):
+        if self.jump >= 0:
+            return False
+
+        return (self.resume >= len(self.record)
+                or self.record[self.resume][0] in (EVB_YIELD, EVB_NONE))
+
+    def state(self):
+        return (None if self.ended() else self.frame, self.jump, self.pause, self.resume,
+                self.label, self.cursor, self.held, self.rect, self.ramp, self.target,
+                self.left, self.step)
+
+    def tick(self):
+        if self.pause >= 1:
+            self.pause -= 1
+        elif self.jump < 0:
+            self.frame += 1
+        else:
+            self.frame, self.jump, self.resume = self.jump, -1, 0
+
+        if self.label >= 0:
+            self.held += 1
+
+        if self.left < 1:
+            self.ramp = self.target
+        else:
+            self.ramp += self.step
+            self.left -= 1
+
+        self.ramp = min(max(self.ramp, 0.0), RAMP_FULL)
+
+        if self.pause < 1:
+            self.interpret()
+
+        self.walk()
+
+    def interpret(self):
+        at = self.resume
+        live = False
+        opened = 0
+        chosen = -1
+        rolling = 0
+
+        while at < len(self.record):
+            fields = self.record[at]
+            code = fields[0]
+
+            if code in (EVB_YIELD, EVB_NONE):
+                break
+
+            if code == EVB_TIME and self.frame < fields[1]:
+                break
+
+            if code == EVB_TIME:
+                if self.frame == fields[1]:
+                    live, opened = True, fields[1]
+            elif code == EVB_CLOSE:
+                live = False
+            elif code == EVB_RANDOM:
+                rolling = self.roll(rolling, fields[1])
+            elif code == EVB_RANDOM_END:
+                rolling = 0
+            elif live and rolling in (0, EVB_TAKEN):
+                chosen = self.command(fields, opened, chosen)
+
+            at += 1
+
+        self.resume = at
+
+        if chosen in self.labels:
+            self.label = chosen
+            self.cursor = self.labels[chosen]
+
+    def roll(self, rolling, percent):
+        if rolling in (EVB_TAKEN, EVB_DONE):
+            return EVB_DONE
+
+        self.rolled = True
+
+        return EVB_TAKEN if self.dice.percent() < percent else EVB_SKIPPED
+
+    def command(self, fields, opened, chosen):
+        code = fields[0]
+
+        if code == EVB_GROUP:
+            self.held = self.frame - opened
+
+            return fields[1]
+
+        if code == EVB_MOTION:
+            self.picked = signed(fields[1])
+        elif code == EVB_LOOP:
+            self.jump = signed(fields[1])
+        elif code == EVB_RAMP:
+            self.target = float(fields[1])
+            self.left = signed(fields[2]) or 1
+            self.step = (self.target - self.ramp) / self.left
+        elif code == EVB_PAUSE:
+            self.pause = signed(fields[1])
+
+        return chosen
+
+    def walk(self):
+        if self.label < 0:
+            return
+
+        start = self.held
+        at = self.cursor
+
+        for _ in range(2 * len(self.record)):
+            if not 0 <= at < len(self.record) or self.record[at][0] == EVB_NONE:
+                return
+
+            fields = self.record[at]
+
+            if fields[0] == EVB_RECT and self.held < fields[1]:
+                self.rect = tuple(fields[2:7])
+                self.cursor = at
+
+                return
+
+            if fields[0] == EVB_RECT:
+                self.held -= fields[1]
+            elif fields[0] == EVB_END:
+                span = start - self.held
+
+                if span <= 0 or span == self.held:
+                    return
+
+                if span < self.held:
+                    self.held %= span
+
+                at = self.labels[self.label]
+
+            at += 1
+
+
+class Run(object):
+    def __init__(self, samples, cyclic, named):
+        self.length = len(samples)
+        self.cyclic = cyclic
+        self.rects = [one[0] for one in samples]
+        self.ramps = [one[1] / RAMP_FULL for one in samples]
+        self.picks = [(tick, named[one[2]] if 0 <= one[2] < len(named) else "")
+                      for tick, one in enumerate(samples) if one[2] is not None]
+        self.rolled = False
+
+    def shows(self):
+        return max(self.ramps[1:] or self.ramps) > 0.0
+
+    def fades(self):
+        return len(set(self.ramps)) > 1
+
+    def holdsPartial(self):
+        return any(RAMP_EPSILON < a < 1.0 - RAMP_EPSILON and abs(a - b) <= RAMP_EPSILON
+                   for a, b in zip(self.ramps, self.ramps[1:]))
+
+
+def repeating(samples, first, now, named):
+    period = now - first
+    start = first + 1
+
+    while start > 0 and samples[start - 1] == samples[start - 1 + period]:
+        start -= 1
+
+    if start == 0:
+        return Run(samples[:period], True, named)
+
+    if period == 1:
+        return Run(samples[:start + 1], False, named)
+
+    if start <= period:
+        steady = [samples[tick + period * -(-(start - tick) // period)] if tick < start
+                  else samples[tick] for tick in range(period)]
+
+        return Run(steady, True, named)
+
+    while len(samples) < EVB_FRAMES:
+        samples.append(samples[len(samples) - period])
+
+    return Run(samples, False, named)
+
+
+def script_runs(model, found):
+    out = {}
+
+    for skeleton in sorted(set(mesh["skeleton"] for mesh in model.mesh)):
+        name = model.scriptAt(skeleton)
+
+        if name in found:
+            out[skeleton] = shown_run(found[name], "%s %d" % (name, skeleton))
+
+    return out
+
+
+def shown_run(script, label):
+    run = None
+
+    for attempt in range(ROLL_TRIES):
+        run = script.run(label if not attempt else "%s %d" % (label, attempt))
+
+        if run.shows() or not run.rolled:
+            return run
+
+    return run
 
 #oh formato lixo da desgraça
 BIN_SECTIONS = 3
@@ -1166,250 +1384,165 @@ def dds_levels(first, second):
             + [0, 255])
 
 
-def dds_mean(blob, at):
-    total = 0.0
+def dds_feathered(blob):
+    body, step, _colour, _alpha = dds_blocks(blob)
 
-    for value in struct.unpack_from("<2H", blob, at):
-        total += ((value >> 11 & 31) * 255.0 / 31.0 + (value >> 5 & 63) * 255.0 / 63.0
-                  + (value & 31) * 255.0 / 31.0) / 3.0
-
-    return total / 2.0
-
-#revise the uni2 fbx after
-def dds_transparent(blob):
-    if len(blob) < 148 or blob[:4] != b"DDS ":
+    if body is None or step != 16:
         return False
 
-    height, width = struct.unpack_from("<2I", blob, 12)
-    fourcc = blob[84:88]
-    body = blob[128:]
-    count = (max(width, 4) // 4) * (max(height, 4) // 4)
-
-    if fourcc == b"DXT1":
-        for i in range(min(count, 4096)):
-            at = i * 8
-
-            if at + 8 > len(body):
-                break
-
-            low, high = struct.unpack_from("<2H", body, at)
-
-            if low > high:
-                continue
-
-            bits = struct.unpack_from("<I", body, at + 4)[0]
-
-            for t in range(16):
-                if (bits >> (t * 2)) & 3 == 3:
-                    return True
-
-        return False
-
-    if fourcc not in (b"DXT3", b"DXT5"):
-        return False
-
-    for i in range(min(count, 4096)):
-        at = i * 16
-
-        if at + 16 > len(body):
-            break
-
-        if fourcc == b"DXT5":
-            if body[at] < 250 and body[at + 1] < 250:
-                return True
-
-            continue
-
-        if min(body[at:at + 8]) != 0xff:
-            return True
-
-    return False
-
-
-def dds_uniform(blob):
-    body, step, colour, _alpha = dds_blocks(blob)
-
-    if body is None:
-        return False
-
+    explicit = blob[84:88] == b"DXT3"
     count = len(body) // step
-
-    if count == 0:
-        return False
-
-    seen = set()
-    stride = max(1, count // 4096)
-
-    for i in range(0, count, stride):
-        seen.add(body[i * step + colour:i * step + colour + 4])
-
-        if len(seen) > 1:
-            return False
-
-    return bool(seen)
-
-
-def dds_alphamix(blob):
-    body, step, _colour, alpha = dds_blocks(blob)
-
-    if body is None or alpha < 0:
-        return (0.0, 0.0, 1.0)
-
-    count = len(body) // step
-
-    if count == 0:
-        return (0.0, 0.0, 1.0)
-
-    stride = max(1, count // 2048)
-    inside = 0
+    stride = max(1, count // SOFT_SAMPLES)
+    soft = 0
     solid = 0
     total = 0
 
-    for i in range(0, count, stride):
-        at = i * step + alpha
-        levels = dds_levels(body[at], body[at + 1])
-        bits = int.from_bytes(body[at + 2:at + 8], "little")
-
-        for k in range(16):
-            value = levels[(bits >> (k * 3)) & 7]
+    for block in range(0, count, stride):
+        for value in alpha_texels(body, block * step, explicit):
             total += 1
-
-            if value > SOFT_HIGH:
-                solid += 1
-            elif value >= SOFT_LOW:
-                inside += 1
+            soft += 0 < value < 255
+            solid += value == 255
 
     if not total:
-        return (0.0, 0.0, 1.0)
+        return False
 
-    return (1.0 - (inside + solid) / float(total), inside / float(total),
-            solid / float(total))
+    fine = soft / float(total)
+
+    return fine >= SOFT_SHARE or (solid / float(total) < GLOW_SOLID and fine > GLOW_SOFT)
 
 
-def dds_greyscale(blob):
+def alpha_texels(body, at, explicit):
+    if explicit:
+        bits = int.from_bytes(body[at:at + 8], "little")
+
+        return [((bits >> (k * 4)) & 15) * 17 for k in range(16)]
+
+    levels = dds_levels(body[at], body[at + 1])
+    bits = int.from_bytes(body[at + 2:at + 8], "little")
+
+    return [levels[(bits >> (k * 3)) & 7] for k in range(16)]
+
+
+def clear_texel(body, at, k):
+    first, second, bits = struct.unpack_from("<2HI", body, at)
+
+    return first <= second and (bits >> (k * 2)) & 3 == 3
+
+
+def punched(body, at):
+    return any(clear_texel(body, at, k) for k in range(16))
+
+
+def block_palette(first, second, punchable):
+    ends = [[(value >> 11 & 31) / 31.0, (value >> 5 & 63) / 63.0, (value & 31) / 31.0]
+            for value in (first, second)]
+
+    if first > second or not punchable:
+        return ends + [[(2 * ends[0][k] + ends[1][k]) / 3.0 for k in range(3)],
+                       [(ends[0][k] + 2 * ends[1][k]) / 3.0 for k in range(3)]]
+
+    return ends + [[(ends[0][k] + ends[1][k]) / 2.0 for k in range(3)], [0.0, 0.0, 0.0]]
+
+
+def texel_peak(body, at, punchable):
+    first, second, bits = struct.unpack_from("<2HI", body, at)
+    palette = block_palette(first, second, punchable)
+
+    return max(max(palette[(bits >> (k * 2)) & 3]) for k in range(16))
+
+
+def dds_glowing(blob):
     body, step, colour, _alpha = dds_blocks(blob)
 
     if body is None:
-        return 255.0
+        return False
 
+    explicit = blob[84:88] == b"DXT3"
     count = len(body) // step
+    stride = max(1, count // SOFT_SAMPLES)
+    peak = 0.0
 
-    if count == 0:
-        return 255.0
+    for block in range(0, count, stride):
+        at = block * step
 
-    stride = max(1, count // 2048)
-    spread = 0.0
-    total = 0
+        if step == 8 and punched(body, at):
+            return False
 
-    for i in range(0, count, stride):
-        for value in struct.unpack_from("<2H", body, i * step + colour):
-            red = (value >> 11 & 31) * 255.0 / 31.0
-            green = (value >> 5 & 63) * 255.0 / 63.0
-            blue = (value & 31) * 255.0 / 31.0
-            spread += max(red, green, blue) - min(red, green, blue)
-            total += 1
+        if step == 16 and min(alpha_texels(body, at, explicit)) < 255:
+            return False
 
-    return spread / total if total else 255.0
+        peak = max(peak, texel_peak(body, at + colour, step == 8))
 
-
-def dds_backing(blob):
-    body, step, colour, alpha = dds_blocks(blob)
-
-    if body is None or alpha < 0:
-        return (0.0, 0.0)
-
-    count = len(body) // step
-
-    if count == 0:
-        return (0.0, 0.0)
-
-    stride = max(1, count // 2048)
-    clear = 0
-    total = 0
-    level = 0.0
-
-    for i in range(0, count, stride):
-        at = i * step
-        levels = dds_levels(body[at + alpha], body[at + alpha + 1])
-        bits = int.from_bytes(body[at + alpha + 2:at + alpha + 8], "little")
-        mean = dds_mean(body, at + colour)
-
-        for k in range(16):
-            total += 1
-
-            if levels[(bits >> (k * 3)) & 7] < BACK_CLEAR:
-                clear += 1
-                level += mean
-
-    if not total or not clear:
-        return (0.0, 0.0)
-
-    return (clear / float(total), level / clear)
-
-
-def dds_lit(blob):
-    share, level = dds_backing(blob)
-
-    return share <= BACK_SHARE or level < BACK_LOW or level >= BACK_HIGH
+    return peak > CARD_BLACK
 
 
 def dds_sampler(blob):
-    if len(blob) < 148 or blob[:4] != b"DDS ":
-        return None
-
-    height, width = struct.unpack_from("<2I", blob, 12)
     body, step, colour, _alpha = dds_blocks(blob)
 
     if body is None:
         return None
 
-    wide, high = max(width // 4, 1), max(height // 4, 1)
+    height, width = struct.unpack_from("<2I", blob, 12)
+    wide, high = max((width + 3) // 4, 1), max((height + 3) // 4, 1)
 
-    def at(u, v):
-        x = min(max(int(u * wide), 0), wide - 1)
-        y = min(max(int(v * high), 0), high - 1)
-        p = (y * wide + x) * step + colour
+    def peak(u, v):
+        at = ((math.floor(v * high) % high) * wide + math.floor(u * wide) % wide) * step + colour
 
-        if p + 4 > len(body):
+        return texel_peak(body, at, step == 8) if at + 8 <= len(body) else 1.0
+
+    return peak
+
+
+class AlphaSheet(object):
+    def __init__(self, blob):
+        self.body, self.step, _colour, _alpha = dds_blocks(blob)
+        self.explicit = blob[84:88] == b"DXT3"
+        self.height, self.width = struct.unpack_from("<2I", blob, 12) if self.body else (0, 0)
+        self.wide = max((self.width + 3) // 4, 1)
+
+    def texel(self, x, y):
+        x, y = x % self.width, y % self.height
+        at = ((y // 4) * self.wide + x // 4) * self.step
+        k = (y % 4) * 4 + x % 4
+
+        if at + self.step > len(self.body):
+            return 1.0
+
+        if self.step == 8:
+            return 0.0 if clear_texel(self.body, at, k) else 1.0
+
+        return alpha_texels(self.body, at, self.explicit)[k] / 255.0
+
+    def sample(self, u, v):
+        x, y = u * self.width - 0.5, v * self.height - 0.5
+        left, top = math.floor(x), math.floor(y)
+        across, down = x - left, y - top
+        upper = self.texel(left, top) * (1.0 - across) + self.texel(left + 1, top) * across
+        lower = self.texel(left, top + 1) * (1.0 - across) + self.texel(left + 1, top + 1) * across
+
+        return upper * (1.0 - down) + lower * down
+
+    def faded(self):
+        if not self.body:
+            return False
+
+        ring = ([(x, y) for x in range(self.width) for y in (0, self.height - 1)]
+                + [(x, y) for y in range(self.height) for x in (0, self.width - 1)])
+
+        return all(self.texel(x, y) == 0.0 for x, y in ring)
+
+    def peak(self):
+        if not self.body:
             return 0.0
 
-        total = 0.0
+        if self.step == 8:
+            return 1.0
 
-        for value in struct.unpack_from("<2H", body, p):
-            total += (value >> 11 & 31) * 8 + (value >> 5 & 63) * 4 + (value & 31) * 8
+        count = len(self.body) // self.step
+        stride = max(1, count // SOFT_SAMPLES)
 
-        return total / 6.0
-
-    return at
-
-
-def dds_haloed(blob, box):
-    at = dds_sampler(blob)
-
-    if at is None:
-        return False
-
-    ulo, uhi = max(box[0], 0.0), min(box[1], 1.0)
-    vlo, vhi = max(box[2], 0.0), min(box[3], 1.0)
-
-    if uhi - ulo < 0.01 or vhi - vlo < 0.01:
-        return False
-
-    steps = 16
-    ring = []
-    core = []
-
-    for i in range(steps + 1):
-        for j in range(steps + 1):
-            u = ulo + (uhi - ulo) * i / steps
-            v = vlo + (vhi - vlo) * j / steps
-            edge = i <= 1 or j <= 1 or i >= steps - 1 or j >= steps - 1
-            (ring if edge else core).append(at(u, v))
-
-    dark = sum(ring) / len(ring)
-    bright = sum(core) / len(core)
-
-    return dark < 6.0 and bright > 4.0 * max(dark, 0.5) and bright > 20.0
+        return max(max(alpha_texels(self.body, block * self.step, self.explicit))
+                   for block in range(0, count, stride)) / 255.0
 
 #same decode to a small dds. (8x8 shit)
 def dds_pixels(blob):
@@ -1433,19 +1566,7 @@ def dds_pixels(blob):
         at = block * step
         first, second = struct.unpack_from("<2H", body, at + colour)
         bits = struct.unpack_from("<I", body, at + colour + 4)[0]
-        ends = []
-
-        for value in (first, second):
-            ends.append([(value >> 11 & 31) / 31.0, (value >> 5 & 63) / 63.0,
-                         (value & 31) / 31.0])
-
-        if first > second or alpha >= 0:
-            ends.append([(2 * ends[0][k] + ends[1][k]) / 3.0 for k in range(3)])
-            ends.append([(ends[0][k] + 2 * ends[1][k]) / 3.0 for k in range(3)])
-        else:
-            ends.append([(ends[0][k] + ends[1][k]) / 2.0 for k in range(3)])
-            ends.append([0.0, 0.0, 0.0])
-
+        ends = block_palette(first, second, alpha < 0)
         shades = None
 
         if alpha >= 0:
@@ -1477,28 +1598,136 @@ def dds_pixels(blob):
 
 
 def loaded_image(where):
+    known = next((one for one in bpy.data.images if one.get("mua_source") == where), None)
+
+    if known is not None:
+        return known
+
     image = bpy.data.images.load(where, check_existing=True)
 
     if image.size[0]:
         return image
 
     with open(where, "rb") as handle:
-        decoded = dds_pixels(handle.read())
+        blob = handle.read()
 
-    if decoded is None:
+    fresh = decoded_image(where, blob) or flattened_image(where, blob)
+
+    if fresh is None:
         return image
 
-    width, height, pixels = decoded
-    leaf = os.path.basename(where)
     bpy.data.images.remove(image)
-    fresh = bpy.data.images.new(leaf, width, height, alpha=True)
+    fresh.name = os.path.basename(where)
+    fresh["mua_source"] = where
+
+    return fresh
+
+
+def decoded_image(where, blob):
+    decoded = dds_pixels(blob)
+
+    if decoded is None:
+        return None
+
+    width, height, pixels = decoded
+    fresh = bpy.data.images.new(os.path.basename(where), width, height, alpha=True)
     fresh.pixels = pixels
     fresh.pack()
 
     return fresh
 
 
-def stage_material(model, slot, index, blend, soft, prefix):
+def flattened_image(where, blob):
+    if len(blob) < 128 or blob[:4] != b"DDS " or not dword(blob, DDS_CAPS2):
+        return None
+
+    copy = os.path.join(bpy.app.tempdir, os.path.basename(where))
+
+    with open(copy, "wb") as handle:
+        handle.write(blob[:DDS_CAPS2] + bytes(4) + blob[DDS_CAPS2 + 4:])
+
+    fresh = bpy.data.images.load(copy)
+
+    if not fresh.size[0]:
+        bpy.data.images.remove(fresh)
+
+        return None
+
+    fresh.pack()
+
+    return fresh
+
+
+def shined(tree, model, slot, index, colour):
+    layers = model.materialLayers[slot] if 0 <= slot < len(model.materialLayers) else {}
+    texture = layers.get(SHINE_LAYER, -1)
+
+    if not 0 <= texture < len(model.texture):
+        return colour
+
+    where = found_texture(index, os.path.basename(model.texture[texture]).lower())
+
+    if not where:
+        return colour
+
+    geometry = tree.nodes.new("ShaderNodeNewGeometry")
+    view = tree.nodes.new("ShaderNodeVectorTransform")
+    view.vector_type = "NORMAL"
+    view.convert_from = "WORLD"
+    view.convert_to = "CAMERA"
+    tree.links.new(view.inputs["Vector"], geometry.outputs["Normal"])
+
+    sphere = tree.nodes.new("ShaderNodeMapping")
+    sphere.name = "Shine"
+    sphere.inputs["Location"].default_value = (0.5, 0.5, 0.0)
+    sphere.inputs["Scale"].default_value = (0.5, 0.5, 1.0)
+    tree.links.new(sphere.inputs["Vector"], view.outputs["Vector"])
+
+    image = tree.nodes.new("ShaderNodeTexImage")
+    image.extension = "EXTEND"
+
+    try:
+        image.image = loaded_image(where)
+    except RuntimeError:
+        return colour
+
+    tree.links.new(image.inputs["Vector"], sphere.outputs["Vector"])
+
+    glow = tree.nodes.new("ShaderNodeMix")
+    glow.data_type = "RGBA"
+    glow.blend_type = "ADD"
+    glow.inputs["Factor"].default_value = 1.0
+    tree.links.new(glow.inputs[6], colour)
+    tree.links.new(glow.inputs[7], image.outputs["Color"])
+
+    return glow.outputs[2]
+
+
+def trimmed(tree, alpha):
+    rim = tree.nodes.new("ShaderNodeAttribute")
+    rim.attribute_type = "OBJECT"
+    rim.attribute_name = "mua_rim"
+
+    lifted = tree.nodes.new("ShaderNodeMath")
+    lifted.operation = "SUBTRACT"
+    tree.links.new(lifted.inputs[0], alpha)
+    tree.links.new(lifted.inputs[1], rim.outputs["Fac"])
+
+    span = tree.nodes.new("ShaderNodeMath")
+    span.operation = "SUBTRACT"
+    span.inputs[0].default_value = 1.0
+    tree.links.new(span.inputs[1], rim.outputs["Fac"])
+
+    scaled = tree.nodes.new("ShaderNodeMath")
+    scaled.operation = "DIVIDE"
+    scaled.use_clamp = True
+    tree.links.new(scaled.inputs[0], lifted.outputs["Value"])
+    tree.links.new(scaled.inputs[1], span.outputs["Value"])
+
+    return scaled.outputs["Value"]
+
+
+def stage_material(model, slot, index, blend, prefix):
     leaf = sheet_of(model, slot)
     unique_name = (material_name(model, slot, prefix) + ("" if blend == "opaque" else " " + blend))
     known = bpy.data.materials.get(unique_name)
@@ -1535,41 +1764,70 @@ def stage_material(model, slot, index, blend, soft, prefix):
     shade = tree.nodes.new("ShaderNodeAttribute")
     shade.attribute_name = "Shade"
 
+    linear = tree.nodes.new("ShaderNodeGamma")
+    linear.inputs["Gamma"].default_value = SHADE_GAMMA
+    tree.links.new(linear.inputs["Color"], shade.outputs["Color"])
+
     tint = tree.nodes.new("ShaderNodeMix")
     tint.data_type = "RGBA"
     tint.blend_type = "MULTIPLY"
     tint.inputs["Factor"].default_value = 1.0
     tree.links.new(tint.inputs[6], texture.outputs["Color"])
-    tree.links.new(tint.inputs[7], shade.outputs["Color"])
+    tree.links.new(tint.inputs[7], linear.outputs["Color"])
 
     emission = tree.nodes.new("ShaderNodeEmission")
-    tree.links.new(emission.inputs["Color"], tint.outputs[2])
+    tree.links.new(emission.inputs["Color"], shined(tree, model, slot, index, tint.outputs[2]))
 
     fade = tree.nodes.new("ShaderNodeMath")
     fade.operation = "MULTIPLY"
-    tree.links.new(fade.inputs[0], texture.outputs["Alpha"])
+    tree.links.new(fade.inputs[0], trimmed(tree, texture.outputs["Alpha"]) if blend in SOFT_KINDS
+                   else texture.outputs["Alpha"])
     tree.links.new(fade.inputs[1], shade.outputs["Alpha"])
 
+    ramp = tree.nodes.new("ShaderNodeAttribute")
+    ramp.attribute_type = "OBJECT"
+    ramp.attribute_name = "mua_ramp"
+    ramped = tree.nodes.new("ShaderNodeMath")
+    ramped.operation = "MULTIPLY"
+    tree.links.new(ramped.inputs[0], fade.outputs["Value"])
+    tree.links.new(ramped.inputs[1], ramp.outputs["Fac"])
+    fade = ramped
+
     if blend == "opaque":
-        tree.nodes.remove(fade)
-        tree.links.new(output.inputs[0], emission.outputs["Emission"])
+        cutout = tree.nodes.new("ShaderNodeMath")
+        cutout.operation = "GREATER_THAN"
+        cutout.inputs[1].default_value = 0.0
+        tree.links.new(cutout.inputs[0], fade.outputs["Value"])
+        fade = cutout
+
+    clear = tree.nodes.new("ShaderNodeBsdfTransparent")
+
+    if blend == "sub":
+        tree.nodes.remove(emission)
+        shadow = tree.nodes.new("ShaderNodeInvert")
+        tree.links.new(shadow.inputs["Color"], tint.outputs[2])
+        dim = tree.nodes.new("ShaderNodeMix")
+        dim.data_type = "RGBA"
+        dim.inputs[6].default_value = (1.0, 1.0, 1.0, 1.0)
+        tree.links.new(dim.inputs["Factor"], fade.outputs["Value"])
+        tree.links.new(dim.inputs[7], shadow.outputs["Color"])
+        tree.links.new(clear.inputs["Color"], dim.outputs[2])
+        mixer = clear
+    elif blend == "add":
+        tree.links.new(emission.inputs["Strength"], fade.outputs["Value"])
+        mixer = tree.nodes.new("ShaderNodeAddShader")
+        tree.links.new(mixer.inputs[0], emission.outputs["Emission"])
+        tree.links.new(mixer.inputs[1], clear.outputs["BSDF"])
     else:
-        clear = tree.nodes.new("ShaderNodeBsdfTransparent")
+        mixer = tree.nodes.new("ShaderNodeMixShader")
+        tree.links.new(mixer.inputs[0], fade.outputs["Value"])
+        tree.links.new(mixer.inputs[1], clear.outputs["BSDF"])
+        tree.links.new(mixer.inputs[2], emission.outputs["Emission"])
 
-        if blend == "add":
-            mixer = tree.nodes.new("ShaderNodeAddShader")
-            tree.links.new(mixer.inputs[0], emission.outputs["Emission"])
-            tree.links.new(mixer.inputs[1], clear.outputs["BSDF"])
-        else:
-            mixer = tree.nodes.new("ShaderNodeMixShader")
-            tree.links.new(mixer.inputs[0], fade.outputs["Value"])
-            tree.links.new(mixer.inputs[1], clear.outputs["BSDF"])
-            tree.links.new(mixer.inputs[2], emission.outputs["Emission"])
+    tree.links.new(output.inputs[0], mixer.outputs[0])
 
-        tree.links.new(output.inputs[0], mixer.outputs[0])
-
-        if (soft or blend == "add") and hasattr(material, "surface_render_method"):
-            material.surface_render_method = "BLENDED"
+    if hasattr(material, "surface_render_method"):
+        material.surface_render_method = "BLENDED" if blend in BLENDED_KINDS else "DITHERED"
 
     material["mua_slot"] = slot
     material["mua_texture"] = leaf
@@ -1579,25 +1837,36 @@ def stage_material(model, slot, index, blend, soft, prefix):
     return material
 
 
+def divisor(value):
+    return value if value else 1.0
+
+
+def uv_channels(flip):
+    return ((1, 0, lambda k: -k["offset"][0] / divisor(k["scale"][0])),
+            (1, 1, lambda k: 1.0 - (1.0 + k["offset"][1]) / divisor(k["scale"][1]) if flip
+             else k["offset"][1] / divisor(k["scale"][1])),
+            (3, 0, lambda k: 1.0 / divisor(k["scale"][0])),
+            (3, 1, lambda k: 1.0 / divisor(k["scale"][1])))
+
+
 def scroll_material(material, keys, flip):
-    if len(keys) < 2:
+    tree = material.node_tree
+    mapping = tree.nodes.get("Mapping") if tree is not None else None
+
+    if not keys or mapping is None:
         return 0
 
-    tree = material.node_tree
-    mapping = tree.nodes.get("Mapping")
+    channels = uv_channels(flip)
 
-    if mapping is None:
+    for socket, index, reading in channels:
+        mapping.inputs[socket].default_value[index] = reading(keys[0])
+
+    if len(keys) < 2:
         return 0
 
     frames = [key["frame"] for key in keys]
     action = fresh_action(tree, "%s flow" % material.name)
     written = 0
-
-    channels = ((1, 0, lambda k: k["offset"][0]),
-                (1, 1, lambda k: 1.0 - k["scale"][1] - k["offset"][1] if flip
-                 else k["offset"][1]),
-                (3, 0, lambda k: k["scale"][0]),
-                (3, 1, lambda k: k["scale"][1]))
 
     for socket, index, reading in channels:
         values = [reading(key) for key in keys]
@@ -1620,99 +1889,147 @@ def scroll_material(material, keys, flip):
     return written
 
 
-class Paint(object):
-    #Which meshes needs draw additive
-    def __init__(self, model, index, ramped=()):
-        self.ramped = set(ramped)
-        self.cutout = []
-        self.flat = []
-        self.sheer = []
-        self.grey = []
-        self.glowing = []
-        self.art = {}
-        at, count = model.section[VERTEX_SECTION]
-        self.opacity = any(model.blob[at + i * VERTEX + 0x37] == 255 for i in range(count))
-
-        for name in model.texture:
-            where = found_texture(index, os.path.basename(name).lower())
-            art = b""
-
-            if where:
-                with open(where, "rb") as handle:
-                    art = handle.read()
-
-            _clear, fine, solid = dds_alphamix(art)
-            self.cutout.append(dds_transparent(art))
-            self.flat.append(dds_uniform(art))
-            self.sheer.append(fine >= SOFT_SHARE or (solid < GLOW_SOLID and fine > GLOW_SOFT))
-            self.grey.append(fine < SOFT_SHARE and dds_greyscale(art) < GREY_SPREAD)
-            self.glowing.append(dds_lit(art))
-            self.art[len(self.cutout) - 1] = art
-
-    def sheet(self, model, slot):
-        assigned = model.material[slot] if 0 <= slot < len(model.material) else []
-
-        return assigned[0] if assigned and 0 <= assigned[0] < len(model.texture) else 0
-
-    def blend(self, model, slots, kept):
-        #Gambiarra de opaco precisa revisar esssa poha depois
-        faded = self.opacity and any(one["colour"][3] < 1.0 for one in kept)
-        cut = any(self.cutout[self.sheet(model, slot)] for slot in slots)
-        soft = any(self.sheer[self.sheet(model, slot)] for slot in slots)
-
-        if not faded and not cut:
-            return "opaque", False
-
-        return "alpha", soft or faded
-
-    def lit_overlay(self, model, mesh, slots, kept):
-        #0x12 wall lamps (central station) temp! [it should work for now tho]
-        if model.scriptOf(mesh) in self.ramped:
-            return True
-
-        if any(one["colour"][3] < 1.0 for one in kept):
-            return False
-
-        if any(self.cutout[self.sheet(model, slot)] for slot in slots):
-            return False
-
-        black = sum(1 for one in kept if max(one["colour"][:3]) == 0.0)
-
-        return (black >= 0.25 * len(kept)
-                and max(max(one["colour"][:3]) for one in kept) >= 128.0 / 255.0)
-
-    def additive(self, model, mesh, slots, kept, verts, triangles):
-        if not kept or not triangles:
-            return False
-
-        if self.lit_overlay(model, mesh, slots, kept):
-            return True
-
-        faded = any(one["colour"][3] < 1.0 for one in kept)
-        unlit = any(max(one["colour"][:3]) == 0.0 for one in kept)
-        mean = [sum(one["colour"][c] for one in kept) / len(kept) for c in range(3)]
-        masked = max(mean) < MASK_LEVEL
-        box = (min(one["uv"][0] for one in kept), max(one["uv"][0] for one in kept),
-               min(1.0 - one["uv"][1] for one in kept), max(1.0 - one["uv"][1] for one in kept))
-        adds = False
-
-        for slot in slots:
-            index = self.sheet(model, slot)
-            alight = self.glowing[index] and (self.sheer[index]
-                                              or (self.cutout[index] and faded)
-                                              or (self.grey[index] and masked))
-            adds = (adds or alight or (self.flat[index] and unlit)
-                    or dds_haloed(self.art.get(index, b""), box))
-
-        if not adds:
-            return False
-
-        span = max(max(v[k] for v in verts) - min(v[k] for v in verts) for k in range(3))
-
-        return len(triangles) <= ADDS_MOST and span <= ADDS_SPAN
-
 # :) ..... :( 
-def build_object(index, model, mesh, options, sheets, collection, paint, prefix):
+def drawn_as(model, mesh, sheer, dark):
+    mode = model.blendOf(mesh)
+
+    if mode == BLEND_OPAQUE:
+        return "opaque"
+
+    if mode == BLEND_ADD:
+        return "add"
+
+    if mode == BLEND_SUBTRACT:
+        return "sub"
+
+    if model.flagsOf(mesh) & NO_DEPTH_WRITE_FLAG:
+        return "sheer"
+
+    if sheer:
+        return "blend"
+
+    return "add" if dark() else "alpha"
+
+
+def see_through(model, slots, kept, run, art):
+    if run is not None and run.holdsPartial():
+        return True
+
+    alphas = [one["colour"][3] for one in kept]
+
+    if min(alphas) < 1.0 and max(alphas) > 0.0:
+        return True
+
+    return any(art.feathered(sheet_of(model, slot)) for slot in slots)
+
+
+def black_card(model, slots, kept, art):
+    if not slots:
+        return False
+
+    for slot in slots:
+        leaf = sheet_of(model, slot)
+
+        if not art.glows(leaf):
+            return False
+
+        peak = art.sampler(leaf)
+
+        if any(peak(*one["texel"]) * max(one["colour"][:3]) > CARD_BLACK for one in kept):
+            return False
+
+    return True
+
+
+def border(verts, faces, slots):
+    touched = {}
+
+    for face, slot in zip(faces, slots):
+        for a, b in ((face[0], face[1]), (face[1], face[2]), (face[2], face[0])):
+            touched.setdefault(frozenset((verts[a], verts[b])), []).append((a, b, slot))
+
+    return [found[0] for found in touched.values() if len(found) == 1]
+
+
+def rim_of(model, order, kept, edges, art):
+    leaves = [sheet_of(model, material) for material in order]
+
+    if not edges or not all(art.faded(leaf) for leaf in leaves):
+        return 0.0
+
+    rim = 0.0
+
+    for a, b, slot in edges:
+        sheet = art.alpha(leaves[slot])
+        (ua, va), (ub, vb) = kept[a]["texel"], kept[b]["texel"]
+
+        for step in range(RIM_STEPS + 1):
+            share = step / float(RIM_STEPS)
+            rim = max(rim, sheet.sample(ua + (ub - ua) * share, va + (vb - va) * share))
+
+    return rim if rim <= RIM_TAIL * max(art.peak(leaf) for leaf in leaves) else 0.0
+
+
+class SheetArt(object):
+    def __init__(self, index):
+        self.index = index
+        self.soft = {}
+        self.lit = {}
+        self.samplers = {}
+        self.alphas = {}
+        self.clear = {}
+        self.peaks = {}
+
+    def read(self, leaf):
+        where = found_texture(self.index, leaf)
+
+        if not where:
+            return b""
+
+        with open(where, "rb") as handle:
+            return handle.read()
+
+    def feathered(self, leaf):
+        if leaf not in self.soft:
+            self.soft[leaf] = dds_feathered(self.read(leaf))
+
+        return self.soft[leaf]
+
+    def glows(self, leaf):
+        if leaf not in self.lit:
+            self.lit[leaf] = dds_glowing(self.read(leaf))
+
+        return self.lit[leaf]
+
+    def sampler(self, leaf):
+        if leaf not in self.samplers:
+            self.samplers[leaf] = dds_sampler(self.read(leaf))
+
+        return self.samplers[leaf]
+
+    def alpha(self, leaf):
+        if leaf not in self.alphas:
+            self.alphas[leaf] = AlphaSheet(self.read(leaf))
+
+        return self.alphas[leaf]
+
+    def faded(self, leaf):
+        if leaf not in self.clear:
+            self.clear[leaf] = self.alpha(leaf).faded()
+
+        return self.clear[leaf]
+
+    def peak(self, leaf):
+        if leaf not in self.peaks:
+            self.peaks[leaf] = self.alpha(leaf).peak()
+
+        return self.peaks[leaf]
+
+
+def build_object(index, model, mesh, options, sheets, collection, prefix, runs, art):
+    if model.flagsOf(mesh) & HIDDEN_FLAG:
+        return None, None
+
     name = "node%03d %s" % (index, mesh["name"])
     data = bpy.data.meshes.new(name)
     obj = bpy.data.objects.new(name, data)
@@ -1732,6 +2049,7 @@ def build_object(index, model, mesh, options, sheets, collection, paint, prefix)
         kept.append({
             "normal": (nx, ny, -nz if options["mirror"] else nz),
             "uv": (raw["uv"][0], 1.0 - raw["uv"][1] if options["flip"] else raw["uv"][1]),
+            "texel": tuple(raw["uv"]),
             "colour": tuple(c / 255.0 for c in raw["colour"]),
         })
         weights.append(raw["weights"] or [(0, 1.0)])
@@ -1766,14 +2084,12 @@ def build_object(index, model, mesh, options, sheets, collection, paint, prefix)
 
         return None, None
 
-    additive = paint is not None and paint.additive(model, mesh, order, kept, verts, faces)
-    blend, soft = paint.blend(model, order, kept) if paint is not None else ("opaque", False)
-
-    if additive:
-        blend, soft = "add", True
+    sheer = see_through(model, order, kept, runs.get(mesh["skeleton"]), art)
+    blend = drawn_as(model, mesh, sheer, lambda: black_card(model, order, kept, art))
+    rim = rim_of(model, order, kept, border(verts, faces, slots), art) if blend in SOFT_KINDS else 0.0
 
     for material in order:
-        obj.data.materials.append(stage_material(model, material, sheets, blend, soft, prefix))
+        obj.data.materials.append(stage_material(model, material, sheets, blend, prefix))
 
     data.from_pydata(verts, [], faces)
     data.update()
@@ -1801,7 +2117,11 @@ def build_object(index, model, mesh, options, sheets, collection, paint, prefix)
     obj["mua_node"] = index
     obj["mua_skeleton"] = mesh["skeleton"]
     obj["mua_script"] = model.scriptOf(mesh)
-    obj["fbxex_blendmode"] = 1 if additive else 0
+    obj["mua_ramp"] = 1.0
+    obj["mua_rim"] = rim
+    obj["fbxex_blendmode"] = 1 if blend == "add" else 0
+    obj["mua_blend"] = model.blendOf(mesh)
+    obj["mua_flags"] = model.flagsOf(mesh)
     obj["fbxex_flag1"] = 0
 
     return obj, weights
@@ -2046,16 +2366,14 @@ def keyed(action, rig, bone, frames, basis):
     return written
 
 
-def arrange(rig, actions, model, found, picked):
+def arrange(rig, actions, model, runs, picked):
     #script own thing
     longest = 0
 
     for first in sorted(actions):
         label = model.bone[first]["name"] or "bone%03d" % first
-        loop, entries = (0, [])
-
-        if first in picked:
-            loop, entries = found[picked[first]].picks()
+        run = runs.get(picked.get(first))
+        entries = run.picks if run is not None else []
 
         if not entries:
             for name in sorted(actions[first]):
@@ -2065,8 +2383,9 @@ def arrange(rig, actions, model, found, picked):
 
             continue
 
+        loop = run.length if run.cyclic else 0
         track = rig.animation_data.nla_tracks.new()
-        track.name = picked[first]
+        track.name = model.scriptAt(picked[first])
 
         for at, (frame, leaf) in enumerate(entries):
             action = actions[first].get(leaf)
@@ -2099,127 +2418,161 @@ def place_strip(track, action, start, span):
     return strip.frame_end
 
 
-def build_ramps(objects, script):
-    loop, ramps = script.ramps()
+def changes(values, run):
+    frames = [0]
+    kept = [values[0]]
 
-    if not loop or not ramps:
-        return 0
+    for tick in range(1, len(values)):
+        if values[tick] != values[tick - 1]:
+            frames.append(tick)
+            kept.append(values[tick])
 
-    frames = []
-    values = []
-    current = 0.0
+    return closed(frames, kept, run)
 
-    for at, target, over in ramps:
-        goal = target / 1000.0
-        frames.extend((at, min(loop, at + over)))
-        values.extend((current, goal))
-        current = goal
 
-    for obj in objects:
-        obj["mua_ramp"] = 0.0
-        action = action_for(obj, "%s ramp" % obj.name)
-        write_curve(action, obj, '["mua_ramp"]', 0, frames, values)
-        cycled(action)
+def bends(values, run):
+    frames = [0]
+    kept = [values[0]]
 
-    return len(objects)
+    for tick in range(1, len(values) - 1):
+        if abs((values[tick] - values[tick - 1]) - (values[tick + 1] - values[tick])) > RAMP_EPSILON:
+            frames.append(tick)
+            kept.append(values[tick])
+
+    if len(values) > 1:
+        frames.append(len(values) - 1)
+        kept.append(values[-1])
+
+    return closed(frames, kept, run)
+
+
+def closed(frames, values, run):
+    if run.cyclic:
+        frames.append(run.length)
+        values.append(values[0])
+
+    return frames, values
+
+
+def cycled_curve(fcurve, run):
+    if run.cyclic and not any(one.type == "CYCLES" for one in fcurve.modifiers):
+        fcurve.modifiers.new("CYCLES")
+
+
+def keyed_sequence(obj, run, shown):
+    hidden = [0.0 if on and ramp > 0.0 else 1.0 for on, ramp in zip(shown, run.ramps)]
+    obj["mua_ramp"] = run.ramps[0]
+
+    if len(set(hidden)) > 1:
+        frames, values = changes(hidden, run)
+        action = action_for(obj, "%s script" % obj.name)
+
+        for path in ("hide_viewport", "hide_render"):
+            cycled_curve(write_curve(action, obj, path, 0, frames, values, kind="CONSTANT"), run)
+    elif hidden[0]:
+        obj.hide_viewport = True
+        obj.hide_render = True
+
+    if not run.fades():
+        return
+
+    frames, values = bends(run.ramps, run)
+    action = action_for(obj, "%s script" % obj.name)
+    cycled_curve(write_curve(action, obj, '["mua_ramp"]', 0, frames, values), run)
 
 
 def framed(obj, rect, size, flip):
     x, y, w, h = rect
     wide, tall = size
-    left = x / float(wide)
-    right = (x + w) / float(wide)
-    low = 1.0 - (y + h) / float(tall) if flip else y / float(tall)
-    high = 1.0 - y / float(tall) if flip else (y + h) / float(tall)
-
     uvs = obj.data.uv_layers.active
 
     if uvs is None:
         return
 
-    us = [uvs.data[loop.index].uv[0] for loop in obj.data.loops]
-    vs = [uvs.data[loop.index].uv[1] for loop in obj.data.loops]
-    lowU, lowV = min(us), min(vs)
-    spanU = max(us) - lowU
-    spanV = max(vs) - lowV
-
-    for loop in obj.data.loops:
-        uv = uvs.data[loop.index].uv
-        acrossU = 0.0 if spanU <= 0.0 else (uv[0] - lowU) / spanU
-        acrossV = 0.0 if spanV <= 0.0 else (uv[1] - lowV) / spanV
-        uv[0] = left + (right - left) * acrossU
-        uv[1] = low + (high - low) * acrossV
+    for corner in uvs.data:
+        u, v = corner.uv
+        down = 1.0 - v if flip else v
+        across = (y + down * h) / float(tall)
+        corner.uv = ((x + u * w) / float(wide), 1.0 - across if flip else across)
 
 
-def sheet_named(leaf, sheet, named):
-    #don't ask
-    if named:
-        return named[sheet] if 0 <= sheet < len(named) else leaf
-
-    if sheet <= 0:
-        return leaf
-
-    stem, kind = os.path.splitext(leaf)
-    digits = len(stem) - len(stem.rstrip("0123456789"))
-
-    if not digits:
-        return leaf
-
-    return "%s%0*d%s" % (stem[:len(stem) - digits], digits, sheet, kind)
-
-
-def build_rects(objects, script, sizes, collection, flip, index):
-    loop, timeline = script.rects()
-
-    if not loop or not any(timeline):
-        return 0
-
+def distinct(timeline):
     order = []
 
     for frame in timeline:
         if frame is not None and frame not in order:
             order.append(frame)
 
-    built = 0
+    return order
+
+
+def copied(obj, at, collection):
+    shown = obj.copy()
+    shown.data = obj.data.copy()
+    shown.name = "%s f%d" % (obj.name, at)
+    shown.animation_data_clear()
+    collection.objects.link(shown)
+
+    if obj.parent is not None:
+        shown.parent = obj.parent
+
+    return shown
+
+
+def placements(order, leaf, script, sizes):
+    out = []
+
+    for frame in order:
+        sheet = frame[0]
+        wanted = script.sheets[sheet].lower() if 0 <= sheet < len(script.sheets) else leaf
+
+        if wanted in sizes:
+            out.append((frame, wanted))
+
+    return out
+
+
+def sprites(obj, run, script, sizes, collection, flip, index):
+    leaf = (obj.get("mua_sheet") or "").lower()
+    placed = placements(distinct(run.rects), leaf, script, sizes)
+    fitted = set(rect for rect, _wanted in placed)
+
+    if not placed:
+        return [(obj, None)], fitted
+
+    bare = any(rect not in fitted for rect in run.rects)
+    count = len(placed) + (1 if bare else 0)
+    targets = [obj] + [copied(obj, at, collection) for at in range(1, count)]
+    out = [(targets.pop(0), None)] if bare else []
+
+    for target, (rect, wanted) in zip(targets, placed):
+        if wanted != leaf:
+            swap_sheet(target, wanted, index)
+
+        framed(target, rect[1:], sizes[wanted], flip)
+        out.append((target, rect))
+
+    return out, fitted
+
+
+def shown_ticks(run, rect, fitted):
+    if rect is None:
+        return [one not in fitted for one in run.rects]
+
+    return [one == rect for one in run.rects]
+
+
+def build_sequence(objects, run, script, sizes, collection, flip, index):
+    placed = 0
 
     for obj in objects:
-        leaf = (obj.get("mua_sheet") or "").lower()
+        targets, fitted = sprites(obj, run, script, sizes, collection, flip, index)
 
-        if len(obj.data.vertices) != 4:
-            continue
+        for target, rect in targets:
+            keyed_sequence(target, run, shown_ticks(run, rect, fitted))
+            placed += rect is not None
 
-        for at, frame in enumerate(order):
-            sheet, rect = frame[0], frame[1:]
-            wanted = sheet_named(leaf, sheet, script.named).lower()
-
-            if wanted not in sizes:
-                wanted = leaf
-
-            size = sizes.get(wanted)
-
-            if size is None:
-                continue
-
-            shown = obj
-
-            if at:
-                shown = obj.copy()
-                shown.data = obj.data.copy()
-                shown.name = "%s f%d" % (obj.name, at)
-                shown.animation_data_clear()
-                collection.objects.link(shown)
-
-                if obj.parent is not None:
-                    shown.parent = obj.parent
-
-            if wanted != leaf:
-                swap_sheet(shown, wanted, index)
-
-            framed(shown, rect, size, flip)
-            keyed_visibility(shown, timeline, frame, loop)
-            built += 1
-
-    return built
+    return placed, (len(objects) if run.fades() else 0)
 
 
 def swap_sheet(obj, leaf, index):
@@ -2248,30 +2601,6 @@ def swap_sheet(obj, leaf, index):
     obj.data.materials[0] = known
 
 
-def keyed_visibility(obj, timeline, rect, loop):
-    frames = []
-    values = []
-    last = None
-
-    for frame, shown in enumerate(timeline):
-        hidden = 0.0 if shown == rect else 1.0
-
-        if hidden != last:
-            frames.append(frame)
-            values.append(hidden)
-            last = hidden
-
-    if len(frames) < 2:
-        return
-
-    action = action_for(obj, "%s shown" % obj.name)
-
-    for path in ("hide_viewport", "hide_render"):
-        write_curve(action, obj, path, 0, frames, values, kind="CONSTANT")
-
-    cycled(action)
-
-
 def build_texts(found, stage):
     for name in sorted(found):
         text = bpy.data.texts.new("%s %s.evb" % (stage, name))
@@ -2280,27 +2609,17 @@ def build_texts(found, stage):
     return len(found)
 
 
-def bound_objects(model, built, name):
-    out = []
-
-    for index, mesh in enumerate(model.mesh):
-        if model.scriptOf(mesh) == name and index in built:
-            out.append(built[index])
-
-    return out
-
-
 def build_model(context, entry, model, files, found, options, sheets, label, prefix):
-    ramped = [name for name, script in found.items() if script.ramps()[1]]
-    paint = Paint(model, sheets, ramped) if sheets else None
+    runs = script_runs(model, found)
+    art = SheetArt(sheets)
     collection = bpy.data.collections.new(label)
     context.scene.collection.children.link(collection)
     built = {}
     weights = {}
 
     for index, mesh in enumerate(model.mesh):
-        obj, listed = build_object(index, model, mesh, options, sheets, collection, paint,
-                                   prefix)
+        obj, listed = build_object(index, model, mesh, options, sheets, collection, prefix,
+                                   runs, art)
 
         if obj is None:
             continue
@@ -2339,23 +2658,26 @@ def build_model(context, entry, model, files, found, options, sheets, label, pre
                 report["skin"] += 1
 
         if options["animation"]:
-            report.update(animate(rig, names, model, files, found, options))
+            report.update(animate(rig, names, model, files, runs, options))
 
         rig.hide_set(True)
 
-    if not found:
+    if not runs:
         return report
 
     sizes = sheet_sizes(sheets)
 
-    for name, script in sorted(found.items()):
-        objects = bound_objects(model, built, name)
+    for skeleton, run in sorted(runs.items()):
+        objects = [built[index] for index, mesh in enumerate(model.mesh)
+                   if mesh["skeleton"] == skeleton and index in built]
 
         if not objects:
             continue
 
-        report["ramp"] += build_ramps(objects, script)
-        report["rect"] += build_rects(objects, script, sizes, collection, options["flip"], sheets)
+        placed, ramped = build_sequence(objects, run, found[model.scriptAt(skeleton)], sizes,
+                                        collection, options["flip"], sheets)
+        report["rect"] += placed
+        report["ramp"] += ramped
 
     return report
 
@@ -2374,6 +2696,7 @@ def do_import(context, path, options):
     context.scene["mua_character"] = UNI2_CHARACTER / options["scale"]
     context.scene["mua_mirror"] = 1 if options["mirror"] else 0
     context.scene["mua_flip"] = 1 if options["flip"] else 0
+    context.scene.view_settings.view_transform = VIEW_TRANSFORM
 
     found = scripts(files) if options["scripts"] else {}
     report = {"mesh": 0, "of": 0, "take": 0, "flow": 0, "rect": 0, "ramp": 0, "skin": 0,
@@ -2414,7 +2737,7 @@ def show_materials(context):
                 space.shading.type = "MATERIAL"
 
 
-def animate(rig, names, model, files, found, options):
+def animate(rig, names, model, files, runs, options):
     made = takes(model, files)
     actions = {}
     picked = {}
@@ -2432,16 +2755,14 @@ def animate(rig, names, model, files, found, options):
                 actions.setdefault(first, {})[label] = action
 
     for index, mesh in enumerate(model.mesh):
-        name = model.scriptOf(mesh)
-
-        if name and name in found and mesh["bone"] in actions:
-            picked[mesh["bone"]] = name
+        if mesh["skeleton"] in runs and mesh["bone"] in actions:
+            picked[mesh["bone"]] = mesh["skeleton"]
 
     if not actions:
         return {"take": 0, "frames": 0}
 
     rig.animation_data.action = None
-    longest = arrange(rig, actions, model, found, picked)
+    longest = arrange(rig, actions, model, runs, picked)
 
     return {"take": sum(len(group) for group in actions.values()), "frames": int(longest)}
 

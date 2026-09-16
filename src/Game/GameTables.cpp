@@ -480,9 +480,10 @@ const char* const kPaletteNames[][40] = {
 	{ "Snake Keeper", "Purple Pain", "Emerald Seaserpent", "Sugaar Lightning", "Rosaceous Naga", "Green Thorn", "Navy Lindworm", "Aiatar's Forest", "Fafnir Rouge", "Goddess Underworld", "Twilight Nidhoggur", "Cutie Quetzalcoatl", "Lahamu Cherry", "Lamia Amethyst", "Ladon Brown", "Wish of Melusine", "Brilliant Leviathan", "Egger Aitvaras", "Kukulkan Green", "Sunburned Itzamna", "Tiny Midgard", "Hydra Swamp", "Punane Pisuhand", "Blame Vouivre", "Azzurro Amphisbaena", "Blessed Itzamna", "Ouroboros Hue", "Red Castle", "Coatlicue Harvest", "Hoydenish Breeze", "Equatorial Wave", "Inferno Blaze", "Annular Eclipse", "Seeds of Heaven", "Clamorous Colors", "Royal Calibur", "Stella Nest", "Little Briar Rose", "Betrayal of Savior", "Switching Contrast" },
 	{ "Abyss Returner", "From the Ash", "Epilithic Moss", "Marine Style", "Old Gentleman", "Lady Killer", "Blood Starved Beast", "Newbie Agent", "Dweller Back Alley", "Blood Nocturne", "Rock Star", "Jade Harvester", "Shiden Strike", "Stony Contract", "Gold Surfer", "Winter Land", "Hero Appearance", "Majestic Clan", "Meadow Wind", "White Smoke", "Madam's Guardians", "Blue Curacao", "Jolly Brother", "Loxley Impact", "Birth In-Peach", "Sea Breeze", "Treasure Map", "Spilled Red", "Desert River", "Shadow Chaser", "Equatorial Wave", "Inferno Blaze", "Annular Eclipse", "Seeds of Heaven", "Clamorous Colors", "Royal Calibur", "Stella Nest", "Little Briar Rose", "Betrayal of Savior", "Switching Contrast" },
 	{ "Night Mermaid", "Call of Abyss", "Lemon Tea", "Verdure Wind", "Pink Bomb", "Swimming Club", "Wasserpflanzen", "Chairwoman", "Dune Wave", "Chrysaora pacifica", "Coral Palace", "Goldfish Bowl", "Moonlit Bathe", "Sanatorium", "Metalworking", "Mimosa Garden", "Low Pressure Girl", "Many Spices", "Pink Neon", "Allium Fistulosum", "Concealed Clan", "Rushing Heat", "Genoa Fortuneteller", "Sickly Sister", "Flaming Mountain", "Spring Poems", "Incongruous Purple", "Electric Leakage", "Futuristic Plant", "Unbeatable Heroine", "Equatorial Wave", "Inferno Blaze", "Annular Eclipse", "Seeds of Heaven", "Clamorous Colors", "Royal Calibur", "Stella Nest", "Little Briar Rose", "Betrayal of Savior", "Switching Contrast" },
+	{ "Mirror Image", "Presence of Mind", "Passion Red", "Bottomless Swamp", "Snow Devil", "Jet Black Mirror", "Justice Stake", "Spring Fashion", "Bone-Dry Wind", "Bloodstained Vamp", "Pink Rabbit", "Submarine Volcano", "Nightmare Reaper", "Marine Girl", "Forest Scout", "Newbie Students", "Fateful Unity", "Sakura Quartz", "Hollow Runners", "28th Child", "Wine-Red Heart", "Medical Facility", "Lighthearted Step", "Usuzumi", "Parched Earth", "Pink Nymphaea", "Flowers of Memory", "Rainy Season", "Moment at Dusk", "Viola Mandshurica", "Equatorial Wave", "Inferno Blaze", "Annular Eclipse", "Seeds of Heaven", "Clamorous Colors", "Royal Calibur", "Stella Nest", "Little Briar Rose", "Betrayal of Savior", "Switching Contrast" },
 };
 
-constexpr int kPaletteCharaCount = 27;
+constexpr int kPaletteCharaCount = 28;
 constexpr int kPaletteNameCount = 40;
 
 const unsigned char kPart00_0[] = { 16, 17, 18, 19, 20, 22, 23, 29 };
@@ -621,6 +622,16 @@ const unsigned char kPart26_1[] = { 80, 81, 82, 83, 84, 87, 88, 89, 90, 193, 194
 const unsigned char kPart26_2[] = { 112, 113, 114, 115, 116, 118, 119, 120, 121, 122 };
 const unsigned char kPart26_3[] = { 22, 23, 24, 25, 38, 39, 40, 41 };
 const unsigned char kPart26_4[] = { 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 27, 28, 29, 30, 31, 144, 145, 146, 147, 148, 150, 151, 152, 154, 155 };
+const unsigned char kPart27_0[] = { 48, 49, 50, 51, 52 };
+const unsigned char kPart27_1[] = { 80, 81, 82, 83, 84 };
+const unsigned char kPart27_2[] = { 96, 97, 98, 99, 100, 112, 113, 114, 115, 116, 118, 119, 120, 121, 122 };
+const unsigned char kPart27_3[] = { 38, 39, 40, 41, 42, 176, 177, 178, 179, 180, 192, 193, 194, 195, 196, 198, 199, 200, 201, 202 };
+const unsigned char kPart27_4[] = { 176, 177, 178, 179, 180, 182, 183, 184, 185, 186, 198, 199, 200, 201, 202 };
+const unsigned char kPart27_5[] = { 16, 17, 18, 19, 20, 22, 23, 24, 25, 26 };
+const unsigned char kPart27_6[] = { 208, 209, 210, 211, 212, 214, 215, 216, 217, 218, 220, 221 };
+const unsigned char kPart27_7[] = { 48, 49, 50, 51, 52 };
+const unsigned char kPart27_8[] = { 2, 4, 5, 6, 8, 9, 10, 16, 17, 18, 19, 20, 22, 23, 24, 25, 26, 32, 33, 34, 35, 36, 54, 55, 56, 57, 58, 254 };
+const unsigned char kPart27_9[] = { 2, 3, 4, 5, 6, 86, 87, 88, 89, 90 };
 
 struct Part { const char* name; const unsigned char* entries; int count; };
 struct CharaParts { int chara; const Part* parts; int count; };
@@ -815,6 +826,18 @@ const Part kParts26[] = {
 	{ "Part 4", kPart26_3, 8 },
 	{ "Skin", kPart26_4, 28 },
 };
+const Part kParts27[] = {
+	{ "Hair 1", kPart27_0, 5 },
+	{ "Hair 2", kPart27_1, 5 },
+	{ "Part 3", kPart27_2, 15 },
+	{ "Hands", kPart27_3, 20 },
+	{ "Legs 1", kPart27_4, 15 },
+	{ "Skin", kPart27_5, 10 },
+	{ "Part 7", kPart27_6, 12 },
+	{ "Legs 2", kPart27_7, 5 },
+	{ "Eyes", kPart27_8, 28 },
+	{ "Part 10", kPart27_9, 10 },
+};
 
 const CharaParts kCharaParts[] = {
 	{ 0, kParts00, 5 },
@@ -844,6 +867,7 @@ const CharaParts kCharaParts[] = {
 	{ 24, kParts24, 5 },
 	{ 25, kParts25, 5 },
 	{ 26, kParts26, 5 },
+	{ 27, kParts27, 10 },
 };
 
 const char* Find(const Named* table, size_t count, unsigned value)

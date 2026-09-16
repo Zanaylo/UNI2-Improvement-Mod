@@ -58,7 +58,8 @@ constexpr size_t kImageBytes = ReplayFiles::kRecordSize * ReplayFiles::kSlotCoun
 const char* const kShortNames[] = {
 	"HYD", "LIN", "WAL", "CAR", "ORI", "GOR", "MER", "VAT", "SET",
 	"YUZ", "HIL", "ELT", "NAN", "BYA", "AKA", "CHA", "WAG", "ENK",
-	"LON", "TSU", "UZU", "MIK", "KAG", "KUO", "PHO", "OGR", "IZU"
+	"LON", "TSU", "UZU", "MIK", "KAG", "KUO", "PHO", "OGR", "IZU",
+	"ZOH"
 };
 
 constexpr int kCharaCount = static_cast<int>(sizeof(kShortNames) / sizeof(kShortNames[0]));

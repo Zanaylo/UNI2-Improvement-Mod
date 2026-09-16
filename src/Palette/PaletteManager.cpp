@@ -41,7 +41,8 @@ struct Folder
 const char* const kCharaNames[] = {
 	"Hyde", "Linne", "Waldstein", "Carmine", "Orie", "Gordeau", "Merkava", "Vatista", "Seth",
 	"Yuzuriha", "Hilda", "Eltnum", "Nanase", "Byakuya", "Akatsuki", "Chaos", "Wagner", "Enkidu",
-	"Londrekia", "Tsurugi", "Uzuki", "Mika", "Kaguya", "Kuon", "Phonon", "Ogre", "Izumi"
+	"Londrekia", "Tsurugi", "Uzuki", "Mika", "Kaguya", "Kuon", "Phonon", "Ogre", "Izumi",
+	"Zohar"
 };
 
 constexpr int kCharaCount = static_cast<int>(sizeof(kCharaNames) / sizeof(kCharaNames[0]));
@@ -234,6 +235,9 @@ void LoadFolder(int chara)
 	do
 	{
 		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+			continue;
+
+		if (PaletteFile::IsCompanion(found.cFileName))
 			continue;
 
 		if (target.count >= PaletteManager::kMaxPalettes)

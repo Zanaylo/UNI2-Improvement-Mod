@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <map>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -28,7 +29,8 @@ constexpr const char* kSection = "StageColour";
 constexpr const char* kStale = "Mods\\Shader\\sh_bgspeculer.txt";
 constexpr int kLampRegister = 218;
 constexpr int kLampSlots = 8;
-constexpr int kLampRamps = 8;
+constexpr int kLampRamps = 512;
+constexpr size_t kNoteLine = 16384;
 constexpr float kLampFull = 1000.0f;
 constexpr int kBlackRegister = 220;
 constexpr int kContrastRegister = 221;
@@ -268,7 +270,7 @@ void ReadRates(const char* line, Note& note)
 
 bool ReadNote(int stage, Note& note)
 {
-	note = Note{};
+	memset(&note, 0, sizeof(note));
 
 	const std::string folder = StageLibrary::FolderOf(stage);
 
@@ -280,10 +282,12 @@ bool ReadNote(int stage, Note& note)
 	if (fopen_s(&handle, (folder + "\\stage.txt").c_str(), "rb") != 0 || handle == nullptr)
 		return false;
 
-	char line[512] = {};
+	std::vector<char> buffer(kNoteLine);
 
-	while (fgets(line, sizeof(line), handle) != nullptr)
+	while (fgets(buffer.data(), static_cast<int>(buffer.size()), handle) != nullptr)
 	{
+		const char* const line = buffer.data();
+
 		if (strstr(line, "VertexAlpha") != nullptr)
 		{
 			const char* const equals = strchr(line, '=');
@@ -607,7 +611,7 @@ void BgGrade::Update()
 
 	if (stage != held)
 	{
-		Note note = {};
+		static Note note;
 		const bool read = ReadNote(stage, note);
 		const bool flowing = read && note.flowing && Flows(stage);
 		const bool fading = read && note.fading;

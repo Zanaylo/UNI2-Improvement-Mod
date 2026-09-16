@@ -19,16 +19,9 @@ constexpr double kUni2Character = 0.132;
 
 constexpr float kFlowMark = 128.0f;
 constexpr float kLampMark = 128.0f;
-constexpr size_t kAddsMost = 128;
-constexpr float kAddsSpan = 2.0f;
-constexpr float kOverlayBlack = 0.25f;
-constexpr float kOverlayBright = 128.0f / 255.0f;
-
-constexpr float kSoftShare = 0.5f;
-constexpr float kGlowSolid = 0.01f;
-constexpr float kGlowSoft = 0.05f;
-constexpr float kGreySpread = 6.0f;
-constexpr float kMaskLevel = 0.15f;
+constexpr int kBlendOpaque = 0;
+constexpr int kBlendAdd = 2;
+constexpr int kBlendUnset = 0x7fffffff;
 
 constexpr float kWindowCover = 0.9f;
 constexpr float kWindowBand = 0.6f;
@@ -122,25 +115,46 @@ std::string ScriptOf(const BbtagMua::Model& model, const BbtagMua::Mesh& mesh)
 	return dot == std::string::npos ? named : named.substr(0, dot);
 }
 
-template <typename Held>
-const Held* Chosen(const std::map<std::string, Held>& held, const std::string& bound,
-	const std::string& mesh)
-{
-	const typename std::map<std::string, Held>::const_iterator exact = held.find(bound);
+typedef std::map<std::pair<std::string, int>, BbtagScript::Played> PlayedScripts;
 
-	if (exact != held.end())
-		return &exact->second;
+std::string Stem(const BbtagScript::Scripts& scripts, const std::string& bound, const std::string& mesh)
+{
+	if (scripts.find(bound) != scripts.end())
+		return bound;
 
 	if (!bound.empty())
-		return nullptr;
+		return std::string();
 
-	for (const std::pair<const std::string, Held>& one : held)
+	for (const BbtagScript::Scripts::value_type& one : scripts)
 	{
 		if (mesh.compare(0, one.first.size(), one.first) == 0)
-			return &one.second;
+			return one.first;
 	}
 
-	return nullptr;
+	return std::string();
+}
+
+const BbtagScript::Played& PlayedFor(const BbtagScript::Scripts& scripts, PlayedScripts& played,
+	const std::string& stem, int skeleton)
+{
+	const std::pair<std::string, int> key(stem, skeleton);
+	const PlayedScripts::const_iterator known = played.find(key);
+
+	if (known != played.end())
+		return known->second;
+
+	BbtagScript::Played& fresh = played[key];
+	BbtagScript::Play(scripts.at(stem), stem + " " + std::to_string(skeleton), fresh);
+
+	return fresh;
+}
+
+template <typename Held>
+const Held* Named(const std::map<std::string, Held>& held, const std::string& mesh)
+{
+	const typename std::map<std::string, Held>::const_iterator found = held.find(mesh);
+
+	return found == held.end() ? nullptr : &found->second;
 }
 
 typedef std::map<int, std::vector<Plate> > Siblings;
@@ -435,31 +449,29 @@ void Flows(const BbtagMua::Model& model, bool flip, std::vector<float>& rates,
 			continue;
 
 		taken[static_cast<int>(m)] = std::make_pair(static_cast<int>(rates.size()), flow.across);
-		rates.push_back(!flow.across && flip ? -flow.rate : flow.rate);
+		rates.push_back(flow.across || flip ? -flow.rate : flow.rate);
 	}
 }
 
-bool Masked(const std::vector<float>& vertices)
+bool DrawnOn(const BbtagScript::Sprite& sprite, const BbtagScript::Rect& rect, const std::string& texture)
 {
-	const size_t rows = vertices.size() / kFloats;
+	if (sprite.sheets.empty())
+		return true;
 
-	if (rows == 0)
+	if (rect.sheet < 0 || rect.sheet >= static_cast<int>(sprite.sheets.size()))
 		return false;
 
-	float mean[3] = {};
+	return Lowered(sprite.sheets[rect.sheet]) == texture;
+}
 
-	for (size_t i = 0; i < rows; ++i)
-	{
-		for (int c = 0; c < 3; ++c)
-			mean[c] += vertices[i * kFloats + 6 + c];
-	}
+int BlendOf(const BbtagMua::Model& model, const BbtagMua::Mesh& mesh)
+{
+	const std::vector<BbtagMua::Skeleton>& skeletons = model.Skeletons();
 
-	for (int c = 0; c < 3; ++c)
-		mean[c] /= rows;
+	if (mesh.skeleton < 0 || mesh.skeleton >= static_cast<int>(skeletons.size()))
+		return kBlendUnset;
 
-	const float high = std::max(mean[0], std::max(mean[1], mean[2]));
-
-	return high < kMaskLevel;
+	return skeletons[mesh.skeleton].blend;
 }
 
 int Shelf(const std::vector<FbxExWriter::Material>& materials,
@@ -516,27 +528,6 @@ void Strips(const BbtagMua::Model& model, double scale, bool mirror, Siblings& o
 		const Plate plate = { highV - lowV, tall, 1.0f - highV };
 
 		out[model.Materials()[material][0]].push_back(plate);
-	}
-}
-
-void Signage(const Siblings& siblings, std::set<int>& out)
-{
-	out.clear();
-
-	for (const std::pair<const int, std::vector<Plate> >& group : siblings)
-	{
-		for (const Plate& plate : group.second)
-		{
-			int count = 1;
-			int taken = -1;
-			Divides(group.second, plate.tall, count, taken);
-
-			if (plate.span >= kWindowCover && count > 1)
-			{
-				out.insert(group.first);
-				break;
-			}
-		}
 	}
 }
 
@@ -934,10 +925,6 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 	FbxExWriter::Model built;
 
 	std::vector<bool> cutout;
-	std::vector<bool> flat;
-	std::vector<bool> sheer;
-	std::vector<bool> grey;
-	std::vector<bool> glowing;
 	std::vector<const std::vector<uint8_t>*> pixels;
 
 	for (const std::string& name : model.Textures())
@@ -949,17 +936,7 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 
 		built.textures.push_back(image == out.images.end() ? Lowered(name) : leaf);
 		pixels.push_back(image == out.images.end() ? nullptr : &image->second);
-
-		float clear = 0.0f;
-		float fine = 0.0f;
-		float solid = 1.0f;
-		BbtagArt::AlphaMix(blob, clear, fine, solid);
-
 		cutout.push_back(BbtagArt::Transparent(blob));
-		flat.push_back(BbtagArt::Uniform(blob));
-		sheer.push_back(fine >= kSoftShare || (solid < kGlowSolid && fine > kGlowSoft));
-		grey.push_back(fine < kSoftShare && BbtagArt::Greyscale(blob) < kGreySpread);
-		glowing.push_back(BbtagArt::Lit(blob));
 	}
 
 	for (const std::vector<int>& assigned : model.Materials())
@@ -1000,13 +977,11 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 	Siblings siblings;
 	Strips(model, scale, mirror, siblings);
 
-	std::set<int> boards;
-	Signage(siblings, boards);
-
 	std::map<int, Takes> moving;
+	BbtagScript::Scripts scripts;
+	PlayedScripts played;
 	std::map<std::string, BbtagScript::Sprite> sprites;
 	std::map<std::string, BbtagScript::Run> runs;
-	std::map<std::string, BbtagScript::Lamp> lamps;
 	std::map<std::string, int> slots;
 	BbtagPac::Files scene;
 
@@ -1026,40 +1001,41 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 			if (stem == "base" || stem == "setting")
 				continue;
 
-			BbtagScript::Sprite sprite;
-
-			if (BbtagScript::Read(file.second, sprite))
-				sprites[stem] = sprite;
-
-			BbtagScript::Run run;
-
-			if (BbtagScript::ReadRun(file.second, run))
-				runs[stem] = run;
-
-			BbtagScript::Lamp lamp;
-
-			if (BbtagScript::ReadLamp(file.second, lamp))
-				lamps[stem] = lamp;
+			scripts[stem] = file.second;
 		}
 	}
+
+	out.lamps.clear();
 
 	for (const BbtagMua::Mesh& mesh : model.Meshes())
 	{
 		const std::string bound = ScriptOf(model, mesh);
+		const std::string stem = Stem(scripts, bound, mesh.name);
 
-		if (bound.empty() || lamps.find(bound) == lamps.end() || slots.count(bound) != 0)
+		if (stem.empty())
 			continue;
 
-		if (static_cast<int>(slots.size()) >= BbtagStage::kLampSlots)
-			break;
+		const BbtagScript::Played& run = PlayedFor(scripts, played, stem, mesh.skeleton);
 
-		slots[bound] = static_cast<int>(slots.size());
+		BbtagScript::Lamp lamp;
+
+		if (BbtagScript::Lamps(run, lamp) && bound == stem && slots.count(bound) == 0
+			&& static_cast<int>(slots.size()) < BbtagStage::kLampSlots)
+		{
+			slots[bound] = static_cast<int>(slots.size());
+			out.lamps.push_back(lamp);
+		}
+
+		BbtagScript::Sprite sprite;
+
+		if (BbtagScript::Sprites(run, sprite))
+			sprites[mesh.name] = sprite;
+
+		BbtagScript::Run motion;
+
+		if (BbtagScript::Motions(run, motion))
+			runs[mesh.name] = motion;
 	}
-
-	out.lamps.assign(slots.size(), BbtagScript::Lamp());
-
-	for (const std::pair<const std::string, int>& one : slots)
-		out.lamps[one.second] = lamps[one.first];
 
 	Internal(model, scale, mirror, moving);
 
@@ -1101,37 +1077,11 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 
 		const size_t rows = vertices.size() / kFloats;
 		bool faded = false;
-		bool unlit = false;
-		float box[4] = { vertices[10], vertices[10], 1.0f - vertices[11], 1.0f - vertices[11] };
 
 		for (size_t i = 0; i < rows; ++i)
-		{
-			const float* const row = &vertices[i * kFloats];
-
-			faded = faded || row[9] < 1.0f;
-			unlit = unlit || (row[6] == 0.0f && row[7] == 0.0f && row[8] == 0.0f);
-
-			box[0] = std::min(box[0], row[10]);
-			box[1] = std::max(box[1], row[10]);
-			box[2] = std::min(box[2], 1.0f - row[11]);
-			box[3] = std::max(box[3], 1.0f - row[11]);
-		}
-
-		size_t blacks = 0;
-		float brightest = 0.0f;
-
-		for (size_t i = 0; i < rows; ++i)
-		{
-			const float* const row = &vertices[i * kFloats];
-			const float most = std::max(row[6], std::max(row[7], row[8]));
-
-			blacks += most == 0.0f ? 1 : 0;
-			brightest = std::max(brightest, most);
-		}
+			faded = faded || vertices[i * kFloats + 9] < 1.0f;
 
 		bool clear = faded;
-		bool adds = false;
-		bool cut = false;
 		std::vector<FbxExWriter::Submesh> submeshes;
 
 		for (int p = 0; p < mesh.parts; ++p)
@@ -1166,18 +1116,7 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 			if (submesh.indices.empty())
 				continue;
 
-			const int texture = built.materials[submesh.material].textureIndex;
-			const std::vector<uint8_t> empty;
-			const std::vector<uint8_t>& blob = pixels[texture] == nullptr ? empty : *pixels[texture];
-
-			clear = clear || cutout[texture];
-			cut = cut || cutout[texture];
-
-			const bool alight = glowing[texture] && (sheer[texture] || (cutout[texture] && faded)
-				|| (grey[texture] && Masked(vertices)));
-
-			adds = adds || alight || (flat[texture] && unlit) || BbtagArt::Haloed(blob, box);
-
+			clear = clear || cutout[built.materials[submesh.material].textureIndex];
 			submeshes.push_back(submesh);
 		}
 
@@ -1185,90 +1124,43 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 			continue;
 
 		const int plate = Shelf(built.materials, submeshes);
+		const int mode = BlendOf(model, mesh);
+		const bool adds = mode == kBlendAdd;
 
-		adds = adds || boards.count(plate) != 0;
-		clear = clear || adds;
-
-		size_t drawn = 0;
-
-		for (const FbxExWriter::Submesh& submesh : submeshes)
-			drawn += submesh.indices.size() / 3;
-
-		float low[3] = { 1e30f, 1e30f, 1e30f };
-		float high[3] = { -1e30f, -1e30f, -1e30f };
-		const size_t placed = vertices.size() / kFloats;
-
-		for (size_t i = 0; i < placed; ++i)
-		{
-			for (int k = 0; k < 3; ++k)
-			{
-				const float value = vertices[i * kFloats + k];
-
-				low[k] = std::min(low[k], value);
-				high[k] = std::max(high[k], value);
-			}
-		}
-
-		float span = 0.0f;
-
-		for (int k = 0; k < 3; ++k)
-			span = std::max(span, high[k] - low[k]);
-
-		const bool overlay = !cut && !faded
-			&& static_cast<float>(blacks) >= kOverlayBlack * static_cast<float>(rows)
-			&& brightest >= kOverlayBright;
-
-		adds = (adds && drawn <= kAddsMost && span <= kAddsSpan)
-			|| lamps.count(ScriptOf(model, mesh)) != 0 || overlay;
+		clear = clear || mode != kBlendOpaque;
 		out.fading = out.fading || faded;
 
 		const std::map<int, Takes>::const_iterator track = moving.find(mesh.bone);
 		const bool animated = track != moving.end();
 		const std::string bound = ScriptOf(model, mesh);
-		const BbtagScript::Run* const run = Chosen(runs, bound, mesh.name);
+		const BbtagScript::Run* const run = Named(runs, mesh.name);
 
 		const std::map<std::string, int>::const_iterator lit = slots.find(bound);
 		const int lamp = lit == slots.end() ? -1 : lit->second;
 
-		int window = 1;
-		int taken = -1;
+		const std::vector<uint8_t> empty;
+		const std::vector<uint8_t>& sheet = pixels[plate] == nullptr ? empty : *pixels[plate];
 
-		if (!animated)
+		BbtagArt::Size size = {};
+		const bool measured = BbtagArt::Measure(sheet, size);
+
+		const BbtagScript::Sprite* const sprite = animated ? nullptr : Named(sprites, mesh.name);
+
+		std::vector<int> order;
+
+		for (size_t i = 0; sprite != nullptr && i < sprite->rect.size(); ++i)
 		{
-			const std::vector<uint8_t> empty;
-			const std::vector<uint8_t>& blob = pixels[plate] == nullptr ? empty : *pixels[plate];
+			const BbtagScript::Rect& rect = sprite->rect[i];
 
-			BbtagArt::Size size = {};
-			BbtagArt::Measure(blob, size);
-
-			const Siblings::const_iterator group = siblings.find(plate);
-			const std::vector<Plate> none;
-
-			Bands(vertices, submeshes, size, group == siblings.end() ? none : group->second,
-				window, taken);
+			if (rect.w > kLeastRect && rect.h > kLeastRect
+				&& DrawnOn(*sprite, rect, built.textures[plate]))
+			{
+				order.push_back(static_cast<int>(i));
+			}
 		}
 
-		const BbtagScript::Sprite* const sprite = window > 1
-			? Chosen(sprites, bound, mesh.name) : nullptr;
-
-		if (sprite != nullptr)
+		if (!order.empty() && measured)
 		{
-			const std::vector<uint8_t> empty;
-			const std::vector<uint8_t>& sheet = pixels[plate] == nullptr ? empty : *pixels[plate];
-
-			BbtagArt::Size size = {};
-			BbtagArt::Measure(sheet, size);
-
-			std::vector<int> order;
-
-			for (size_t i = 0; i < sprite->rect.size(); ++i)
-			{
-				const BbtagScript::Rect& rect = sprite->rect[i];
-
-				if (rect.w > kLeastRect && rect.h > kLeastRect)
-					order.push_back(static_cast<int>(i));
-			}
-
 			std::sort(order.begin(), order.end(), [sprite](int one, int other)
 			{
 				const BbtagScript::Rect& a = sprite->rect[one];
@@ -1283,7 +1175,10 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 				if (a.w != b.w)
 					return a.w < b.w;
 
-				return a.h < b.h;
+				if (a.h != b.h)
+					return a.h < b.h;
+
+				return a.sheet < b.sheet;
 			});
 
 			for (int index : order)
@@ -1303,6 +1198,18 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 			}
 
 			continue;
+		}
+
+		int window = 1;
+		int taken = -1;
+
+		if (!animated)
+		{
+			const Siblings::const_iterator group = siblings.find(plate);
+			const std::vector<Plate> none;
+
+			Bands(vertices, submeshes, size, group == siblings.end() ? none : group->second,
+				window, taken);
 		}
 
 		if (window > 1)

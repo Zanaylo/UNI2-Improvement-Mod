@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Game/GameOffsets.h"
 #include "Game/HitboxData.h"
 #include "Game/PlayerState.h"
 #include "Overlay/Window/IWindow.h"
@@ -27,7 +28,7 @@ private:
 		Decreased
 	};
 
-	static constexpr int kDwordCount = 0xba4 / 4;
+	static constexpr int kDwordCount = static_cast<int>(GameOffsets::kPlayerDataSize) / 4;
 
 	void RefreshEntities();
 	void DumpToLog();

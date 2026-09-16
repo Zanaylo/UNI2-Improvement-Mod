@@ -12,8 +12,8 @@
 
 namespace {
 
-constexpr uintptr_t kSetParamRva = 0x156d0;
-constexpr uintptr_t kTintCallerRva = 0x1535d;
+constexpr uintptr_t kSetParamRva = 0x15790;
+constexpr uintptr_t kTintCallerRva = 0x1541d;
 
 constexpr uintptr_t kValuesToFrame = 0x5c;
 constexpr uintptr_t kPieceSlot = 0x50;

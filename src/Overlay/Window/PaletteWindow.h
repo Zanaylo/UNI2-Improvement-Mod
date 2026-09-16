@@ -29,17 +29,27 @@ private:
 	void DrawFiles(int player);
 
 	void PullBaseline(int player, bool force);
+	void ComposeCompanion(int player);
+
+	void DrawSummon(int player);
+	void DrawSummonGrid(int player, const unsigned char* entries, int count);
+	void DrawSummonPicker(int player);
+	bool IsSummonJunk(int player, int entry) const;
 
 	void Record(int player);
 	void Undo(int player);
 
 	void Apply(int player);
 	void Refresh(int player);
+	void FollowPartTints(int player);
+	void ForgetPartTints(int player);
 
 	void ApplyImportedColours(int player, const uint8_t* colours, const uint8_t* effects);
 
 	bool Save(int player);
 	bool Load(int player, const char* name);
+	void LoadSummon(int player, const char* name);
+	bool AnySummonEdits(int player) const;
 	void RefreshFiles(int player);
 
 	void PollPngDialogs(int player);
@@ -48,7 +58,7 @@ private:
 
 	void Adopt(int player, int chara);
 
-	void StartFlash(int player);
+	void StartFlash(int player, bool summon);
 	void RunFlash();
 
 	LivePalette::Colours m_colours[2] = {};
@@ -63,6 +73,22 @@ private:
 	int m_selected[2] = { 1, 1 };
 	int m_effectEntry[2] = { -1, -1 };
 	bool m_pulled[2] = {};
+	bool m_tinted[2][LivePalette::kColours] = {};
+
+	uint8_t m_companion[2][LivePalette::kBytes] = {};
+	uint8_t m_companionBase[2][LivePalette::kBytes] = {};
+	bool m_hasCompanion[2] = {};
+
+	struct SummonEdit
+	{
+		uint8_t entry[LivePalette::kColours][3];
+		bool edited[LivePalette::kColours];
+	};
+
+	SummonEdit m_summon[2] = {};
+	SummonEdit m_summonHistory[2][kUndoDepth] = {};
+	int m_companionSelected[2] = { 1, 1 };
+	bool m_flashSummon = false;
 
 	char m_name[2][48] = {};
 	char m_creator[2][32] = {};

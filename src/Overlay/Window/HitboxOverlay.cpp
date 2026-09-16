@@ -102,7 +102,7 @@ const CategoryInfo kCategories[HitboxOverlay::BoxCategory_COUNT] = {
 		"Crouch block check", IM_COL32(120, 120, 240, 255),
 		"The crouching silhouette, on someone blocking while standing.",
 		"A jump attack that misses it can also be blocked crouching.\n\nOnly a jump attack out of Nanase's "
-		"or Uduki's air B+C can trigger that. On everyone else nothing reads this box."
+		"or Uzuki's air B+C can trigger that. On everyone else nothing reads this box."
 	},
 	{
 		"Pull box", IM_COL32(90, 200, 130, 255),

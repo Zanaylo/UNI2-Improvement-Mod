@@ -50,6 +50,7 @@ namespace BbtagMua
 		int firstBone;
 		int bones;
 		int script;
+		int blend;
 	};
 
 	struct Flow

@@ -12,14 +12,14 @@
 
 namespace {
 
-constexpr uintptr_t kCharaDrawRva = 0xbdf50;
+constexpr uintptr_t kCharaDrawRva = 0xbe140;
 
 constexpr uintptr_t kDrawOverride = 0x24;
 constexpr uintptr_t kDrawOwner = 0x48;
 constexpr uintptr_t kDrawPair = 0x2c;
 constexpr uintptr_t kDrawOdd = 0x20;
 
-constexpr uintptr_t kOwnerPalette = 0x15050;
+constexpr uintptr_t kOwnerPalette = 0x15054;
 
 constexpr int kMaxRows = 32;
 
@@ -97,6 +97,10 @@ void Record(uintptr_t owner, uintptr_t texture, uintptr_t override, int row, int
 	fresh.charaFromStack = chara;
 	fresh.stackDepth = depth;
 	fresh.draws = 1;
+
+	LOG("palette owner: owner 0x%08x texture 0x%08x override 0x%08x side %d object %d depth %d",
+		static_cast<unsigned>(owner), static_cast<unsigned>(texture),
+		static_cast<unsigned>(override), row, chara, depth);
 }
 
 void __fastcall Detour(void* self, void* unused)
@@ -124,9 +128,9 @@ void __fastcall Detour(void* self, void* unused)
 			if (holder != 0)
 				ReadPointer(holder, texture);
 
-			const int side = pair * 2 + (odd != 0 ? 1 : 0);
+			const int row = pair * 2 + (odd != 0 ? 1 : 0);
 
-			PaletteSeat::OnDraw(owner, texture, side);
+			PaletteSeat::OnDraw(owner, texture, row);
 
 			PalettePaint::OnDraw();
 
@@ -135,7 +139,7 @@ void __fastcall Detour(void* self, void* unused)
 				int depth = 0;
 				const int chara = CharaFromStack(depth);
 
-				Record(owner, texture, override, side, chara, depth);
+				Record(owner, texture, override, row, chara, depth);
 			}
 		}
 	}

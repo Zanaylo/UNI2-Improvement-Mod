@@ -245,7 +245,7 @@ bool LooksLikePalette(uintptr_t address)
 
 int PaletteMemory::ProbeFromCharacters()
 {
-	constexpr int kCharaDwords = 0xba4 / 4;
+	constexpr int kCharaDwords = static_cast<int>(GameOffsets::kPlayerDataSize) / 4;
 	int found = 0;
 
 	for (int player = 0; player < 2; ++player)

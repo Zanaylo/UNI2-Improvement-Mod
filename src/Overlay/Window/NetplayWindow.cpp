@@ -108,21 +108,9 @@ void NetplayWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Spectate"))
-	{
-		DrawSpectateTab();
-		ImGui::EndTabItem();
-	}
-
 	if (ImGui::BeginTabItem("Rollback"))
 	{
 		DrawRollbackTab();
-		ImGui::EndTabItem();
-	}
-
-	if (ImGui::BeginTabItem("Room"))
-	{
-		DrawRoomTab();
 		ImGui::EndTabItem();
 	}
 

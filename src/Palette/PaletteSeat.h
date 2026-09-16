@@ -19,7 +19,7 @@ namespace PaletteSeat
 		int lastSeenFrame;
 	};
 
-	void OnDraw(uintptr_t owner, uintptr_t texture, int side);
+	void OnDraw(uintptr_t owner, uintptr_t texture, int row);
 
 	void OnFrame();
 

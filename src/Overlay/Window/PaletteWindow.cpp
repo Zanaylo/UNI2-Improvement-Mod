@@ -210,6 +210,12 @@ void PaletteWindow::DrawPlayer(int player)
 		ImGui::EndTabItem();
 	}
 
+	if (m_hasCompanion[player] && ImGui::BeginTabItem("Summon"))
+	{
+		DrawSummon(player);
+		ImGui::EndTabItem();
+	}
+
 	ImGui::EndTabBar();
 
 	ImGui::Separator();
@@ -245,13 +251,26 @@ void PaletteWindow::DrawGroupedSwatches(int player, int chara, int parts)
 		if (!GameTables::GetPart(chara, part, name, entries, count))
 			continue;
 
+		unsigned char fresh[LivePalette::kColours] = {};
+		int freshCount = 0;
+
+		for (int i = 0; i < count; ++i)
+		{
+			const unsigned char entry = entries[i];
+
+			if (!covered[entry] && !IsJunk(player, chara, entry))
+				fresh[freshCount++] = entry;
+
+			covered[entry] = true;
+		}
+
+		if (freshCount == 0)
+			continue;
+
 		ImGui::PushID(part);
 
 		if (ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen))
-			DrawGrid(player, entries, count);
-
-		for (int i = 0; i < count; ++i)
-			covered[entries[i]] = true;
+			DrawGrid(player, fresh, freshCount);
 
 		ImGui::PopID();
 	}
@@ -487,7 +506,7 @@ void PaletteWindow::DrawGrid(int player, const unsigned char* entries, int count
 			Ui::Scaled(kSwatch, kSwatch)))
 		{
 			m_selected[player] = i;
-			StartFlash(player);
+			StartFlash(player, false);
 		}
 
 		if (selected || changed)
@@ -570,6 +589,7 @@ void PaletteWindow::DrawPicker(int player)
 	{
 		PalettePaint::Clear(player);
 		EffectPaint::Clear(player);
+		ForgetPartTints(player);
 
 		PaletteChoice::Forget(m_chara[player]);
 		PaletteChoice::NoteBare(player);
@@ -584,6 +604,7 @@ void PaletteWindow::DrawPicker(int player)
 	{
 		Record(player);
 		LivePalette::Reset(m_colours[player], m_chara[player]);
+		m_summon[player] = SummonEdit();
 
 		if (m_applied[player])
 			Apply(player);
@@ -940,11 +961,15 @@ void PaletteWindow::Record(int player)
 	if (m_historyCount[player] >= kUndoDepth)
 	{
 		for (int i = 1; i < kUndoDepth; ++i)
+		{
 			m_history[player][i - 1] = m_history[player][i];
+			m_summonHistory[player][i - 1] = m_summonHistory[player][i];
+		}
 
 		--m_historyCount[player];
 	}
 
+	m_summonHistory[player][m_historyCount[player]] = m_summon[player];
 	m_history[player][m_historyCount[player]++] = m_colours[player];
 }
 
@@ -954,6 +979,7 @@ void PaletteWindow::Undo(int player)
 		return;
 
 	m_colours[player] = m_history[player][--m_historyCount[player]];
+	m_summon[player] = m_summonHistory[player][m_historyCount[player]];
 
 	if (m_applied[player])
 		Apply(player);
@@ -1006,6 +1032,7 @@ void PaletteWindow::Bare(int player)
 {
 	PalettePaint::Clear(player);
 	EffectPaint::Clear(player);
+	ForgetPartTints(player);
 
 	PaletteChoice::Forget(m_chara[player]);
 	PaletteChoice::NoteBare(player);
@@ -1041,6 +1068,13 @@ bool PaletteWindow::Save(int player)
 		return false;
 	}
 
+	const std::string companion = folder + "\\" + PaletteFile::CompanionOf(file);
+
+	if (AnySummonEdits(player))
+		PaletteFile::Save(companion, m_companion[player], info, nullptr);
+	else
+		DeleteFileA(companion.c_str());
+
 	PaletteChoice::Remember(m_chara[player], file.c_str());
 	PaletteChoice::NoteWorn(player, file.c_str());
 
@@ -1060,6 +1094,7 @@ void PaletteWindow::ApplyImportedColours(int player, const uint8_t* colours, con
 	}
 
 	EffectPaint::SetBlock(player, effects);
+	ForgetPartTints(player);
 
 	Apply(player);
 }
@@ -1091,7 +1126,43 @@ bool PaletteWindow::Load(int player, const char* name)
 	strncpy_s(m_name[player], info.name[0] != '\0' ? info.name : name, _TRUNCATE);
 	StripExtension(m_name[player]);
 
+	LoadSummon(player, name);
+
 	return true;
+}
+
+bool PaletteWindow::AnySummonEdits(int player) const
+{
+	for (bool edited : m_summon[player].edited)
+	{
+		if (edited)
+			return true;
+	}
+
+	return false;
+}
+
+void PaletteWindow::LoadSummon(int player, const char* name)
+{
+	m_summon[player] = SummonEdit();
+
+	if (m_chara[player] < 0 || name == nullptr)
+		return;
+
+	uint8_t colours[PaletteFile::kBytes] = {};
+	PaletteFile::Info info = {};
+
+	const std::string path = PaletteLibrary::FolderFor(m_chara[player]) + "\\"
+		+ PaletteFile::CompanionOf(name);
+
+	if (!PaletteFile::Load(path, colours, info))
+		return;
+
+	for (int entry = 1; entry < LivePalette::kColours; ++entry)
+	{
+		memcpy(m_summon[player].entry[entry], colours + entry * 4, 3);
+		m_summon[player].edited[entry] = true;
+	}
 }
 
 void PaletteWindow::PollPngDialogs(int player)
@@ -1174,6 +1245,11 @@ void PaletteWindow::Adopt(int player, int chara)
 	m_pulled[player] = false;
 	m_status[player][0] = 0;
 	m_chosen[player] = -1;
+	m_hasCompanion[player] = false;
+	m_companionSelected[player] = 1;
+	m_summon[player] = SummonEdit();
+
+	ForgetPartTints(player);
 
 	RefreshFiles(player);
 
@@ -1207,11 +1283,207 @@ void PaletteWindow::PullBaseline(int player, bool force)
 
 	LivePalette::SetBaseline(m_colours[player], drawn);
 	m_pulled[player] = true;
+
+	uint8_t theirs[LivePalette::kBytes] = {};
+
+	m_hasCompanion[player] = PalettePaint::ReadCompanionColours(player, theirs);
+
+	if (m_hasCompanion[player])
+		memcpy(m_companionBase[player], theirs, sizeof(theirs));
+}
+
+void PaletteWindow::ComposeCompanion(int player)
+{
+	if (!m_hasCompanion[player])
+		return;
+
+	memcpy(m_companion[player], m_companionBase[player], LivePalette::kBytes);
+
+	const SummonEdit& summon = m_summon[player];
+
+	for (int entry = 1; entry < LivePalette::kColours; ++entry)
+	{
+		if (summon.edited[entry])
+			memcpy(m_companion[player] + entry * 4, summon.entry[entry], 3);
+	}
+}
+
+bool PaletteWindow::IsSummonJunk(int player, int entry) const
+{
+	if (!g_modVals.paletteFilterJunk)
+		return false;
+
+	const uint8_t* const colour = m_companionBase[player] + entry * 4;
+
+	return colour[0] == 0 && colour[1] == 255 && colour[2] == 0;
+}
+
+void PaletteWindow::DrawSummonGrid(int player, const unsigned char* entries, int count)
+{
+	const SummonEdit& summon = m_summon[player];
+
+	for (int n = 0; n < count; ++n)
+	{
+		const int i = entries[n];
+
+		ImGui::PushID(i);
+
+		const uint8_t* const rgb = m_companion[player] + i * 4;
+		const ImVec4 colour(rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f, 1.0f);
+
+		const bool selected = i == m_companionSelected[player];
+		const bool changed = summon.edited[i];
+
+		if (selected || changed)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Border, selected ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f)
+				: ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
+		}
+
+		if (ImGui::ColorButton("##summonswatch", colour,
+			ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
+			Ui::Scaled(kSwatch, kSwatch)))
+		{
+			m_companionSelected[player] = i;
+			StartFlash(player, true);
+		}
+
+		if (selected || changed)
+		{
+			ImGui::PopStyleVar();
+			ImGui::PopStyleColor();
+		}
+
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("entry %d%s", i, changed ? " (changed)" : "");
+
+		if (((n + 1) % kPerRow) != 0 && n + 1 < count)
+			ImGui::SameLine();
+
+		ImGui::PopID();
+	}
+}
+
+void PaletteWindow::DrawSummonPicker(int player)
+{
+	const int selected = m_companionSelected[player];
+	SummonEdit& summon = m_summon[player];
+
+	ImGui::Text("entry %d%s", selected, summon.edited[selected] ? "  (changed)" : "");
+
+	const uint8_t* const shown = m_companion[player] + selected * 4;
+
+	float picked[3] = { shown[0] / 255.0f, shown[1] / 255.0f, shown[2] / 255.0f };
+
+	Ui::SetItemWidth(170.0f);
+
+	if (ImGui::ColorPicker3("##summonentry", picked, ImGuiColorEditFlags_NoSidePreview |
+		ImGuiColorEditFlags_NoSmallPreview))
+	{
+		if (ImGui::IsItemActivated() || !ImGui::IsItemActive())
+			Record(player);
+
+		for (int c = 0; c < 3; ++c)
+			summon.entry[selected][c] = static_cast<uint8_t>(picked[c] * 255.0f + 0.5f);
+
+		summon.edited[selected] = true;
+		Apply(player);
+	}
+
+	if (!summon.edited[selected])
+		return;
+
+	if (ImGui::Button("Back to the game's colour"))
+	{
+		Record(player);
+		summon.edited[selected] = false;
+		Apply(player);
+	}
+}
+
+void PaletteWindow::DrawSummon(int player)
+{
+	if (!m_hasCompanion[player])
+	{
+		ImGui::TextDisabled("this character has no summon of its own.");
+		return;
+	}
+
+	ImGui::TextWrapped("The summon reads its own colours. Changing one here leaves the character "
+		"alone.");
+
+	unsigned char entries[LivePalette::kColours] = {};
+	int count = 0;
+
+	for (int i = 1; i < LivePalette::kColours; ++i)
+	{
+		if (!IsSummonJunk(player, i))
+			entries[count++] = static_cast<unsigned char>(i);
+	}
+
+	ImGui::BeginChild("summon", Ui::Scaled(0.0f, 200.0f), ImGuiChildFlags_Borders);
+
+	if (count == 0)
+		ImGui::TextDisabled("nothing of the summon's is in this palette.");
+	else
+		DrawSummonGrid(player, entries, count);
+
+	ImGui::EndChild();
+
+	DrawSummonPicker(player);
 }
 
 void PaletteWindow::Refresh(int player)
 {
 	LivePalette::Compose(m_colours[player], m_composed[player]);
+	ComposeCompanion(player);
+}
+
+void PaletteWindow::ForgetPartTints(int player)
+{
+	memset(m_tinted[player], 0, sizeof(m_tinted[player]));
+}
+
+void PaletteWindow::FollowPartTints(int player)
+{
+	const int chara = m_chara[player];
+
+	if (chara < 0 || !m_colours[player].hasBaseline)
+		return;
+
+	for (int entry = 1; entry < LivePalette::kColours; ++entry)
+	{
+		if (!PartColourTable::IsPartEntry(chara, entry))
+			continue;
+
+		const uint8_t* const wanted = m_composed[player] + entry * 4;
+		const uint8_t* const own = m_colours[player].baseline + entry * 4;
+
+		if (wanted[0] == own[0] && wanted[1] == own[1] && wanted[2] == own[2])
+		{
+			if (!m_tinted[player][entry])
+				continue;
+
+			EffectPaint::ClearEntry(player, entry);
+			m_tinted[player][entry] = false;
+			continue;
+		}
+
+		if (EffectPaint::IsEdited(player, entry) && !m_tinted[player][entry])
+			continue;
+
+		uint8_t already[3] = {};
+
+		if (EffectPaint::GetEdit(player, entry, already) && already[0] == wanted[0]
+			&& already[1] == wanted[1] && already[2] == wanted[2])
+		{
+			continue;
+		}
+
+		EffectPaint::SetEntry(player, entry, wanted);
+		m_tinted[player][entry] = true;
+	}
 }
 
 void PaletteWindow::Apply(int player)
@@ -1219,13 +1491,21 @@ void PaletteWindow::Apply(int player)
 	Refresh(player);
 
 	PalettePaint::Stage(player, m_composed[player]);
+
+	if (m_hasCompanion[player])
+		PalettePaint::StageCompanion(player, m_companion[player]);
+
+	FollowPartTints(player);
+
 	m_applied[player] = true;
 }
 
-void PaletteWindow::StartFlash(int player)
+void PaletteWindow::StartFlash(int player, bool summon)
 {
 	if (!g_modVals.paletteFlashEntry || !PaletteControl::CanEdit(player))
 		return;
+
+	m_flashSummon = summon;
 
 	if (m_flashPlayer >= 0 && m_flashPlayer != player)
 	{
@@ -1255,7 +1535,8 @@ void PaletteWindow::RunFlash()
 
 	--m_flashFrames;
 
-	const int keep = m_selected[player];
+	const int keep = m_flashSummon ? -1 : m_selected[player];
+	const int keepTheirs = m_flashSummon ? m_companionSelected[player] : -1;
 	const bool on = (m_flashFrames / 8) % 2 == 0;
 
 	const uint8_t lit[3] = {
@@ -1276,9 +1557,33 @@ void PaletteWindow::RunFlash()
 		dimmed[i * 4 + 2] = grey;
 	}
 
-	memcpy(dimmed + keep * 4, lit, 3);
+	if (keep >= 0)
+		memcpy(dimmed + keep * 4, lit, 3);
 
 	PalettePaint::Preview(player, dimmed);
+
+	if (m_hasCompanion[player])
+	{
+		if (!PalettePaint::HasCompanion(player))
+			PalettePaint::StageCompanion(player, m_companion[player]);
+
+		uint8_t theirs[LivePalette::kBytes] = {};
+		memcpy(theirs, m_companion[player], sizeof(theirs));
+
+		for (int i = 0; i < LivePalette::kColours; ++i)
+		{
+			const uint8_t grey = static_cast<uint8_t>(Luminance(theirs + i * 4) / 2);
+
+			theirs[i * 4 + 0] = grey;
+			theirs[i * 4 + 1] = grey;
+			theirs[i * 4 + 2] = grey;
+		}
+
+		if (keepTheirs >= 0)
+			memcpy(theirs + keepTheirs * 4, lit, 3);
+
+		PalettePaint::PreviewCompanion(player, theirs);
+	}
 
 	const uint8_t dark[3] = { 40, 40, 40 };
 

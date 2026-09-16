@@ -161,8 +161,10 @@ stage again from the mod's panel overwrites it.
 CENTRALFICTION with their motions, scripts and textures, and can save them back.
 
 To play one of those stages in UNI2, use **Get stages from another fighting game** in the Stages
-panel. Point it at the game folder and it converts the stages for you. The converter only uses one
-sprite sheet, so animated sprites stand still. To fix a port by hand:
+panel. Point it at the game folder and it converts the stages for you. It plays each stage's scripts
+the way BBTAG does and rolls the same random picks as the Mua add-on, so lights fade, TVs change
+channel and lightning flashes in the port like they do in Blender. A sprite only uses the frames drawn
+on its own sheet, and it can't be half faded: it's shown or it isn't. To fix a port by hand:
 
 1. Open the port, `UNI2-IM\Mods\bg\bgNNN\bg.fbx.bin`, with the FbxExp add-on.
 2. Open the original `<stage>_vtx.pac` with the Mua add-on next to it, to see how it should look and

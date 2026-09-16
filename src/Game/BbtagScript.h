@@ -9,6 +9,7 @@ namespace BbtagScript
 {
 	struct Rect
 	{
+		int sheet;
 		int x;
 		int y;
 		int w;
@@ -20,6 +21,7 @@ namespace BbtagScript
 		int loop;
 		std::vector<int> frame;
 		std::vector<Rect> rect;
+		std::vector<std::string> sheets;
 	};
 
 	struct Step
@@ -47,17 +49,31 @@ namespace BbtagScript
 		std::vector<Ramp> ramp;
 	};
 
+	struct Sample
+	{
+		bool lit;
+		Rect rect;
+		double ramp;
+		bool picked;
+		int64_t pick;
+	};
+
+	struct Played
+	{
+		std::vector<Sample> sample;
+		std::vector<std::string> sheets;
+		std::vector<std::string> named;
+		bool cyclic;
+		bool rolled;
+	};
+
 	typedef std::map<std::string, std::vector<uint8_t> > Scripts;
 
-	bool Read(const std::vector<uint8_t>& blob, Sprite& out);
+	bool Play(const std::vector<uint8_t>& blob, const std::string& label, Played& out);
 
-	bool ReadRun(const std::vector<uint8_t>& blob, Run& out);
+	bool Sprites(const Played& played, Sprite& out);
 
-	bool ReadLamp(const std::vector<uint8_t>& blob, Lamp& out);
+	bool Motions(const Played& played, Run& out);
 
-	float LampAt(const Lamp& lamp, int frame);
-
-	const Sprite* For(const std::map<std::string, Sprite>& held, const std::string& mesh);
-
-	const Run* RunFor(const std::map<std::string, Run>& held, const std::string& mesh);
+	bool Lamps(const Played& played, Lamp& out);
 }

@@ -168,9 +168,9 @@ void Drop(int index)
 
 }
 
-void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int side)
+void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int row)
 {
-	if (owner == 0 || texture == 0 || side < 0)
+	if (owner == 0 || texture == 0 || row < 0)
 		return;
 
 	int seat = FindSeat(owner);
@@ -190,10 +190,10 @@ void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int side)
 
 	Seat& entry = g_seats[seat];
 
-	entry.side = side;
+	entry.side = row & 1;
 
-	if (side < 32)
-		entry.rows |= 1u << side;
+	if (row < 32)
+		entry.rows |= 1u << row;
 
 	entry.lastSeenFrame = g_frame;
 	++entry.draws;

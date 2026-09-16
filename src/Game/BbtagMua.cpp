@@ -1,5 +1,6 @@
 #include "Game/BbtagMua.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
@@ -22,6 +23,7 @@ constexpr int kIndex = 14;
 constexpr int kStringInfo = 15;
 constexpr int kString = 16;
 
+constexpr int kBaseLayer = 1;
 constexpr size_t kVertexBytes = 0x50;
 constexpr size_t kHeader = 0x20;
 
@@ -106,11 +108,13 @@ void BbtagMua::Model::ReadTextures()
 void BbtagMua::Model::ReadMaterials()
 {
 	std::vector<int> assigned;
+	std::vector<int> layers;
 	std::vector<Flow> flows;
 
 	for (int i = 0; i < Count(kAssign); ++i)
 	{
 		const size_t at = Where(kAssign, i, 0x20);
+		layers.push_back(static_cast<int>(Dword(at)));
 		assigned.push_back(static_cast<int>(Dword(at + 4)));
 
 		const int keys = static_cast<int>(Dword(at + 8));
@@ -148,16 +152,24 @@ void BbtagMua::Model::ReadMaterials()
 		const int count = static_cast<int>(Dword(at));
 		const int first = static_cast<int>(Dword(at + 4));
 
-		std::vector<int> textures;
-		Flow flow = {};
+		std::vector<int> taken;
 
 		for (int k = 0; k < count; ++k)
 		{
 			const int index = first + k;
 
-			if (index < 0 || index >= static_cast<int>(assigned.size()))
-				continue;
+			if (index >= 0 && index < static_cast<int>(assigned.size()))
+				taken.push_back(index);
+		}
 
+		std::stable_partition(taken.begin(), taken.end(),
+			[&layers](int index) { return layers[index] == kBaseLayer; });
+
+		std::vector<int> textures;
+		Flow flow = {};
+
+		for (int index : taken)
+		{
 			textures.push_back(assigned[index]);
 
 			if (!flow.known && flows[index].known)
@@ -206,7 +218,7 @@ void BbtagMua::Model::ReadBones()
 	{
 		const size_t at = Where(kSkeleton, i, 0x20);
 		const Skeleton skeleton = { static_cast<int>(Dword(at)), static_cast<int>(Dword(at + 4)),
-			static_cast<int>(Dword(at + 8)) };
+			static_cast<int>(Dword(at + 8)), static_cast<int>(Dword(at + 0xc)) };
 
 		m_skeleton.push_back(skeleton);
 	}

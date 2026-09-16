@@ -522,13 +522,32 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 bool HookVTableEntry(void** vtable, int index, void* detour, void** original, const char* label)
 {
-	return HookManager::CreateAndEnableHook(vtable[index], detour, original, label);
+	if (vtable == nullptr || !IsReadableMemory(vtable + index, sizeof(void*)))
+	{
+		LOG("Device hooks: '%s' skipped, slot %d of vtable 0x%p is not readable", label, index,
+			static_cast<void*>(vtable));
+
+		return false;
+	}
+
+	void* const target = vtable[index];
+
+	if (target == nullptr || !IsReadableMemory(target, 1))
+	{
+		LOG("Device hooks: '%s' skipped, slot %d holds 0x%p", label, index, target);
+		return false;
+	}
+
+	return HookManager::CreateAndEnableHook(target, detour, original, label);
 }
 
 }
 
 bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS& presentParameters, HWND focusWindow)
 {
+	LOG("Device hooks: asked to install on device 0x%p, window 0x%p", static_cast<void*>(device),
+		static_cast<void*>(focusWindow));
+
 	if (g_installed)
 	{
 		g_device = device;
@@ -545,7 +564,24 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 	if (focusWindow != nullptr)
 		g_gameProc.hWndGame = focusWindow;
 
+	if (!IsReadableMemory(device, sizeof(void*)))
+	{
+		LOG("Device hooks: device 0x%p is not readable, no device hooks installed",
+			static_cast<void*>(device));
+
+		return false;
+	}
+
 	void** vtable = *reinterpret_cast<void***>(device);
+
+	if (vtable == nullptr
+		|| !IsReadableMemory(vtable, (kDrawIndexedPrimitiveUPIndex + 1) * sizeof(void*)))
+	{
+		LOG("Device hooks: vtable 0x%p of device 0x%p is too short or unreadable, no device hooks "
+			"installed", static_cast<void*>(vtable), static_cast<void*>(device));
+
+		return false;
+	}
 
 	const bool reset = HookVTableEntry(vtable, kResetIndex, &HookedReset,
 		reinterpret_cast<void**>(&oReset), "IDirect3DDevice9::Reset");

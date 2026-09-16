@@ -102,6 +102,8 @@ namespace PaletteTexture
 	bool ReadRow(int index, unsigned row, uint8_t* out);
 	bool WriteRow(int index, unsigned row, const uint8_t* colors);
 
+	bool WriteRowSet(int index, const unsigned* rows, const uint8_t* const* colors, int count);
+
 	bool ReadRowAsRgba(int index, unsigned row, uint8_t* out);
 
 	bool ReadPristineRowAsRgba(int index, unsigned row, uint8_t* out);

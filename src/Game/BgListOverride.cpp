@@ -422,6 +422,20 @@ bool Commit(const std::string& list, const std::string& names)
 
 }
 
+bool BgListOverride::OwnNumbers(std::vector<int>& out)
+{
+	out.clear();
+
+	std::string original;
+
+	if (!Original(kList, original))
+		return false;
+
+	EntryNumbers(original, out);
+
+	return !out.empty();
+}
+
 bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned,
 	const std::vector<Reworked>& reworked)
 {

@@ -8,8 +8,18 @@ namespace PalettePaint
 	constexpr int kColours = 256;
 	constexpr int kBytes = kColours * 4;
 
+	constexpr unsigned kSets = 2;
+	constexpr unsigned kRows = kSets * 2;
+
 	void Stage(int player, const uint8_t* colours);
 	void Clear(int player);
+
+	void StageCompanion(int player, const uint8_t* colours);
+	void ClearCompanion(int player);
+	void PreviewCompanion(int player, const uint8_t* colours);
+	bool HasCompanion(int player);
+
+	bool ReadCompanionColours(int player, uint8_t* rgba);
 
 	bool IsStaged(int player);
 

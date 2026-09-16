@@ -21,7 +21,7 @@ license = [
 ]
 '''
 
-VERSION = '0.5.0'
+VERSION = '0.9.0'
 
 ADDONS = (
     ('io_scene_fbxex', 'FbxExp model (.fbx.bin)', 'Import and export stage models'),

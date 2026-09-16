@@ -28,7 +28,7 @@ namespace {
 constexpr int kColoursSampled = 8;
 constexpr int kSlotsSampled = 4;
 constexpr int kSeatWindowDwords = 12;
-constexpr uintptr_t kSeatWindowStart = 0x597930;
+constexpr uintptr_t kSeatWindowStart = 0x5a5960;
 
 const char* OwnerKindName(PaletteTexture::OwnerKind kind)
 {

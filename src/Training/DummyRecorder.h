@@ -34,13 +34,13 @@ namespace DummyRecorder
 	int GetLeadInRemaining();
 	int GetLeadInLength();
 
-	constexpr uintptr_t kWatchRuntimeStart = 0x1a54000;
-	constexpr uintptr_t kWatchRuntimeEnd = 0x1a65000;
-	constexpr uintptr_t kWatchSettingsStart = 0x858000;
-	constexpr uintptr_t kWatchSettingsEnd = 0x859000;
+	constexpr uintptr_t kWatchRuntimeStart = 0x1d795d0;
+	constexpr uintptr_t kWatchRuntimeEnd = 0x1d8a580;
+	constexpr uintptr_t kWatchSettingsStart = 0x87a740;
+	constexpr uintptr_t kWatchSettingsEnd = 0x87b940;
 
-	constexpr uintptr_t kWatchCharaStart = 0xc34e80;
-	constexpr uintptr_t kWatchCharaEnd = 0xc34e80 + 2 * 0xba4;
+	constexpr uintptr_t kWatchCharaStart = 0xc65280;
+	constexpr uintptr_t kWatchCharaEnd = 0xc65280 + 2 * 0xbc0;
 	constexpr int kMaxChanges = 64;
 
 	void SetFrameCounterRva(uintptr_t rva);

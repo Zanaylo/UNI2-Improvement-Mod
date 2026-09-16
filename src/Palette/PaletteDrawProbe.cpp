@@ -193,7 +193,7 @@ std::atomic<int> g_objectElsewhere{ 0 };
 std::atomic<uintptr_t> g_objectSample{ 0 };
 std::atomic<bool> g_objectScanned{ false };
 
-constexpr uintptr_t kTintCallerRva = 0x1535d;
+constexpr uintptr_t kTintCallerRva = 0x1541d;
 constexpr uintptr_t kTintValuesToEbp = 0x5c;
 constexpr uintptr_t kTintObjectSlot = 0x50;
 constexpr uintptr_t kTintIndexOffset = 0x40;

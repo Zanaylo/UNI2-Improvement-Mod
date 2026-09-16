@@ -101,6 +101,14 @@ bool PaletteChoice::Apply(int player, int chara, const char* file)
 
 	PalettePaint::Stage(player, colours);
 
+	uint8_t theirs[PaletteFile::kBytes] = {};
+	PaletteFile::Info theirInfo = {};
+
+	if (PaletteFile::Load(PathFor(chara, PaletteFile::CompanionOf(file).c_str()), theirs, theirInfo))
+		PalettePaint::StageCompanion(player, theirs);
+	else
+		PalettePaint::ClearCompanion(player);
+
 	if (!hasEffects)
 		hasEffects = PartColourTable::BuildAutoEffectBlock(chara, colours, effects);
 
