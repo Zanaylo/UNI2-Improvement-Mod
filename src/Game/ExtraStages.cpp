@@ -7,6 +7,7 @@
 #include "Game/BgCeiling.h"
 #include "Game/BgListOverride.h"
 #include "Game/GameOffsets.h"
+#include "Game/OnlineState.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -35,6 +36,8 @@ constexpr uintptr_t kFlagFields[kFlagCount] = {
 	GameOffsets::kBgRecordVsDisable,
 };
 
+constexpr int kRandomFlag = 1;
+
 struct Held
 {
 	int number;
@@ -46,6 +49,7 @@ std::vector<ExtraStages::Stage> g_all;
 std::vector<Held> g_held;
 
 bool g_ready = false;
+bool g_heldBack = false;
 int g_countdown = 0;
 char g_status[160] = "not looked yet";
 
@@ -209,6 +213,24 @@ void Discover()
 	}
 }
 
+void HoldBack(bool netplay)
+{
+	if (netplay == g_heldBack)
+		return;
+
+	g_heldBack = netplay;
+
+	for (const ExtraStages::Stage& stage : g_stages)
+	{
+		if (stage.unlocked)
+			Write(stage.number, !netplay);
+	}
+
+	LOG("ExtraStages: %s", netplay
+		? "netplay, the unlocked stages are hidden again so both sides pick from the same stages"
+		: "offline again, the unlocked stages are back");
+}
+
 void Settle()
 {
 	if (ExtraStages::RecordAt(kFirstStage) == 0)
@@ -239,6 +261,9 @@ void Settle()
 
 void ExtraStages::OnFrame()
 {
+	if (g_ready)
+		HoldBack(OnlineState::IsNetplay());
+
 	if (g_countdown > 0)
 	{
 		--g_countdown;
@@ -252,6 +277,9 @@ void ExtraStages::OnFrame()
 		Settle();
 		return;
 	}
+
+	if (g_heldBack)
+		return;
 
 	for (const Stage& stage : g_stages)
 	{
@@ -333,6 +361,13 @@ void ExtraStages::SetUnlocked(int number, bool unlocked)
 
 	LOG("ExtraStages: stage %d '%s' %s", found->number, found->name.c_str(),
 		unlocked ? "unlocked" : "hidden again");
+}
+
+bool ExtraStages::HiddenFromRandom(int number)
+{
+	const Held* const held = HeldFor(number);
+
+	return held != nullptr && held->original[kRandomFlag] != 0;
 }
 
 bool ExtraStages::Ready()

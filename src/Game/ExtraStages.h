@@ -25,6 +25,8 @@ namespace ExtraStages
 
 	void SetUnlocked(int number, bool unlocked);
 
+	bool HiddenFromRandom(int number);
+
 	int LoadedStage();
 
 	bool Ready();

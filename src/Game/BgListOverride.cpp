@@ -185,7 +185,42 @@ bool ListedNumbers(const std::string& list, std::vector<int>& out, size_t& first
 	return true;
 }
 
-void SetListed(std::string& list, int number, bool listed)
+void WriteListed(std::string& list, const std::vector<int>& numbers, size_t first, size_t last)
+{
+	std::string rebuilt = " ";
+
+	for (size_t i = 0; i < numbers.size(); ++i)
+	{
+		char text[16] = {};
+		sprintf_s(text, "%d", numbers[i]);
+
+		rebuilt += text;
+		rebuilt += i + 1 < numbers.size() ? ", " : " ";
+	}
+
+	list.replace(first + 1, last - first - 1, rebuilt);
+}
+
+void Arrange(std::vector<int>& numbers, const std::vector<int>& own)
+{
+	std::vector<int> arranged;
+
+	for (int number : own)
+	{
+		if (std::find(numbers.begin(), numbers.end(), number) != numbers.end())
+			arranged.push_back(number);
+	}
+
+	for (int number : numbers)
+	{
+		if (std::find(own.begin(), own.end(), number) == own.end())
+			arranged.push_back(number);
+	}
+
+	numbers.swap(arranged);
+}
+
+void PlaceListed(std::string& list, int number, bool listed, const std::vector<int>& own)
 {
 	std::vector<int> numbers;
 	size_t first = 0;
@@ -199,18 +234,13 @@ void SetListed(std::string& list, int number, bool listed)
 	if (listed)
 		numbers.push_back(number);
 
-	std::string rebuilt = " ";
+	Arrange(numbers, own);
+	WriteListed(list, numbers, first, last);
+}
 
-	for (size_t i = 0; i < numbers.size(); ++i)
-	{
-		char text[16] = {};
-		sprintf_s(text, "%d", numbers[i]);
-
-		rebuilt += text;
-		rebuilt += i + 1 < numbers.size() ? ", " : " ";
-	}
-
-	list.replace(first + 1, last - first - 1, rebuilt);
+void SetListed(std::string& list, int number, bool listed)
+{
+	PlaceListed(list, number, listed, std::vector<int>());
 }
 
 bool LineOf(const std::string& names, int number, size_t& start, size_t& end)
@@ -365,7 +395,7 @@ void Restock(std::string& list, std::string& names, const std::vector<int>& owne
 	for (int number : lost)
 	{
 		if (std::find(listed.begin(), listed.end(), number) != listed.end())
-			SetListed(list, number, true);
+			PlaceListed(list, number, true, listed);
 
 		size_t start = 0;
 		size_t end = 0;
@@ -465,6 +495,14 @@ bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<in
 	order.erase(std::remove_if(order.begin(), order.end(), [&owned](int number)
 		{ return std::find(owned.begin(), owned.end(), number) != owned.end(); }), order.end());
 
+	std::string original;
+	std::vector<int> own;
+	size_t ownFirst = 0;
+	size_t ownLast = 0;
+
+	if (Original(kList, original) && ListedNumbers(original, own, ownFirst, ownLast))
+		Arrange(order, own);
+
 	const size_t table = TableEnd(list);
 
 	if (table == std::string::npos)
@@ -488,18 +526,7 @@ bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<in
 	if (!ListedNumbers(list, moved, open, close))
 		return false;
 
-	std::string rebuilt = " ";
-
-	for (size_t i = 0; i < order.size(); ++i)
-	{
-		char text[16] = {};
-		sprintf_s(text, "%d", order[i]);
-
-		rebuilt += text;
-		rebuilt += i + 1 < order.size() ? ", " : " ";
-	}
-
-	list.replace(open + 1, close - open - 1, rebuilt);
+	WriteListed(list, order, open, close);
 
 	LOG("BgListOverride: the picker list carries %d of ours now",
 		static_cast<int>(ours.size()));
@@ -579,7 +606,8 @@ bool BgListOverride::Restore(int number)
 	size_t last = 0;
 
 	ListedNumbers(ownList, ownOrder, first, last);
-	SetListed(list, number, std::find(ownOrder.begin(), ownOrder.end(), number) != ownOrder.end());
+	PlaceListed(list, number, std::find(ownOrder.begin(), ownOrder.end(), number) != ownOrder.end(),
+		ownOrder);
 
 	ClearName(names, number);
 

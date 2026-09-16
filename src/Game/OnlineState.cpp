@@ -3,6 +3,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
+#include "Network/SpectateViewer.h"
 #include "Network/SteamNetwork.h"
 
 #include <Windows.h>
@@ -24,10 +25,6 @@ const char* const kBackendNames[] = { "Peer2Peer", "Spectator", "SyncTest" };
 constexpr int kBackendSpectator = 1;
 
 constexpr unsigned kTrafficFreshMs = 3000;
-
-// The one battle mode that can be an online match. It is also replays and CPU versus CPU, so it
-// is no use as a lock on its own - but it is the only mode worth refusing when the mod has no
-// idea whether a peer is there.
 constexpr uint32_t kAmbiguousBattleMode = 1;
 
 bool g_blind = true;
@@ -113,9 +110,6 @@ bool OnlineState::IsOnline()
 	if (g_online)
 		return true;
 
-	// Without the hook on SendP2PPacket the mod cannot see peer traffic at all, so "no traffic"
-	// stops meaning "offline". Refuse the one mode that might be an online match rather than let
-	// the training tools loose in one.
 	if (!g_blind)
 		return false;
 
@@ -129,6 +123,11 @@ bool OnlineState::IsOnline()
 bool OnlineState::HasSession()
 {
 	return g_lastPointer != 0 && g_lastKind >= 0;
+}
+
+bool OnlineState::IsNetplay()
+{
+	return IsOnline() || HasSession() || SpectateViewer::IsJoining();
 }
 
 bool OnlineState::IsSpectating()

@@ -3,11 +3,11 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/BgCeiling.h"
+#include "Game/ExtraStages.h"
 #include "Game/GameOffsets.h"
 #include "Game/OnlineState.h"
 #include "Game/StageLibrary.h"
 #include "Hooks/HookManager.h"
-#include "Network/SpectateViewer.h"
 
 #include <Windows.h>
 
@@ -74,14 +74,9 @@ bool Ours(int number)
 	return StageLibrary::Of(id, entry) && entry.shown;
 }
 
-bool Online()
-{
-	return OnlineState::IsOnline() || OnlineState::HasSession() || SpectateViewer::IsJoining();
-}
-
 bool Offered(int number, uintptr_t record, const uint8_t* unlocks, bool online)
 {
-	if (online && !StageLibrary::GameOwns(number))
+	if (online && (!StageLibrary::GameOwns(number) || ExtraStages::HiddenFromRandom(number)))
 		return false;
 
 	if (Ours(number))
@@ -146,7 +141,7 @@ void Pick()
 	int* const pending = Global(GameOffsets::kBgPendingNumber);
 	*pending = 1;
 
-	const bool online = Online();
+	const bool online = OnlineState::IsNetplay();
 	int ours = 0;
 	const int count = Gather(online, ours);
 

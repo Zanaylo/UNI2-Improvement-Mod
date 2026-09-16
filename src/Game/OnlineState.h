@@ -15,6 +15,8 @@ namespace OnlineState
 	// Measured null through every offline session on this machine - training, replays and menus.
 	bool HasSession();
 
+	bool IsNetplay();
+
 	// Watching somebody else's match. The game builds a spectator backend for it, so this is the
 	// session's own answer rather than an inference from who is holding a pad.
 	bool IsSpectating();
