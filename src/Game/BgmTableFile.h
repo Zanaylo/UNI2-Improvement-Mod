@@ -9,5 +9,7 @@ namespace BgmTableFile
 
 	bool ReadGameTable(std::vector<uint8_t>& out);
 
+	bool Refresh(std::vector<uint8_t>& table);
+
 	void Repair();
 }

@@ -357,18 +357,10 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 		return false;
 	}
 
-	if (!BgmTableFile::HasVanillaSlots(table))
+	if (!BgmTableFile::Refresh(table))
 	{
-		std::vector<uint8_t> vanilla;
-
-		if (!BgmTableFile::ReadGameTable(vanilla))
-		{
-			strncpy_s(g_status, "the game's own slot table could not be found", _TRUNCATE);
-			return false;
-		}
-
-		vanilla.insert(vanilla.end(), table.begin(), table.end());
-		table.swap(vanilla);
+		strncpy_s(g_status, "the game's own slot table could not be found", _TRUNCATE);
+		return false;
 	}
 
 	DropPackBlock(table, packName);

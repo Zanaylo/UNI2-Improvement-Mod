@@ -40,6 +40,27 @@ bool LooksLikeTable(const std::vector<uint8_t>& blob)
 	return text.find("IsLoop") != std::string::npos && BgmTableFile::HasVanillaSlots(blob);
 }
 
+size_t OwnSection(const std::string& text)
+{
+	for (size_t at = 0; at < text.size();)
+	{
+		if (text.compare(at, 5, "#pack") == 0)
+			return at;
+
+		if (text.compare(at, 5, "[BGM_") == 0 && atoi(text.c_str() + at + 5) >= kFirstPackSlot)
+			return at;
+
+		const size_t end = text.find('\n', at);
+
+		if (end == std::string::npos)
+			break;
+
+		at = end + 1;
+	}
+
+	return std::string::npos;
+}
+
 }
 
 bool BgmTableFile::HasVanillaSlots(const std::vector<uint8_t>& blob)
@@ -102,6 +123,31 @@ bool BgmTableFile::ReadGameTable(std::vector<uint8_t>& out)
 	return !out.empty();
 }
 
+bool BgmTableFile::Refresh(std::vector<uint8_t>& table)
+{
+	std::vector<uint8_t> refreshed;
+
+	if (!ReadGameTable(refreshed))
+		return false;
+
+	const std::string text(table.begin(), table.end());
+	const size_t own = OwnSection(text);
+
+	if (own != std::string::npos)
+	{
+		if (!refreshed.empty() && refreshed.back() != '\n')
+		{
+			refreshed.push_back('\r');
+			refreshed.push_back('\n');
+		}
+
+		refreshed.insert(refreshed.end(), table.begin() + own, table.end());
+	}
+
+	table.swap(refreshed);
+	return true;
+}
+
 void BgmTableFile::Repair()
 {
 	const std::string path = OverridePath();
@@ -111,23 +157,18 @@ void BgmTableFile::Repair()
 	if (!ReadWholeFile(path, current, 0))
 		return;
 
-	if (HasVanillaSlots(current))
-		return;
+	std::vector<uint8_t> refreshed = current;
 
-	std::vector<uint8_t> vanilla;
-
-	if (!ReadGameTable(vanilla))
+	if (!Refresh(refreshed))
 	{
-		LOG("BgmTableFile: %s has no vanilla slot in it and the game's own table could not be "
-			"found, so the game will have no music of its own", path.c_str());
+		LOG("BgmTableFile: the game's own slot table could not be found, so %s is left as it is",
+			path.c_str());
 		return;
 	}
 
-	vanilla.insert(vanilla.end(), current.begin(), current.end());
-
-	if (!WriteWhole(path, vanilla))
+	if (refreshed == current || !WriteWhole(path, refreshed))
 		return;
 
-	LOG("BgmTableFile: %s had lost the game's own slots and has been repaired",
+	LOG("BgmTableFile: %s carries the game's own slots as the installed game ships them again",
 		path.c_str());
 }
