@@ -45,6 +45,7 @@ private:
 	void ForgetPartTints(int player);
 
 	void ApplyImportedColours(int player, const uint8_t* colours, const uint8_t* effects);
+	void ApplyImportedSummon(int player, const uint8_t* colours);
 
 	bool Save(int player);
 	bool Load(int player, const char* name);
@@ -78,6 +79,8 @@ private:
 	uint8_t m_companion[2][LivePalette::kBytes] = {};
 	uint8_t m_companionBase[2][LivePalette::kBytes] = {};
 	bool m_hasCompanion[2] = {};
+	bool m_summonTabOpen[2] = {};
+	bool m_importIntoSummon[2] = {};
 
 	struct SummonEdit
 	{

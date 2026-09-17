@@ -210,8 +210,11 @@ void PaletteWindow::DrawPlayer(int player)
 		ImGui::EndTabItem();
 	}
 
+	m_summonTabOpen[player] = false;
+
 	if (m_hasCompanion[player] && ImGui::BeginTabItem("Summon"))
 	{
+		m_summonTabOpen[player] = true;
 		DrawSummon(player);
 		ImGui::EndTabItem();
 	}
@@ -913,14 +916,21 @@ void PaletteWindow::DrawFiles(int player)
 	ImGui::BeginDisabled(importing);
 
 	if (ImGui::Button(importing ? "Importing..." : "Import PNG..."))
-		m_pngImportDialog[player].BeginOpen("Import a palette PNG", "PNG images\0*.png\0");
+	{
+		m_importIntoSummon[player] = m_summonTabOpen[player];
+		m_pngImportDialog[player].BeginOpen(m_importIntoSummon[player]
+			? "Import a palette PNG for the summon" : "Import a palette PNG", "PNG images\0*.png\0");
+	}
 
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Applies the colours of an indexed PNG to this character. The colours "
-			"must already be in the game's order. Nothing is converted or reordered.");
+		ImGui::SetTooltip(m_summonTabOpen[player]
+			? "Applies the colours of an indexed PNG to the summon.\nOpen the Character tab to import "
+				"for the character."
+			: "Applies the colours of an indexed PNG to this character.\nOpen the Summon tab to import "
+				"for the summon.\nThe colours must already be in the game's order.");
 	}
 
 	ImGui::SameLine();
@@ -1082,6 +1092,21 @@ bool PaletteWindow::Save(int player)
 	return true;
 }
 
+void PaletteWindow::ApplyImportedSummon(int player, const uint8_t* colours)
+{
+	Record(player);
+
+	SummonEdit& summon = m_summon[player];
+
+	for (int entry = 1; entry < LivePalette::kColours; ++entry)
+	{
+		memcpy(summon.entry[entry], colours + entry * 4, 3);
+		summon.edited[entry] = true;
+	}
+
+	Apply(player);
+}
+
 void PaletteWindow::ApplyImportedColours(int player, const uint8_t* colours, const uint8_t* effects)
 {
 	Record(player);
@@ -1184,6 +1209,19 @@ void PaletteWindow::CompleteImportPng(int player, const std::string& path)
 	if (!PngPalette::Read(path, colours, error))
 	{
 		sprintf_s(m_status[player], "%s", error.c_str());
+		return;
+	}
+
+	if (m_importIntoSummon[player])
+	{
+		if (!m_hasCompanion[player])
+		{
+			sprintf_s(m_status[player], "The summon has not been drawn yet. Summon it once, then import.");
+			return;
+		}
+
+		ApplyImportedSummon(player, colours);
+		sprintf_s(m_status[player], "Imported into the summon. Save to keep it.");
 		return;
 	}
 
