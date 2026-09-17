@@ -11,6 +11,7 @@
 #include "Game/ReplayArchive.h"
 #include "Game/SteamNames.h"
 #include "Hooks/HookManager.h"
+#include "Network/NetLink.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -198,41 +199,117 @@ std::string RepDataPath(uint64_t* outStamp = nullptr)
 	return own->path;
 }
 
-bool LoadDisk()
+struct DiskLoad
 {
-	if (g_diskTried)
-		return g_disk.size() == kImageBytes;
+	std::string path;
+	uint64_t stamp;
+	std::vector<uint8_t> image;
+	bool decoded;
+};
 
-	g_diskTried = true;
+volatile LONG g_loadBusy = 0;
+volatile LONG g_loadReady = 0;
+DiskLoad* g_load = nullptr;
 
-	const std::string path = RepDataPath(&g_diskStamp);
-	if (path.empty())
-		return false;
-
+bool DecodeRepData(const std::string& path, std::vector<uint8_t>& out)
+{
 	std::vector<uint8_t> blob;
+
 	if (!ReadWholeFile(path, blob, 32))
-	{
-		g_diskStamp = 0;
 		return false;
-	}
 
 	if (blob.size() == kImageBytes)
 	{
-		g_disk.swap(blob);
+		out.swap(blob);
 		return true;
 	}
 
-	if (!Deflate::Gunzip(blob.data(), blob.size(), g_disk, kImageBytes) ||
-		g_disk.size() != kImageBytes)
+	return Deflate::Gunzip(blob.data(), blob.size(), out, kImageBytes) && out.size() == kImageBytes;
+}
+
+DWORD WINAPI DiskLoadWorker(LPVOID parameter)
+{
+	DiskLoad* const load = static_cast<DiskLoad*>(parameter);
+
+	load->decoded = DecodeRepData(load->path, load->image);
+
+	g_load = load;
+	InterlockedExchange(&g_loadReady, 1);
+	return 0;
+}
+
+bool TakeDiskLoad()
+{
+	if (InterlockedCompareExchange(&g_loadReady, 0, 1) != 1)
+		return false;
+
+	DiskLoad* const load = g_load;
+	g_load = nullptr;
+	g_diskTried = true;
+
+	if (load->decoded)
 	{
-		LOG("replay files: %s did not decompress to an array", path.c_str());
+		g_disk.swap(load->image);
+		g_diskStamp = load->stamp;
+		LOG("replay files: read %zu bytes of replays from %s", g_disk.size(), load->path.c_str());
+	}
+	else
+	{
+		LOG("replay files: %s did not read as an array of replays", load->path.c_str());
 		g_disk.clear();
 		g_diskStamp = 0;
+	}
+
+	delete load;
+	InterlockedExchange(&g_loadBusy, 0);
+	return true;
+}
+
+bool LoadDisk(bool blocking = true)
+{
+	TakeDiskLoad();
+
+	if (g_diskTried)
+		return g_disk.size() == kImageBytes;
+
+	if (InterlockedCompareExchange(&g_loadBusy, 1, 0) != 0)
+	{
+		if (!blocking)
+			return false;
+
+		while (InterlockedCompareExchange(&g_loadReady, 0, 0) == 0)
+			Sleep(1);
+
+		TakeDiskLoad();
+		return g_disk.size() == kImageBytes;
+	}
+
+	uint64_t stamp = 0;
+	const std::string path = RepDataPath(&stamp);
+
+	if (path.empty())
+	{
+		g_diskTried = true;
+		InterlockedExchange(&g_loadBusy, 0);
 		return false;
 	}
 
-	LOG("replay files: read %zu bytes of replays from %s", g_disk.size(), path.c_str());
-	return true;
+	DiskLoad* const load = new DiskLoad{ path, stamp, {}, false };
+
+	if (!blocking)
+	{
+		const HANDLE thread = CreateThread(nullptr, 0, &DiskLoadWorker, load, 0, nullptr);
+
+		if (thread != nullptr)
+		{
+			CloseHandle(thread);
+			return false;
+		}
+	}
+
+	DiskLoadWorker(load);
+	TakeDiskLoad();
+	return g_disk.size() == kImageBytes;
 }
 
 bool ReadSlotAt(int slot, size_t offset, void* out, size_t bytes)
@@ -1387,7 +1464,7 @@ bool SourceIsCurrent()
 		g_used = -1;
 	}
 
-	return LoadDisk();
+	return LoadDisk(false);
 }
 
 }
@@ -1400,6 +1477,9 @@ void ReplayFiles::Update()
 		return;
 
 	countdown = 60;
+
+	if (NetLink::InSession())
+		return;
 
 	const HoldOwn own;
 

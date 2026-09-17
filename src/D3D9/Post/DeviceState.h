@@ -15,6 +15,8 @@ public:
 	void Restore();
 	void Release();
 
+	bool IsHeld() const { return m_block != nullptr || m_target != nullptr || m_depth != nullptr; }
+
 private:
 	IDirect3DDevice9* m_device;
 	IDirect3DStateBlock9* m_block;

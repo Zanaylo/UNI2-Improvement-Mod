@@ -1,5 +1,3 @@
-// Screen-space quads drawn onto the back buffer from the Present hook, batched one draw per texture.
-
 #pragma once
 
 #include <d3d9.h>
@@ -21,6 +19,8 @@ namespace QuadRenderer
 	void SetBlend(int blend);
 
 	void OnDeviceLost();
+
+	bool HoldsDeviceResources();
 
 	void FillRect(float x, float y, float width, float height, uint32_t color);
 

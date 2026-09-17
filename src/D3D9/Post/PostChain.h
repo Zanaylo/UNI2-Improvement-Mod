@@ -15,6 +15,8 @@ namespace PostChain
 	void OnDeviceLost();
 	void Shutdown();
 
+	bool HoldsDeviceResources();
+
 	bool IsAnyStageOn();
 
 	bool IsLookNeutral();

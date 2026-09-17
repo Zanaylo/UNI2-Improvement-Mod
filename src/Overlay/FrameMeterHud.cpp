@@ -684,11 +684,6 @@ bool FrameMeterHud::HasGameAssets()
 	return GameFont::IsLoaded();
 }
 
-void FrameMeterHud::OnDeviceLost()
-{
-	QuadRenderer::OnDeviceLost();
-}
-
 void FrameMeterHud::Render(IDirect3DDevice9* device)
 {
 	const bool countdownVisible = FrameStepper::GetResumeCountdown() > 0 ||

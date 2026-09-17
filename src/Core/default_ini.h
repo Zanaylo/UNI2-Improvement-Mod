@@ -75,7 +75,7 @@ const char* const kDefaultIniLines[] = {
 	"[Netplay]",
 	"RoomRosterFix = 0",
 	"RepublishPingLocation = 0",
-	"NetLog = 1",
+	"NetLog = 0",
 	"CaptureGgpoLog = 0",
 	"SharePalettes = 1",
 	"",

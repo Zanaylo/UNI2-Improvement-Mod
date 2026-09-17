@@ -488,14 +488,9 @@ void ScreenDirector::Render(IDirect3DDevice9* device)
 	QuadRenderer::End();
 }
 
-void ScreenDirector::OnDeviceLost()
-{
-	Invalidate();
-}
-
 void ScreenDirector::Invalidate()
 {
-	PatTextures::OnDeviceLost();
+	PatTextures::Release();
 	PatFile::UnloadAll();
 	CharaGrid::Invalidate();
 

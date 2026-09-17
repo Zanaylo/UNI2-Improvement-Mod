@@ -12,7 +12,7 @@ namespace PatTextures
 
 	IDirect3DTexture9* Get(PatFile::Handle handle, int atlas);
 
-	void OnDeviceLost();
+	void Release();
 
 	int Count();
 }

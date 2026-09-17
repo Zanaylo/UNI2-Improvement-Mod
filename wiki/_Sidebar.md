@@ -31,6 +31,7 @@
 [POTATO MODE](POTATO-MODE)
 [Improvements](Improvements)
 [Patches](Patches)
+[Reporting a problem](Reporting-a-problem)
 
 **Project**
 

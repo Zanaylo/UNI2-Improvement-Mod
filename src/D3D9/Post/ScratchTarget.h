@@ -14,6 +14,8 @@ public:
 	bool Ensure(IDirect3DDevice9* device, unsigned width, unsigned height, D3DFORMAT format);
 	void Release();
 
+	bool IsHeld() const { return m_texture != nullptr || m_surface != nullptr; }
+
 	IDirect3DTexture9* Texture() const { return m_texture; }
 	IDirect3DSurface9* Surface() const { return m_surface; }
 

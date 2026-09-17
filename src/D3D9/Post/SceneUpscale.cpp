@@ -228,6 +228,11 @@ void SceneUpscale::OnDeviceLost()
 	g_passesThisFrame = 0;
 }
 
+bool SceneUpscale::HoldsDeviceResources()
+{
+	return g_state.IsHeld() || g_target.IsHeld();
+}
+
 void SceneUpscale::Shutdown()
 {
 	OnDeviceLost();

@@ -50,6 +50,7 @@
 #include "Game/ModFiles.h"
 #include "Training/StageColor.h"
 #include "D3D9/FrozenFrame.h"
+#include "D3D9/QuadRenderer.h"
 #include "Network/ModChannel.h"
 #include "Network/PaletteShare.h"
 #include "Web/UpdateInstall.h"
@@ -111,10 +112,29 @@ DrawPrimitiveUP_t oDrawPrimitiveUP = nullptr;
 DrawIndexedPrimitiveUP_t oDrawIndexedPrimitiveUP = nullptr;
 
 volatile LONG g_presentCount = 0;
+volatile LONG g_deviceLost = 0;
+volatile LONG g_resetGeneration = 0;
 
 IDirect3DDevice9* g_device = nullptr;
 D3DPRESENT_PARAMETERS g_presentParameters = {};
 bool g_installed = false;
+
+const char* HeldDefaultResources()
+{
+	static char text[160];
+
+	const int palettes = PaletteTexture::HeldVolatileCount();
+
+	snprintf(text, sizeof(text), "%s%s%s%s%s%s",
+		WindowManager::GetInstance().HoldsDeviceResources() ? "overlay " : "",
+		FrozenFrame::HoldsDeviceResources() ? "frozen-frame " : "",
+		QuadRenderer::HoldsDeviceResources() ? "quads " : "",
+		PostChain::HoldsDeviceResources() ? "post-chain " : "",
+		SceneUpscale::HoldsDeviceResources() ? "upscale " : "",
+		palettes > 0 ? "palette-textures" : "");
+
+	return text[0] != 0 ? text : "none of the mod's";
+}
 
 HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* presentParameters)
 {
@@ -136,10 +156,11 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 			presentParameters ? presentParameters->BackBufferHeight : 0,
 			presentParameters ? presentParameters->Windowed : -1);
 
+		InterlockedExchange(&g_deviceLost, 1);
+
 		WindowManager::GetInstance().OnDeviceLost();
 		FrozenFrame::OnDeviceLost();
-		ScreenDirector::OnDeviceLost();
-		FrameMeterHud::OnDeviceLost();
+		QuadRenderer::OnDeviceLost();
 		PaletteTexture::OnDeviceLost();
 		PostChain::OnDeviceLost();
 		SceneUpscale::OnDeviceLost();
@@ -163,13 +184,17 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 			if (presentParameters != nullptr)
 				g_presentParameters = *presentParameters;
 
+			InterlockedIncrement(&g_resetGeneration);
+			InterlockedExchange(&g_deviceLost, 0);
+
 			WindowManager::GetInstance().OnDeviceReset();
 			FrozenFrame::OnDeviceReset(device, g_presentParameters.BackBufferWidth,
 				g_presentParameters.BackBufferHeight, g_presentParameters.BackBufferFormat);
 		}
 		else
 		{
-			LOG("Reset failed: 0x%08lx", result);
+			LOG("Reset failed: 0x%08lx, still held: %s", static_cast<unsigned long>(result),
+				HeldDefaultResources());
 		}
 	}
 
@@ -401,6 +426,19 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	LARGE_INTEGER modStart = {};
 	QueryPerformanceCounter(&modStart);
 
+	if (device == g_device && InterlockedCompareExchange(&g_deviceLost, 0, 0) != 0)
+	{
+		ReportModWork(modStart);
+
+		const HRESULT lost = oPresent(device, sourceRect, destRect, destWindowOverride, dirtyRegion);
+
+		if (lost != D3DERR_DEVICELOST)
+			InterlockedExchange(&g_deviceLost, 0);
+
+		Profiler::EndPresentFrame();
+		return lost;
+	}
+
 	GraphicsWrapper::Detect(device);
 	SceneWatch::OnFrame();
 
@@ -535,7 +573,12 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	}
 
 	if (device == g_device)
+	{
+		if (result == D3DERR_DEVICELOST)
+			InterlockedExchange(&g_deviceLost, 1);
+
 		Profiler::EndPresentFrame();
+	}
 
 	return result;
 }
@@ -650,6 +693,16 @@ bool DeviceHooks::IsInstalled()
 unsigned long DeviceHooks::PresentCount()
 {
 	return static_cast<unsigned long>(InterlockedCompareExchange(&g_presentCount, 0, 0));
+}
+
+bool DeviceHooks::IsDeviceUsable()
+{
+	return InterlockedCompareExchange(&g_deviceLost, 0, 0) == 0;
+}
+
+unsigned long DeviceHooks::ResetGeneration()
+{
+	return static_cast<unsigned long>(InterlockedCompareExchange(&g_resetGeneration, 0, 0));
 }
 
 IDirect3DDevice9* DeviceHooks::GetDevice()

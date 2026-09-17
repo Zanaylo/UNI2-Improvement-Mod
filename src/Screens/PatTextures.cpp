@@ -61,7 +61,7 @@ IDirect3DTexture9* PatTextures::Get(PatFile::Handle handle, int atlas)
 	return found != g_textures.end() ? found->second : nullptr;
 }
 
-void PatTextures::OnDeviceLost()
+void PatTextures::Release()
 {
 	for (auto& entry : g_textures)
 	{

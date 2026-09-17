@@ -79,6 +79,11 @@ void FrozenFrame::Shutdown()
 	Release();
 }
 
+bool FrozenFrame::HoldsDeviceResources()
+{
+	return g_texture != nullptr;
+}
+
 bool FrozenFrame::IsValid()
 {
 	return g_texture != nullptr && g_hasContent;

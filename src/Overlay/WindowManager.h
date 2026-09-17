@@ -17,6 +17,8 @@ public:
 	void OnDeviceLost();
 	void OnDeviceReset();
 
+	bool HoldsDeviceResources() const { return m_deviceObjectsValid; }
+
 	bool IsInitialized() const { return m_initialized; }
 	bool IsOverlayActive() const { return m_overlayActive; }
 	bool HasFocus() const { return m_hasFocus; }

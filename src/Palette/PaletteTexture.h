@@ -19,6 +19,8 @@ namespace PaletteTexture
 	void Forget();
 	void OnDeviceLost();
 
+	int HeldVolatileCount();
+
 	void ForgetMatchTextures();
 
 	void ResetMatchEvidence();

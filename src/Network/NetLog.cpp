@@ -17,6 +17,7 @@ constexpr int kRecords = 4096;
 constexpr int kTextBytes = 232;
 constexpr int kKeepFiles = 10;
 constexpr DWORD kFlushMs = 250;
+constexpr long kMaxBytes = 8 * 1024 * 1024;
 
 struct Record
 {
@@ -36,6 +37,9 @@ CRITICAL_SECTION g_flushLock;
 volatile LONG g_enabled = 0;
 volatile LONG g_dropped = 0;
 volatile LONG g_reportedDropped = 0;
+volatile LONG g_overBudget = 0;
+
+long g_bytes = 0;
 
 bool g_initialized = false;
 HANDLE g_thread = nullptr;
@@ -173,7 +177,18 @@ void Flush()
 		for (int i = 0; i < taken; ++i)
 		{
 			Stamp(g_batch[i].tick, stamp, sizeof(stamp));
-			fprintf(g_file, "[%s] %5lu %s\n", stamp, g_batch[i].thread, g_batch[i].text);
+
+			const int written = fprintf(g_file, "[%s] %5lu %s\n", stamp, g_batch[i].thread,
+				g_batch[i].text);
+
+			if (written > 0)
+				g_bytes += written;
+		}
+
+		if (g_bytes >= kMaxBytes && InterlockedExchange(&g_overBudget, 1) == 0)
+		{
+			fprintf(g_file, "(this log reached %ld MB, so GGPO's own lines are dropped from here on; "
+				"the mod's own lines carry on)\n", kMaxBytes / (1024 * 1024));
 		}
 
 		const LONG dropped = g_dropped;
@@ -283,6 +298,11 @@ void NetLog::WriteV(const char* prefix, const char* format, va_list args)
 		text[length - 1] = 0;
 
 	Push(text);
+}
+
+bool NetLog::IsOverBudget()
+{
+	return g_overBudget != 0;
 }
 
 unsigned NetLog::Dropped()

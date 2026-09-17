@@ -7,6 +7,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 
 namespace {
 
@@ -17,8 +18,59 @@ bool g_installed = false;
 bool g_enabled = false;
 char g_status[128] = "off";
 
+struct Noise
+{
+	const char* match;
+	const char* name;
+};
+
+constexpr Noise kNoise[] =
+{
+	{ "Skipping past frame", "skipped" },
+	{ "send game-compressed-input", "sent" },
+	{ "recv game-compressed-input", "received" },
+	{ "Throwing away pending output", "dropped output" },
+	{ "Sending frame", "queued" },
+	{ "Network Stats", "stats" },
+};
+
+constexpr int kNoiseKinds = static_cast<int>(sizeof(kNoise) / sizeof(kNoise[0]));
+
+volatile LONG g_counted[kNoiseKinds] = {};
+
+int NoiseKind(const char* format)
+{
+	if (format == nullptr)
+		return -1;
+
+	for (int i = 0; i < kNoiseKinds; ++i)
+	{
+		if (strstr(format, kNoise[i].match) != nullptr)
+			return i;
+	}
+
+	return -1;
+}
+
+bool Swallow(const char* format)
+{
+	if (NetLog::IsOverBudget())
+		return true;
+
+	const int kind = NoiseKind(format);
+
+	if (kind < 0)
+		return false;
+
+	InterlockedIncrement(&g_counted[kind]);
+	return true;
+}
+
 void __cdecl HookedUdpLog(void*, const char* format, ...)
 {
+	if (Swallow(format))
+		return;
+
 	va_list args;
 	va_start(args, format);
 	NetLog::WriteV("ggpo udp | ", format, args);
@@ -27,6 +79,9 @@ void __cdecl HookedUdpLog(void*, const char* format, ...)
 
 void __cdecl HookedProtocolLog(void* protocol, const char* format, ...)
 {
+	if (Swallow(format))
+		return;
+
 	uint32_t queue = 0;
 	TryReadDword(reinterpret_cast<const void*>(reinterpret_cast<uintptr_t>(protocol) + GameOffsets::kGgpoEndpointQueue),
 		queue);
@@ -97,6 +152,33 @@ void GgpoLogCapture::SetEnabled(bool enabled)
 	g_enabled = enabled;
 	strncpy_s(g_status, enabled ? "on, GGPO's own lines go to the network log" : "off", _TRUNCATE);
 	NetLog::Write("ggpo log capture %s", enabled ? "on" : "off");
+}
+
+void GgpoLogCapture::ReportSecond()
+{
+	if (!g_enabled)
+		return;
+
+	char text[192] = {};
+	int used = 0;
+	int kinds = 0;
+
+	for (int i = 0; i < kNoiseKinds; ++i)
+	{
+		const LONG count = InterlockedExchange(&g_counted[i], 0);
+
+		if (count == 0)
+			continue;
+
+		++kinds;
+		used += _snprintf_s(text + used, sizeof(text) - used, _TRUNCATE, "%s%s %ld",
+			used > 0 ? ", " : "", kNoise[i].name, static_cast<long>(count));
+	}
+
+	if (kinds == 0)
+		return;
+
+	NetLog::Write("ggpo per-frame lines this second: %s", text);
 }
 
 bool GgpoLogCapture::IsEnabled()

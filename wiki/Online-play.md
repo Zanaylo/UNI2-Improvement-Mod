@@ -34,8 +34,10 @@ Netplay window and go to **Spectate**.
   start of their next match. You cannot be in a room of your own at the same time.
 - **Kick** removes a viewer. Someone you kicked has to be let in by you before they can watch again.
 
-A viewer only watches. Nothing they do reaches the match. A viewer who fails to connect makes the
-players wait at most 5 seconds, then the match starts without them.
+A viewer only watches, and viewers are now kept completely outside the match. The host reads the inputs
+the netcode has already settled and sends them on the mod's own channel, under a strict limit that gives
+way to the match whenever the connection is busy. A viewer who cannot connect, or who is slow, costs the
+players nothing at all: the match never waits for them.
 
 The viewer sees the host's stage. If it is a custom stage the viewer does not have, the viewer sees
 stage 1. The viewer's game loads the same patch the host is playing, and skips the match if that patch
@@ -43,8 +45,7 @@ is not installed. When the match ends, the viewer's game shows the result and th
 to the main menu, and joins the host's next match on its own.
 
 Viewers play a little behind the players. Their game keeps a buffer of the players' inputs, so a slow
-connection or a slow loading screen means watching further behind, not freezing. Viewers never cause
-rollbacks and never slow the players down. The host sends them fewer, larger packets to keep upload
-low, and a viewer who falls too far behind is dropped and joins the next match.
+connection or a slow loading screen means watching further behind, not freezing. The host sends fewer,
+larger packets to keep upload low, and a viewer who falls too far behind is dropped and joins the next
+match.
 
-This has not been tested in a real match yet.

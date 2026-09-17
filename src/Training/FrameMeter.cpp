@@ -1464,9 +1464,17 @@ void LogTrace()
 	const bool hasDisplay = PlayerState::ReadFrameDisplay(display);
 
 	LOG_SECTION("meter: exchange trace");
-	LOG_RAW("game frame info: startup %d  total %d  advantage %+d%s",
-		hasDisplay ? display.startup : 0, hasDisplay ? display.total : 0,
-		hasDisplay ? display.advantage : 0, hasDisplay ? "" : "  <unreadable>");
+
+	if (hasDisplay)
+	{
+		LOG_RAW("game frame info: startup %d  total %d  advantage %+d", display.startup,
+			display.total, display.advantage);
+	}
+	else
+	{
+		LOG_RAW("game frame info: the game is not holding one. Turn the game's own Frame info on in "
+			"training to compare against it");
+	}
 
 	uint32_t raw[10] = {};
 	const int rawCount = PlayerState::ReadFrameDisplayRaw(raw, 10);

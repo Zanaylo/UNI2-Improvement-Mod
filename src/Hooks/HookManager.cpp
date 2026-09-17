@@ -622,12 +622,20 @@ public:
 			return;
 
 		const unsigned long present = DeviceHooks::PresentCount();
+		const unsigned long generation = DeviceHooks::ResetGeneration();
 
-		if (present != m_lastPresent)
+		if (present != m_lastPresent || generation != m_lastGeneration)
 		{
 			m_lastPresent = present;
+			m_lastGeneration = generation;
 			m_stalledChecks = 0;
 			m_reported = false;
+			return;
+		}
+
+		if (!DeviceHooks::IsDeviceUsable())
+		{
+			m_stalledChecks = 0;
 			return;
 		}
 
@@ -644,6 +652,7 @@ public:
 
 private:
 	unsigned long m_lastPresent = 0;
+	unsigned long m_lastGeneration = 0;
 	int m_stalledChecks = 0;
 	bool m_reported = false;
 };

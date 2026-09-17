@@ -29,7 +29,7 @@ namespace {
 
 const char* const kIniFileName = "UNI2_IM.ini";
 
-constexpr int kSettingsRevision = 3;
+constexpr int kSettingsRevision = 4;
 
 int ClampRange(int value, int lowest, int highest)
 {
@@ -246,6 +246,13 @@ void MigrateIni(int from, const std::string& path)
 		WritePrivateProfileStringA("Netplay", "SafeOnline", nullptr, path.c_str());
 		WritePrivateProfileStringA("Netplay", "Diagnostics", nullptr, path.c_str());
 		LOG("Settings: RoomRosterFix and RepublishPingLocation are off, they write into the game's own room state");
+	}
+
+	if (from < 4)
+	{
+		WritePrivateProfileStringA("Netplay", "NetLog", "0", path.c_str());
+		WritePrivateProfileStringA("Netplay", "CaptureGgpoLog", "0", path.c_str());
+		LOG("Settings: the network log is off unless you turn it on, it is for a report");
 	}
 
 	char revision[16] = {};

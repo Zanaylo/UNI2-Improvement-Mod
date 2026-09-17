@@ -2,9 +2,12 @@
 
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
+#include "Network/GgpoLogCapture.h"
 #include "Network/NetLog.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <cstring>
 
 namespace {
 
@@ -273,6 +276,20 @@ void LogRest(const NetLink::Snapshot& before, const NetLink::Snapshot& after)
 		after.players, after.spectators);
 }
 
+constexpr int kPingMax = 60000;
+constexpr int kKbpsMax = 100000;
+constexpr int kBehindMax = 3600;
+
+const char* Plausible(int value, int low, int high, char* out, int size)
+{
+	if (value < low || value > high)
+		strncpy_s(out, size, "-", _TRUNCATE);
+	else
+		_snprintf_s(out, size, _TRUNCATE, "%d", value);
+
+	return out;
+}
+
 double Milliseconds(int64_t ticks)
 {
 	return g_frequency.QuadPart != 0 ? static_cast<double>(ticks) * 1000.0 / static_cast<double>(g_frequency.QuadPart) : 0.0;
@@ -300,13 +317,31 @@ void Summarise(const NetLink::Snapshot& snapshot)
 	{
 		const NetLink::Endpoint& peer = snapshot.peer;
 
+		const int frames = snapshot.netplayFrame - g_window.startFrame;
+		const int rollbacks = snapshot.rollbacks - g_window.startRollbacks;
+
+		char netplay[48] = {};
+
+		if (frames < 0 || rollbacks < 0)
+			strncpy_s(netplay, "netplay counters reset", _TRUNCATE);
+		else
+			_snprintf_s(netplay, _TRUNCATE, "netplay +%d rb +%d", frames, rollbacks);
+
+		char ping[16] = {};
+		char kbps[16] = {};
+		char local[16] = {};
+		char remote[16] = {};
+
 		NetLog::Write("sec frames %d, interval avg %.1f max %.1f ms, %d over 20 | mod avg %.2f max %.2f ms | "
-			"netplay +%d rb +%d | %s ping %d kbps %d behind %d/%d pend %d max %d%s",
+			"%s | %s ping %s kbps %s behind %s/%s pend %d max %d%s",
 			g_window.frames, Milliseconds(g_window.intervalSum) / g_window.frames, Milliseconds(g_window.intervalMax),
 			g_window.slow, Milliseconds(g_window.modSum) / g_window.frames, Milliseconds(g_window.modMax),
-			snapshot.netplayFrame - g_window.startFrame, snapshot.rollbacks - g_window.startRollbacks,
-			snapshot.hasPeer ? NetLink::StateName(peer.state) : "no peer", peer.ping, peer.kbps, peer.localBehind,
-			peer.remoteBehind, peer.pending, g_window.maxPending, snapshot.synchronizing ? " syncing" : "");
+			netplay, snapshot.hasPeer ? NetLink::StateName(peer.state) : "no peer",
+			Plausible(peer.ping, 0, kPingMax, ping, sizeof(ping)),
+			Plausible(peer.kbps, 0, kKbpsMax, kbps, sizeof(kbps)),
+			Plausible(peer.localBehind, -kBehindMax, kBehindMax, local, sizeof(local)),
+			Plausible(peer.remoteBehind, -kBehindMax, kBehindMax, remote, sizeof(remote)),
+			peer.pending, g_window.maxPending, snapshot.synchronizing ? " syncing" : "");
 	}
 	else if (g_window.frames > 0 && (g_window.slow > 0 || Milliseconds(g_window.modMax) * 1000.0 > kHeavyModMicros))
 	{
@@ -315,6 +350,7 @@ void Summarise(const NetLink::Snapshot& snapshot)
 			g_window.slow, Milliseconds(g_window.modSum) / g_window.frames, Milliseconds(g_window.modMax));
 	}
 
+	GgpoLogCapture::ReportSecond();
 	ResetWindow(snapshot);
 }
 

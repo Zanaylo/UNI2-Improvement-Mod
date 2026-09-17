@@ -1,5 +1,3 @@
-// The D3D9 device vtable hooks: Present, Reset, Clear, SetTexture and the four draw calls.
-
 #pragma once
 
 #include <d3d9.h>
@@ -10,6 +8,9 @@ namespace DeviceHooks
 	bool IsInstalled();
 
 	unsigned long PresentCount();
+
+	bool IsDeviceUsable();
+	unsigned long ResetGeneration();
 
 	IDirect3DDevice9* GetDevice();
 	const D3DPRESENT_PARAMETERS& GetPresentParameters();

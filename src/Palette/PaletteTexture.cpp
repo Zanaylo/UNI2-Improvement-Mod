@@ -754,6 +754,19 @@ int PaletteTexture::GetGeneration()
 	return g_generation;
 }
 
+int PaletteTexture::HeldVolatileCount()
+{
+	int held = 0;
+
+	for (int i = 0; i < g_seenCount; ++i)
+	{
+		if (g_volatilePool[i])
+			++held;
+	}
+
+	return held;
+}
+
 void PaletteTexture::OnDeviceLost()
 {
 

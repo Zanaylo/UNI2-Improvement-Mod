@@ -467,12 +467,19 @@ void PostChain::OnDeviceLost()
 	g_back.Release();
 	g_bloomFront.Release();
 	g_bloomBack.Release();
-	ShaderPack::OnDeviceLost();
+}
+
+bool PostChain::HoldsDeviceResources()
+{
+	return g_state.IsHeld() || g_front.IsHeld() || g_back.IsHeld() || g_bloomFront.IsHeld() ||
+		g_bloomBack.IsHeld();
 }
 
 void PostChain::Shutdown()
 {
 	OnDeviceLost();
+
+	ShaderPack::OnDeviceLost();
 
 	g_fxaa.Release();
 	g_sharpen.Release();

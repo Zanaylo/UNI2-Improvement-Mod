@@ -164,6 +164,47 @@ bool LoadedFile(char* out, int size)
 	return true;
 }
 
+bool g_parkedPause = false;
+
+void ParkPaused(const char* why)
+{
+	if (ReadGlobal(GameOffsets::kBgmPlayer) == 0)
+	{
+		LOG("BgmControl: the pause after %s was not parked, the stream is already gone", why);
+		return;
+	}
+
+	WriteGlobal(GameOffsets::kBgmState, State_Paused);
+	g_parkedPause = true;
+}
+
+void ClearOrphanPause()
+{
+	if (!g_parkedPause)
+		return;
+
+	if (ReadGlobal(GameOffsets::kBgmPlayer) != 0)
+		return;
+
+	g_parkedPause = false;
+
+	if (ReadGlobal(GameOffsets::kBgmState) != State_Paused)
+		return;
+
+	WriteGlobal(GameOffsets::kBgmState, State_Stopped);
+	LOG("BgmControl: the parked pause outlived its stream, the state is cleared");
+}
+
+void StopStream()
+{
+	g_parkedPause = false;
+
+	if (g_stop == nullptr || ReadGlobal(GameOffsets::kBgmPlayer) == 0)
+		return;
+
+	g_stop();
+}
+
 void HoldPosition()
 {
 	g_positionHeld = false;
@@ -202,7 +243,7 @@ bool RestorePosition()
 		return false;
 
 	SeekStream(stream, g_positionSeconds);
-	WriteGlobal(GameOffsets::kBgmState, State_Paused);
+	ParkPaused("the pick-up");
 	MarkPlayingFrom(g_positionSeconds);
 
 	LOG("BgmControl: '%s' picked up at %.1fs instead of the top", loaded,
@@ -277,6 +318,7 @@ bool StartTrack(int id, void* edx)
 		BgmVolume::SetCurrent(slot, id);
 	}
 
+	g_parkedPause = false;
 	WriteGlobal(GameOffsets::kBgmState, State_Stopped);
 
 	return result;
@@ -466,7 +508,7 @@ void __fastcall HookedMenuBgm(void* self, void* unused, int scene)
 	if (!holding || kept == 0 || now != before)
 		return;
 
-	WriteGlobal(GameOffsets::kBgmState, State_Paused);
+	ParkPaused("the menu chooser");
 	HookedBgmStart();
 }
 
@@ -573,7 +615,7 @@ void __cdecl HookedBgmPause()
 	if (!resume)
 		return;
 
-	WriteGlobal(GameOffsets::kBgmState, State_Paused);
+	ParkPaused("the game's own pause");
 }
 
 }
@@ -724,10 +766,7 @@ void BgmControl::Stop()
 
 	BgmVolume::SetCurrent(-1, -1);
 
-	if (g_stop == nullptr)
-		return;
-
-	g_stop();
+	StopStream();
 }
 
 void BgmControl::Release()
@@ -784,6 +823,8 @@ int BgmControl::PinnedId()
 
 void BgmControl::OnFrame()
 {
+	ClearOrphanPause();
+
 	if (g_pinned < 0)
 		return;
 
@@ -821,8 +862,7 @@ bool BgmControl::Play(int id)
 		return false;
 	}
 
-	if (g_stop != nullptr)
-		g_stop();
+	StopStream();
 
 	g_playing = -1;
 	g_pinned = id;

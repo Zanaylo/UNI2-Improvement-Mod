@@ -286,6 +286,11 @@ void QuadRenderer::OnDeviceLost()
 	g_batchTexture = nullptr;
 }
 
+bool QuadRenderer::HoldsDeviceResources()
+{
+	return g_stateBlock != nullptr;
+}
+
 void QuadRenderer::FillRect(float x, float y, float width, float height, uint32_t color)
 {
 	PushQuad(nullptr, x, y, width, height, 0.0f, 0.0f, 1.0f, 1.0f, color);

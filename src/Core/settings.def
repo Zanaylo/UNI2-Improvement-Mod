@@ -204,7 +204,7 @@ SETTING_INT(roomRosterFix,          "Netplay",  "RoomRosterFix",        0)
 
 SETTING_INT(republishPingLocation,  "Netplay",  "RepublishPingLocation", 0)
 
-SETTING_INT(netLog,                 "Netplay",  "NetLog",               1)
+SETTING_INT(netLog,                 "Netplay",  "NetLog",               0)
 
 SETTING_INT(netLogGgpo,             "Netplay",  "CaptureGgpoLog",       0)
 

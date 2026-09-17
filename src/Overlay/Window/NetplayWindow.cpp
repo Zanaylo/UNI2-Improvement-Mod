@@ -286,9 +286,13 @@ void NetplayWindow::DrawNetworkLogTab()
 
 	UiText::Help("For a detailed report only. It catches the text GGPO writes about syncing, lost "
 		"packets and disconnects, which the game normally throws away. It hooks two of GGPO's log "
-		"functions and nothing else.");
+		"functions and nothing else. The lines it writes every frame are counted once a second "
+		"instead, and it stops once the file reaches 8 MB.");
 
 	UiText::Muted("%s", GgpoLogCapture::StatusText());
+
+	if (NetLog::IsOverBudget())
+		UiText::Warn("The file reached 8 MB, so GGPO's lines have stopped. The mod's own carry on.");
 
 	ImGui::Separator();
 	ImGui::TextUnformatted("How the mod stays out of the connection");

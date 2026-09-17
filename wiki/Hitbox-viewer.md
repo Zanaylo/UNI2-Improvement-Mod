@@ -8,3 +8,11 @@ what the game uses.
 
 Throws, the D Shield and proximity guard have no box, because the game has none. A throw grabs with a
 normal attack box, on a frame that has a throw attribute.
+
+## Screens that are not 16:9
+
+The game draws a 16:9 picture and puts bars at the sides on a wider screen, ultrawide included. The boxes
+follow that picture, so they stay on the characters at any resolution, windowed or fullscreen.
+
+If boxes ever sit beside the characters instead of on them, say your resolution and whether the game is
+fullscreen or windowed, and see [Reporting a problem](Reporting-a-problem).

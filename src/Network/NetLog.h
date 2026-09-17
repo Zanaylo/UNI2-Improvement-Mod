@@ -13,6 +13,8 @@ namespace NetLog
 	void Write(const char* format, ...);
 	void WriteV(const char* prefix, const char* format, va_list args);
 
+	bool IsOverBudget();
+
 	unsigned Dropped();
 	const char* Path();
 }

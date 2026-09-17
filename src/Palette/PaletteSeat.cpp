@@ -24,6 +24,17 @@ struct Candidate
 
 Candidate g_candidates[PaletteSeat::kMaxSeats][PaletteSeat::kCandidates] = {};
 
+struct Flip
+{
+	int count;
+	int first;
+	int last;
+};
+
+constexpr int kFlipQuietFrames = 60;
+
+Flip g_flips[PaletteSeat::kMaxSeats] = {};
+
 bool IsLive(const PaletteSeat::Seat& seat)
 {
 	return seat.texture != 0 && g_frame - seat.lastSeenFrame <= kLiveFrames;
@@ -158,13 +169,29 @@ void Drop(int index)
 	for (int i = index; i < g_count - 1; ++i)
 	{
 		g_seats[i] = g_seats[i + 1];
+		g_flips[i] = g_flips[i + 1];
 		memcpy(g_candidates[i], g_candidates[i + 1], sizeof(g_candidates[i]));
 	}
 
 	--g_count;
 
 	memset(&g_seats[g_count], 0, sizeof(g_seats[g_count]));
+	memset(&g_flips[g_count], 0, sizeof(g_flips[g_count]));
 	memset(g_candidates[g_count], 0, sizeof(g_candidates[g_count]));
+}
+
+void ReportFlips(int seat)
+{
+	Flip& flip = g_flips[seat];
+
+	if (flip.count == 0 || g_frame - flip.last < kFlipQuietFrames)
+		return;
+
+	LOG("palette seat: owner 0x%08x changed side %d time(s) between frame %d and %d, and is now on "
+		"side %d", static_cast<unsigned>(g_seats[seat].owner), flip.count, flip.first, flip.last,
+		g_seats[seat].side);
+
+	flip.count = 0;
 }
 
 }
@@ -184,6 +211,7 @@ void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int row)
 		seat = g_count++;
 
 		memset(&g_seats[seat], 0, sizeof(g_seats[seat]));
+		memset(&g_flips[seat], 0, sizeof(g_flips[seat]));
 		memset(g_candidates[seat], 0, sizeof(g_candidates[seat]));
 
 		g_seats[seat].owner = owner;
@@ -195,8 +223,13 @@ void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int row)
 
 	if (entry.draws > 0 && entry.side != side)
 	{
-		LOG("palette seat: owner 0x%08x moved from side %d to side %d at frame %d",
-			static_cast<unsigned>(owner), entry.side, side, g_frame);
+		Flip& flip = g_flips[seat];
+
+		if (flip.count == 0)
+			flip.first = g_frame;
+
+		++flip.count;
+		flip.last = g_frame;
 	}
 
 	entry.side = side;
@@ -220,6 +253,8 @@ void PaletteSeat::OnFrame()
 
 	for (int i = g_count - 1; i >= 0; --i)
 	{
+		ReportFlips(i);
+
 		if (g_frame - g_seats[i].lastSeenFrame > kStaleFrames)
 			Drop(i);
 	}
