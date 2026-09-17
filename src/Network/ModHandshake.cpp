@@ -1,10 +1,13 @@
 #include "Network/ModHandshake.h"
 
 #include "Core/info.h"
-#include "Core/logger.h"
 #include "Game/GamePatches.h"
 #include "Network/ModChannel.h"
-#include "Network/SteamNetwork.h"
+#include "Network/ModPresence.h"
+#include "Network/NetLink.h"
+#include "Network/NetLog.h"
+
+#include <Windows.h>
 
 #include <cstdio>
 #include <cstring>
@@ -14,9 +17,8 @@ namespace {
 constexpr uint16_t kHelloVersion = 1;
 constexpr uint8_t kFlagAnswerMe = 1;
 
-constexpr int kAskEveryFrames = 30;
-constexpr int kAsks = 3;
-constexpr int kVerdictFrames = 90;
+constexpr DWORD kHelloTtlMs = 20000;
+constexpr DWORD kAnswerWaitMs = 30000;
 
 constexpr int kNotSent = -2;
 constexpr int kVersionBytes = 16;
@@ -34,7 +36,9 @@ struct Hello
 #pragma pack(pop)
 
 uint64_t g_peer = 0;
-int g_waited = 0;
+volatile LONG64 g_heardFrom = 0;
+DWORD g_trackedAt = 0;
+bool g_asked = false;
 int g_sentChosen = kNotSent;
 int g_sentBoot = kNotSent;
 
@@ -53,11 +57,11 @@ void UpdateStatus()
 		strncpy_s(g_status, "connected, waiting for the other side's hello", _TRUNCATE);
 		return;
 	case ModHandshake::Peer_Modded:
-		sprintf_s(g_status, "the other side runs %s, picked %s, has %s loaded", g_peerVersion,
-			g_peerWanted, g_peerLoaded);
+		sprintf_s(g_status, "the other side runs %s, picked %s, has %s loaded", g_peerVersion, g_peerWanted,
+			g_peerLoaded);
 		return;
 	case ModHandshake::Peer_Unmodded:
-		strncpy_s(g_status, "the other side sent no hello, so it has no mod", _TRUNCATE);
+		strncpy_s(g_status, "the other side shows no sign of the mod, so nothing is sent to it", _TRUNCATE);
 		return;
 	default:
 		strncpy_s(g_status, "no session", _TRUNCATE);
@@ -70,7 +74,7 @@ bool LocalChanged()
 	return GamePatches::HomeIndex() != g_sentChosen || GamePatches::BootIndex() != g_sentBoot;
 }
 
-bool SendHello(uint8_t flags)
+void QueueHello(uint8_t flags)
 {
 	Hello hello = {};
 	hello.header.magic = ModChannel::kMagic;
@@ -85,15 +89,11 @@ bool SendHello(uint8_t flags)
 	ModHandshake::DescribeData(chosen, hello.wanted, sizeof(hello.wanted));
 	ModHandshake::DescribeData(boot, hello.loaded, sizeof(hello.loaded));
 
-	if (!SteamNetwork::Send(&hello, sizeof(hello)))
-		return false;
+	if (!ModChannel::SendToPeer(&hello, sizeof(hello), kHelloTtlMs, (flags & kFlagAnswerMe) != 0 ? "hello" : "hello answer"))
+		return;
 
 	g_sentChosen = chosen;
 	g_sentBoot = boot;
-
-	LOG("ModHandshake: hello to %llu, picked %s, %s loaded%s", static_cast<unsigned long long>(g_peer),
-		hello.wanted, hello.loaded, (flags & kFlagAnswerMe) != 0 ? ", asking for an answer" : "");
-	return true;
 }
 
 void Track(uint64_t peer)
@@ -102,7 +102,8 @@ void Track(uint64_t peer)
 		return;
 
 	g_peer = peer;
-	g_waited = 0;
+	g_trackedAt = GetTickCount();
+	g_asked = false;
 	g_sentChosen = kNotSent;
 	g_sentBoot = kNotSent;
 	g_peerVersion[0] = 0;
@@ -111,29 +112,37 @@ void Track(uint64_t peer)
 	g_state = peer != 0 ? ModHandshake::Peer_Waiting : ModHandshake::Peer_None;
 
 	UpdateStatus();
-
-	if (peer != 0)
-		LOG("ModHandshake: session with %llu", static_cast<unsigned long long>(peer));
 }
 
 void Wait()
 {
-	if (g_waited % kAskEveryFrames == 0 && g_waited < kAskEveryFrames * kAsks)
-		SendHello(kFlagAnswerMe);
+	if (!ModPresence::PeerHasMod(g_peer))
+	{
+		g_state = ModHandshake::Peer_Unmodded;
+		UpdateStatus();
+		NetLog::Write("handshake: %llu has no mod marker in the room, the mod stays silent towards it",
+			static_cast<unsigned long long>(g_peer));
+		return;
+	}
 
-	if (++g_waited < kVerdictFrames)
+	if (!g_asked)
+	{
+		g_asked = true;
+		QueueHello(kFlagAnswerMe);
+		NetLog::Write("handshake: %llu carries the mod marker, hello queued", static_cast<unsigned long long>(g_peer));
+	}
+
+	if (GetTickCount() - g_trackedAt < kAnswerWaitMs)
 		return;
 
 	g_state = ModHandshake::Peer_Unmodded;
 	UpdateStatus();
-
-	LOG("ModHandshake: no hello from %llu in %d frames, it has no mod",
-		static_cast<unsigned long long>(g_peer), kVerdictFrames);
+	NetLog::Write("handshake: no hello back from %llu", static_cast<unsigned long long>(g_peer));
 }
 
 void HandleHello(const uint8_t* data, int size, uint64_t from)
 {
-	if (size < static_cast<int>(sizeof(Hello)) || from == 0 || from != SteamNetwork::GetPeer())
+	if (size < static_cast<int>(sizeof(Hello)) || from == 0 || from != NetLink::Peer())
 		return;
 
 	Track(from);
@@ -144,19 +153,20 @@ void HandleHello(const uint8_t* data, int size, uint64_t from)
 	hello.wanted[kIdBytes - 1] = 0;
 	hello.loaded[kIdBytes - 1] = 0;
 
+	InterlockedExchange64(&g_heardFrom, static_cast<LONG64>(from));
 	g_state = ModHandshake::Peer_Modded;
 	strncpy_s(g_peerVersion, hello.modVersion, _TRUNCATE);
 	strncpy_s(g_peerWanted, hello.wanted, _TRUNCATE);
 	strncpy_s(g_peerLoaded, hello.loaded, _TRUNCATE);
 	UpdateStatus();
 
-	LOG("ModHandshake: %llu runs %s, picked %s, %s loaded", static_cast<unsigned long long>(from),
-		g_peerVersion, g_peerWanted, g_peerLoaded);
+	NetLog::Write("handshake: %llu runs %s, picked %s, %s loaded", static_cast<unsigned long long>(from), g_peerVersion,
+		g_peerWanted, g_peerLoaded);
 
 	if ((hello.flags & kFlagAnswerMe) == 0 || g_sentChosen != kNotSent)
 		return;
 
-	SendHello(0);
+	QueueHello(0);
 }
 
 }
@@ -168,7 +178,10 @@ void ModHandshake::Initialize()
 
 void ModHandshake::Update()
 {
-	Track(SteamNetwork::HasPeer() ? SteamNetwork::GetPeer() : 0);
+	Track(NetLink::HasPeer() ? NetLink::Peer() : 0);
+
+	if (g_state == Peer_Unmodded && !g_asked && ModPresence::PeerHasMod(g_peer))
+		g_state = Peer_Waiting;
 
 	if (g_state == Peer_Waiting)
 	{
@@ -176,8 +189,8 @@ void ModHandshake::Update()
 		return;
 	}
 
-	if (g_state == Peer_Modded && LocalChanged())
-		SendHello(0);
+	if (g_state == Peer_Modded && g_sentChosen != kNotSent && LocalChanged())
+		QueueHello(0);
 }
 
 ModHandshake::PeerState ModHandshake::GetPeerState()
@@ -188,6 +201,11 @@ ModHandshake::PeerState ModHandshake::GetPeerState()
 bool ModHandshake::PeerHasMod()
 {
 	return g_state == Peer_Modded;
+}
+
+bool ModHandshake::HeardFrom(uint64_t id)
+{
+	return id != 0 && static_cast<uint64_t>(g_heardFrom) == id;
 }
 
 const char* ModHandshake::PeerVersion()

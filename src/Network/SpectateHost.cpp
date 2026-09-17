@@ -6,14 +6,14 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "Hooks/HookManager.h"
-#include "Network/GgpoSpectators.h"
+#include "Network/ModChannel.h"
+#include "Network/NetLog.h"
 #include "Network/SpectateCode.h"
 #include "Network/SpectateMatch.h"
+#include "Network/SpectateRelay.h"
 #include "Network/SpectateWire.h"
-#include "Network/SpectatorPacing.h"
 #include "Network/SteamFriends.h"
 #include "Network/SteamInterfaces.h"
-#include "Network/SteamNetwork.h"
 
 #include <Windows.h>
 
@@ -23,7 +23,6 @@
 
 namespace {
 
-typedef void(__fastcall* StartSessionFn)(void*);
 typedef void(__fastcall* DispatchMatchFn)(int*);
 
 using Viewer = SpectateHost::Viewer;
@@ -31,22 +30,30 @@ using Viewer = SpectateHost::Viewer;
 constexpr DWORD kArmedFreshMs = 3000;
 constexpr DWORD kPresenceEveryMs = 30000;
 constexpr DWORD kStageResolveMs = 4000;
-constexpr uint32_t kViewerSyncTimeoutMs = 5000;
 constexpr int kFewestViewers = 1;
-constexpr int kMostPendingFrames = 90;
+constexpr DWORD kMessageTtlMs = 5000;
+constexpr DWORD kStartTtlMs = 10000;
+constexpr DWORD kInputsTtlMs = 3000;
+constexpr DWORD kStreamEveryMs = 100;
+constexpr DWORD kRewindEveryMs = 2000;
+constexpr int kResendGapFrames = 240;
+constexpr int kMostBehindFrames = 600;
+constexpr int kMostQueued = 8;
 
-StartSessionFn oStartSession = nullptr;
 DispatchMatchFn oDispatchMatch = nullptr;
 
 SRWLOCK g_lock = SRWLOCK_INIT;
 std::vector<Viewer> g_viewers;
 
 bool g_allowed = false;
+bool g_hooksActive = false;
+volatile LONG g_codeReady = 0;
 int g_maxViewers = SpectateHost::kMostViewers;
 bool g_presenceShown = false;
 DWORD g_presenceAt = 0;
 int g_slowest = 0;
 bool g_hadSession = false;
+DWORD g_streamedAt = 0;
 
 SpectateWire::MatchStart g_start = {};
 std::vector<uint64_t> g_startTargets;
@@ -54,13 +61,15 @@ bool g_startWaiting = false;
 bool g_startLoading = false;
 DWORD g_startAt = 0;
 
+uint8_t g_batch[sizeof(SpectateWire::Inputs) + SpectateWire::kMostFramesPerBatch * SpectateWire::kInputBytes] = {};
+
 char g_code[SpectateCode::kTextBytes] = "";
 char g_status[192] = "off";
 
 void Send(uint64_t to, SpectateWire::Type type, uint8_t detail)
 {
 	const SpectateWire::Message message = SpectateWire::Make(type, detail);
-	SteamNetwork::SendTo(to, &message, sizeof(message));
+	ModChannel::SendTo(to, &message, sizeof(message), kMessageTtlMs, "spectate");
 }
 
 uint32_t ReadGame(uintptr_t rva)
@@ -128,6 +137,8 @@ SpectateWire::Type Admit(uint64_t id, uint8_t& detail)
 	Viewer viewer = {};
 	viewer.id = id;
 	viewer.state = SpectateHost::Viewer_Accepted;
+	viewer.sentThrough = -1;
+	viewer.ackedFrame = -1;
 	g_viewers.push_back(viewer);
 
 	return SpectateWire::Type_Accepted;
@@ -154,6 +165,24 @@ void OnArmed(uint64_t from)
 	});
 }
 
+void OnAck(uint64_t from, const uint8_t* data, int size)
+{
+	if (size < static_cast<int>(sizeof(SpectateWire::Ack)))
+		return;
+
+	SpectateWire::Ack ack = {};
+	memcpy(&ack, data, sizeof(ack));
+
+	WithViewer(from, [&ack](Viewer& viewer)
+	{
+		if (!viewer.watching || ack.frame < viewer.ackedFrame)
+			return;
+
+		viewer.ackedFrame = ack.frame;
+		viewer.armedAt = GetTickCount();
+	});
+}
+
 void OnLeave(uint64_t from)
 {
 	AcquireSRWLockExclusive(&g_lock);
@@ -165,7 +194,7 @@ void OnLeave(uint64_t from)
 	ReleaseSRWLockExclusive(&g_lock);
 }
 
-std::vector<uint64_t> ArmedViewers(DWORD now, bool preparedOnly)
+std::vector<uint64_t> ArmedViewers(DWORD now)
 {
 	std::vector<uint64_t> armed;
 
@@ -175,7 +204,7 @@ std::vector<uint64_t> ArmedViewers(DWORD now, bool preparedOnly)
 	{
 		const bool fresh = viewer.armedAt != 0 && now - viewer.armedAt < kArmedFreshMs;
 
-		if (viewer.state == SpectateHost::Viewer_Accepted && fresh && (!preparedOnly || viewer.prepared))
+		if (viewer.state == SpectateHost::Viewer_Accepted && fresh)
 			armed.push_back(viewer.id);
 	}
 
@@ -201,16 +230,6 @@ std::vector<uint64_t> WatchingViewers()
 	return watching;
 }
 
-void ClearWatching()
-{
-	AcquireSRWLockExclusive(&g_lock);
-
-	for (Viewer& viewer : g_viewers)
-		viewer.watching = false;
-
-	ReleaseSRWLockExclusive(&g_lock);
-}
-
 bool LocalPlays(int command)
 {
 	if (command != GameOffsets::kMatchCaseRank && command != GameOffsets::kMatchCasePlayer)
@@ -221,7 +240,7 @@ bool LocalPlays(int command)
 
 void PrepareViewers()
 {
-	std::vector<uint64_t> armed = ArmedViewers(GetTickCount(), false);
+	std::vector<uint64_t> armed = ArmedViewers(GetTickCount());
 
 	if (armed.empty())
 		return;
@@ -248,10 +267,10 @@ void SendStart()
 
 	for (uint64_t id : g_startTargets)
 	{
-		const bool sent = SteamNetwork::SendTo(id, &g_start, sizeof(g_start));
-		WithViewer(id, [sent](Viewer& viewer) { viewer.prepared = sent; });
+		const bool queued = ModChannel::SendTo(id, &g_start, sizeof(g_start), kStartTtlMs, "spectate match");
+		WithViewer(id, [queued](Viewer& viewer) { viewer.prepared = queued; });
 
-		LOG("SpectateHost: match setup %s %llu, stage %d '%s', data %s", sent ? "sent to" : "could not reach",
+		LOG("SpectateHost: match setup %s %llu, stage %d '%s', data %s", queued ? "queued for" : "could not queue for",
 			static_cast<unsigned long long>(id), SpectateMatch::StageOf(g_start.snapshot),
 			SpectateMatch::StageNameOf(g_start.snapshot), SpectateMatch::PatchOf(g_start.snapshot));
 	}
@@ -274,82 +293,126 @@ void WaitForStage(DWORD now)
 		SendStart();
 }
 
-void AddViewers()
+void BeginMatch(DWORD now)
 {
-	if (!g_allowed)
-		return;
+	SpectateRelay::Reset();
 
-	const uintptr_t session = GgpoSpectators::PeerSession();
+	AcquireSRWLockExclusive(&g_lock);
 
-	if (session == 0 || !GgpoSpectators::Synchronizing(session))
-		return;
-
-	for (uint64_t id : ArmedViewers(GetTickCount(), true))
+	for (Viewer& viewer : g_viewers)
 	{
-		const int result = GgpoSpectators::Add(session, id, kViewerSyncTimeoutMs);
+		const bool fresh = viewer.armedAt != 0 && now - viewer.armedAt < kArmedFreshMs;
 
-		if (result == GgpoSpectators::kAddOk)
-			SpectatorPacing::Pace(session, GgpoSpectators::IndexOf(session, id));
+		viewer.watching = g_allowed && viewer.state == SpectateHost::Viewer_Accepted && viewer.prepared && fresh;
+		viewer.prepared = false;
+		viewer.sentThrough = -1;
+		viewer.ackedFrame = -1;
+		viewer.rewoundAt = now;
 
-		WithViewer(id, [result](Viewer& viewer)
-		{
-			viewer.watching = result == GgpoSpectators::kAddOk;
-			viewer.prepared = false;
-		});
-
-		LOG("SpectateHost: %llu %s this match (%d)", static_cast<unsigned long long>(id),
-			result == GgpoSpectators::kAddOk ? "joins" : "could not join", result);
-
-		if (result == GgpoSpectators::kAddFull || result == GgpoSpectators::kAddTooLate)
-			return;
+		if (viewer.watching)
+			NetLog::Write("spectate host: %llu watches this match through the relay", static_cast<unsigned long long>(viewer.id));
 	}
+
+	ReleaseSRWLockExclusive(&g_lock);
 }
 
-void __fastcall HookedStartSession(void* holder)
+int PackBatch(int first, int last)
 {
-	SpectatorPacing::Reset();
-	oStartSession(holder);
-	AddViewers();
+	const int bytes = SpectateRelay::InputBytes();
+	int count = 0;
+
+	for (int frame = first; frame <= last && count < SpectateWire::kMostFramesPerBatch; ++frame, ++count)
+	{
+		if (!SpectateRelay::Read(frame, g_batch + sizeof(SpectateWire::Inputs) + count * bytes))
+			break;
+	}
+
+	if (count == 0)
+		return 0;
+
+	SpectateWire::Inputs header = {};
+	header.message = SpectateWire::Make(SpectateWire::Type_Inputs, 0);
+	header.first = first;
+	header.count = static_cast<uint16_t>(count);
+	header.bytes = static_cast<uint16_t>(bytes);
+	memcpy(g_batch, &header, sizeof(header));
+
+	return count;
 }
 
-bool Watching(uint64_t id)
+void Rewind(Viewer& viewer, DWORD now)
 {
-	bool watching = false;
-	WithViewer(id, [&watching](Viewer& viewer) { watching = viewer.watching; });
+	if (viewer.sentThrough - viewer.ackedFrame < kResendGapFrames || now - viewer.rewoundAt < kRewindEveryMs)
+		return;
 
-	return watching;
+	viewer.sentThrough = viewer.ackedFrame;
+	viewer.rewoundAt = now;
 }
 
-void DropBehind(uintptr_t session, uint64_t id, int pending)
+void Stream(DWORD now)
 {
-	WithViewer(id, [](Viewer& viewer) { viewer.watching = false; });
-	GgpoSpectators::Drop(session, id);
-	Send(id, SpectateWire::Type_Behind, SpectateWire::Refusal_None);
+	if (now - g_streamedAt < kStreamEveryMs || SpectateRelay::InputBytes() == 0)
+		return;
 
-	LOG("SpectateHost: %llu fell %d frames behind and was dropped from this match", static_cast<unsigned long long>(id), pending);
+	g_streamedAt = now;
+
+	const int confirmed = SpectateRelay::Confirmed();
+
+	AcquireSRWLockExclusive(&g_lock);
+
+	for (Viewer& viewer : g_viewers)
+	{
+		if (!viewer.watching || ModChannel::Queued() >= kMostQueued)
+			continue;
+
+		Rewind(viewer, now);
+
+		const int count = PackBatch(viewer.sentThrough + 1, confirmed);
+
+		if (count == 0)
+			continue;
+
+		const int size = static_cast<int>(sizeof(SpectateWire::Inputs)) + count * SpectateRelay::InputBytes();
+
+		if (ModChannel::SendTo(viewer.id, g_batch, size, kInputsTtlMs, "spectate inputs"))
+			viewer.sentThrough += count;
+	}
+
+	ReleaseSRWLockExclusive(&g_lock);
 }
 
-void WatchLag(uintptr_t session)
+void WatchLag()
 {
-	GgpoSpectators::Link links[GameOffsets::kGgpoMostSpectators] = {};
-	const int count = GgpoSpectators::Links(session, links, GameOffsets::kGgpoMostSpectators);
+	const int confirmed = SpectateRelay::Confirmed();
+	std::vector<uint64_t> behind;
+
+	AcquireSRWLockExclusive(&g_lock);
 
 	g_slowest = 0;
 
-	for (int i = 0; i < count; ++i)
+	for (Viewer& viewer : g_viewers)
 	{
-		const GgpoSpectators::Link& link = links[i];
-
-		if (link.state != GameOffsets::kGgpoStateRunning || !Watching(link.id))
+		if (!viewer.watching)
 			continue;
 
-		if (link.pending >= kMostPendingFrames)
+		const int lag = confirmed - viewer.ackedFrame;
+
+		if (lag > kMostBehindFrames)
 		{
-			DropBehind(session, link.id, link.pending);
+			viewer.watching = false;
+			behind.push_back(viewer.id);
 			continue;
 		}
 
-		g_slowest = (std::max)(g_slowest, link.pending);
+		g_slowest = (std::max)(g_slowest, lag);
+	}
+
+	ReleaseSRWLockExclusive(&g_lock);
+
+	for (uint64_t id : behind)
+	{
+		Send(id, SpectateWire::Type_Behind, SpectateWire::Refusal_None);
+		NetLog::Write("spectate host: %llu fell behind and stops watching this match", static_cast<unsigned long long>(id));
 	}
 }
 
@@ -361,8 +424,14 @@ void EndMatch()
 		LOG("SpectateHost: told %llu the match ended", static_cast<unsigned long long>(id));
 	}
 
-	ClearWatching();
-	SpectatorPacing::Reset();
+	AcquireSRWLockExclusive(&g_lock);
+
+	for (Viewer& viewer : g_viewers)
+		viewer.watching = false;
+
+	ReleaseSRWLockExclusive(&g_lock);
+
+	SpectateRelay::Reset();
 	g_slowest = 0;
 }
 
@@ -376,34 +445,52 @@ void __fastcall HookedDispatchMatch(int* command)
 		PrepareViewers();
 }
 
-template <typename Fn>
-bool Install(uintptr_t rva, Fn detour, Fn& original, const char* label)
+bool Activate(bool active)
 {
-	if (original != nullptr)
+	if (active == g_hooksActive)
 		return true;
 
-	void* const target = reinterpret_cast<void*>(RvaToAddress(rva));
+	void* const target = reinterpret_cast<void*>(RvaToAddress(GameOffsets::kFnMatchDispatch));
 
-	if (IsAddressInGameModule(reinterpret_cast<uintptr_t>(target)) &&
-		HookManager::CreateAndEnableHook(target, detour, reinterpret_cast<void**>(&original), label))
+	bool ready = false;
+
+	if (oDispatchMatch != nullptr)
 	{
-		return true;
+		ready = HookManager::SetHookEnabled(target, active);
+	}
+	else if (!active)
+	{
+		ready = true;
+	}
+	else if (IsAddressInGameModule(reinterpret_cast<uintptr_t>(target)))
+	{
+		ready = HookManager::CreateAndEnableHook(target, &HookedDispatchMatch, reinterpret_cast<void**>(&oDispatchMatch),
+			"MatchDispatch");
 	}
 
-	original = nullptr;
-	LOG("SpectateHost: %s is not where this game version expects it", label);
-	return false;
+	if (!ready)
+	{
+		oDispatchMatch = nullptr;
+		LOG("SpectateHost: the match setup is not where this game version expects it");
+	}
+
+	g_hooksActive = active && ready;
+	NetLog::Write("spectate host hook %s", g_hooksActive ? "active" : "parked");
+	return ready;
 }
 
 void RefreshCode()
 {
-	if (g_code[0] != 0)
+	if (g_codeReady != 0)
 		return;
 
 	const uint64_t own = SteamInterfaces::GetOwnSteamId();
 
-	if (own != 0)
-		SpectateCode::Encode(own, g_code, sizeof(g_code));
+	if (own == 0)
+		return;
+
+	SpectateCode::Encode(own, g_code, sizeof(g_code));
+	InterlockedExchange(&g_codeReady, 1);
 }
 
 void Publish(DWORD now)
@@ -418,7 +505,7 @@ void Publish(DWORD now)
 		return;
 	}
 
-	if (g_code[0] == 0 || (g_presenceShown && now - g_presenceAt < kPresenceEveryMs))
+	if (g_codeReady == 0 || (g_presenceShown && now - g_presenceAt < kPresenceEveryMs))
 		return;
 
 	if (!SteamFriends::SetRichPresence(SpectateWire::kPresenceKey, g_code))
@@ -452,39 +539,49 @@ void Summarise()
 
 void SpectateHost::Initialize()
 {
-	g_allowed = g_settings.spectateAllow != 0;
 	g_maxViewers = std::clamp(g_settings.spectateMaxViewers, kFewestViewers, kMostViewers);
+	g_allowed = g_settings.spectateAllow != 0 && Activate(true);
+}
 
-	Install(GameOffsets::kFnStartSessionFromDescription, &HookedStartSession, oStartSession, "StartSessionFromDescription");
-	Install(GameOffsets::kFnMatchDispatch, &HookedDispatchMatch, oDispatchMatch, "MatchDispatch");
-	SpectatorPacing::Install();
+void SpectateHost::Tick(const NetLink::Snapshot&)
+{
+	Publish(GetTickCount());
 }
 
 void SpectateHost::Update()
 {
 	const DWORD now = GetTickCount();
 
-	Publish(now);
-	WaitForStage(now);
-
-	const uintptr_t session = GgpoSpectators::PeerSession();
-
-	if (session != 0)
+	if (!g_allowed && !g_hadSession)
 	{
-		g_hadSession = true;
-		WatchLag(session);
 		Summarise();
 		return;
 	}
 
-	if (g_hadSession)
+	WaitForStage(now);
+
+	const NetLink::Snapshot& link = NetLink::Current();
+	const bool session = link.backend == NetLink::Backend_Players && link.hasPeer;
+
+	if (session && !g_hadSession)
+		BeginMatch(now);
+
+	if (!session && g_hadSession)
 		EndMatch();
 
-	g_hadSession = false;
+	g_hadSession = session;
+
+	if (session)
+	{
+		SpectateRelay::Capture(link.session);
+		Stream(now);
+		WatchLag();
+	}
+
 	Summarise();
 }
 
-void SpectateHost::Receive(uint8_t type, uint64_t from)
+void SpectateHost::Receive(uint8_t type, const uint8_t* data, int size, uint64_t from)
 {
 	switch (type)
 	{
@@ -493,6 +590,9 @@ void SpectateHost::Receive(uint8_t type, uint64_t from)
 		return;
 	case SpectateWire::Type_Armed:
 		OnArmed(from);
+		return;
+	case SpectateWire::Type_Ack:
+		OnAck(from, data, size);
 		return;
 	case SpectateWire::Type_Leave:
 		OnLeave(from);
@@ -504,12 +604,15 @@ void SpectateHost::Receive(uint8_t type, uint64_t from)
 
 bool SpectateHost::IsAllowed()
 {
-	return g_allowed && oStartSession != nullptr && oDispatchMatch != nullptr;
+	return g_allowed && g_hooksActive;
 }
 
 void SpectateHost::SetAllowed(bool allowed)
 {
-	g_allowed = allowed;
+	if (!allowed)
+		EndMatch();
+
+	g_allowed = Activate(allowed) && allowed;
 	Settings::SaveInt("Spectate", "AllowSpectators", allowed ? 1 : 0);
 	LOG("SpectateHost: spectators are %s", allowed ? "allowed" : "not allowed");
 }
@@ -527,8 +630,7 @@ void SpectateHost::SetMaxViewers(int count)
 
 const char* SpectateHost::Code()
 {
-	RefreshCode();
-	return g_code;
+	return g_codeReady != 0 ? g_code : "";
 }
 
 void SpectateHost::Snapshot(std::vector<Viewer>& out)
@@ -572,7 +674,6 @@ void SpectateHost::Kick(uint64_t id)
 	if (index < 0)
 		return;
 
-	GgpoSpectators::Drop(GgpoSpectators::PeerSession(), id);
 	Send(id, SpectateWire::Type_Kicked, SpectateWire::Refusal_None);
 	LOG("SpectateHost: %llu was removed", static_cast<unsigned long long>(id));
 }

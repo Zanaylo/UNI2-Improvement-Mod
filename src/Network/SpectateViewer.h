@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Network/NetLink.h"
 #include "Network/SteamFriends.h"
 
 #include <cstdint>
@@ -21,6 +22,7 @@ namespace SpectateViewer
 
 	void Initialize();
 	void Update();
+	void Tick(const NetLink::Snapshot& snapshot);
 
 	void Receive(uint8_t type, uint8_t detail, const uint8_t* data, int size, uint64_t from);
 

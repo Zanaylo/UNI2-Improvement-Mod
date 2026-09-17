@@ -718,7 +718,32 @@ namespace GameOffsets
 
 	constexpr uintptr_t kGgpoSession = 0x4448858;
 	constexpr uintptr_t kGgpoBackendVTable = 0x537910;
-	constexpr int kGgpoGetNetworkStats = 8;
+	constexpr uintptr_t kGgpoSpectatorBackendVTable = 0x5379f4;
+	constexpr uintptr_t kGgpoPlayerEndpoints = 0xbd8;
+	constexpr uintptr_t kGgpoSpectatorHostEndpoint = 0x450;
+	constexpr uintptr_t kGgpoPlayerCount = 0x5d868;
+	constexpr int kGgpoMostPlayers = 4;
+	constexpr uintptr_t kGgpoEndpointUdp = 0x04;
+	constexpr uintptr_t kGgpoEndpointQueue = 0x24;
+	constexpr uintptr_t kGgpoEndpointRoundTrip = 0x860;
+	constexpr uintptr_t kGgpoEndpointKbpsSent = 0x86c;
+	constexpr uintptr_t kGgpoEndpointLocalBehind = 0x898;
+	constexpr uintptr_t kGgpoEndpointRemoteBehind = 0x89c;
+	constexpr uintptr_t kFnGgpoUdpLog = 0xa0e10;
+	constexpr uintptr_t kFnGgpoProtocolLog = 0xa2270;
+	constexpr uintptr_t kGgpoSyncPlayers = 0x59c;
+	constexpr uintptr_t kGgpoSyncInputSize = 0x5a0;
+	constexpr uintptr_t kGgpoLastConfirmedFrame = 0x5a8;
+	constexpr uintptr_t kGgpoInputQueues = 0x5b4;
+	constexpr size_t kGgpoInputQueueStride = 0x1654;
+	constexpr uintptr_t kGgpoQueueInputs = 0x28;
+	constexpr size_t kGgpoQueueInputStride = 0x2c;
+	constexpr int kGgpoQueueSlots = 128;
+	constexpr uintptr_t kGgpoInputBits = 0x08;
+	constexpr uintptr_t kGgpoLocalConnectStatus = 0xbc4;
+	constexpr uintptr_t kSpectatorOnEvent = 0x28;
+	constexpr int kGgpoEventSynchronized = 0x3ea;
+	constexpr int kGgpoEventRunning = 0x3eb;
 
 	constexpr uintptr_t kFnStartSessionFromDescription = 0x1c20d0;
 	constexpr uintptr_t kFnStartSpectatorSession = 0x1c1c60;
@@ -740,8 +765,8 @@ namespace GameOffsets
 	constexpr uintptr_t kReplaySaveResult = 0x1e8a15c;
 	constexpr uintptr_t kFnApplyMatchBlock = 0x447dc0;
 
-	constexpr uintptr_t kGgpoSynchronizing = 0x5da04;
-	constexpr uintptr_t kGgpoSpectatorCount = 0x5d9fc;
+	constexpr uintptr_t kGgpoSynchronizing = 0x5d864;
+	constexpr uintptr_t kGgpoSpectatorCount = 0x5d85c;
 	constexpr uintptr_t kGgpoSpectatorEndpoints = 0xbdc;
 	constexpr size_t kGgpoEndpointStride = 0x2e64;
 	constexpr int kGgpoMostSpectators = 32;

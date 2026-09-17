@@ -8,11 +8,18 @@
 #include "Game/OpponentLog.h"
 #include "Network/RollbackStats.h"
 #include "Game/SteamNames.h"
+#include "Network/GgpoLogCapture.h"
+#include "Network/ModChannel.h"
 #include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
+#include "Network/NetGate.h"
+#include "Network/NetLink.h"
+#include "Network/NetLog.h"
+#include "Network/NetWorker.h"
 #include "Network/RoomPing.h"
-#include "Network/OnlineSafety.h"
 #include "Network/RoomRoster.h"
+#include "Network/SteamLink.h"
+#include "Network/SteamWatch.h"
 #include "Network/SpectateHost.h"
 #include "Network/SpectateViewer.h"
 #include "Overlay/UiScale.h"
@@ -114,6 +121,12 @@ void NetplayWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
+	if (ImGui::BeginTabItem("Network log"))
+	{
+		DrawNetworkLogTab();
+		ImGui::EndTabItem();
+	}
+
 	if (ImGui::BeginTabItem("Opponents"))
 	{
 		DrawOpponentsTab();
@@ -148,24 +161,8 @@ void NetplayWindow::DrawRollbackTab()
 		ImGui::EndTable();
 	}
 
-	UiText::Help("Ping and the two frames behind numbers come straight from GGPO, the game's "
-		"netcode. They are real measurements, not estimates.");
-
-	bool diagnostics = g_modVals.netplayDiagnostics;
-	if (ImGui::Checkbox("Get ping and frames behind from GGPO", &diagnostics))
-	{
-		g_modVals.netplayDiagnostics = diagnostics;
-		Settings::SaveInt("Netplay", "Diagnostics", diagnostics ? 1 : 0);
-	}
-
-	UiText::Help("Off by default, and off is safer, because asking GGPO touches the netcode while "
-		"it runs. With it off, the rollback and frame counters still work.");
-
-	if (g_modVals.netplayDiagnostics)
-	{
-		UiText::Warn("On. If a match drops or the room breaks, turn this off first and tell us if "
-			"that fixed it.");
-	}
+	UiText::Help("Ping, frames behind and the send queue are GGPO's own numbers, read from memory. "
+		"The mod never calls into the netcode to get them.");
 
 	ImGui::Separator();
 
@@ -256,33 +253,105 @@ void NetplayWindow::DrawStartCapture()
 		RollbackStats::ClearStartCapture();
 }
 
+void NetplayWindow::DrawNetworkLogTab()
+{
+	ImGui::TextUnformatted("Network log");
+	UiText::Help("Writes what the game's connection and the mod's network code do to its own file: "
+		"every Steam event, every mod packet, and one line per second during a match. Send that file "
+		"with any connection report.");
+
+	bool logging = NetLog::IsEnabled();
+
+	if (ImGui::Checkbox("Write the network log", &logging))
+	{
+		NetLog::SetEnabled(logging);
+		g_modVals.netLog = logging;
+		Settings::SaveInt("Netplay", "NetLog", logging ? 1 : 0);
+	}
+
+	if (NetLog::Path()[0] != 0)
+		UiText::Muted("%s", NetLog::Path());
+
+	if (NetLog::Dropped() > 0)
+		UiText::Warn("%u line(s) were dropped because they came faster than the file was written.", NetLog::Dropped());
+
+	bool ggpo = GgpoLogCapture::IsEnabled();
+
+	if (ImGui::Checkbox("Include GGPO's own lines", &ggpo))
+	{
+		GgpoLogCapture::SetEnabled(ggpo);
+		g_modVals.netLogGgpo = GgpoLogCapture::IsEnabled();
+		Settings::SaveInt("Netplay", "CaptureGgpoLog", g_modVals.netLogGgpo ? 1 : 0);
+	}
+
+	UiText::Help("For a detailed report only. It catches the text GGPO writes about syncing, lost "
+		"packets and disconnects, which the game normally throws away. It hooks two of GGPO's log "
+		"functions and nothing else.");
+
+	UiText::Muted("%s", GgpoLogCapture::StatusText());
+
+	ImGui::Separator();
+	ImGui::TextUnformatted("How the mod stays out of the connection");
+
+	UiText::Muted("Steam listener: %s, %d event kind(s)", SteamWatch::IsRegistered() ? "on" : "not yet",
+		SteamWatch::Registered());
+	UiText::Muted("Steam work thread: %s, slowest job %.1f ms", NetWorker::IsRunning() ? "running" : "stopped",
+		NetWorker::SlowestJobMs());
+	UiText::Muted("Mod packets waiting: %d, sent to the opponent this match: %d B", ModChannel::Queued(),
+		NetGate::PeerBytesThisSession());
+
+	ImGui::Separator();
+	ImGui::TextUnformatted("Connection");
+
+	const NetLink::Snapshot& link = NetLink::Current();
+
+	if (!link.hasPeer)
+	{
+		UiText::Muted(NetLink::IsBlind() ? "The GGPO session could not be read on this game version."
+			: "No match connected.");
+		return;
+	}
+
+	SteamLink::Sample steam = {};
+	SteamLink::Take(steam);
+
+	if (!ImGui::BeginTable("##connection", 2, ImGuiTableFlags_SizingFixedFit))
+		return;
+
+	Metric("Opponent", "%s", SteamNames::Resolve(link.peer.id).c_str());
+	Metric("GGPO endpoint", "%s", NetLink::StateName(link.peer.state));
+	Metric("GGPO ping", "%d ms", link.peer.ping);
+	Metric("Inputs not yet acknowledged", "%d", link.peer.pending);
+
+	if (steam.valid && steam.peer == link.peer.id)
+	{
+		Metric("Route", "%s", steam.usingRelay ? "Steam relay" : "direct");
+		Metric("Steam send queue", "%d B, %d packet(s)", steam.bytesQueued, steam.packetsQueued);
+		Metric("Steam ping", steam.messagesRead && steam.ping > 0 ? "%d ms" : "-", steam.ping);
+		Metric("Link quality", "%.0f%% here, %.0f%% there", steam.qualityLocal * 100.0f, steam.qualityRemote * 100.0f);
+		Metric("Relay network", "%s", SteamLink::AvailabilityName(steam.relayAvailability));
+	}
+
+	ImGui::EndTable();
+}
+
 void NetplayWindow::DrawRoomTab()
 {
 	ImGui::TextUnformatted("During a match");
-	UiText::Help("This tab holds the mod's fixes for online rooms. They send data to the room or "
-		"read the netcode, which caused mid-match disconnects. Turn this on to pause all of them "
-		"while a match is connected.");
+	UiText::Help("While a match is connected the mod writes nothing to the room and never touches "
+		"the game's connection. This is always on.");
 
-	bool guarded = OnlineSafety::IsGuarded();
-
-	if (ImGui::Checkbox("Pause room features during a match", &guarded))
-	{
-		OnlineSafety::SetGuarded(guarded);
-		g_modVals.onlineSafety = guarded;
-		Settings::SaveInt("Netplay", "SafeOnline", guarded ? 1 : 0);
-	}
-
-	if (OnlineSafety::InSession())
-		UiText::Warn("%s", OnlineSafety::GetStatusText());
+	if (NetGate::MayTouchRoom())
+		UiText::Muted("No match connected.");
 	else
-		UiText::Muted("%s", OnlineSafety::GetStatusText());
+		UiText::Warn("A match is connected. Room features are paused.");
 
 	ImGui::Separator();
 
 	ImGui::TextUnformatted("Ghost members");
 	UiText::Help("The game only removes players who leave the room normally. Anyone who "
 		"disconnects, alt-F4s, or gets kicked or banned stays in the room list forever. This "
-		"removes them too.");
+		"removes them too. It changes how the game handles its own room, so it is off by default.");
 
 	bool fix = RoomRoster::IsFixEnabled();
 	if (ImGui::Checkbox("Remove players who disconnect or get kicked", &fix))
@@ -295,7 +364,7 @@ void NetplayWindow::DrawRoomTab()
 	if (RoomRoster::IsHooked())
 		UiText::Good("Active. %d ghost(s) removed.", RoomRoster::GetGhostsPrevented());
 	else
-		UiText::Warn("Not active: %s", RoomRoster::GetStatusText());
+		UiText::Muted("%s", RoomRoster::GetStatusText());
 
 	ImGui::Separator();
 
@@ -309,19 +378,19 @@ void NetplayWindow::DrawRoomTab()
 	}
 	else
 	{
-		UiText::Good("%s", ModPresence::GetStatusText());
+		UiText::Good("%d of %d in this room have the mod", ModPresence::ModCount(), ModPresence::RoomSize());
 
-		for (int i = 0; i < ModPresence::RoomSize(); ++i)
+		ModPresence::Member member = {};
+
+		for (int i = 0; ModPresence::MemberAt(i, member); ++i)
 		{
-			const uint64_t member = ModPresence::MemberAt(i);
-
-			if (member == 0)
+			if (member.id == 0)
 				continue;
 
-			const std::string name = SteamNames::Resolve(member);
+			const std::string name = SteamNames::Resolve(member.id);
 
-			if (ModPresence::HasMod(i))
-				UiText::Good("  %s (%s)", name.c_str(), ModPresence::VersionAt(i));
+			if (member.hasMod)
+				UiText::Good("  %s (%s)", name.c_str(), member.version);
 			else
 				UiText::Muted("  %s (no mod)", name.c_str());
 		}
@@ -350,7 +419,7 @@ void NetplayWindow::DrawRoomTab()
 
 	ImGui::TextUnformatted("Room ping");
 	UiText::Help("Keeps your ping location fresh, so the ping other players see for you stays "
-		"accurate. This works for players without the mod too.");
+		"accurate. It writes a key the game owns, so it is off by default and never runs during a match.");
 
 	bool republish = RoomPing::IsEnabled();
 	if (ImGui::Checkbox("Update my ping location every 30 s", &republish))
@@ -360,12 +429,13 @@ void NetplayWindow::DrawRoomTab()
 		Settings::SaveInt("Netplay", "RepublishPingLocation", republish ? 1 : 0);
 	}
 
-	ImGui::Text("%s", RoomPing::GetStatusText());
+	char pingStatus[160] = {};
+	RoomPing::StatusText(pingStatus, sizeof(pingStatus));
+	ImGui::TextUnformatted(pingStatus);
 
-	if (RoomPing::InRoom())
+	if (NetLink::Lobby() != 0 && RoomPing::GetPublishCount() > 0)
 	{
-		ImGui::Text("Room %llu, last update %u s ago",
-			static_cast<unsigned long long>(RoomPing::GetLobbyId()),
+		ImGui::Text("Room %llu, last update %u s ago", static_cast<unsigned long long>(NetLink::Lobby()),
 			RoomPing::GetSecondsSinceLastPublish());
 	}
 
@@ -394,7 +464,10 @@ void NetplayWindow::DrawRoomTab()
 
 	for (int i = events - 1; i >= 0; --i)
 	{
-		const RoomRoster::Event& event = RoomRoster::GetEvent(i);
+		RoomRoster::Event event = {};
+
+		if (!RoomRoster::GetEvent(i, event))
+			continue;
 
 		char flags[96] = {};
 		RoomRoster::DescribeFlags(event.rawFlags, flags, sizeof(flags));

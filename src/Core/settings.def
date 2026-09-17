@@ -200,13 +200,13 @@ SETTING_INT(keyboardSeatRouteSides, "Input",    "KeyboardSeatRouteSides", 1)
 
 SETTING_INT(replayAutoExport,       "Replays",  "AutoExport",           1)
 
-SETTING_INT(onlineSafety,           "Netplay",  "SafeOnline",           1)
+SETTING_INT(roomRosterFix,          "Netplay",  "RoomRosterFix",        0)
 
-SETTING_INT(roomRosterFix,          "Netplay",  "RoomRosterFix",        1)
+SETTING_INT(republishPingLocation,  "Netplay",  "RepublishPingLocation", 0)
 
-SETTING_INT(republishPingLocation,  "Netplay",  "RepublishPingLocation", 1)
+SETTING_INT(netLog,                 "Netplay",  "NetLog",               1)
 
-SETTING_INT(netplayDiagnostics,     "Netplay",  "Diagnostics",          0)
+SETTING_INT(netLogGgpo,             "Netplay",  "CaptureGgpoLog",       0)
 
 SETTING_INT(sharePalettes,          "Netplay",  "SharePalettes",        1)
 

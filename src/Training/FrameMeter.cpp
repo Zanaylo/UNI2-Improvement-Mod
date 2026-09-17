@@ -670,7 +670,8 @@ FrameMeter::State Classify(int player, const PlayerState::State& state)
 	else
 	{
 		++tracked.stillFrames;
-		tracked.looping = tracked.looping || state.frameIndex < tracked.lastFrameIndex;
+		tracked.looping = tracked.looping ||
+			(state.frameIndex < tracked.lastFrameIndex && !PlayerState::IsAirborne(state));
 	}
 
 	tracked.lastFrameIndex = state.frameIndex;
@@ -751,6 +752,9 @@ FrameMeter::State Classify(int player, const PlayerState::State& state)
 	if (movement != FrameMeter::State::None)
 		return movement;
 
+	if (state.cancelFree && !tracked.sawActive && !tracked.sawParry && !tracked.inMove)
+		return FrameMeter::State::Idle;
+
 	if (tracked.canAct && !state.cancelFree && tracked.inMove)
 	{
 
@@ -829,13 +833,6 @@ void UpdateLastMoveFromBar(int player)
 
 	const uint16_t movePattern = g_frames[player][begin].pattern;
 
-	int last = end;
-	while (last + 1 < g_length && g_frames[player][last + 1].state == FrameMeter::State::Idle &&
-		(g_frames[player][last + 1].pattern == movePattern || g_frames[player][last + 1].airJumpOK))
-	{
-		++last;
-	}
-
 	int active = 0;
 	int startup = 0;
 	bool sawActive = false;
@@ -862,6 +859,19 @@ void UpdateLastMoveFromBar(int player)
 
 	if (!sawActive && parryAt >= 0)
 		startup = parryAt;
+
+	int last = end;
+
+	while (sawActive || parryAt >= 0)
+	{
+		if (last + 1 >= g_length || g_frames[player][last + 1].state != FrameMeter::State::Idle)
+			break;
+
+		if (g_frames[player][last + 1].pattern != movePattern && !g_frames[player][last + 1].airJumpOK)
+			break;
+
+		++last;
+	}
 
 	const int total = last - begin + 1;
 
@@ -1513,12 +1523,19 @@ void LogOracle()
 	if (!PlayerState::ReadFrameDisplay(display))
 		return;
 
-	if (display.startup == 0 || display.total == 0)
+	if (display.total == 0)
 		return;
 
 	for (int p = 0; p < FrameMeter::kPlayers; ++p)
 	{
-		if (!g_hadAttackBoxes[p] || !g_lastMove[p].valid)
+		if (!g_hadAttackBoxes[p] && g_lastMove[p].valid && display.total != 0)
+		{
+			LOG("oracle: p%d  movement total %d/%d (%+d)  %s", p, g_lastMove[p].total, display.total,
+				g_lastMove[p].total - display.total, g_lastMove[p].total == display.total ? "match" : "MISMATCH");
+			continue;
+		}
+
+		if (!g_hadAttackBoxes[p] || !g_lastMove[p].valid || display.startup == 0)
 			continue;
 
 		const int startupDelta = g_lastMove[p].startup - display.startup;

@@ -1,11 +1,10 @@
 #include "Network/RollbackStats.h"
 
 #include "Core/Profiler.h"
-#include "Core/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
-#include "Network/SteamNetwork.h"
+#include "Network/NetLink.h"
 
 #include <Windows.h>
 
@@ -13,18 +12,6 @@
 #include <cstring>
 
 namespace {
-
-struct GgpoNetworkStats
-{
-	int sendQueueLen;
-	int recvQueueLen;
-	int ping;
-	int kbpsSent;
-	int localFramesBehind;
-	int remoteFramesBehind;
-};
-
-using GetNetworkStats_t = int(__fastcall*)(void*, void*, GgpoNetworkStats*, int);
 
 RollbackStats::Sample g_live[RollbackStats::kLiveSamples] = {};
 int g_liveCount = 0;
@@ -47,7 +34,6 @@ float g_rollbacksPerSecond = 0.0f;
 
 char g_status[128] = "no netplay";
 
-constexpr int kStatsEveryFrames = 20;
 constexpr float kSlowFrameMs = 20.0f;
 constexpr int kSummaryBytes = 1024;
 
@@ -55,10 +41,6 @@ bool g_profilerLent = false;
 int g_slowFrames = 0;
 float g_worstFrameMs = 0.0f;
 float g_peakRollbacksPerSecond = 0.0f;
-
-int g_statsCountdown = 1;
-GgpoNetworkStats g_lastStats = {};
-bool g_haveStats = false;
 
 bool ReadByteAt(uintptr_t rva, uint8_t& out)
 {
@@ -73,85 +55,6 @@ bool ReadIntAt(uintptr_t rva, int& out)
 
 	out = static_cast<int>(value);
 	return true;
-}
-
-void* ResolveSession()
-{
-	uint32_t pointer = 0;
-	if (!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kGgpoSession)),
-		pointer))
-	{
-		return nullptr;
-	}
-
-	if (pointer == 0)
-		return nullptr;
-
-	void* session = reinterpret_cast<void*>(pointer);
-	if (!IsReadableMemory(session, sizeof(void*)))
-		return nullptr;
-
-	uint32_t vtable = 0;
-	if (!TryReadDword(session, vtable))
-		return nullptr;
-
-	if (vtable != RvaToAddress(GameOffsets::kGgpoBackendVTable))
-		return nullptr;
-
-	return session;
-}
-
-bool QueryNetworkStats(GgpoNetworkStats& out)
-{
-	memset(&out, 0, sizeof(out));
-
-	if (!g_modVals.netplayDiagnostics)
-		return false;
-
-	if (--g_statsCountdown > 0)
-		return false;
-
-	g_statsCountdown = kStatsEveryFrames;
-
-	if (!SteamNetwork::HasRecentPeerTraffic(3000))
-		return false;
-
-	void* session = ResolveSession();
-	if (session == nullptr)
-		return false;
-
-	void** vtable = *reinterpret_cast<void***>(session);
-	if (!IsReadableMemory(vtable, sizeof(void*) * (GameOffsets::kGgpoGetNetworkStats + 1)))
-		return false;
-
-	auto getStats = reinterpret_cast<GetNetworkStats_t>(vtable[GameOffsets::kGgpoGetNetworkStats]);
-	if (getStats == nullptr)
-		return false;
-
-	bool got = false;
-
-	for (int handle = 1; handle <= 2; ++handle)
-	{
-		GgpoNetworkStats stats = {};
-
-		__try
-		{
-			if (getStats(session, nullptr, &stats, handle) != 0)
-				continue;
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER)
-		{
-			return got;
-		}
-
-		if (stats.ping <= 0 && got)
-			continue;
-
-		out = stats;
-		got = true;
-	}
-
-	return got;
 }
 
 void PushLive(const RollbackStats::Sample& sample)
@@ -187,8 +90,6 @@ void OnNetplayStarted()
 	g_startCount = 0;
 	g_startArmed = true;
 	g_rateAnchorRollbacks = 0;
-	g_haveStats = false;
-	g_statsCountdown = 1;
 	g_slowFrames = 0;
 	g_worstFrameMs = 0.0f;
 	g_peakRollbacksPerSecond = 0.0f;
@@ -285,31 +186,21 @@ void RollbackStats::Update()
 
 	g_lastTick = now;
 
-	GgpoNetworkStats stats = {};
+	const NetLink::Snapshot& link = NetLink::Current();
 
-	if (QueryNetworkStats(stats))
+	if (link.hasPeer)
 	{
-		g_lastStats = stats;
-		g_haveStats = true;
-	}
+		sample.ping = link.peer.ping;
+		sample.localFramesBehind = link.peer.localBehind;
+		sample.remoteFramesBehind = link.peer.remoteBehind;
+		sample.sendQueue = link.peer.pending;
+		sample.kbpsSent = link.peer.kbps;
 
-	if (g_haveStats)
-	{
-		stats = g_lastStats;
-
-		sample.ping = stats.ping;
-		sample.localFramesBehind = stats.localFramesBehind;
-		sample.remoteFramesBehind = stats.remoteFramesBehind;
-		sample.sendQueue = stats.sendQueueLen;
-		sample.kbpsSent = stats.kbpsSent;
-
-		sprintf_s(g_status, "frame %d, %d rollbacks, %d ms", sample.frame, sample.rollbacks,
-			sample.ping);
+		sprintf_s(g_status, "frame %d, %d rollbacks, %d ms", sample.frame, sample.rollbacks, sample.ping);
 	}
 	else
 	{
-		sprintf_s(g_status, "frame %d, %d rollbacks, no GGPO stats", sample.frame,
-			sample.rollbacks);
+		sprintf_s(g_status, "frame %d, %d rollbacks, no peer", sample.frame, sample.rollbacks);
 	}
 
 	Track(sample);
@@ -326,7 +217,7 @@ bool RollbackStats::IsNetplayActive()
 
 bool RollbackStats::HasSession()
 {
-	return ResolveSession() != nullptr;
+	return NetLink::Current().backend == NetLink::Backend_Players;
 }
 
 int RollbackStats::GetFrame()

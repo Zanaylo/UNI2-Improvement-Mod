@@ -86,10 +86,10 @@ struct ModValues
 
 	bool replayAutoExport;
 
-	bool onlineSafety;
 	bool roomRosterFix;
 	bool republishPingLocation;
-	bool netplayDiagnostics;
+	bool netLog;
+	bool netLogGgpo;
 	bool sharePalettes;
 
 	bool advancedStages;

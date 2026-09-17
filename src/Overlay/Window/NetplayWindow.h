@@ -14,6 +14,7 @@ protected:
 private:
 	void DrawRollbackTab();
 	void DrawStartCapture();
+	void DrawNetworkLogTab();
 	void DrawRoomTab();
 	void DrawOpponentsTab();
 	void DrawPrivacyTab();

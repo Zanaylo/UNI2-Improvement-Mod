@@ -6,11 +6,11 @@
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cmath>
 
 namespace {
 
-// World coordinates are mapped through this, so a wrong answer moves every hitbox.
 float ReferenceSize(uintptr_t rva, float fallback)
 {
 	uint32_t value = 0;
@@ -135,8 +135,12 @@ bool Camera::PixelToScreen(float pixelX, float pixelY, float& outScreenX, float&
 	const ImGuiIO& io = ImGui::GetIO();
 	if (io.DisplaySize.x > 0.0f && io.DisplaySize.y > 0.0f)
 	{
-		outScreenX *= io.DisplaySize.x / ReferenceWidth();
-		outScreenY *= io.DisplaySize.y / ReferenceHeight();
+		const float width = ReferenceWidth();
+		const float height = ReferenceHeight();
+		const float scale = (std::min)(io.DisplaySize.x / width, io.DisplaySize.y / height);
+
+		outScreenX = outScreenX * scale + (io.DisplaySize.x - width * scale) * 0.5f;
+		outScreenY = outScreenY * scale + (io.DisplaySize.y - height * scale) * 0.5f;
 	}
 
 	return std::isfinite(outScreenX) && std::isfinite(outScreenY);

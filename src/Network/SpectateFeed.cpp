@@ -4,34 +4,44 @@
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
 #include "Hooks/HookManager.h"
+#include "Network/NetLog.h"
 
 #include <Windows.h>
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 
 namespace {
 
 typedef int(__fastcall* PollFn)(void*, void*, int, int);
 typedef int(__fastcall* SyncInputFn)(void*, void*, void*, int, int*);
+typedef void(__cdecl* OnEventFn)(void*);
 
 constexpr int kDepth = 4096;
 constexpr int kFirstTarget = 8;
 constexpr int kTargetStep = 4;
 constexpr int kMostTarget = 45;
 constexpr DWORD kIdlePollMs = 40;
+constexpr int kBodyBytes = GameOffsets::kSpectatorInputBytes - sizeof(int32_t);
 
 struct Input
 {
 	int32_t frame;
-	uint8_t body[GameOffsets::kSpectatorInputBytes - sizeof(int32_t)];
+	uint8_t body[kBodyBytes];
+};
+
+struct Event
+{
+	int32_t code;
+	int32_t values[7];
 };
 
 PollFn oPoll = nullptr;
 SyncInputFn oSyncInput = nullptr;
 
 Input g_inputs[kDepth] = {};
-int g_newest = -1;
+int g_contiguous = -1;
 int g_next = 0;
 int g_target = kFirstTarget;
 int g_stalls = 0;
@@ -40,7 +50,10 @@ DWORD g_polledAt = 0;
 
 int ReadInt(uintptr_t address)
 {
-	return *reinterpret_cast<const int*>(address);
+	int value = 0;
+	TryReadMemory(&value, reinterpret_cast<const void*>(address), sizeof(value));
+
+	return value;
 }
 
 Input* Slot(uintptr_t backend, int frame)
@@ -50,36 +63,56 @@ Input* Slot(uintptr_t backend, int frame)
 	return reinterpret_cast<Input*>(backend + GameOffsets::kSpectatorInputs + slot * GameOffsets::kSpectatorInputBytes);
 }
 
-void Harvest(uintptr_t backend)
+void Advance()
 {
-	const int next = ReadInt(backend + GameOffsets::kSpectatorNextFrame);
-
-	for (int i = 0; i < GameOffsets::kSpectatorInputSlots; ++i)
-	{
-		const Input* const ring = Slot(backend, i);
-		const int frame = ring->frame;
-
-		if (frame < next || frame - next >= kDepth)
-			continue;
-
-		Input& kept = g_inputs[frame % kDepth];
-
-		if (kept.frame == frame)
-			continue;
-
-		kept = *ring;
-		g_newest = (std::max)(g_newest, frame);
-	}
+	while (g_inputs[(g_contiguous + 1) % kDepth].frame == g_contiguous + 1)
+		++g_contiguous;
 }
 
-int __fastcall HookedPoll(void* backend, void* edx, int timeout, int unused)
+bool Fire(uintptr_t backend, int code)
 {
-	const int result = oPoll(backend, edx, timeout, unused);
+	const OnEventFn onEvent = reinterpret_cast<OnEventFn>(static_cast<uintptr_t>(
+		static_cast<uint32_t>(ReadInt(backend + GameOffsets::kSpectatorOnEvent))));
 
-	Harvest(reinterpret_cast<uintptr_t>(backend));
+	if (!IsAddressInGameModule(reinterpret_cast<uintptr_t>(onEvent)))
+		return false;
+
+	Event event = {};
+	event.code = code;
+
+	__try
+	{
+		onEvent(&event);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void Drive(uintptr_t backend)
+{
 	g_polledAt = GetTickCount();
 
-	return result;
+	const uint8_t* const synchronizing = reinterpret_cast<const uint8_t*>(backend + GameOffsets::kSpectatorSynchronizing);
+
+	if (*synchronizing == 0 || g_contiguous + 1 < g_target)
+		return;
+
+	const bool fired = Fire(backend, GameOffsets::kGgpoEventSynchronized) && Fire(backend, GameOffsets::kGgpoEventRunning);
+	const uint8_t cleared = 0;
+
+	TryWriteMemory(reinterpret_cast<void*>(backend + GameOffsets::kSpectatorSynchronizing), &cleared, sizeof(cleared));
+	NetLog::Write("spectate feed: %d relayed frames buffered, the spectator session is running%s", g_contiguous + 1,
+		fired ? "" : " (the game's event callback could not be called)");
+}
+
+int __fastcall HookedPoll(void* backend, void*, int, int)
+{
+	Drive(reinterpret_cast<uintptr_t>(backend));
+	return 0;
 }
 
 void Stall()
@@ -90,7 +123,7 @@ void Stall()
 	g_buffering = true;
 	++g_stalls;
 	g_target = (std::min)(g_target + kTargetStep, kMostTarget);
-	LOG("SpectateFeed: ran out of inputs at frame %d, now buffering %d frames", g_next, g_target);
+	NetLog::Write("spectate feed: ran out of relayed inputs at frame %d, now buffering %d frames", g_next, g_target);
 }
 
 int __fastcall HookedSyncInput(void* self, void* edx, void* values, int size, int* flags)
@@ -104,7 +137,7 @@ int __fastcall HookedSyncInput(void* self, void* edx, void* values, int size, in
 	g_next = next;
 
 	const Input& kept = g_inputs[next % kDepth];
-	const int ready = next >= 0 && kept.frame == next ? g_newest - next + 1 : 0;
+	const int ready = next >= 0 && kept.frame == next ? g_contiguous - next + 1 : 0;
 
 	if (ready <= 0)
 	{
@@ -140,39 +173,29 @@ uintptr_t SpectatorSession()
 {
 	uint32_t session = 0;
 	uint32_t vtable = 0;
-	uint32_t poll = 0;
 
 	if (!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kGgpoSession)), session) || session == 0)
 		return 0;
 
-	if (!TryReadDword(reinterpret_cast<const void*>(session), vtable) ||
-		!TryReadDword(reinterpret_cast<const void*>(vtable + GameOffsets::kGgpoVTablePoll * sizeof(uint32_t)), poll))
-	{
+	if (!TryReadDword(reinterpret_cast<const void*>(session), vtable))
 		return 0;
-	}
 
-	return poll == RvaToAddress(GameOffsets::kFnSpectatorPoll) ? session : 0;
-}
-
-bool CallPoll(uintptr_t session)
-{
-	__try
-	{
-		reinterpret_cast<PollFn>(RvaToAddress(GameOffsets::kFnSpectatorPoll))(reinterpret_cast<void*>(session), nullptr, 0, 0);
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		return false;
-	}
-
-	return true;
+	return vtable == RvaToAddress(GameOffsets::kGgpoSpectatorBackendVTable) ? session : 0;
 }
 
 }
 
-bool SpectateFeed::Install()
+bool SpectateFeed::SetActive(bool active)
 {
 	if (oPoll != nullptr && oSyncInput != nullptr)
+	{
+		const bool poll = HookManager::SetHookEnabled(reinterpret_cast<void*>(RvaToAddress(GameOffsets::kFnSpectatorPoll)), active);
+		const bool sync = HookManager::SetHookEnabled(reinterpret_cast<void*>(RvaToAddress(GameOffsets::kFnSpectatorSyncInput)), active);
+
+		return poll && sync;
+	}
+
+	if (!active)
 		return true;
 
 	return Hook(GameOffsets::kFnSpectatorPoll, &HookedPoll, reinterpret_cast<void**>(&oPoll), "SpectatorPoll") &&
@@ -184,12 +207,34 @@ void SpectateFeed::Reset()
 	for (Input& input : g_inputs)
 		input.frame = -1;
 
-	g_newest = -1;
+	g_contiguous = -1;
 	g_next = 0;
 	g_target = kFirstTarget;
 	g_stalls = 0;
 	g_buffering = true;
 	g_polledAt = 0;
+}
+
+void SpectateFeed::Store(int first, int count, int bytes, const uint8_t* data)
+{
+	if (first < 0 || count <= 0 || bytes <= 0 || bytes > kBodyBytes - static_cast<int>(sizeof(int32_t)) || data == nullptr)
+		return;
+
+	for (int i = 0; i < count; ++i)
+	{
+		const int frame = first + i;
+
+		if (frame < g_next || frame - g_next >= kDepth)
+			continue;
+
+		Input& kept = g_inputs[frame % kDepth];
+		kept.frame = frame;
+		memset(kept.body, 0, sizeof(kept.body));
+		memcpy(kept.body, &bytes, sizeof(int32_t));
+		memcpy(kept.body + sizeof(int32_t), data + i * bytes, static_cast<size_t>(bytes));
+	}
+
+	Advance();
 }
 
 void SpectateFeed::Pump()
@@ -199,16 +244,18 @@ void SpectateFeed::Pump()
 
 	const uintptr_t session = SpectatorSession();
 
-	if (session == 0)
-		return;
+	if (session != 0)
+		Drive(session);
+}
 
-	if (!CallPoll(session))
-		LOG("SpectateFeed: polling the spectator session faulted");
+int SpectateFeed::Newest()
+{
+	return g_contiguous;
 }
 
 int SpectateFeed::Buffered()
 {
-	return g_newest < g_next ? 0 : g_newest - g_next + 1;
+	return g_contiguous < g_next ? 0 : g_contiguous - g_next + 1;
 }
 
 int SpectateFeed::Target()

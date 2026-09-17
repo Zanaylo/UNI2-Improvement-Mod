@@ -5,7 +5,7 @@
 #include "Game/GameState.h"
 #include "Game/SteamNames.h"
 #include "Network/RollbackStats.h"
-#include "Network/SteamNetwork.h"
+#include "Network/NetLink.h"
 
 #include <Windows.h>
 
@@ -140,7 +140,7 @@ void OpponentLog::Update()
 	if (!g_initialized)
 		return;
 
-	if (!SteamNetwork::HasPeer())
+	if (!NetLink::HasPeer())
 	{
 		g_currentPeer = 0;
 		g_recordedPeer = 0;
@@ -148,7 +148,7 @@ void OpponentLog::Update()
 		return;
 	}
 
-	const uint64_t peer = SteamNetwork::GetPeer();
+	const uint64_t peer = NetLink::Peer();
 	const DWORD now = GetTickCount();
 
 	if (peer != g_currentPeer)

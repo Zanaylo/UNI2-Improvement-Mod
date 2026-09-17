@@ -1,9 +1,7 @@
 #include "Network/RoomPing.h"
 
-#include "Core/logger.h"
-#include "Core/utils.h"
-#include "Game/GameOffsets.h"
-#include "Network/OnlineSafety.h"
+#include "Network/NetGate.h"
+#include "Network/NetLog.h"
 #include "Network/SteamInterfaces.h"
 
 #include <Windows.h>
@@ -17,151 +15,90 @@ constexpr const char* kMemberPingKey = "MemberPropertyKey_PingLocation";
 constexpr DWORD kRepublishMs = 30000;
 constexpr DWORD kRetryMs = 5000;
 
-bool g_enabled = true;
-bool g_initialized = false;
+volatile LONG g_enabled = 0;
 
 uint64_t g_lobby = 0;
-int g_publishCount = 0;
-DWORD g_lastPublishTick = 0;
+volatile LONG g_publishCount = 0;
+volatile LONG g_lastPublishTick = 0;
 DWORD g_lastAttemptTick = 0;
 
-char g_location[SteamInterfaces::kPingLocationStringMax] = {};
-char g_status[192] = "not in a room";
+SRWLOCK g_lock = SRWLOCK_INIT;
+char g_status[160] = "off";
 
-uint64_t ReadLobbyId()
+void Say(const char* text)
 {
-	const uintptr_t address = RvaToAddress(GameOffsets::kSessionManagerLobbyId);
-
-	uint32_t low = 0;
-	uint32_t high = 0;
-
-	if (!TryReadUnaligned(reinterpret_cast<const void*>(address), low))
-		return 0;
-
-	if (!TryReadUnaligned(reinterpret_cast<const void*>(address + 4), high))
-		return 0;
-
-	return (static_cast<uint64_t>(high) << 32) | low;
+	AcquireSRWLockExclusive(&g_lock);
+	strncpy_s(g_status, text, _TRUNCATE);
+	ReleaseSRWLockExclusive(&g_lock);
 }
 
-bool LooksLikeLobby(uint64_t id)
-{
-	if (id == 0)
-		return false;
-
-	const uint32_t universe = static_cast<uint32_t>((id >> 56) & 0xff);
-	const uint32_t accountType = static_cast<uint32_t>((id >> 52) & 0x0f);
-
-	return universe == 1 && accountType == 8;
-}
-
-bool DuePublish(DWORD now)
+bool Due(DWORD now)
 {
 	if (g_publishCount == 0)
-		return true;
+		return g_lastAttemptTick == 0 || now - g_lastAttemptTick >= kRetryMs;
 
-	return now - g_lastPublishTick >= kRepublishMs;
+	return now - static_cast<DWORD>(g_lastPublishTick) >= kRepublishMs;
 }
 
 }
 
-bool RoomPing::Initialize()
+void RoomPing::Tick(const NetLink::Snapshot& snapshot)
 {
-	g_initialized = true;
-	strncpy_s(g_status, "waiting for a room", _TRUNCATE);
-	return true;
-}
-
-void RoomPing::Update()
-{
-	if (!g_initialized || !g_enabled)
-		return;
-
-	if (!OnlineSafety::MayWriteRoomState())
-		return;
-
-	const uint64_t lobby = ReadLobbyId();
-
-	if (!LooksLikeLobby(lobby))
+	if (snapshot.lobby != g_lobby)
 	{
-		if (g_lobby != 0)
-		{
-			g_lobby = 0;
-			g_publishCount = 0;
-			strncpy_s(g_status, "not in a room", _TRUNCATE);
-		}
-
-		return;
+		g_lobby = snapshot.lobby;
+		InterlockedExchange(&g_publishCount, 0);
+		g_lastAttemptTick = 0;
 	}
 
-	if (lobby != g_lobby)
-	{
-		g_lobby = lobby;
-		g_publishCount = 0;
-		LOG("RoomPing: room %llu", static_cast<unsigned long long>(lobby));
-	}
+	if (g_enabled == 0 || g_lobby == 0 || !NetGate::MayTouchRoom(snapshot))
+		return;
 
 	const DWORD now = GetTickCount();
 
-	if (!DuePublish(now))
-		return;
-
-	if (now - g_lastAttemptTick < kRetryMs && g_lastAttemptTick != 0)
+	if (!Due(now))
 		return;
 
 	g_lastAttemptTick = now;
 
 	char location[SteamInterfaces::kPingLocationStringMax] = {};
+
 	if (!SteamInterfaces::GetLocalPingLocation(location, sizeof(location)))
 	{
-		strncpy_s(g_status, "Steam has no ping location yet", _TRUNCATE);
+		Say("Steam has no ping location yet");
 		return;
 	}
 
-	if (!SteamInterfaces::SetLobbyMemberData(lobby, kMemberPingKey, location))
+	if (!SteamInterfaces::SetLobbyMemberData(g_lobby, kMemberPingKey, location))
 	{
-		strncpy_s(g_status, "publishing the ping location failed", _TRUNCATE);
+		Say("publishing the ping location failed");
 		return;
 	}
 
-	strncpy_s(g_location, location, _TRUNCATE);
-	g_lastPublishTick = now;
-	++g_publishCount;
+	InterlockedExchange(&g_lastPublishTick, static_cast<LONG>(now));
+	InterlockedIncrement(&g_publishCount);
 
-	sprintf_s(g_status, "republished %d time(s) in room %llu", g_publishCount,
-		static_cast<unsigned long long>(lobby));
+	char status[160] = {};
+	sprintf_s(status, "republished %ld time(s) in room %llu", static_cast<long>(g_publishCount),
+		static_cast<unsigned long long>(g_lobby));
+	Say(status);
+	NetLog::Write("room ping: %s", status);
 }
 
 bool RoomPing::IsEnabled()
 {
-	return g_enabled;
+	return g_enabled != 0;
 }
 
 void RoomPing::SetEnabled(bool enabled)
 {
-	g_enabled = enabled;
-}
-
-uint64_t RoomPing::GetLobbyId()
-{
-	return g_lobby;
-}
-
-uint64_t RoomPing::ReadLobbyNow()
-{
-	const uint64_t lobby = ReadLobbyId();
-
-	return LooksLikeLobby(lobby) ? lobby : 0;
-}
-
-bool RoomPing::InRoom()
-{
-	return g_lobby != 0;
+	InterlockedExchange(&g_enabled, enabled ? 1 : 0);
+	Say(enabled ? "waiting for a room" : "off");
 }
 
 int RoomPing::GetPublishCount()
 {
-	return g_publishCount;
+	return static_cast<int>(g_publishCount);
 }
 
 unsigned RoomPing::GetSecondsSinceLastPublish()
@@ -169,15 +106,12 @@ unsigned RoomPing::GetSecondsSinceLastPublish()
 	if (g_publishCount == 0)
 		return 0;
 
-	return (GetTickCount() - g_lastPublishTick) / 1000;
+	return (GetTickCount() - static_cast<DWORD>(g_lastPublishTick)) / 1000;
 }
 
-const char* RoomPing::GetLastLocation()
+void RoomPing::StatusText(char* out, int size)
 {
-	return g_location;
-}
-
-const char* RoomPing::GetStatusText()
-{
-	return g_status;
+	AcquireSRWLockShared(&g_lock);
+	strncpy_s(out, size, g_status, _TRUNCATE);
+	ReleaseSRWLockShared(&g_lock);
 }

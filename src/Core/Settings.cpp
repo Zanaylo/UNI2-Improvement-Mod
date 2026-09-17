@@ -29,7 +29,7 @@ namespace {
 
 const char* const kIniFileName = "UNI2_IM.ini";
 
-constexpr int kSettingsRevision = 2;
+constexpr int kSettingsRevision = 3;
 
 int ClampRange(int value, int lowest, int highest)
 {
@@ -237,6 +237,15 @@ void MigrateIni(int from, const std::string& path)
 		WritePrivateProfileStringA("Netplay", "Diagnostics", "0", path.c_str());
 		LOG("Settings: [Netplay] Diagnostics was turned off - it reaches into the netcode and is "
 			"a diagnostic, not a feature");
+	}
+
+	if (from < 3)
+	{
+		WritePrivateProfileStringA("Netplay", "RoomRosterFix", "0", path.c_str());
+		WritePrivateProfileStringA("Netplay", "RepublishPingLocation", "0", path.c_str());
+		WritePrivateProfileStringA("Netplay", "SafeOnline", nullptr, path.c_str());
+		WritePrivateProfileStringA("Netplay", "Diagnostics", nullptr, path.c_str());
+		LOG("Settings: RoomRosterFix and RepublishPingLocation are off, they write into the game's own room state");
 	}
 
 	char revision[16] = {};
@@ -555,10 +564,10 @@ void Settings::ApplySettings()
 
 	g_modVals.notifications = g_settings.notifications != 0;
 
-	g_modVals.onlineSafety = g_settings.onlineSafety != 0;
 	g_modVals.roomRosterFix = g_settings.roomRosterFix != 0;
 	g_modVals.republishPingLocation = g_settings.republishPingLocation != 0;
-	g_modVals.netplayDiagnostics = g_settings.netplayDiagnostics != 0;
+	g_modVals.netLog = g_settings.netLog != 0;
+	g_modVals.netLogGgpo = g_settings.netLogGgpo != 0;
 	g_modVals.sharePalettes = g_settings.sharePalettes != 0;
 
 	g_modVals.advancedStages = g_settings.advancedStages != 0;

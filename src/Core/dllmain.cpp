@@ -5,6 +5,7 @@
 #include "Core/Settings.h"
 #include "Core/SoundOutput.h"
 #include "Web/UpdateCheck.h"
+#include "Core/ModuleInventory.h"
 #include "Core/crashdump.h"
 #include "Core/info.h"
 #include "Core/interfaces.h"
@@ -335,6 +336,9 @@ DWORD WINAPI InitThread(LPVOID)
 	HookManager::StartIntegrityWatchdog();
 
 	LOG("Initialization finished");
+	D3D9Wrapper::MarkInitializationFinished();
+	ReclaimCrashHandler();
+	ModuleInventory::LogForeignModules("at startup");
 
 	WarnIfTheDeviceWasMissed();
 	return 0;
@@ -410,6 +414,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 		}
 
 		SoundOutput::Stop();
+		NetplayTick::Shutdown();
 		WindowManager::GetInstance().Shutdown();
 		HookManager::Shutdown();
 

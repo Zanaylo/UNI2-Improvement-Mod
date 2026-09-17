@@ -21,6 +21,7 @@ namespace ModHandshake
 
 	PeerState GetPeerState();
 	bool PeerHasMod();
+	bool HeardFrom(uint64_t id);
 
 	const char* PeerVersion();
 	const char* PeerWanted();

@@ -4,4 +4,5 @@ namespace NetplayTick
 {
 	bool Initialize();
 	void Update();
+	void Shutdown();
 }

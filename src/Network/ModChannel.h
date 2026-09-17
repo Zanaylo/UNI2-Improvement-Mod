@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Network/NetLink.h"
+
+#include <Windows.h>
+
 #include <cstdint>
 
 namespace ModChannel
@@ -9,6 +13,8 @@ namespace ModChannel
 	constexpr uint16_t kKindPalette = 1;
 	constexpr uint16_t kKindHello = 2;
 	constexpr uint16_t kKindSpectate = 3;
+
+	constexpr int kMaxBytes = 4096;
 
 #pragma pack(push, 1)
 	struct Header
@@ -23,5 +29,13 @@ namespace ModChannel
 
 	void Register(uint16_t kind, Handler handler);
 
+	bool SendToPeer(const void* data, int size, DWORD ttlMs, const char* label);
+	bool SendTo(uint64_t to, const void* data, int size, DWORD ttlMs, const char* label);
+
+	void Flush(const NetLink::Snapshot& snapshot);
+	void Receive();
+
 	void Pump();
+
+	int Queued();
 }

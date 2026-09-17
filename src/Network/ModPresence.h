@@ -1,26 +1,31 @@
 #pragma once
 
+#include "Network/ModHandshake.h"
+#include "Network/NetLink.h"
+
 #include <cstdint>
 
 namespace ModPresence
 {
 	constexpr int kMaxMembers = 16;
+	constexpr int kVersionBytes = 32;
 
-	void Update();
+	struct Member
+	{
+		uint64_t id;
+		char version[kVersionBytes];
+		char pick[ModHandshake::kDataIdBytes];
+		bool hasMod;
+	};
+
+	void SetPick(const char* pick);
+	void Tick(const NetLink::Snapshot& snapshot);
 
 	bool InRoom();
-
 	int RoomSize();
 	int ModCount();
-
-	bool HasMod(int index);
-	uint64_t MemberAt(int index);
+	bool MemberAt(int index, Member& out);
 
 	bool PeerHasMod(uint64_t id);
-	const char* VersionAt(int index);
-	const char* PickAt(int index);
-
 	bool RoomAgrees(const char* pick);
-
-	const char* GetStatusText();
 }

@@ -1,34 +1,28 @@
 #include "Network/PlayerCount.h"
 
-#include "Core/logger.h"
+#include "Network/NetLog.h"
 #include "Network/SteamInterfaces.h"
 
 #include <Windows.h>
-
-#include <cstdio>
-#include <cstring>
 
 namespace {
 
 constexpr DWORD kRefreshMs = 300000;
 constexpr DWORD kRetryMs = 30000;
 
-int g_players = -1;
+volatile LONG g_players = -1;
 uint64_t g_call = 0;
 DWORD g_lastRequest = 0;
 DWORD g_nextRequest = 0;
 
-char g_status[96] = "not asked yet";
+const char* volatile g_status = "not asked yet";
 
 bool DueRequest(DWORD now)
 {
 	if (g_call != 0)
 		return false;
 
-	if (g_lastRequest == 0)
-		return true;
-
-	return now - g_lastRequest >= g_nextRequest;
+	return g_lastRequest == 0 || now - g_lastRequest >= g_nextRequest;
 }
 
 void Request(DWORD now)
@@ -38,7 +32,7 @@ void Request(DWORD now)
 	g_call = SteamInterfaces::RequestPlayerCount();
 
 	if (g_call == 0)
-		strncpy_s(g_status, "Steam did not take the request", _TRUNCATE);
+		g_status = "Steam did not take the request";
 }
 
 void Collect()
@@ -53,15 +47,13 @@ void Collect()
 
 	if (failed)
 	{
-		strncpy_s(g_status, "Steam could not answer", _TRUNCATE);
+		g_status = "Steam could not answer";
 		return;
 	}
 
-	g_players = players;
+	InterlockedExchange(&g_players, players);
 	g_nextRequest = kRefreshMs;
-
-	sprintf_s(g_status, "%d playing right now", g_players);
-	LOG("PlayerCount: %s", g_status);
+	NetLog::Write("player count: %d playing right now", players);
 }
 
 }
@@ -90,7 +82,7 @@ bool PlayerCount::IsKnown()
 
 int PlayerCount::Get()
 {
-	return g_players;
+	return static_cast<int>(g_players);
 }
 
 const char* PlayerCount::GetStatusText()

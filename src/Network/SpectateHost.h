@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Network/NetLink.h"
+
 #include <cstdint>
 #include <vector>
 
@@ -21,12 +23,16 @@ namespace SpectateHost
 		uint32_t armedAt;
 		bool prepared;
 		bool watching;
+		int sentThrough;
+		int ackedFrame;
+		uint32_t rewoundAt;
 	};
 
 	void Initialize();
 	void Update();
+	void Tick(const NetLink::Snapshot& snapshot);
 
-	void Receive(uint8_t type, uint64_t from);
+	void Receive(uint8_t type, const uint8_t* data, int size, uint64_t from);
 
 	bool IsAllowed();
 	void SetAllowed(bool allowed);

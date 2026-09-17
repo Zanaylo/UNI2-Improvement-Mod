@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Network/NetLink.h"
+
 namespace MatchKind
 {
 	enum Kind
@@ -9,6 +11,7 @@ namespace MatchKind
 		Kind_Other
 	};
 
+	void Tick(const NetLink::Snapshot& snapshot);
 	Kind Classify();
 
 	const char* Describe(Kind kind);

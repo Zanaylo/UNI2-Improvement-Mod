@@ -7,13 +7,13 @@
 #include "Hooks/HookManager.h"
 #include "Network/ModHandshake.h"
 #include "Network/ReadyFlags.h"
-#include "Network/RoomPing.h"
 #include "Network/SpectateCode.h"
 #include "Network/SpectateFeed.h"
 #include "Network/SpectateMatch.h"
 #include "Network/SpectateWire.h"
 #include "Network/SteamInterfaces.h"
-#include "Network/SteamNetwork.h"
+#include "Network/ModChannel.h"
+#include "Network/NetLog.h"
 
 #include <Windows.h>
 
@@ -34,6 +34,10 @@ constexpr int kAsks = 5;
 constexpr DWORD kArmedEveryMs = 1000;
 constexpr DWORD kEnterTimeoutMs = 20000;
 constexpr DWORD kFriendsEveryMs = 3000;
+constexpr DWORD kFriendsWantedMs = 5000;
+constexpr DWORD kMessageTtlMs = 5000;
+constexpr DWORD kAckEveryMs = 500;
+constexpr DWORD kAckTtlMs = 1000;
 constexpr DWORD kReportEveryMs = 1000;
 constexpr DWORD kEndGraceMs = 30000;
 constexpr uint32_t kGgpoPath = 1;
@@ -49,6 +53,7 @@ uint64_t g_host = 0;
 DWORD g_sentAt = 0;
 DWORD g_enteredAt = 0;
 DWORD g_reportedAt = 0;
+DWORD g_ackedAt = 0;
 DWORD g_endedAt = 0;
 int g_asks = 0;
 bool g_matchReady = false;
@@ -61,20 +66,28 @@ uint8_t g_description[GameOffsets::kSessionDescriptionSize] = {};
 SRWLOCK g_friendsLock = SRWLOCK_INIT;
 std::vector<SteamFriends::Friend> g_friends;
 DWORD g_friendsAt = 0;
+volatile LONG g_friendsWantedAt = 0;
+bool g_hooksActive = false;
 
 char g_status[192] = "not watching anyone";
+
+bool Activate(bool active);
 
 void Become(State state, const char* status)
 {
 	g_state = state;
 	strncpy_s(g_status, status, _TRUNCATE);
 	LOG("SpectateViewer: %s", g_status);
+	NetLog::Write("spectate viewer: %s", g_status);
+
+	if (state == SpectateViewer::State_Idle)
+		Activate(false);
 }
 
 void Send(SpectateWire::Type type)
 {
 	const SpectateWire::Message message = SpectateWire::Make(type, SpectateWire::Refusal_None);
-	SteamNetwork::SendTo(g_host, &message, sizeof(message));
+	ModChannel::SendTo(g_host, &message, sizeof(message), kMessageTtlMs, "spectate");
 	g_sentAt = GetTickCount();
 }
 
@@ -106,8 +119,8 @@ void Describe()
 	Put(GameOffsets::kDescriptionFrameDelay, ReadGame(GameOffsets::kInputDelayOption) & kByteMask);
 	Put(GameOffsets::kDescriptionPadSlot, ReadGame(GameOffsets::kNetplayPadSlot));
 	Put(GameOffsets::kDescriptionRemotePort, GameOffsets::kGgpoLocalPort);
-	Put(GameOffsets::kDescriptionRemoteSteamLow, static_cast<uint32_t>(g_host));
-	Put(GameOffsets::kDescriptionRemoteSteamHigh, static_cast<uint32_t>(g_host >> 32));
+	Put(GameOffsets::kDescriptionRemoteSteamLow, 0);
+	Put(GameOffsets::kDescriptionRemoteSteamHigh, 0);
 
 	strncpy_s(reinterpret_cast<char*>(g_description + GameOffsets::kDescriptionRemoteIp),
 		GameOffsets::kDescriptionRemoteIpBytes, kLoopback, _TRUNCATE);
@@ -172,6 +185,9 @@ void OnMatchStart(const uint8_t* data, int size)
 
 void RefreshFriends(DWORD now)
 {
+	if (g_friendsWantedAt == 0 || now - static_cast<DWORD>(g_friendsWantedAt) > kFriendsWantedMs)
+		return;
+
 	if (g_friendsAt != 0 && now - g_friendsAt < kFriendsEveryMs)
 		return;
 
@@ -225,7 +241,7 @@ void Enter()
 {
 	g_matchReady = false;
 
-	if (ReadGame(GameOffsets::kGgpoSession) != 0 || RoomPing::InRoom())
+	if (ReadGame(GameOffsets::kGgpoSession) != 0 || NetLink::Lobby() != 0)
 	{
 		Become(SpectateViewer::State_Waiting, "you are in your own match or room, so this match was skipped");
 		return;
@@ -339,10 +355,40 @@ void Finish(const char* status)
 	Become(SpectateViewer::State_Waiting, status);
 }
 
+void SendAck(DWORD now)
+{
+	if (now - g_ackedAt < kAckEveryMs)
+		return;
+
+	g_ackedAt = now;
+
+	SpectateWire::Ack ack = {};
+	ack.message = SpectateWire::Make(SpectateWire::Type_Ack, SpectateWire::Refusal_None);
+	ack.frame = SpectateFeed::Newest();
+	ModChannel::SendTo(g_host, &ack, sizeof(ack), kAckTtlMs, "spectate ack");
+}
+
+void OnInputs(const uint8_t* data, int size)
+{
+	if (!SpectateViewer::IsJoining() || size < static_cast<int>(sizeof(SpectateWire::Inputs)))
+		return;
+
+	SpectateWire::Inputs header = {};
+	memcpy(&header, data, sizeof(header));
+
+	const int expected = static_cast<int>(sizeof(header)) + header.count * header.bytes;
+
+	if (header.bytes == 0 || header.bytes > SpectateWire::kInputBytes || size < expected)
+		return;
+
+	SpectateFeed::Store(header.first, header.count, header.bytes, data + sizeof(header));
+}
+
 void Arrive(DWORD now)
 {
 	ReadyFlags::HoldBattleStart();
 	Report(now);
+	SendAck(now);
 
 	if (g_dropped)
 	{
@@ -363,6 +409,7 @@ void Follow(DWORD now)
 {
 	ReadyFlags::HoldBattleStart();
 	SpectateFeed::Pump();
+	SendAck(now);
 
 	if (g_dropped)
 	{
@@ -414,29 +461,58 @@ const char* RefusalText(uint8_t detail)
 
 }
 
-void SpectateViewer::Initialize()
-{
-	if (oChooseSession != nullptr)
-		return;
+namespace {
 
+bool HookSessionBuilder(bool active)
+{
 	void* const target = reinterpret_cast<void*>(RvaToAddress(GameOffsets::kFnChooseRoomSession));
 
-	if (!IsAddressInGameModule(reinterpret_cast<uintptr_t>(target)) ||
-		!HookManager::CreateAndEnableHook(target, &HookedChooseSession, reinterpret_cast<void**>(&oChooseSession),
+	if (oChooseSession != nullptr)
+		return HookManager::SetHookEnabled(target, active);
+
+	if (!active)
+		return true;
+
+	if (IsAddressInGameModule(reinterpret_cast<uintptr_t>(target)) &&
+		HookManager::CreateAndEnableHook(target, &HookedChooseSession, reinterpret_cast<void**>(&oChooseSession),
 			"ChooseRoomSession"))
 	{
-		oChooseSession = nullptr;
-		LOG("SpectateViewer: the game's session builder is not where this game version expects it");
+		return true;
 	}
 
-	SpectateFeed::Install();
+	oChooseSession = nullptr;
+	LOG("SpectateViewer: the game's session builder is not where this game version expects it");
+	return false;
+}
+
+bool Activate(bool active)
+{
+	if (active == g_hooksActive)
+		return true;
+
+	const bool builder = HookSessionBuilder(active);
+	const bool feed = SpectateFeed::SetActive(active);
+
+	g_hooksActive = active && builder && feed;
+	NetLog::Write("spectate viewer hooks %s", g_hooksActive ? "active" : "parked");
+
+	return builder && feed;
+}
+
+}
+
+void SpectateViewer::Initialize()
+{
+}
+
+void SpectateViewer::Tick(const NetLink::Snapshot&)
+{
+	RefreshFriends(GetTickCount());
 }
 
 void SpectateViewer::Update()
 {
 	const DWORD now = GetTickCount();
-
-	RefreshFriends(now);
 
 	switch (g_state)
 	{
@@ -483,6 +559,9 @@ void SpectateViewer::Receive(uint8_t type, uint8_t detail, const uint8_t* data, 
 	case SpectateWire::Type_Behind:
 		g_dropped = IsJoining();
 		return;
+	case SpectateWire::Type_Inputs:
+		OnInputs(data, size);
+		return;
 	case SpectateWire::Type_MatchEnd:
 		if (g_state == State_Watching && g_endedAt == 0)
 			g_endedAt = GetTickCount();
@@ -494,7 +573,7 @@ void SpectateViewer::Receive(uint8_t type, uint8_t detail, const uint8_t* data, 
 
 bool SpectateViewer::Watch(uint64_t host)
 {
-	if (host == 0 || oChooseSession == nullptr)
+	if (host == 0)
 		return false;
 
 	if (host == SteamInterfaces::GetOwnSteamId())
@@ -503,9 +582,15 @@ bool SpectateViewer::Watch(uint64_t host)
 		return false;
 	}
 
-	if (RoomPing::InRoom())
+	if (NetLink::Lobby() != 0)
 	{
 		strncpy_s(g_status, "leave your room first", _TRUNCATE);
+		return false;
+	}
+
+	if (!Activate(true))
+	{
+		strncpy_s(g_status, "watching is not supported on this game version", _TRUNCATE);
 		return false;
 	}
 
@@ -567,6 +652,8 @@ uint64_t SpectateViewer::Host()
 
 void SpectateViewer::Friends(std::vector<SteamFriends::Friend>& out)
 {
+	InterlockedExchange(&g_friendsWantedAt, static_cast<LONG>(GetTickCount()));
+
 	AcquireSRWLockShared(&g_friendsLock);
 	out = g_friends;
 	ReleaseSRWLockShared(&g_friendsLock);

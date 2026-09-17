@@ -1,5 +1,6 @@
 #include "D3D9/GraphicsWrapper.h"
 
+#include "Core/ModuleInventory.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/D3D9Proxy.h"
@@ -27,16 +28,6 @@ const char* LastSegment(const char* path)
 {
 	const char* const slash = strrchr(path, '\\');
 	return slash != nullptr ? slash + 1 : path;
-}
-
-bool UnderSystemDirectory(const char* path)
-{
-	const std::string system = GetSystemDirectoryPath();
-
-	if (system.empty() || system.size() >= strlen(path))
-		return false;
-
-	return _strnicmp(path, system.c_str(), system.size()) == 0;
 }
 
 HMODULE OwnerOfVTable(IDirect3DDevice9* device)
@@ -132,7 +123,7 @@ void Settle(HMODULE owner)
 		return;
 	}
 
-	g_wrapper = !UnderSystemDirectory(g_module);
+	g_wrapper = !IsUnderSystemDirectory(g_module);
 
 	if (!ReadProductName(g_module, g_name, sizeof(g_name)))
 		strncpy_s(g_name, LastSegment(g_module), _TRUNCATE);
@@ -152,6 +143,8 @@ void GraphicsWrapper::Detect(IDirect3DDevice9* device)
 {
 	if (g_asked)
 		return;
+
+	ModuleInventory::LogForeignModules("at the first frame");
 
 	g_asked = true;
 

@@ -471,6 +471,34 @@ bool IsHotkeyRepeating(int virtualKey, unsigned delayMs, unsigned intervalMs)
 	return true;
 }
 
+namespace {
+
+bool StartsWithDirectory(const char* path, const char* directory, UINT length)
+{
+	if (length == 0 || length >= strlen(path))
+		return false;
+
+	const bool separated = directory[length - 1] == '\\' || path[length] == '\\';
+
+	return separated && _strnicmp(path, directory, length) == 0;
+}
+
+}
+
+bool IsUnderSystemDirectory(const char* path)
+{
+	if (path == nullptr)
+		return false;
+
+	char system[MAX_PATH] = {};
+	char wow64[MAX_PATH] = {};
+
+	const UINT systemLength = GetSystemDirectoryA(system, MAX_PATH);
+	const UINT wow64Length = GetSystemWow64DirectoryA(wow64, MAX_PATH);
+
+	return StartsWithDirectory(path, system, systemLength) || StartsWithDirectory(path, wow64, wow64Length);
+}
+
 std::string GetSystemDirectoryPath()
 {
 	char path[MAX_PATH] = {};

@@ -1,246 +1,114 @@
 #include "Network/SteamNetwork.h"
 
-#include "Core/logger.h"
-#include "Core/utils.h"
-#include "Hooks/HookManager.h"
+#include "Network/NetLog.h"
 
-#include <MinHook.h>
 #include <Windows.h>
 
-#include <cstdio>
+#include <cstring>
 
 namespace {
 
-constexpr int kSendP2PPacket = 0;
-constexpr int kIsP2PPacketAvailable = 1;
-constexpr int kReadP2PPacket = 2;
-
 constexpr int kSendReliable = 2;
 
-constexpr DWORD kPeerFreshMs = 3000;
+using Accessor_t = void*(__cdecl*)();
+using SendP2PPacket_t = bool(__cdecl*)(void*, uint64_t, const void*, uint32_t, int, int);
+using IsP2PPacketAvailable_t = bool(__cdecl*)(void*, uint32_t*, int);
+using ReadP2PPacket_t = bool(__cdecl*)(void*, void*, uint32_t, uint32_t*, uint64_t*, int);
 
-constexpr int kGetISteamGenericInterface = 12;
+Accessor_t g_accessor = nullptr;
+SendP2PPacket_t g_send = nullptr;
+IsP2PPacketAvailable_t g_available = nullptr;
+ReadP2PPacket_t g_read = nullptr;
 
-using SendP2PPacket_t = bool(__fastcall*)(void*, void*, uint64_t, const void*, uint32_t, int, int);
-using IsP2PPacketAvailable_t = bool(__fastcall*)(void*, void*, uint32_t*, int);
-using ReadP2PPacket_t = bool(__fastcall*)(void*, void*, void*, uint32_t, uint32_t*, uint64_t*, int);
-using GetGenericInterface_t = void*(__fastcall*)(void*, void*, int32_t, int32_t, const char*);
+volatile LONG g_ready = 0;
+char g_status[128] = "not started";
 
-using GetHSteamUser_t = int32_t(__cdecl*)();
-using GetHSteamPipe_t = int32_t(__cdecl*)();
-using SteamClient_t = void*(__cdecl*)();
-
-void* g_networking = nullptr;
-bool g_ready = false;
-bool g_sendHooked = false;
-uint64_t g_peer = 0;
-uint64_t g_lastLoggedPeer = 0;
-
-volatile DWORD g_lastTrafficTick = 0;
-volatile DWORD g_lastPeerTick = 0;
-char g_status[192] = "not started";
-
-SendP2PPacket_t oSendP2PPacket = nullptr;
-
-void* VTableEntry(void* object, int index)
+void* Networking()
 {
-	if (object == nullptr)
-		return nullptr;
-
-	void** vtable = *reinterpret_cast<void***>(object);
-	if (!IsReadableMemory(vtable, sizeof(void*) * (index + 1)))
-		return nullptr;
-
-	return vtable[index];
-}
-
-bool __fastcall HookedSendP2PPacket(void* self, void* edx, uint64_t steamIDRemote, const void* data,
-	uint32_t size, int sendType, int channel)
-{
-	if (steamIDRemote != 0 && channel != SteamNetwork::kChannel)
-	{
-		const DWORD now = GetTickCount();
-
-		g_lastTrafficTick = now;
-
-		if (channel == SteamNetwork::kRollbackChannel)
-		{
-			g_peer = steamIDRemote;
-			g_lastPeerTick = now;
-		}
-	}
-
-	return oSendP2PPacket(self, edx, steamIDRemote, data, size, sendType, channel);
-}
-
-void HookSend()
-{
-	void* target = VTableEntry(g_networking, kSendP2PPacket);
-	if (target == nullptr)
-		return;
-
-	g_sendHooked = HookManager::CreateAndEnableHook(target, &HookedSendP2PPacket,
-		reinterpret_cast<void**>(&oSendP2PPacket), "ISteamNetworking::SendP2PPacket");
-}
-
-}
-
-bool SteamNetwork::Initialize()
-{
-	if (g_ready)
-		return true;
-
-	HMODULE steam = GetModuleHandleA("steam_api.dll");
-	if (steam == nullptr)
-	{
-		strncpy_s(g_status, "steam_api.dll is not loaded", _TRUNCATE);
-		LOG("SteamNetwork: %s", g_status);
-		return false;
-	}
-
-	auto getUser = reinterpret_cast<GetHSteamUser_t>(
-		GetProcAddress(steam, "SteamAPI_GetHSteamUser"));
-	auto getPipe = reinterpret_cast<GetHSteamPipe_t>(
-		GetProcAddress(steam, "SteamAPI_GetHSteamPipe"));
-	auto steamClient = reinterpret_cast<SteamClient_t>(GetProcAddress(steam, "SteamClient"));
-
-	if (getUser == nullptr || getPipe == nullptr || steamClient == nullptr)
-	{
-		strncpy_s(g_status, "steam_api.dll is missing the exports this needs", _TRUNCATE);
-		LOG("SteamNetwork: %s", g_status);
-		return false;
-	}
-
-	void* client = nullptr;
-	int32_t user = 0;
-	int32_t pipe = 0;
-
-	__try
-	{
-		client = steamClient();
-		user = getUser();
-		pipe = getPipe();
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		client = nullptr;
-	}
-
-	if (client == nullptr || pipe == 0)
-	{
-		strncpy_s(g_status, "no Steam client yet", _TRUNCATE);
-		return false;
-	}
-
-	auto generic = reinterpret_cast<GetGenericInterface_t>(
-		VTableEntry(client, kGetISteamGenericInterface));
-
-	if (generic == nullptr)
-	{
-		strncpy_s(g_status, "ISteamClient has no readable vtable", _TRUNCATE);
-		LOG("SteamNetwork: %s", g_status);
-		return false;
-	}
-
 	void* networking = nullptr;
 
 	__try
 	{
-		networking = generic(client, nullptr, user, pipe, "SteamNetworking006");
+		networking = g_accessor();
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
 		networking = nullptr;
 	}
 
-	if (networking == nullptr || VTableEntry(networking, kReadP2PPacket) == nullptr)
+	return networking;
+}
+
+bool Resolve()
+{
+	if (g_accessor != nullptr)
+		return true;
+
+	const HMODULE steam = GetModuleHandleA("steam_api.dll");
+
+	if (steam == nullptr)
+		return false;
+
+	g_send = reinterpret_cast<SendP2PPacket_t>(GetProcAddress(steam, "SteamAPI_ISteamNetworking_SendP2PPacket"));
+	g_available = reinterpret_cast<IsP2PPacketAvailable_t>(
+		GetProcAddress(steam, "SteamAPI_ISteamNetworking_IsP2PPacketAvailable"));
+	g_read = reinterpret_cast<ReadP2PPacket_t>(GetProcAddress(steam, "SteamAPI_ISteamNetworking_ReadP2PPacket"));
+
+	const Accessor_t accessor = reinterpret_cast<Accessor_t>(GetProcAddress(steam, "SteamAPI_SteamNetworking_v006"));
+
+	if (accessor == nullptr || g_send == nullptr || g_available == nullptr || g_read == nullptr)
 	{
-		strncpy_s(g_status, "SteamNetworking006 was not handed over", _TRUNCATE);
-		LOG("SteamNetwork: %s", g_status);
+		strncpy_s(g_status, "steam_api.dll lacks the networking exports", _TRUNCATE);
 		return false;
 	}
 
-	g_networking = networking;
-	g_ready = true;
+	g_accessor = accessor;
+	return true;
+}
 
-	HookSend();
+}
 
-	sprintf_s(g_status, "SteamNetworking006 at 0x%p, channel %d", networking, kChannel);
-	LOG("SteamNetwork: %s", g_status);
+bool SteamNetwork::Initialize()
+{
+	if (g_ready != 0)
+		return true;
+
+	if (!Resolve() || Networking() == nullptr)
+		return false;
+
+	InterlockedExchange(&g_ready, 1);
+	strncpy_s(g_status, "ready, mod channel open", _TRUNCATE);
+	NetLog::Write("steam networking ready, mod channel %d", kChannel);
 	return true;
 }
 
 bool SteamNetwork::IsReady()
 {
-	return g_ready;
-}
-
-bool SteamNetwork::CanSeePeerTraffic()
-{
-	return g_sendHooked;
-}
-
-uint64_t SteamNetwork::GetPeer()
-{
-	return g_peer;
-}
-
-namespace {
-
-bool PeerIsFresh()
-{
-	const DWORD last = g_lastPeerTick;
-
-	if (g_peer == 0 || last == 0)
-		return false;
-
-	return GetTickCount() - last < kPeerFreshMs;
-}
-
-}
-
-bool SteamNetwork::HasPeer()
-{
-	if (!PeerIsFresh())
-		return false;
-
-	if (g_peer != g_lastLoggedPeer)
-	{
-		g_lastLoggedPeer = g_peer;
-		LOG("SteamNetwork: the rollback peer is %llu", (unsigned long long)g_peer);
-	}
-
-	return true;
-}
-
-bool SteamNetwork::HasRecentPeerTraffic(unsigned withinMs)
-{
-	const DWORD last = g_lastTrafficTick;
-	if (last == 0)
-		return false;
-
-	return GetTickCount() - last < withinMs;
-}
-
-bool SteamNetwork::Send(const void* data, int size)
-{
-	if (!PeerIsFresh())
-		return false;
-
-	return SendTo(g_peer, data, size);
+	return g_ready != 0;
 }
 
 bool SteamNetwork::SendTo(uint64_t steamId, const void* data, int size)
 {
-	if (!g_ready || steamId == 0 || data == nullptr || size <= 0)
+	if (g_ready == 0 || steamId == 0 || data == nullptr || size <= 0)
 		return false;
 
-	auto send = reinterpret_cast<SendP2PPacket_t>(VTableEntry(g_networking, kSendP2PPacket));
-	if (send == nullptr)
+	void* const networking = Networking();
+
+	if (networking == nullptr)
 		return false;
 
-	return send(g_networking, nullptr, steamId, data, static_cast<uint32_t>(size), kSendReliable,
-		kChannel);
+	bool sent = false;
+
+	__try
+	{
+		sent = g_send(networking, steamId, data, static_cast<uint32_t>(size), kSendReliable, kChannel);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		sent = false;
+	}
+
+	return sent;
 }
 
 bool SteamNetwork::Receive(void* buffer, int capacity, int& outSize, uint64_t& outPeer)
@@ -248,24 +116,30 @@ bool SteamNetwork::Receive(void* buffer, int capacity, int& outSize, uint64_t& o
 	outSize = 0;
 	outPeer = 0;
 
-	if (!g_ready || buffer == nullptr || capacity <= 0)
+	if (g_ready == 0 || buffer == nullptr || capacity <= 0)
 		return false;
 
-	auto available = reinterpret_cast<IsP2PPacketAvailable_t>(
-		VTableEntry(g_networking, kIsP2PPacketAvailable));
-	auto read = reinterpret_cast<ReadP2PPacket_t>(VTableEntry(g_networking, kReadP2PPacket));
+	void* const networking = Networking();
 
-	if (available == nullptr || read == nullptr)
+	if (networking == nullptr)
 		return false;
 
 	uint32_t size = 0;
-	if (!available(g_networking, nullptr, &size, kChannel) || size == 0)
-		return false;
-
 	uint32_t got = 0;
 	uint64_t from = 0;
+	bool read = false;
 
-	if (!read(g_networking, nullptr, buffer, static_cast<uint32_t>(capacity), &got, &from, kChannel))
+	__try
+	{
+		read = g_available(networking, &size, kChannel) && size != 0 &&
+			g_read(networking, buffer, static_cast<uint32_t>(capacity), &got, &from, kChannel);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		read = false;
+	}
+
+	if (!read)
 		return false;
 
 	outSize = static_cast<int>(got);

@@ -8,6 +8,7 @@
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
 #include "Network/PaletteShare.h"
+#include "Network/NetLink.h"
 #include "Network/SteamNetwork.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteDrawProbe.h"
@@ -167,10 +168,10 @@ void WriteSeatSignals(FILE* file)
 		OnlineState::IsOnline() ? 1 : 0, OnlineState::IsBlind() ? 1 : 0,
 		OnlineState::GetStatusText());
 
-	fprintf(file, "  steam ready %d, sees traffic %d, has peer %d, peer 0x%016llx\n",
-		SteamNetwork::IsReady() ? 1 : 0, SteamNetwork::CanSeePeerTraffic() ? 1 : 0,
-		SteamNetwork::HasPeer() ? 1 : 0,
-		static_cast<unsigned long long>(SteamNetwork::GetPeer()));
+	fprintf(file, "  steam ready %d, blind %d, has peer %d, peer 0x%016llx\n",
+		SteamNetwork::IsReady() ? 1 : 0, NetLink::IsBlind() ? 1 : 0,
+		NetLink::HasPeer() ? 1 : 0,
+		static_cast<unsigned long long>(NetLink::Peer()));
 
 	fprintf(file, "  share status                %s\n", PaletteShare::GetStatusText());
 

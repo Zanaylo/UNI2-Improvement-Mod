@@ -1,6 +1,7 @@
 #include "Hooks/HookManager.h"
 
 #include "Core/Compat.h"
+#include "Core/crashdump.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/DeviceHooks.h"
@@ -53,6 +54,7 @@ struct HookRecord
 	const char* label;
 	DWORD createdTick;
 	bool reported;
+	bool parked;
 };
 
 HookRecord g_records[kMaxRecords] = {};
@@ -233,6 +235,7 @@ void RememberHook(void* requested, void* resolved, void* detour, const char* lab
 	record.label = label;
 	record.createdTick = GetTickCount();
 	record.reported = false;
+	record.parked = false;
 }
 
 void* ResolvedAddressFor(void* target)
@@ -350,16 +353,38 @@ bool HookTargetIsAvailable(void* requested, void* resolved, const char* label)
 	return false;
 }
 
+const char* ModuleNameOf(const void* address, char* out, DWORD size)
+{
+	HMODULE owner = nullptr;
+
+	if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		static_cast<LPCSTR>(address), &owner) || owner == nullptr || GetModuleFileNameA(owner, out, size) == 0)
+	{
+		strncpy_s(out, size, "no module", _TRUNCATE);
+		return out;
+	}
+
+	const char* const slash = strrchr(out, '\\');
+	return slash != nullptr ? slash + 1 : out;
+}
+
 void LogHookCreated(const char* label, void* requested, void* resolved, int hops)
 {
+	char resolvedPath[MAX_PATH] = {};
+	const char* const resolvedModule = ModuleNameOf(resolved, resolvedPath, MAX_PATH);
+
 	if (hops == 0)
 	{
-		LOG("Hook created: %s at 0x%p", label, resolved);
+		LOG("Hook created: %s at 0x%p in %s", label, resolved, resolvedModule);
 		return;
 	}
 
-	LOG("Hook created: %s at 0x%p (%d jump%s past 0x%p - another hook engine is on this function, "
-		"so the mod went in behind it)", label, resolved, hops, hops == 1 ? "" : "s", requested);
+	char requestedPath[MAX_PATH] = {};
+	const char* const requestedModule = ModuleNameOf(requested, requestedPath, MAX_PATH);
+
+	LOG("Hook created: %s at 0x%p in %s (%d jump%s past 0x%p in %s, another hook engine is on this function, "
+		"so the mod went in behind it)", label, resolved, resolvedModule, hops, hops == 1 ? "" : "s", requested,
+		requestedModule);
 }
 
 }
@@ -446,8 +471,14 @@ bool HookManager::SetHookEnabled(void* target, bool enabled)
 {
 	void* const resolved = ResolvedAddressFor(target);
 
+	for (int i = 0; i < g_recordCount; ++i)
+	{
+		if (g_records[i].resolved == resolved)
+			g_records[i].parked = !enabled;
+	}
+
 	const MH_STATUS status = enabled ? MH_EnableHook(resolved) : MH_DisableHook(resolved);
-	if (status != MH_OK)
+	if (status != MH_OK && status != MH_ERROR_ENABLED && status != MH_ERROR_DISABLED)
 	{
 		LOG("MH_%sHook failed on 0x%p: %d", enabled ? "Enable" : "Disable", target, status);
 		return false;
@@ -521,7 +552,7 @@ int HookManager::VerifyHooks()
 	{
 		HookRecord& record = g_records[i];
 
-		if (IsTooYoungToVerify(record))
+		if (record.parked || IsTooYoungToVerify(record))
 			continue;
 
 		int hops = 0;
@@ -570,6 +601,18 @@ void ReportPresentStall(int stalledChecks)
 		static_cast<int>((stalledChecks * kWatchdogIntervalMs) / 1000), RtssAdvice());
 }
 
+bool GameIsInFront()
+{
+	const HWND window = GetForegroundWindow();
+	DWORD process = 0;
+
+	if (window == nullptr || IsIconic(window))
+		return false;
+
+	GetWindowThreadProcessId(window, &process);
+	return process == GetCurrentProcessId();
+}
+
 class PresentStallDetector
 {
 public:
@@ -594,6 +637,9 @@ public:
 		m_reported = true;
 		g_anyBroken = true;
 		ReportPresentStall(m_stalledChecks);
+
+		if (GameIsInFront())
+			WriteHangDump("the game is in front but its Present has not been called");
 	}
 
 private:
@@ -608,6 +654,7 @@ DWORD WINAPI IntegrityWatchdog(LPVOID)
 
 	while (WaitForSingleObject(g_watchdogStop, kWatchdogIntervalMs) == WAIT_TIMEOUT)
 	{
+		ReclaimCrashHandler();
 		HookManager::VerifyHooks();
 		stallDetector.Check();
 	}
@@ -667,10 +714,20 @@ const char* HookManager::IntegrityStatus()
 
 bool HookManager::EnableAllHooks()
 {
-	const MH_STATUS status = MH_EnableHook(MH_ALL_HOOKS);
+	MH_STATUS status = MH_QueueEnableHook(MH_ALL_HOOKS);
+
+	for (int i = 0; i < g_recordCount && status == MH_OK; ++i)
+	{
+		if (g_records[i].parked)
+			status = MH_QueueDisableHook(g_records[i].resolved);
+	}
+
+	if (status == MH_OK)
+		status = MH_ApplyQueued();
+
 	if (status != MH_OK)
 	{
-		LOG("MH_EnableHook(MH_ALL_HOOKS) failed: %d", status);
+		LOG("Enabling all hooks failed: %d", status);
 		return false;
 	}
 

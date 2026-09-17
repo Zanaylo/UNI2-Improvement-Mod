@@ -8,6 +8,7 @@
 #include "Network/ModChannel.h"
 #include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
+#include "Network/NetLink.h"
 #include "Network/SteamNetwork.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteChoice.h"
@@ -73,6 +74,8 @@ constexpr int kResendsKnown = 3;
 
 constexpr int kSettleFrames = 30;
 
+constexpr DWORD kSendTtlMs = 30000;
+
 bool g_inMatch = false;
 int g_frames = 0;
 int g_sent = 0;
@@ -98,33 +101,6 @@ struct Remote
 
 Remote g_remote[2] = {};
 
-constexpr int kSteamRetryFramesMin = 60;
-constexpr int kSteamRetryFramesMax = 3600;
-constexpr int kSteamRetryAttempts = 20;
-
-int g_steamRetryIn = 0;
-int g_steamRetryFrames = kSteamRetryFramesMin;
-int g_steamAttempts = 0;
-
-bool RetrySteam()
-{
-	if (g_steamAttempts >= kSteamRetryAttempts)
-		return false;
-
-	if (--g_steamRetryIn > 0)
-		return false;
-
-	g_steamRetryIn = g_steamRetryFrames;
-	g_steamRetryFrames = g_steamRetryFrames * 2 < kSteamRetryFramesMax
-		? g_steamRetryFrames * 2 : kSteamRetryFramesMax;
-
-	if (++g_steamAttempts >= kSteamRetryAttempts)
-		LOG("PaletteShare: Steam networking never came up, giving up");
-
-	SteamNetwork::Initialize();
-	return SteamNetwork::IsReady();
-}
-
 int g_statusStamp = -1;
 
 int ReadOwnSide();
@@ -134,7 +110,7 @@ void UpdateStatus()
 	const int seat = ReadOwnSide();
 
 	const int stamp = (g_sentCount << 6) | (g_receivedCount << 4) | ((seat + 1) << 2) |
-		(SteamNetwork::IsReady() ? 2 : 0) | (SteamNetwork::HasPeer() ? 1 : 0);
+		(SteamNetwork::IsReady() ? 2 : 0) | (NetLink::HasPeer() ? 1 : 0);
 
 	if (stamp == g_statusStamp)
 		return;
@@ -151,13 +127,13 @@ void UpdateStatus()
 	sprintf_s(g_status, "%s, %s, sent %d, received %d%s",
 		SteamNetwork::IsReady() ? "Steam ready" : "no Steam", seatText,
 		g_sentCount, g_receivedCount,
-		SteamNetwork::HasPeer() ? "" : ", no peer yet");
+		NetLink::HasPeer() ? "" : ", no peer yet");
 }
 
 int Resends()
 {
 	const bool known = ModHandshake::PeerHasMod() ||
-		ModPresence::PeerHasMod(SteamNetwork::GetPeer());
+		ModPresence::PeerHasMod(NetLink::Peer());
 
 	return known ? kResendsKnown : 0;
 }
@@ -306,9 +282,9 @@ void SendOurs()
 	if (hasEffects)
 		memcpy(packet.effectColors, effects, sizeof(packet.effectColors));
 
-	if (!SteamNetwork::Send(&packet, sizeof(packet)))
+	if (!ModChannel::SendToPeer(&packet, sizeof(packet), kSendTtlMs, "palette"))
 	{
-		PaletteTrace::Note("send of '%s' failed, Steam refused it", packet.name);
+		PaletteTrace::Note("send of '%s' was not queued", packet.name);
 		return;
 	}
 
@@ -319,7 +295,7 @@ void SendOurs()
 	PaletteTrace::Note("sent '%s' chara %d from seat %d with %s, send %d of %d", packet.name,
 		packet.chara, own, packet.hasEffect ? "effects" : "no effects", g_sent, Resends());
 
-	LOG("PaletteShare: sent '%s' for character %d on side %d", packet.name, packet.chara, own);
+	LOG("PaletteShare: queued '%s' for character %d on side %d", packet.name, packet.chara, own);
 }
 
 void PlaceForeign(int side, int chara, const char* name, const uint8_t* colors,
@@ -416,7 +392,7 @@ void HandlePacket(const uint8_t* data, int size, uint64_t from)
 	if (!ReadHeader(data, size, version))
 		return;
 
-	if (from == 0 || from != SteamNetwork::GetPeer())
+	if (from == 0 || from != NetLink::Peer())
 	{
 		PaletteTrace::Note("a packet from %llu is not the opponent's, dropped",
 			(unsigned long long)from);
@@ -490,7 +466,6 @@ void ForgetForeign()
 void PaletteShare::Initialize()
 {
 	ModChannel::Register(ModChannel::kKindPalette, &HandlePacket);
-	SteamNetwork::Initialize();
 	UpdateStatus();
 }
 
@@ -532,7 +507,7 @@ void PaletteShare::InjectTestPacket(int side)
 
 void PaletteShare::OnFrame()
 {
-	if (!SteamNetwork::IsReady() && !RetrySteam())
+	if (!SteamNetwork::IsReady())
 		return;
 
 	const bool inMatch = GameState::IsInMatch();
@@ -562,11 +537,11 @@ void PaletteShare::OnFrame()
 
 	++g_frames;
 
-	if (!SteamNetwork::HasPeer())
+	if (!NetLink::HasPeer())
 		return;
 
 	if (g_matchPeer == 0)
-		g_matchPeer = SteamNetwork::GetPeer();
+		g_matchPeer = NetLink::Peer();
 
 	if (!g_sideLogged)
 	{
@@ -626,7 +601,7 @@ void PaletteShare::GetDiagnostics(Diagnostics& out)
 	out.sent = g_sentCount;
 	out.received = g_receivedCount;
 	out.matchPeer = g_matchPeer;
-	out.steamAttempts = g_steamAttempts;
+	out.steamAttempts = 0;
 	out.lastSentChoice = static_cast<int>(g_sentRevision);
 	out.resends = g_resends;
 

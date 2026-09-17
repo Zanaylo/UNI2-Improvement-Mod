@@ -1,76 +1,78 @@
 #include "Network/ModPresence.h"
 
-#include "Core/logger.h"
 #include "Core/info.h"
-#include "Game/GamePatches.h"
-#include "Network/ModHandshake.h"
-#include "Network/OnlineSafety.h"
-#include "Network/RoomPing.h"
+#include "Network/NetGate.h"
+#include "Network/NetLog.h"
 #include "Network/SteamInterfaces.h"
 
 #include <Windows.h>
 
-#include <cstdio>
 #include <cstring>
 
 namespace {
 
 constexpr const char* kMemberKey = "uni2im";
 constexpr const char* kPickKey = "uni2im_pick";
-constexpr DWORD kPublishMs = 15000;
+constexpr DWORD kRetryMs = 5000;
 constexpr DWORD kScanMs = 2000;
 
-struct Member
-{
-	uint64_t id;
-	char version[32];
-	char pick[ModHandshake::kDataIdBytes];
-	bool hasMod;
-};
-
-Member g_members[ModPresence::kMaxMembers] = {};
+SRWLOCK g_lock = SRWLOCK_INIT;
+ModPresence::Member g_members[ModPresence::kMaxMembers] = {};
+ModPresence::Member g_scan[ModPresence::kMaxMembers] = {};
 int g_roomSize = 0;
 int g_modCount = 0;
-
 uint64_t g_lobby = 0;
 uint64_t g_self = 0;
-DWORD g_lastPublish = 0;
-DWORD g_lastScan = 0;
+
+char g_pick[ModHandshake::kDataIdBytes] = "";
 char g_publishedPick[ModHandshake::kDataIdBytes] = "";
+bool g_published = false;
+DWORD g_lastAttempt = 0;
+DWORD g_lastScan = 0;
 
-char g_status[192] = "not in a room";
-
-void Forget()
+void Forget(uint64_t lobby)
 {
-	g_lobby = 0;
+	AcquireSRWLockExclusive(&g_lock);
+	g_lobby = lobby;
 	g_roomSize = 0;
 	g_modCount = 0;
-	g_lastPublish = 0;
+	ReleaseSRWLockExclusive(&g_lock);
+
+	g_published = false;
+	g_publishedPick[0] = 0;
+	g_lastAttempt = 0;
 	g_lastScan = 0;
-	strncpy_s(g_status, "not in a room", _TRUNCATE);
 }
 
-void Publish(DWORD now)
+void Publish(uint64_t lobby, DWORD now)
 {
 	char pick[ModHandshake::kDataIdBytes] = {};
-	ModHandshake::DescribeData(GamePatches::HomeIndex(), pick, sizeof(pick));
 
-	const bool pickChanged = strcmp(pick, g_publishedPick) != 0;
+	AcquireSRWLockShared(&g_lock);
+	strncpy_s(pick, g_pick, _TRUNCATE);
+	ReleaseSRWLockShared(&g_lock);
 
-	if (!pickChanged && g_lastPublish != 0 && now - g_lastPublish < kPublishMs)
+	if (g_published && strcmp(pick, g_publishedPick) == 0)
 		return;
 
-	if (!SteamInterfaces::SetLobbyMemberData(g_lobby, kMemberKey, UNI2_IM_VERSION) ||
-		!SteamInterfaces::SetLobbyMemberData(g_lobby, kPickKey, pick))
+	if (g_lastAttempt != 0 && now - g_lastAttempt < kRetryMs)
+		return;
+
+	g_lastAttempt = now;
+
+	if (!SteamInterfaces::SetLobbyMemberData(lobby, kMemberKey, UNI2_IM_VERSION) ||
+		!SteamInterfaces::SetLobbyMemberData(lobby, kPickKey, pick))
 	{
 		return;
 	}
 
+	g_published = true;
 	strncpy_s(g_publishedPick, pick, _TRUNCATE);
-	g_lastPublish = now;
+	NetLog::Write("presence: marked this player as modded in lobby %llu, pick %s", static_cast<unsigned long long>(lobby),
+		pick);
 }
 
-void Scan(DWORD now)
+void Scan(uint64_t lobby, DWORD now)
 {
 	if (g_lastScan != 0 && now - g_lastScan < kScanMs)
 		return;
@@ -80,69 +82,62 @@ void Scan(DWORD now)
 	if (g_self == 0)
 		g_self = SteamInterfaces::GetOwnSteamId();
 
-	const int count = SteamInterfaces::GetNumLobbyMembers(g_lobby);
+	const int count = SteamInterfaces::GetNumLobbyMembers(lobby);
+	const int size = count < ModPresence::kMaxMembers ? count : ModPresence::kMaxMembers;
+	int modded = 0;
 
-	g_roomSize = count < ModPresence::kMaxMembers ? count : ModPresence::kMaxMembers;
-	g_modCount = 0;
-
-	for (int i = 0; i < g_roomSize; ++i)
+	for (int i = 0; i < size; ++i)
 	{
-		Member& member = g_members[i];
-
-		member.id = SteamInterfaces::GetLobbyMemberByIndex(g_lobby, i);
-		member.version[0] = 0;
-		member.pick[0] = 0;
-		member.hasMod = false;
+		ModPresence::Member& member = g_scan[i];
+		member = {};
+		member.id = SteamInterfaces::GetLobbyMemberByIndex(lobby, i);
 
 		if (member.id == 0)
 			continue;
 
-		const char* value = SteamInterfaces::GetLobbyMemberData(g_lobby, member.id, kMemberKey);
+		const char* const version = SteamInterfaces::GetLobbyMemberData(lobby, member.id, kMemberKey);
 
-		if (value[0] == 0)
+		if (version[0] == 0)
 			continue;
 
-		strncpy_s(member.version, value, _TRUNCATE);
-		strncpy_s(member.pick, SteamInterfaces::GetLobbyMemberData(g_lobby, member.id, kPickKey),
-			_TRUNCATE);
+		strncpy_s(member.version, version, _TRUNCATE);
+		strncpy_s(member.pick, SteamInterfaces::GetLobbyMemberData(lobby, member.id, kPickKey), _TRUNCATE);
 		member.hasMod = true;
-		++g_modCount;
+		++modded;
 	}
 
-	sprintf_s(g_status, "%d of %d in this room %s the mod", g_modCount, g_roomSize,
-		g_modCount == 1 ? "has" : "have");
+	AcquireSRWLockExclusive(&g_lock);
+	const bool changed = modded != g_modCount || size != g_roomSize;
+	memcpy(g_members, g_scan, sizeof(g_members));
+	g_roomSize = size;
+	g_modCount = modded;
+	ReleaseSRWLockExclusive(&g_lock);
+
+	if (changed)
+		NetLog::Write("presence: %d of %d in lobby %llu run the mod", modded, size, static_cast<unsigned long long>(lobby));
 }
 
 }
 
-void ModPresence::Update()
+void ModPresence::SetPick(const char* pick)
 {
-	if (!RoomPing::InRoom())
-	{
-		if (g_lobby != 0)
-			Forget();
+	AcquireSRWLockExclusive(&g_lock);
+	strncpy_s(g_pick, pick != nullptr ? pick : "", _TRUNCATE);
+	ReleaseSRWLockExclusive(&g_lock);
+}
 
-		return;
-	}
+void ModPresence::Tick(const NetLink::Snapshot& snapshot)
+{
+	if (snapshot.lobby != g_lobby)
+		Forget(snapshot.lobby);
 
-	const uint64_t lobby = RoomPing::GetLobbyId();
-
-	if (lobby == 0)
-		return;
-
-	if (lobby != g_lobby)
-	{
-		Forget();
-		g_lobby = lobby;
-	}
-
-	if (!OnlineSafety::MayWriteRoomState())
+	if (snapshot.lobby == 0 || !NetGate::MayTouchRoom(snapshot))
 		return;
 
 	const DWORD now = GetTickCount();
 
-	Publish(now);
-	Scan(now);
+	Publish(snapshot.lobby, now);
+	Scan(snapshot.lobby, now);
 }
 
 bool ModPresence::InRoom()
@@ -160,20 +155,17 @@ int ModPresence::ModCount()
 	return g_modCount;
 }
 
-bool ModPresence::HasMod(int index)
+bool ModPresence::MemberAt(int index, Member& out)
 {
-	if (index < 0 || index >= g_roomSize)
-		return false;
+	AcquireSRWLockShared(&g_lock);
 
-	return g_members[index].hasMod;
-}
+	const bool valid = index >= 0 && index < g_roomSize;
 
-uint64_t ModPresence::MemberAt(int index)
-{
-	if (index < 0 || index >= g_roomSize)
-		return 0;
+	if (valid)
+		out = g_members[index];
 
-	return g_members[index].id;
+	ReleaseSRWLockShared(&g_lock);
+	return valid;
 }
 
 bool ModPresence::PeerHasMod(uint64_t id)
@@ -181,51 +173,39 @@ bool ModPresence::PeerHasMod(uint64_t id)
 	if (id == 0)
 		return false;
 
+	bool hasMod = false;
+
+	AcquireSRWLockShared(&g_lock);
+
 	for (int i = 0; i < g_roomSize; ++i)
 	{
 		if (g_members[i].id == id)
-			return g_members[i].hasMod;
+			hasMod = g_members[i].hasMod;
 	}
 
-	return false;
-}
-
-const char* ModPresence::VersionAt(int index)
-{
-	if (index < 0 || index >= g_roomSize)
-		return "";
-
-	return g_members[index].version;
-}
-
-const char* ModPresence::PickAt(int index)
-{
-	if (index < 0 || index >= g_roomSize)
-		return "";
-
-	return g_members[index].pick;
+	ReleaseSRWLockShared(&g_lock);
+	return hasMod;
 }
 
 bool ModPresence::RoomAgrees(const char* pick)
 {
-	if (pick == nullptr || g_roomSize < 2)
+	if (pick == nullptr)
 		return false;
 
-	for (int i = 0; i < g_roomSize; ++i)
+	AcquireSRWLockShared(&g_lock);
+
+	bool agrees = g_roomSize >= 2;
+
+	for (int i = 0; i < g_roomSize && agrees; ++i)
 	{
 		const Member& member = g_members[i];
 
 		if (member.id == 0 || member.id == g_self)
 			continue;
 
-		if (!member.hasMod || strcmp(member.pick, pick) != 0)
-			return false;
+		agrees = member.hasMod && strcmp(member.pick, pick) == 0;
 	}
 
-	return true;
-}
-
-const char* ModPresence::GetStatusText()
-{
-	return g_status;
+	ReleaseSRWLockShared(&g_lock);
+	return agrees;
 }

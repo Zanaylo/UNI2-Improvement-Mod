@@ -29,8 +29,10 @@ namespace RoomRoster
 	bool IsFixEnabled();
 	void SetFixEnabled(bool enabled);
 
+	void Observe(uint64_t user, int rawFlags);
+
 	int EventCount();
-	const Event& GetEvent(int index);
+	bool GetEvent(int index, Event& out);
 
 	int GetGhostsPrevented();
 

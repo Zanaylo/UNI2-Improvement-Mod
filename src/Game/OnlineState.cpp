@@ -3,8 +3,8 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/GameOffsets.h"
+#include "Network/NetLink.h"
 #include "Network/SpectateViewer.h"
-#include "Network/SteamNetwork.h"
 
 #include <Windows.h>
 
@@ -12,117 +12,89 @@
 
 namespace {
 
-constexpr uintptr_t kSession = 0x4448858;
-
-constexpr uintptr_t kBackendVTables[] = {
-	0x529900,
-	0x5299e4,
-	0x529b54,
-};
-
-const char* const kBackendNames[] = { "Peer2Peer", "Spectator", "SyncTest" };
-
-constexpr int kBackendSpectator = 1;
-
-constexpr unsigned kTrafficFreshMs = 3000;
+constexpr DWORD kPeerFreshMs = 3000;
 constexpr uint32_t kAmbiguousBattleMode = 1;
 
-bool g_blind = true;
-bool g_loggedBlind = false;
-
-bool g_online = false;
 bool g_everFound = false;
-uint32_t g_lastPointer = 0;
-int g_lastKind = -2;
+bool g_online = false;
+uint32_t g_lastSession = 0;
+NetLink::Backend g_lastBackend = NetLink::Backend_None;
 bool g_lastOnline = false;
-char g_status[128] = "not read yet";
+bool g_lastBlind = false;
 
-int BackendKind(uint32_t pointer)
+char g_status[160] = "not read yet";
+
+bool ReadOnline(const NetLink::Snapshot& link)
 {
-	if (pointer < 0x10000 || (pointer & 3) != 0)
-		return -1;
+	if (link.backend == NetLink::Backend_Spectator)
+		return true;
 
-	uint32_t vtable = 0;
-	if (!TryReadDword(reinterpret_cast<const void*>(pointer), vtable))
-		return -1;
+	if (NetLink::IsBlind())
+		return true;
 
-	for (int i = 0; i < static_cast<int>(sizeof(kBackendVTables) / sizeof(kBackendVTables[0])); ++i)
+	return link.hasPeer || NetLink::PeerSeenWithin(kPeerFreshMs);
+}
+
+void Describe(const NetLink::Snapshot& link)
+{
+	if (NetLink::IsBlind())
 	{
-		if (vtable == RvaToAddress(kBackendVTables[i]))
-			return i;
+		sprintf_s(g_status, "online assumed, GGPO session 0x%08x could not be read", link.session);
+		return;
 	}
 
-	return -1;
+	if (g_online)
+	{
+		sprintf_s(g_status, "online, %s session 0x%08x with %llu", NetLink::BackendName(link.backend), link.session,
+			static_cast<unsigned long long>(NetLink::Peer()));
+		return;
+	}
+
+	if (link.session == 0)
+	{
+		strncpy_s(g_status, "offline, no GGPO session", _TRUNCATE);
+		return;
+	}
+
+	sprintf_s(g_status, "offline, GGPO session 0x%08x (%s) has no remote player", link.session,
+		NetLink::BackendName(link.backend));
 }
 
 }
 
 void OnlineState::Update()
 {
-	uint32_t pointer = 0;
-	if (!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(kSession)), pointer))
-		pointer = 0;
+	const NetLink::Snapshot& link = NetLink::Current();
 
-	const int kind = BackendKind(pointer);
+	g_online = ReadOnline(link);
 
-	g_blind = !SteamNetwork::CanSeePeerTraffic();
-
-	if (g_blind && !g_loggedBlind)
-	{
-		g_loggedBlind = true;
-		LOG("OnlineState: no hook on SendP2PPacket, so battle mode %u is treated as online",
-			kAmbiguousBattleMode);
-	}
-
-	const bool online = SteamNetwork::HasRecentPeerTraffic(kTrafficFreshMs);
-	const bool changed = pointer != g_lastPointer || kind != g_lastKind || online != g_lastOnline;
-
-	g_online = online;
-	g_lastPointer = pointer;
-	g_lastKind = kind;
-	g_lastOnline = online;
-
-	if (pointer != 0 && kind >= 0)
+	if (link.backend != NetLink::Backend_None)
 		g_everFound = true;
+
+	const bool blind = NetLink::IsBlind();
+	const bool changed = link.session != g_lastSession || link.backend != g_lastBackend || g_online != g_lastOnline ||
+		blind != g_lastBlind;
+
+	g_lastSession = link.session;
+	g_lastBackend = link.backend;
+	g_lastOnline = g_online;
+	g_lastBlind = blind;
 
 	if (!changed)
 		return;
 
-	const char* const backend = kind >= 0 ? kBackendNames[kind] : "not a backend";
-
-	//lembrar depois
-	if (online)
-		sprintf_s(g_status, "online, connected to a peer (GGPO 0x%08x, %s)", pointer,
-			backend);
-	else if (g_blind)
-		strncpy_s(g_status, "unknown, Steam networking did not start, so assuming online",
-			_TRUNCATE);
-	else if (pointer == 0)
-		strncpy_s(g_status, "offline, no GGPO session", _TRUNCATE);
-	else
-		sprintf_s(g_status, "offline, GGPO session 0x%08x (%s) has no peer traffic", pointer, backend);
-
+	Describe(link);
 	LOG("OnlineState: %s", g_status);
 }
 
 bool OnlineState::IsOnline()
 {
-	if (g_online)
-		return true;
-
-	if (!g_blind)
-		return false;
-
-	uint32_t mode = 0;
-	if (!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kBattleMode)), mode))
-		return true;
-
-	return mode == kAmbiguousBattleMode;
+	return g_online;
 }
 
 bool OnlineState::HasSession()
 {
-	return g_lastPointer != 0 && g_lastKind >= 0;
+	return g_lastBackend == NetLink::Backend_Players || g_lastBackend == NetLink::Backend_Spectator;
 }
 
 bool OnlineState::IsNetplay()
@@ -132,12 +104,12 @@ bool OnlineState::IsNetplay()
 
 bool OnlineState::IsSpectating()
 {
-	return g_lastKind == kBackendSpectator;
+	return g_lastBackend == NetLink::Backend_Spectator;
 }
 
 bool OnlineState::IsBlind()
 {
-	return g_blind;
+	return g_lastBlind;
 }
 
 bool OnlineState::IsDetectionReady()

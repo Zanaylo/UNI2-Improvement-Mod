@@ -1,23 +1,16 @@
 #pragma once
 
-#include <cstdint>
+#include "Network/NetLink.h"
 
 namespace RoomPing
 {
-	bool Initialize();
-
-	void Update();
+	void Tick(const NetLink::Snapshot& snapshot);
 
 	bool IsEnabled();
 	void SetEnabled(bool enabled);
 
-	uint64_t GetLobbyId();
-	uint64_t ReadLobbyNow();
-	bool InRoom();
-
 	int GetPublishCount();
 	unsigned GetSecondsSinceLastPublish();
 
-	const char* GetLastLocation();
-	const char* GetStatusText();
+	void StatusText(char* out, int size);
 }

@@ -7,8 +7,11 @@
 
 namespace SpectateWire
 {
-	constexpr uint16_t kVersion = 5;
+	constexpr uint16_t kVersion = 6;
 	constexpr const char* kPresenceKey = "uni2im_spectate";
+
+	constexpr int kInputBytes = 36;
+	constexpr int kMostFramesPerBatch = 60;
 
 	enum Type : uint8_t
 	{
@@ -21,7 +24,9 @@ namespace SpectateWire
 		Type_Leave,
 		Type_MatchStart,
 		Type_Behind,
-		Type_MatchEnd
+		Type_MatchEnd,
+		Type_Inputs,
+		Type_Ack
 	};
 
 	enum Refusal : uint8_t
@@ -44,6 +49,20 @@ namespace SpectateWire
 	{
 		Message message;
 		SpectateMatch::Snapshot snapshot;
+	};
+
+	struct Inputs
+	{
+		Message message;
+		int32_t first;
+		uint16_t count;
+		uint16_t bytes;
+	};
+
+	struct Ack
+	{
+		Message message;
+		int32_t frame;
 	};
 #pragma pack(pop)
 

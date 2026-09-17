@@ -10,7 +10,8 @@
 #include "Network/MatchKind.h"
 #include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
-#include "Network/RoomPing.h"
+#include "Network/NetLink.h"
+#include "Network/NetLog.h"
 #include "Network/SpectateViewer.h"
 
 #include <cstdio>
@@ -39,7 +40,7 @@ struct Decision
 bool InOnlineContext()
 {
 	return BgmControl::GetLastRequested() == GameOffsets::kBgmNetworkMenu ||
-		RoomPing::ReadLobbyNow() != 0 || OnlineState::IsOnline();
+		NetLink::Lobby() != 0 || OnlineState::IsOnline();
 }
 
 Decision ForSession(int home, const char* pick, bool playerMatch)
@@ -116,6 +117,8 @@ void Apply(const Decision& decision)
 
 	g_warnedTarget = kUndecided;
 
+	NetLog::Write("online patch: switching data%s, %s", NetLink::InSession() ? " with a match connection open" : "",
+		decision.why);
 	GamePatches::SwitchTables(decision.target, decision.why);
 	sprintf_s(g_status, "%s", decision.why);
 }

@@ -21,7 +21,6 @@
 #include "Game/SceneWatch.h"
 #include "Game/PotatoMode.h"
 #include "Game/MemoryMap.h"
-#include "Game/OnlineState.h"
 #include "Game/BalanceRules.h"
 #include "Game/GameRestart.h"
 #include "Game/DataSearchPath.h"
@@ -41,6 +40,7 @@
 #include "Game/VoiceImport.h"
 #include "Game/SoundpackTransfer.h"
 #include "Game/UserMusic.h"
+#include "Network/NetLink.h"
 #include "Network/NetplayTick.h"
 #include "Game/ReplayState.h"
 #include "Hooks/HookManager.h"
@@ -374,6 +374,19 @@ void RetryOverlay(IDirect3DDevice9* device)
 	manager.Initialize(window, device);
 }
 
+void ReportModWork(const LARGE_INTEGER& start)
+{
+	static LARGE_INTEGER frequency = {};
+
+	if (frequency.QuadPart == 0)
+		QueryPerformanceFrequency(&frequency);
+
+	LARGE_INTEGER now = {};
+	QueryPerformanceCounter(&now);
+
+	NetLink::OnPresent((now.QuadPart - start.QuadPart) * 1000000 / frequency.QuadPart);
+}
+
 bool FrozenFrameCouldBeReplayed()
 {
 	return FrameStepper::IsImplemented() && GameState::AllowsTrainingTools() &&
@@ -384,6 +397,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	const RECT* destRect, HWND destWindowOverride, const RGNDATA* dirtyRegion)
 {
 	InterlockedIncrement(&g_presentCount);
+
+	LARGE_INTEGER modStart = {};
+	QueryPerformanceCounter(&modStart);
 
 	GraphicsWrapper::Detect(device);
 	SceneWatch::OnFrame();
@@ -401,7 +417,6 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 		{
 			Profiler::Scope scope(Profiler::Section_PresentOnline);
 			KeepCrashHandler();
-			OnlineState::Update();
 			NetplayTick::Update();
 			GamePatches::Update();
 			DataSearchPath::Assert();
@@ -510,6 +525,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	PotatoMode::OnFrame();
 
 	HRESULT result = D3D_OK;
+
+	if (device == g_device)
+		ReportModWork(modStart);
 
 	{
 		Profiler::Scope scope(Profiler::Section_PresentDevice);

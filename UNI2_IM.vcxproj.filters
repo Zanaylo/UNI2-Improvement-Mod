@@ -108,7 +108,7 @@
     <ClCompile Include="src\Network\SpectateCode.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\GgpoSpectators.cpp">
+    <ClCompile Include="src\Network\SpectateRelay.cpp">
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\SpectateMatch.cpp">
@@ -121,9 +121,6 @@
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\SpectateFeed.cpp">
-      <Filter>Network</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Network\SpectatorPacing.cpp">
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\Spectate.cpp">
@@ -165,7 +162,25 @@
     <ClCompile Include="src\Game\PatchPacks.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\OnlineSafety.cpp">
+    <ClCompile Include="src\Network\NetLog.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\NetLink.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\NetGate.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\NetWorker.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SteamWatch.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SteamLink.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\GgpoLogCapture.cpp">
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\CrashContext.cpp">
@@ -466,6 +481,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\crashdump.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ModuleInventory.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\utils.cpp">
@@ -1046,7 +1064,7 @@
     <ClInclude Include="src\Network\SpectateWire.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\GgpoSpectators.h">
+    <ClInclude Include="src\Network\SpectateRelay.h">
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\SpectateMatch.h">
@@ -1059,9 +1077,6 @@
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\SpectateFeed.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Network\SpectatorPacing.h">
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\Spectate.h">
@@ -1103,7 +1118,25 @@
     <ClInclude Include="src\Game\PatchPacks.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\OnlineSafety.h">
+    <ClInclude Include="src\Network\NetLog.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\NetLink.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\NetGate.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\NetWorker.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SteamWatch.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SteamLink.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\GgpoLogCapture.h">
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\CrashContext.h">
@@ -1401,6 +1434,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\crashdump.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ModuleInventory.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\utils.h">

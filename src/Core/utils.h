@@ -47,6 +47,7 @@ bool TryReadUnaligned(const void* source, uint32_t& outValue);
 bool TryWriteUnaligned(void* address, uint32_t value);
 
 std::string GetSystemDirectoryPath();
+bool IsUnderSystemDirectory(const char* path);
 
 void NoteHotkeyMessage(int virtualKey);
 

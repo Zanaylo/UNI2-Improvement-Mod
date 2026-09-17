@@ -1,7 +1,9 @@
 #include "D3D9/D3D9Wrapper.h"
 
 #include "Core/Compat.h"
+#include "Core/crashdump.h"
 #include "Core/logger.h"
+#include "Core/utils.h"
 #include "D3D9/D3D9Proxy.h"
 #include "D3D9/DeviceHooks.h"
 #include "D3D9/DgVoodoo.h"
@@ -28,6 +30,11 @@ bool g_createDeviceHooked = false;
 
 IDirect3D9* g_seenD3D9 = nullptr;
 
+constexpr DWORD kInitWaitMs = 15000;
+
+HANDLE g_initFinished = CreateEventA(nullptr, TRUE, FALSE, nullptr);
+volatile LONG g_holdUntilInit = 0;
+
 void LogAttempt(const char* what, HRESULT result, UINT adapter, D3DDEVTYPE deviceType,
 	DWORD behaviorFlags, const D3DPRESENT_PARAMETERS& parameters)
 {
@@ -45,11 +52,14 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 	HWND hFocusWindow, DWORD behaviorFlags, D3DPRESENT_PARAMETERS* presentParameters,
 	IDirect3DDevice9** ppReturnedDeviceInterface)
 {
+	ReclaimCrashHandler();
+
 	D3DPRESENT_PARAMETERS asked = {};
 
 	if (presentParameters != nullptr)
 	{
 		asked = *presentParameters;
+		LogAttempt("asked for by the game", S_OK, adapter, deviceType, behaviorFlags, asked);
 
 		if (!DgVoodoo::IsRunning())
 			PresentTuning::Apply(self, adapter, *presentParameters);
@@ -152,6 +162,16 @@ Direct3DCreate9_t Creator()
 	return dgVoodoo != nullptr ? dgVoodoo : oDirect3DCreate9;
 }
 
+bool RuntimeIsTheSystems(char* path, DWORD size)
+{
+	const HMODULE runtime = GetModuleHandleA("d3d9.dll");
+
+	if (runtime == nullptr || GetModuleFileNameA(runtime, path, size) == 0)
+		return false;
+
+	return IsUnderSystemDirectory(path);
+}
+
 void HookCreateDeviceThroughProbe()
 {
 	if (g_createDeviceHooked || oDirect3DCreate9 == nullptr)
@@ -161,6 +181,17 @@ void HookCreateDeviceThroughProbe()
 	{
 		LOG("dgVoodoo is on, so CreateDevice is hooked on the game's own Direct3D object instead of "
 			"a probe");
+		return;
+	}
+
+	char runtime[MAX_PATH] = {};
+
+	if (!RuntimeIsTheSystems(runtime, MAX_PATH))
+	{
+		InterlockedExchange(&g_holdUntilInit, 1);
+		LOG("d3d9.dll is %s, not the system's, so no probe object is made through it. The game's own "
+			"Direct3DCreate9 waits until the mod has finished installing its hooks, so the wrapper never starts "
+			"while the mod is patching code", runtime);
 		return;
 	}
 
@@ -183,7 +214,17 @@ void HookCreateDeviceThroughProbe()
 
 IDirect3D9* WINAPI HookedDirect3DCreate9(UINT sdkVersion)
 {
+	ReclaimCrashHandler();
 	LOG("Direct3DCreate9 asked for, sdk %u", sdkVersion);
+
+	if (g_holdUntilInit != 0 && g_initFinished != nullptr)
+	{
+		const DWORD before = GetTickCount();
+		const DWORD waited = WaitForSingleObject(g_initFinished, kInitWaitMs);
+
+		LOG("Direct3DCreate9 held %lu ms for the mod's hooks%s", GetTickCount() - before,
+			waited == WAIT_OBJECT_0 ? "" : ", gave up waiting");
+	}
 
 	IDirect3D9* d3d9 = Creator()(sdkVersion);
 
@@ -206,6 +247,12 @@ void D3D9Wrapper::OnDirect3D9Created(IDirect3D9* d3d9)
 bool D3D9Wrapper::SawDirect3D9()
 {
 	return g_seenD3D9 != nullptr;
+}
+
+void D3D9Wrapper::MarkInitializationFinished()
+{
+	if (g_initFinished != nullptr)
+		SetEvent(g_initFinished);
 }
 
 bool D3D9Wrapper::InstallHooks()

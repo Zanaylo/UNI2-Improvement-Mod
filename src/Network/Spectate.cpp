@@ -11,7 +11,8 @@ namespace {
 
 bool ForHost(uint8_t type)
 {
-	return type == SpectateWire::Type_Join || type == SpectateWire::Type_Armed || type == SpectateWire::Type_Leave;
+	return type == SpectateWire::Type_Join || type == SpectateWire::Type_Armed || type == SpectateWire::Type_Leave ||
+		type == SpectateWire::Type_Ack;
 }
 
 void Receive(const uint8_t* data, int size, uint64_t from)
@@ -27,7 +28,7 @@ void Receive(const uint8_t* data, int size, uint64_t from)
 
 	if (ForHost(message.type))
 	{
-		SpectateHost::Receive(message.type, from);
+		SpectateHost::Receive(message.type, data, size, from);
 		return;
 	}
 
