@@ -153,14 +153,13 @@ void ReadBoxPicture(void* playerData, PlayerState::State& out)
 		out.boxCounts[i] = 0;
 
 	HitboxData::FrameObject frame = {};
-	if (!HitboxData::Resolve(playerData, frame))
+	HitboxData::Box boxes[HitboxData::kMaxBoxes] = {};
+	int count = 0;
+	if (!HitboxData::ResolveAndReadBoxes(playerData, frame, boxes, HitboxData::kMaxBoxes, count))
 		return;
 
 	for (int i = 0; i < HitboxData::kArrayCount && i < 4; ++i)
 		out.boxCounts[i] = frame.counts[i];
-
-	HitboxData::Box boxes[HitboxData::kMaxBoxes] = {};
-	const int count = HitboxData::ReadBoxes(frame, boxes, HitboxData::kMaxBoxes);
 
 	out.attackBoxes = 0;
 
@@ -213,11 +212,10 @@ bool HasActiveProjectile(void* playerData, uint32_t ownedObjects)
 			continue;
 
 		HitboxData::FrameObject frame = {};
-		if (!HitboxData::Resolve(effects[i], frame))
-			continue;
-
 		HitboxData::Box boxes[HitboxData::kMaxBoxes] = {};
-		const int count = HitboxData::ReadBoxes(frame, boxes, HitboxData::kMaxBoxes);
+		int count = 0;
+		if (!HitboxData::ResolveAndReadBoxes(effects[i], frame, boxes, HitboxData::kMaxBoxes, count))
+			continue;
 
 		for (int b = 0; b < count; ++b)
 		{

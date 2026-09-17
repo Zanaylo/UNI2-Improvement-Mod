@@ -816,8 +816,12 @@ void MusicPanel::DrawBrowse()
 	ImGui::SameLine();
 	DrawSourceFilter();
 
+	std::vector<int> filteredIds;
+	int totalTracks = 0;
+	CollectFilteredTracks(filteredIds, totalTracks);
+
 	ImGui::SameLine();
-	DrawTrackCount();
+	DrawTrackCount(filteredIds, totalTracks);
 
 	UiText::Muted("Play starts a track and keeps it playing. Press Stop to give the game its music "
 		"back.");
@@ -840,13 +844,13 @@ void MusicPanel::DrawBrowse()
 		UiText::Muted("%d track(s) turned down", BgmVolume::CustomCount());
 	}
 
-	DrawTrackTable();
+	DrawTrackTable(filteredIds);
 }
 
-void MusicPanel::DrawTrackCount()
+void MusicPanel::CollectFilteredTracks(std::vector<int>& outIds, int& outTotal) const
 {
-	int shown = 0;
-	int total = 0;
+	outIds.clear();
+	outTotal = 0;
 
 	for (int index = 0; index < BgmCatalog::Count(); ++index)
 	{
@@ -855,13 +859,18 @@ void MusicPanel::DrawTrackCount()
 		if (!BgmCatalog::IsListed(id))
 			continue;
 
-		++total;
+		++outTotal;
 
 		char name[224] = {};
 
 		if (BgmNames::Describe(id, name, sizeof(name)) && PassesFilter(id, name))
-			++shown;
+			outIds.push_back(id);
 	}
+}
+
+void MusicPanel::DrawTrackCount(const std::vector<int>& filteredIds, int total)
+{
+	const int shown = static_cast<int>(filteredIds.size());
 
 	if (shown == total)
 	{
@@ -952,7 +961,7 @@ void MusicPanel::DrawTrackVolume(int id)
 		BgmVolume::Save();
 }
 
-void MusicPanel::DrawTrackTable()
+void MusicPanel::DrawTrackTable(const std::vector<int>& filteredIds)
 {
 	const bool building = SoundpackBuilder::IsOpen();
 
@@ -967,22 +976,16 @@ void MusicPanel::DrawTrackTable()
 
 	const int playing = BgmControl::Current();
 
-	for (int index = 0; index < BgmCatalog::Count(); ++index)
+	for (size_t index = 0; index < filteredIds.size(); ++index)
 	{
-		const int id = BgmCatalog::IdAt(index);
-
-		if (!BgmCatalog::IsListed(id))
-			continue;
+		const int id = filteredIds[index];
 
 		char name[224] = {};
 
 		if (!BgmNames::Describe(id, name, sizeof(name)))
 			continue;
 
-		if (!PassesFilter(id, name))
-			continue;
-
-		ImGui::PushID(index);
+		ImGui::PushID(static_cast<int>(index));
 		DrawTrackRow(id, name, building, id == playing);
 		ImGui::PopID();
 	}

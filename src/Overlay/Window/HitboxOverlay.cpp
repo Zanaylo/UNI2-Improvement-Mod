@@ -260,22 +260,26 @@ void HitboxOverlay::Draw()
 	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused() && !g_modVals.drawWhilePaused)
 		return;
 
+	Camera::ScreenTransform transform = {};
+	if (!Camera::ResolveScreenTransform(transform))
+		return;
+
 	void** entities = nullptr;
 	int firstEffect = 0;
 	const int entityCount = EnumerateEntities(entities, firstEffect);
 
 	for (int i = 0; i < entityCount; ++i)
-		DrawEntity(entities[i], i >= firstEffect);
+		DrawEntity(transform, entities[i], i >= firstEffect);
 }
 
-void HitboxOverlay::DrawEntity(void* entity, bool isEffect)
+void HitboxOverlay::DrawEntity(const Camera::ScreenTransform& transform, void* entity, bool isEffect)
 {
 	HitboxData::FrameObject frame = {};
-	if (!HitboxData::Resolve(entity, frame))
+	HitboxData::Box boxes[HitboxData::kMaxBoxes] = {};
+	int count = 0;
+	if (!HitboxData::ResolveAndReadBoxes(entity, frame, boxes, HitboxData::kMaxBoxes, count))
 		return;
 
-	HitboxData::Box boxes[HitboxData::kMaxBoxes] = {};
-	const int count = HitboxData::ReadBoxes(frame, boxes, HitboxData::kMaxBoxes);
 	if (count == 0)
 		return;
 
@@ -303,7 +307,7 @@ void HitboxOverlay::DrawEntity(void* entity, bool isEffect)
 	{
 		float originX = 0.0f;
 		float originY = 0.0f;
-		if (Camera::PixelToScreen(originPixelX, originPixelY, originX, originY))
+		if (Camera::TransformPoint(transform, originPixelX, originPixelY, originX, originY))
 		{
 			const float arm = 8.0f * DeviceHooks::GetOverlayScale();
 
@@ -333,8 +337,8 @@ void HitboxOverlay::DrawEntity(void* entity, bool isEffect)
 		float screenRight = 0.0f;
 		float screenBottom = 0.0f;
 
-		if (!Camera::PixelToScreen(left, top, screenLeft, screenTop) ||
-			!Camera::PixelToScreen(right, bottom, screenRight, screenBottom))
+		if (!Camera::TransformPoint(transform, left, top, screenLeft, screenTop) ||
+			!Camera::TransformPoint(transform, right, bottom, screenRight, screenBottom))
 		{
 			continue;
 		}

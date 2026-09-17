@@ -128,11 +128,6 @@ void HealthReadout::Render(IDirect3DDevice9* device)
 	const float y = kBarTop * height + (barHeight - target) * 0.5f +
 		static_cast<float>(g_modVals.healthValuesY);
 
-	if (!QuadRenderer::Begin(device))
-		return;
-
 	DrawSide(0, width, barHeight, scale, y);
 	DrawSide(1, width, barHeight, scale, y);
-
-	QuadRenderer::End();
 }

@@ -5,7 +5,10 @@
 #include "Game/MemoryMap.h"
 
 #include <Windows.h>
+
+#include <algorithm>
 #include <cstdlib>
+#include <cstring>
 
 namespace {
 
@@ -63,6 +66,41 @@ int CountValidBoxes(uint32_t arrayPointer, int count)
 	}
 
 	return valid;
+}
+
+constexpr int kFrameCacheSlots = 32;
+
+struct FrameCacheEntry
+{
+	void* entity;
+	bool valid;
+	HitboxData::FrameObject frame;
+	HitboxData::Box boxes[HitboxData::kMaxBoxes];
+	int count;
+};
+
+FrameCacheEntry g_frameCache[kFrameCacheSlots] = {};
+int g_nextFrameCacheSlot = 0;
+
+FrameCacheEntry* FindFrameCacheEntry(void* entity)
+{
+	for (FrameCacheEntry& slot : g_frameCache)
+	{
+		if (slot.valid && slot.entity == entity)
+			return &slot;
+	}
+
+	return nullptr;
+}
+
+FrameCacheEntry& AllocateFrameCacheEntry(void* entity)
+{
+	FrameCacheEntry& slot = g_frameCache[g_nextFrameCacheSlot];
+	g_nextFrameCacheSlot = (g_nextFrameCacheSlot + 1) % kFrameCacheSlots;
+
+	slot.entity = entity;
+	slot.valid = true;
+	return slot;
 }
 
 int HanteiCategory(int arrayIndex, int index)
@@ -225,4 +263,42 @@ int HitboxData::ReadBoxes(const FrameObject& frameObject, Box* outBoxes, int max
 	}
 
 	return count;
+}
+
+void HitboxData::InvalidateFrameCache()
+{
+	for (FrameCacheEntry& slot : g_frameCache)
+		slot.valid = false;
+}
+
+bool HitboxData::ResolveAndReadBoxes(void* entity, FrameObject& outFrame, Box* outBoxes, int maxBoxes,
+	int& outCount)
+{
+	if (entity == nullptr || outBoxes == nullptr || maxBoxes <= 0)
+		return false;
+
+	if (FrameCacheEntry* const cached = FindFrameCacheEntry(entity))
+	{
+		outFrame = cached->frame;
+		outCount = (std::min)(cached->count, maxBoxes);
+		memcpy(outBoxes, cached->boxes, sizeof(Box) * outCount);
+		return true;
+	}
+
+	FrameObject frame = {};
+	if (!Resolve(entity, frame))
+		return false;
+
+	Box boxes[kMaxBoxes] = {};
+	const int count = ReadBoxes(frame, boxes, kMaxBoxes);
+
+	FrameCacheEntry& slot = AllocateFrameCacheEntry(entity);
+	slot.frame = frame;
+	slot.count = count;
+	memcpy(slot.boxes, boxes, sizeof(Box) * count);
+
+	outFrame = frame;
+	outCount = (std::min)(count, maxBoxes);
+	memcpy(outBoxes, boxes, sizeof(Box) * outCount);
+	return true;
 }

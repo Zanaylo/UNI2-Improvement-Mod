@@ -895,6 +895,8 @@ void DropOldestFrames(int count)
 		memmove(g_frames[p], g_frames[p] + count,
 			sizeof(FrameMeter::Frame) * static_cast<size_t>(remaining));
 
+		const bool techWasInWindow = g_techEndedAt[p] >= 0;
+
 		int* const indices[] = {
 			&g_returnedAt[p], &g_freeFrom[p], &g_moveEndAt[p], &g_stunEndedAt[p],
 			&g_techStartedAt[p], &g_techEndedAt[p], &g_lockEndAt[p], &g_downEndAt[p],
@@ -908,6 +910,13 @@ void DropOldestFrames(int count)
 				continue;
 
 			index = index >= count ? index - count : -1;
+		}
+
+		if (techWasInWindow && g_techEndedAt[p] < 0)
+		{
+			g_techSeen[p] = false;
+			g_techStartedFrame[p] = -1;
+			g_techEndedFrame[p] = -1;
 		}
 	}
 

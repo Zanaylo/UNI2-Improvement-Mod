@@ -12,6 +12,34 @@ const uint8_t* Field(void* playerData, uintptr_t offset)
 	return static_cast<const uint8_t*>(playerData) + offset;
 }
 
+constexpr int kValidatedRecordSlots = 4;
+
+struct ValidatedRecord
+{
+	uint32_t record;
+	bool valid;
+};
+
+ValidatedRecord g_validatedRecords[kValidatedRecordSlots] = {};
+int g_nextValidatedSlot = 0;
+
+bool IsRecordAlreadyValidated(uint32_t record)
+{
+	for (const ValidatedRecord& entry : g_validatedRecords)
+	{
+		if (entry.valid && entry.record == record)
+			return true;
+	}
+
+	return false;
+}
+
+void RememberValidatedRecord(uint32_t record)
+{
+	g_validatedRecords[g_nextValidatedSlot] = { record, true };
+	g_nextValidatedSlot = (g_nextValidatedSlot + 1) % kValidatedRecordSlots;
+}
+
 bool ReadMax(void* playerData, int& out)
 {
 	uint32_t record = 0;
@@ -22,10 +50,18 @@ bool ReadMax(void* playerData, int& out)
 		return false;
 	}
 
-	if (record == 0 || !IsReadableMemory(reinterpret_cast<const void*>(record),
-		GameOffsets::kHpRecordFirstSegment + GameOffsets::kHpRecordSegments * sizeof(int32_t)))
-	{
+	if (record == 0)
 		return false;
+
+	if (!IsRecordAlreadyValidated(record))
+	{
+		if (!IsReadableMemory(reinterpret_cast<const void*>(record),
+			GameOffsets::kHpRecordFirstSegment + GameOffsets::kHpRecordSegments * sizeof(int32_t)))
+		{
+			return false;
+		}
+
+		RememberValidatedRecord(record);
 	}
 
 	const uint8_t* const segments =

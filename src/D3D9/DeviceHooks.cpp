@@ -20,6 +20,7 @@
 #include "Game/CharaSelectProbe.h"
 #include "Game/SceneWatch.h"
 #include "Game/PotatoMode.h"
+#include "Game/HitboxData.h"
 #include "Game/MemoryMap.h"
 #include "Game/BalanceRules.h"
 #include "Game/GameRestart.h"
@@ -446,6 +447,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 		CharaSelectProbe::OnFrame();
 
 	MemoryMap::InvalidateEffectSlotCache();
+	HitboxData::InvalidateFrameCache();
 
 	if (device == g_device)
 	{
@@ -509,10 +511,16 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 		{
 			Profiler::Scope scope(Profiler::Section_PresentMeterHud);
+
 			ScreenDirector::Render(device);
-			FrameMeterHud::Render(device);
-			GrdPopupHud::Render(device);
-			HealthReadout::Render(device);
+
+			if (QuadRenderer::Begin(device))
+			{
+				FrameMeterHud::Render(device);
+				GrdPopupHud::Render(device);
+				HealthReadout::Render(device);
+				QuadRenderer::End();
+			}
 		}
 
 		{

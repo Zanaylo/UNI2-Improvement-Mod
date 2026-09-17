@@ -7,6 +7,7 @@
 #include "Game/GameOffsets.h"
 #include "Game/GameState.h"
 #include "Game/KeyboardSeat.h"
+#include "Game/HitboxData.h"
 #include "Game/MemoryMap.h"
 #include "Game/OnlineState.h"
 #include "Game/ReplayState.h"
@@ -78,6 +79,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 	++g_callCount;
 
 	MemoryMap::InvalidateEffectSlotCache();
+	HitboxData::InvalidateFrameCache();
 
 	if (OnlineState::IsOnline())
 	{

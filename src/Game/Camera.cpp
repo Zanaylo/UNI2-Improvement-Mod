@@ -100,47 +100,60 @@ bool Camera::GetPositionScale(float& outScale)
 
 bool Camera::PixelToScreen(float pixelX, float pixelY, float& outScreenX, float& outScreenY)
 {
-	float scaleX = 0.0f;
-	float scaleY = 0.0f;
+	ScreenTransform transform = {};
+	if (!ResolveScreenTransform(transform))
+		return false;
 
-	if (!ReadFloatGlobal(GameOffsets::kScaleX, scaleX) ||
-		!ReadFloatGlobal(GameOffsets::kScaleY, scaleY))
+	return TransformPoint(transform, pixelX, pixelY, outScreenX, outScreenY);
+}
+
+bool Camera::ResolveScreenTransform(ScreenTransform& out)
+{
+	if (!ReadFloatGlobal(GameOffsets::kScaleX, out.scaleX) ||
+		!ReadFloatGlobal(GameOffsets::kScaleY, out.scaleY))
 	{
 		return false;
 	}
 
-	float matrix[16] = {};
-	if (!TryReadMemory(matrix, reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kScreenMatrix)),
-		sizeof(matrix)))
+	if (!TryReadMemory(out.matrix, reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kScreenMatrix)),
+		sizeof(out.matrix)))
 	{
 		return false;
 	}
 
-	for (float value : matrix)
+	for (float value : out.matrix)
 	{
 		if (!std::isfinite(value))
 			return false;
 	}
 
-	const float x = pixelX * scaleX;
-	const float y = pixelY * scaleY;
+	out.referenceWidth = ReferenceWidth();
+	out.referenceHeight = ReferenceHeight();
 
-	const float w = x * matrix[3] + y * matrix[7] + matrix[15];
+	return true;
+}
+
+bool Camera::TransformPoint(const ScreenTransform& transform, float pixelX, float pixelY,
+	float& outScreenX, float& outScreenY)
+{
+	const float x = pixelX * transform.scaleX;
+	const float y = pixelY * transform.scaleY;
+
+	const float w = x * transform.matrix[3] + y * transform.matrix[7] + transform.matrix[15];
 	if (std::fabs(w) < 1e-6f)
 		return false;
 
-	outScreenX = (x * matrix[0] + y * matrix[4] + matrix[12]) / w;
-	outScreenY = (x * matrix[1] + y * matrix[5] + matrix[13]) / w;
+	outScreenX = (x * transform.matrix[0] + y * transform.matrix[4] + transform.matrix[12]) / w;
+	outScreenY = (x * transform.matrix[1] + y * transform.matrix[5] + transform.matrix[13]) / w;
 
 	const ImGuiIO& io = ImGui::GetIO();
 	if (io.DisplaySize.x > 0.0f && io.DisplaySize.y > 0.0f)
 	{
-		const float width = ReferenceWidth();
-		const float height = ReferenceHeight();
-		const float scale = (std::min)(io.DisplaySize.x / width, io.DisplaySize.y / height);
+		const float scale = (std::min)(io.DisplaySize.x / transform.referenceWidth,
+			io.DisplaySize.y / transform.referenceHeight);
 
-		outScreenX = outScreenX * scale + (io.DisplaySize.x - width * scale) * 0.5f;
-		outScreenY = outScreenY * scale + (io.DisplaySize.y - height * scale) * 0.5f;
+		outScreenX = outScreenX * scale + (io.DisplaySize.x - transform.referenceWidth * scale) * 0.5f;
+		outScreenY = outScreenY * scale + (io.DisplaySize.y - transform.referenceHeight * scale) * 0.5f;
 	}
 
 	return std::isfinite(outScreenX) && std::isfinite(outScreenY);

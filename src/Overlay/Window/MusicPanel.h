@@ -29,11 +29,12 @@ private:
 	void DrawTransfer();
 	void DrawShuffle();
 	void DrawBrowse();
-	void DrawTrackCount();
+	void CollectFilteredTracks(std::vector<int>& outIds, int& outTotal) const;
+	void DrawTrackCount(const std::vector<int>& filteredIds, int total);
 	void SetUpTrackColumns(bool building);
 	void DrawTrackRow(int id, const char* name, bool building, bool playing);
 	void DrawTrackVolume(int id);
-	void DrawTrackTable();
+	void DrawTrackTable(const std::vector<int>& filteredIds);
 	void DrawRules();
 	void DrawRuleTransfer();
 	bool DrawRuleRow(int index, const BgmRules::Rule& stored);

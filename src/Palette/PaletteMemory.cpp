@@ -418,13 +418,29 @@ int PaletteMemory::FindLoadForPlayer(int player)
 	return -1;
 }
 
+namespace {
+
+int GetPlayerSlotForChara(void* chara)
+{
+	if (chara == nullptr)
+		return -1;
+
+	uint32_t slot = 0;
+	if (!MemoryMap::ReadStructDword(chara, GameOffsets::kPlayerDataPaletteSlot, slot))
+		return -1;
+
+	return static_cast<int>(slot);
+}
+
+}
+
 uintptr_t PaletteMemory::GetPlayerPaletteTable(int player)
 {
 	void* chara = PlayerData(player);
 	if (chara == nullptr)
 		return 0;
 
-	const int slot = GetPlayerSlot(player);
+	const int slot = GetPlayerSlotForChara(chara);
 
 	const uintptr_t candidates[] = {
 		GameOffsets::kPlayerDataPaletteTable, GameOffsets::kPlayerDataPaletteTableAlt
@@ -533,13 +549,9 @@ bool PaletteMemory::ReadPlayerPalette(int player, uint8_t* out)
 	return TryReadMemory(out, reinterpret_cast<const void*>(address), kPaletteBytes);
 }
 
-bool PaletteMemory::ReadPlayerPaletteAt(int player, int index, uint8_t* out)
+bool PaletteMemory::ReadPaletteAtTable(uintptr_t table, int index, uint8_t* out)
 {
-	if (out == nullptr || index < 0 || index >= GameOffsets::kPaletteSlots)
-		return false;
-
-	const uintptr_t table = GetPlayerPaletteTable(player);
-	if (table == 0)
+	if (out == nullptr || table == 0 || index < 0 || index >= GameOffsets::kPaletteSlots)
 		return false;
 
 	uint32_t palette = 0;
@@ -553,6 +565,11 @@ bool PaletteMemory::ReadPlayerPaletteAt(int player, int index, uint8_t* out)
 		return false;
 
 	return TryReadMemory(out, reinterpret_cast<const void*>(palette), kPaletteBytes);
+}
+
+bool PaletteMemory::ReadPlayerPaletteAt(int player, int index, uint8_t* out)
+{
+	return ReadPaletteAtTable(GetPlayerPaletteTable(player), index, out);
 }
 
 int PaletteMemory::FindCopiesOfPlayerPalette(int player)
@@ -618,15 +635,7 @@ int PaletteMemory::GetCharaNumber(int player)
 
 int PaletteMemory::GetPlayerSlot(int player)
 {
-	void* chara = PlayerData(player);
-	if (chara == nullptr)
-		return -1;
-
-	uint32_t slot = 0;
-	if (!MemoryMap::ReadStructDword(chara, GameOffsets::kPlayerDataPaletteSlot, slot))
-		return -1;
-
-	return static_cast<int>(slot);
+	return GetPlayerSlotForChara(PlayerData(player));
 }
 
 bool PaletteMemory::SetPlayerSlot(int player, int slot)

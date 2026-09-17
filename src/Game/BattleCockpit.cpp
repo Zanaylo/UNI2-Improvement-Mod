@@ -12,6 +12,8 @@ namespace {
 
 bool g_reached = false;
 
+uint32_t g_lastValidatedObject = 0;
+
 void* Cockpit()
 {
 	const uintptr_t global = RvaToAddress(GameOffsets::kBattleCockpit);
@@ -24,10 +26,15 @@ void* Cockpit()
 	if (!TryReadDword(reinterpret_cast<const void*>(global), object) || object == 0)
 		return nullptr;
 
-	if (!IsReadableMemory(reinterpret_cast<const void*>(object),
-		GameOffsets::kCockpitView + sizeof(uint32_t)))
+	if (object != g_lastValidatedObject)
 	{
-		return nullptr;
+		if (!IsReadableMemory(reinterpret_cast<const void*>(object),
+			GameOffsets::kCockpitView + sizeof(uint32_t)))
+		{
+			return nullptr;
+		}
+
+		g_lastValidatedObject = object;
 	}
 
 	return reinterpret_cast<void*>(object);

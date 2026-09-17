@@ -1,5 +1,3 @@
-// Runtime hitbox layout, recovered from the HA6 chunk parser and the engine's own teardown routine.
-
 #pragma once
 
 #include <cstdint>
@@ -49,6 +47,10 @@ namespace HitboxData
 
 	bool Resolve(void* playerData, FrameObject& out);
 	int ReadBoxes(const FrameObject& frameObject, Box* outBoxes, int maxBoxes);
+
+	bool ResolveAndReadBoxes(void* entity, FrameObject& outFrame, Box* outBoxes, int maxBoxes,
+		int& outCount);
+	void InvalidateFrameCache();
 
 	ScanResult ScanForFrameObject(void* playerData);
 }

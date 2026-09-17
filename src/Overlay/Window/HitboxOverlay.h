@@ -6,6 +6,7 @@
 
 #include "Overlay/Window/IWindow.h"
 
+#include "Game/Camera.h"
 #include "Game/HitboxData.h"
 
 class HitboxOverlay : public IWindow
@@ -56,7 +57,7 @@ protected:
 	void Draw() override;
 
 private:
-	void DrawEntity(void* entity, bool isEffect);
+	void DrawEntity(const Camera::ScreenTransform& transform, void* entity, bool isEffect);
 
 	CategorySettings m_categories[BoxCategory_COUNT];
 	bool m_showOrigin;

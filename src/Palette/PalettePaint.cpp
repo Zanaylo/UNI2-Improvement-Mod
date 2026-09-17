@@ -45,6 +45,8 @@ struct Player
 	uint32_t haveAlpha[PaletteSeat::kCandidates];
 	uint32_t reported[PaletteSeat::kCandidates];
 
+	uint8_t lastNative[PaletteSeat::kCandidates][PalettePaint::kRows][PalettePaint::kBytes];
+
 	int writes;
 	bool painting;
 
@@ -214,13 +216,23 @@ void PaintSlot(Player& entry, int slot, const uint8_t* source, const uint8_t* co
 			continue;
 		}
 
+		uint8_t composed[PalettePaint::kBytes];
+
 		for (int i = 0; i < PalettePaint::kColours; ++i)
 		{
-			native[count][i * 4 + 0] = from[i * 4 + 2];
-			native[count][i * 4 + 1] = from[i * 4 + 1];
-			native[count][i * 4 + 2] = from[i * 4 + 0];
-			native[count][i * 4 + 3] = entry.alpha[slot][row][i];
+			composed[i * 4 + 0] = from[i * 4 + 2];
+			composed[i * 4 + 1] = from[i * 4 + 1];
+			composed[i * 4 + 2] = from[i * 4 + 0];
+			composed[i * 4 + 3] = entry.alpha[slot][row][i];
 		}
+
+		const bool alreadyPainted = (entry.painted[slot] & (1u << row)) != 0;
+
+		if (alreadyPainted && memcmp(composed, entry.lastNative[slot][row], PalettePaint::kBytes) == 0)
+			continue;
+
+		memcpy(native[count], composed, PalettePaint::kBytes);
+		memcpy(entry.lastNative[slot][row], composed, PalettePaint::kBytes);
 
 		if (tell)
 			LOG("palette paint: texture %d row %u written", entry.indices[slot], row);

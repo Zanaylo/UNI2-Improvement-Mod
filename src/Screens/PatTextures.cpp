@@ -3,15 +3,27 @@
 #include "Core/logger.h"
 #include "D3D9/DdsTexture.h"
 
-#include <map>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace {
 
-using Key = std::pair<PatFile::Handle, int>;
+using AtlasTextures = std::vector<std::pair<int, IDirect3DTexture9*>>;
 
-std::map<Key, IDirect3DTexture9*> g_textures;
-std::map<PatFile::Handle, bool> g_prepared;
+std::unordered_map<PatFile::Handle, AtlasTextures> g_textures;
+std::unordered_map<PatFile::Handle, bool> g_prepared;
+
+IDirect3DTexture9* FindAtlasTexture(const AtlasTextures& atlases, int atlas)
+{
+	for (const auto& entry : atlases)
+	{
+		if (entry.first == atlas)
+			return entry.second;
+	}
+
+	return nullptr;
+}
 
 }
 
@@ -28,6 +40,8 @@ bool PatTextures::Prepare(IDirect3DDevice9* device, PatFile::Handle handle)
 	const int count = PatFile::AtlasCount(handle);
 	int uploaded = 0;
 
+	AtlasTextures& atlases = g_textures[handle];
+
 	for (int i = 0; i < count; ++i)
 	{
 		PatFile::Atlas atlas = {};
@@ -43,7 +57,7 @@ bool PatTextures::Prepare(IDirect3DDevice9* device, PatFile::Handle handle)
 		if (texture == nullptr)
 			continue;
 
-		g_textures[Key(handle, atlas.id)] = texture;
+		atlases.emplace_back(atlas.id, texture);
 		++uploaded;
 	}
 
@@ -56,17 +70,20 @@ bool PatTextures::Prepare(IDirect3DDevice9* device, PatFile::Handle handle)
 
 IDirect3DTexture9* PatTextures::Get(PatFile::Handle handle, int atlas)
 {
-	const auto found = g_textures.find(Key(handle, atlas));
+	const auto found = g_textures.find(handle);
 
-	return found != g_textures.end() ? found->second : nullptr;
+	return found != g_textures.end() ? FindAtlasTexture(found->second, atlas) : nullptr;
 }
 
 void PatTextures::Release()
 {
-	for (auto& entry : g_textures)
+	for (auto& handleEntry : g_textures)
 	{
-		if (entry.second != nullptr)
-			entry.second->Release();
+		for (auto& atlasEntry : handleEntry.second)
+		{
+			if (atlasEntry.second != nullptr)
+				atlasEntry.second->Release();
+		}
 	}
 
 	g_textures.clear();
@@ -75,5 +92,10 @@ void PatTextures::Release()
 
 int PatTextures::Count()
 {
-	return static_cast<int>(g_textures.size());
+	int count = 0;
+
+	for (const auto& handleEntry : g_textures)
+		count += static_cast<int>(handleEntry.second.size());
+
+	return count;
 }

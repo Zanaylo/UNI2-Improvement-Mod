@@ -758,9 +758,6 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 		y = static_cast<float>(g_modVals.frameMeterY);
 	}
 
-	if (!QuadRenderer::Begin(device))
-		return;
-
 	float cursor = y;
 
 	if (g_visible)
@@ -822,6 +819,4 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 
 	if (countdownVisible)
 		DrawResumeCountdown(x, cursor, s, width, autoPause.resumeDelayFrames);
-
-	QuadRenderer::End();
 }

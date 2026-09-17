@@ -86,13 +86,15 @@ void RefreshCatalogue(int player)
 	const int before = catalogue.count;
 	++catalogue.passes;
 
+	const uintptr_t table = PaletteMemory::GetPlayerPaletteTable(player);
+
 	for (int i = 0; i < GameOffsets::kPaletteSlots; ++i)
 	{
 		if (catalogue.valid[i])
 			continue;
 
 		uint8_t palette[PaletteMemory::kPaletteBytes] = {};
-		if (!PaletteMemory::ReadPlayerPaletteAt(player, i, palette))
+		if (!PaletteMemory::ReadPaletteAtTable(table, i, palette))
 			continue;
 
 		TakeSignature(palette, catalogue.signature[i]);

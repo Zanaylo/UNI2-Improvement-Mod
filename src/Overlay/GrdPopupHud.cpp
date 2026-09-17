@@ -172,14 +172,9 @@ void GrdPopupHud::Render(IDirect3DDevice9* device)
 	const float height = static_cast<float>(viewport.Height);
 	const float scale = kTextScale * DeviceHooks::GetOverlayScale();
 
-	if (!QuadRenderer::Begin(device))
-		return;
-
 	if (timer)
 		DrawTimer(width, height, scale);
 
 	for (int i = 0; i < count; ++i)
 		DrawPopup(popups[i], width, height, scale);
-
-	QuadRenderer::End();
 }

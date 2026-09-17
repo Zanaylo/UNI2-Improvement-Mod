@@ -21,6 +21,7 @@ namespace PaletteMemory
 	bool ReadPlayerPalette(int player, uint8_t* out);
 
 	bool ReadPlayerPaletteAt(int player, int index, uint8_t* out);
+	bool ReadPaletteAtTable(uintptr_t table, int index, uint8_t* out);
 
 	int FindCopiesOfPlayerPalette(int player);
 
