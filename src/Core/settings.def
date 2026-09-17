@@ -32,6 +32,9 @@ SETTING_INT(healthValuesX,          "Training", "HealthValuesX",        0)
 SETTING_INT(healthValuesY,          "Training", "HealthValuesY",        0)
 SETTING_INT(healthValuesScale,      "Training", "HealthValuesScale",  100)
 
+SETTING_INT(grdPopups,              "Training", "GrdPopups",            1)
+SETTING_INT(grdTimer,               "Training", "GrdTimer",             1)
+
 SETTING_INT(hideBattleHud,          "Training", "HideHud",              0)
 
 SETTING_INT(autoPauseMode,          "Training", "AutoPauseOnAttack",  0)

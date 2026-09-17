@@ -35,6 +35,8 @@ struct ModValues
 	int healthValuesX;
 	int healthValuesY;
 	int healthValuesScale;
+	bool grdPopups;
+	bool grdTimer;
 	int hideBattleHud;
 
 	int autoPauseMode;

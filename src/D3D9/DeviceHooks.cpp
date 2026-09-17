@@ -65,6 +65,7 @@
 #include "Palette/PaletteTexture.h"
 #include "Screens/ScreenDirector.h"
 #include "Overlay/FrameMeterHud.h"
+#include "Overlay/GrdPopupHud.h"
 #include "Overlay/HealthReadout.h"
 #include "Training/PlayerControl.h"
 #include "Overlay/WindowManager.h"
@@ -457,6 +458,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			Profiler::Scope scope(Profiler::Section_PresentMeterHud);
 			ScreenDirector::Render(device);
 			FrameMeterHud::Render(device);
+			GrdPopupHud::Render(device);
 			HealthReadout::Render(device);
 		}
 

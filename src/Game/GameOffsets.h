@@ -358,6 +358,16 @@ namespace GameOffsets
 	constexpr uintptr_t kComboCandidateE = 0x3c;
 	constexpr uintptr_t kCharaSideIndex = 0x434;
 
+	constexpr uintptr_t kGrdGaugeBase = 0x874ce0;
+	constexpr uintptr_t kGrdGaugeStride = 0x14c;
+	constexpr uintptr_t kGrdGaugeBlocks = 0xf0;
+	constexpr uintptr_t kGrdGaugePartial = 0xf4;
+	constexpr uint32_t kGrdGaugeMaxBlocks = 12;
+
+	constexpr uintptr_t kGrdCycleElapsed = 0x874fb0;
+	constexpr uintptr_t kGrdCycleLength = 0x874fb8;
+	constexpr int kGrdCycleUnitsPerFrame = 100;
+
 	constexpr uintptr_t kPlayerDataHp = 0x8c;
 	constexpr uintptr_t kPlayerDataHpTrailing = 0x90;
 	constexpr uintptr_t kPlayerDataHpRecord = 0x868;

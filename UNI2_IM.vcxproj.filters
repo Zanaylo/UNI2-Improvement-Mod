@@ -777,6 +777,12 @@
     <ClCompile Include="src\Overlay\FrameMeterHud.cpp">
       <Filter>Overlay</Filter>
     </ClCompile>
+    <ClCompile Include="src\Overlay\GrdPopupHud.cpp">
+      <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\GrdWatch.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
     <ClCompile Include="src\D3D9\DdsTexture.cpp">
       <Filter>D3D9</Filter>
     </ClCompile>
@@ -1708,6 +1714,12 @@
     </ClInclude>
     <ClInclude Include="src\Overlay\FrameMeterHud.h">
       <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\GrdPopupHud.h">
+      <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\GrdWatch.h">
+      <Filter>Training</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\DdsTexture.h">
       <Filter>D3D9</Filter>

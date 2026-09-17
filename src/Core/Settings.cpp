@@ -376,6 +376,8 @@ void Settings::ApplySettings()
 	g_modVals.healthValuesX = g_settings.healthValuesX;
 	g_modVals.healthValuesY = g_settings.healthValuesY;
 	g_modVals.healthValuesScale = g_settings.healthValuesScale;
+	g_modVals.grdPopups = g_settings.grdPopups != 0;
+	g_modVals.grdTimer = g_settings.grdTimer != 0;
 	g_modVals.hideBattleHud = g_settings.hideBattleHud != 0 ? 1 : 0;
 	g_modVals.blockGameMouse = g_settings.blockGameMouse != 0;
 	g_modVals.drawWhilePaused = g_settings.drawWhilePaused != 0;

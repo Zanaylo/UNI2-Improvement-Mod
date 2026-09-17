@@ -22,6 +22,7 @@
 #include "Game/OnlineState.h"
 #include "Network/PaletteShare.h"
 #include "Overlay/FrameMeterHud.h"
+#include "Overlay/GrdPopupHud.h"
 #include "Overlay/HealthReadout.h"
 #include "Game/BattleCockpit.h"
 #include "Overlay/ComboNav.h"
@@ -925,6 +926,20 @@ void MainWindow::DrawHitboxControls()
 
 	ImGui::SameLine();
 	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.toggleFrameMeterKey));
+
+	bool grdVisible = GrdPopupHud::IsVisible();
+	if (ImGui::Checkbox("GRD popups", &grdVisible))
+		GrdPopupHud::SetVisible(grdVisible);
+
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Shows each GRD gain or loss, in blocks, above the GRD gauge.\nOffline training only.");
+
+	bool grdTimerVisible = GrdPopupHud::IsTimerVisible();
+	if (ImGui::Checkbox("GRD timer", &grdTimerVisible))
+		GrdPopupHud::SetTimerVisible(grdTimerVisible);
+
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Shows the seconds left before the GRD circle closes, in the middle of the gauge.\nOffline training only.");
 
 	bool healthVisible = HealthReadout::IsVisible();
 	if (ImGui::Checkbox("Health values", &healthVisible))

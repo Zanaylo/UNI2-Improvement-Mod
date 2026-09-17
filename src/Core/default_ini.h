@@ -41,6 +41,8 @@ const char* const kDefaultIniLines[] = {
 	"",
 	"[Training]",
 	"FreezeMode = 0",
+	"GrdPopups = 1",
+	"GrdTimer = 1",
 	"AutoPauseOnAttack = 0",
 	"AutoPauseComboStops = 3",
 	"AutoPauseBlockStops = 3",

@@ -13,6 +13,7 @@
 #include "Hooks/HookManager.h"
 #include "Training/DummyRecorder.h"
 #include "Training/FrameMeter.h"
+#include "Training/GrdWatch.h"
 #include "Training/StateRecorder.h"
 #include "Training/PlayerControl.h"
 #include "Training/StopTime.h"
@@ -65,6 +66,7 @@ void SampleObservers()
 	{
 		Profiler::Scope scope(Profiler::Section_TickMeter);
 		FrameMeter::SampleFromGameThread();
+		GrdWatch::SampleFromGameThread();
 	}
 
 	Profiler::Scope scope(Profiler::Section_TickRecorder);
