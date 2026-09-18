@@ -9,10 +9,13 @@
 #include <MinHook.h>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 
 namespace {
 
 bool g_initialized = false;
+
+std::recursive_mutex g_hookLock;
 
 bool MatchesPattern(const uint8_t* data, const char* pattern, const char* mask)
 {
@@ -303,6 +306,8 @@ bool HookManager::GetSectionBounds(const char* sectionName, uintptr_t& outStart,
 
 bool HookManager::Initialize()
 {
+	std::lock_guard<std::recursive_mutex> lock(g_hookLock);
+
 	if (g_initialized)
 		return true;
 
@@ -321,6 +326,8 @@ bool HookManager::Initialize()
 void HookManager::Shutdown()
 {
 	StopIntegrityWatchdog();
+
+	std::lock_guard<std::recursive_mutex> lock(g_hookLock);
 
 	if (!g_initialized)
 		return;
@@ -391,6 +398,8 @@ void LogHookCreated(const char* label, void* requested, void* resolved, int hops
 
 bool HookManager::CreateHook(void* target, void* detour, void** original, const char* label)
 {
+	std::lock_guard<std::recursive_mutex> lock(g_hookLock);
+
 	if (target == nullptr)
 	{
 		LOG("CreateHook '%s' failed: null target", label);
@@ -417,6 +426,8 @@ bool HookManager::CreateHook(void* target, void* detour, void** original, const 
 
 bool HookManager::CreateAndEnableHook(void* target, void* detour, void** original, const char* label)
 {
+	std::lock_guard<std::recursive_mutex> lock(g_hookLock);
+
 	if (!CreateHook(target, detour, original, label))
 		return false;
 
@@ -469,6 +480,8 @@ bool HookManager::CreateVTableHook(void* instance, int index, void* detour, void
 
 bool HookManager::SetHookEnabled(void* target, bool enabled)
 {
+	std::lock_guard<std::recursive_mutex> lock(g_hookLock);
+
 	void* const resolved = ResolvedAddressFor(target);
 
 	for (int i = 0; i < g_recordCount; ++i)
@@ -546,6 +559,8 @@ bool IsTooYoungToVerify(const HookRecord& record)
 
 int HookManager::VerifyHooks()
 {
+	std::lock_guard<std::recursive_mutex> lock(g_hookLock);
+
 	int removed = 0;
 
 	for (int i = 0; i < g_recordCount; ++i)
@@ -723,6 +738,8 @@ const char* HookManager::IntegrityStatus()
 
 bool HookManager::EnableAllHooks()
 {
+	std::lock_guard<std::recursive_mutex> lock(g_hookLock);
+
 	MH_STATUS status = MH_QueueEnableHook(MH_ALL_HOOKS);
 
 	for (int i = 0; i < g_recordCount && status == MH_OK; ++i)

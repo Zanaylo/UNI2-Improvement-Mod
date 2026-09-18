@@ -9,6 +9,7 @@ namespace GraphicsPanel
 	void DrawMousePointer();
 
 	void DrawDgVoodoo();
+	void DrawDxvk();
 
 	bool DrawEverythingOff();
 }

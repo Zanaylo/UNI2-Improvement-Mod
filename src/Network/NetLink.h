@@ -50,6 +50,7 @@ namespace NetLink
 
 	void OnPresent(int64_t modMicros);
 	void Update();
+	void NoteFocusChange(bool focused);
 
 	const Snapshot& Current();
 	void Copy(Snapshot& out);

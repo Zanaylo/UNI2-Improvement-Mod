@@ -2,6 +2,7 @@
 
 #include "Core/KeyboardCapture.h"
 #include "Core/ProcessTuning.h"
+#include "Network/NetLink.h"
 #include "Core/info.h"
 #include "Core/Hotkeys.h"
 #include "Game/BattleCockpit.h"
@@ -319,10 +320,8 @@ void WindowManager::ObserveFocus(UINT message, WPARAM wParam)
 	if (message == WM_ACTIVATEAPP)
 	{
 		m_hasFocus = wParam != 0;
-
-		if (m_hasFocus)
-			ProcessTuning::Reassert();
-
+		ProcessTuning::Reassert();
+		NetLink::NoteFocusChange(m_hasFocus);
 		return;
 	}
 

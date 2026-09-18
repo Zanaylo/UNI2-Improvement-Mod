@@ -7,6 +7,7 @@
 #include "D3D9/D3D9Proxy.h"
 #include "D3D9/DeviceHooks.h"
 #include "D3D9/DgVoodoo.h"
+#include "D3D9/Dxvk.h"
 #include "D3D9/PresentTuning.h"
 #include "Hooks/HookManager.h"
 
@@ -142,24 +143,34 @@ bool HookCreateDeviceFrom(IDirect3D9* d3d9)
 	return true;
 }
 
+Direct3DCreate9_t TranslationLayerCreator(HMODULE module, const char* name)
+{
+	Direct3DCreate9_t creator = reinterpret_cast<Direct3DCreate9_t>(
+		GetProcAddress(module, "Direct3DCreate9"));
+
+	if (creator == nullptr)
+		LOG("%s has no Direct3DCreate9, so the system's is used", name);
+
+	return creator;
+}
+
 Direct3DCreate9_t Creator()
 {
-	static Direct3DCreate9_t dgVoodoo = nullptr;
+	static Direct3DCreate9_t chosen = nullptr;
 
-	if (dgVoodoo != nullptr)
-		return dgVoodoo;
+	if (chosen != nullptr)
+		return chosen;
 
-	const HMODULE module = DgVoodoo::Load();
+	if (HMODULE module = DgVoodoo::Load())
+		chosen = TranslationLayerCreator(module, "dgVoodoo's D3D9.dll");
 
-	if (module == nullptr)
-		return oDirect3DCreate9;
+	if (chosen == nullptr)
+	{
+		if (HMODULE module = Dxvk::Load())
+			chosen = TranslationLayerCreator(module, "DXVK's d3d9.dll");
+	}
 
-	dgVoodoo = reinterpret_cast<Direct3DCreate9_t>(GetProcAddress(module, "Direct3DCreate9"));
-
-	if (dgVoodoo == nullptr)
-		LOG("dgVoodoo's D3D9.dll has no Direct3DCreate9, so the system's is used");
-
-	return dgVoodoo != nullptr ? dgVoodoo : oDirect3DCreate9;
+	return chosen != nullptr ? chosen : oDirect3DCreate9;
 }
 
 bool RuntimeIsTheSystems(char* path, DWORD size)
@@ -180,6 +191,13 @@ void HookCreateDeviceThroughProbe()
 	if (DgVoodoo::IsEnabled() && DgVoodoo::IsInstalled())
 	{
 		LOG("dgVoodoo is on, so CreateDevice is hooked on the game's own Direct3D object instead of "
+			"a probe");
+		return;
+	}
+
+	if (Dxvk::IsEnabled() && Dxvk::IsInstalled())
+	{
+		LOG("DXVK is on, so CreateDevice is hooked on the game's own Direct3D object instead of "
 			"a probe");
 		return;
 	}

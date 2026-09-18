@@ -217,33 +217,39 @@ void Stage_D3D9()
 		LOG("D3D9 hook installation failed, overlay will not be available");
 }
 
+bool g_memoryMapReady = false;
+
 void Stage_GameHooks()
 {
-	if (!MemoryMap::Initialize())
+	RunStage("game hooks: memory map", []() { g_memoryMapReady = MemoryMap::Initialize(); });
+
+	if (!g_memoryMapReady)
 		return;
 
-	CharaTracker::Install();
-	FrameStepper::Initialize();
-	PlayerControl::Initialize();
-	PaletteMemory::Install();
-	PaletteOwnerProbe::Install();
-	EffectPaint::Install();
+	RunStage("game hooks: chara tracker", []() { CharaTracker::Install(); });
+	RunStage("game hooks: frame stepper", []() { FrameStepper::Initialize(); });
+	RunStage("game hooks: player control", []() { PlayerControl::Initialize(); });
+	RunStage("game hooks: palette memory", []() { PaletteMemory::Install(); });
+	RunStage("game hooks: palette owner probe", []() { PaletteOwnerProbe::Install(); });
+	RunStage("game hooks: effect paint", []() { EffectPaint::Install(); });
+
 	if (g_modVals.showLegacyPalettes)
-		PaletteDrawProbe::Install();
-	KeyboardSeat::Initialize();
-	ReplayFiles::Initialize();
-	BalanceRules::Install();
-	ScreenShake::Install();
-	NameCensor::Install();
-	RoomNameCensor::Install();
-	RandomStage::Install();
-	SubtitleWatch::Install();
-	SubtitleText::Install();
-	StageObjects::Initialize();
-	StageCards::Initialize();
-	BgmControl::Initialize();
-	PumpWait::Apply();
-	KeyboardSeat::ApplySaved();
+		RunStage("game hooks: palette draw probe", []() { PaletteDrawProbe::Install(); });
+
+	RunStage("game hooks: keyboard seat", []() { KeyboardSeat::Initialize(); });
+	RunStage("game hooks: replay files", []() { ReplayFiles::Initialize(); });
+	RunStage("game hooks: balance rules", []() { BalanceRules::Install(); });
+	RunStage("game hooks: screen shake", []() { ScreenShake::Install(); });
+	RunStage("game hooks: name censor", []() { NameCensor::Install(); });
+	RunStage("game hooks: room name censor", []() { RoomNameCensor::Install(); });
+	RunStage("game hooks: random stage", []() { RandomStage::Install(); });
+	RunStage("game hooks: subtitle watch", []() { SubtitleWatch::Install(); });
+	RunStage("game hooks: subtitle text", []() { SubtitleText::Install(); });
+	RunStage("game hooks: stage objects", []() { StageObjects::Initialize(); });
+	RunStage("game hooks: stage cards", []() { StageCards::Initialize(); });
+	RunStage("game hooks: bgm control", []() { BgmControl::Initialize(); });
+	RunStage("game hooks: pump wait", []() { PumpWait::Apply(); });
+	RunStage("game hooks: keyboard seat saved", []() { KeyboardSeat::ApplySaved(); });
 }
 
 void Stage_PaletteShare()
@@ -318,11 +324,16 @@ DWORD WINAPI InitThread(LPVOID)
 	g_gameProc.baseAddress = GetGameBaseAddress();
 	g_gameProc.moduleSize = GetGameModuleSize();
 
+	DWORD hookManagerStarted = GetTickCount();
+
 	if (!HookManager::Initialize())
 	{
 		LOG("HookManager initialization failed, aborting");
 		return 0;
 	}
+
+	if (GetTickCount() - hookManagerStarted >= kSlowStageMs)
+		LOG("stage 'hook manager init' took %lu ms", GetTickCount() - hookManagerStarted);
 
 	RunStage("d3d9 hooks", Stage_D3D9);
 	RunStage("input entry point", Stage_InputEntry);
@@ -332,7 +343,11 @@ DWORD WINAPI InitThread(LPVOID)
 	RunStage("netplay", Stage_Netplay);
 	RunStage("input hooks", Stage_InputHooks);
 
+	const DWORD enableHooksStarted = GetTickCount();
 	HookManager::EnableAllHooks();
+
+	if (GetTickCount() - enableHooksStarted >= kSlowStageMs)
+		LOG("stage 'enable all hooks' took %lu ms", GetTickCount() - enableHooksStarted);
 	HookManager::StartIntegrityWatchdog();
 
 	LOG("Initialization finished");

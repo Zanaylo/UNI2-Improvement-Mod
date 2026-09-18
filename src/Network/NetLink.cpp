@@ -393,6 +393,14 @@ void NetLink::OnPresent(int64_t modMicros)
 		modMicros / 1000.0, g_now.netplayFrame);
 }
 
+void NetLink::NoteFocusChange(bool focused)
+{
+	if (!InSession(g_now))
+		return;
+
+	NetLog::Write("focus %s, netplay frame %d", focused ? "gained" : "lost", g_now.netplayFrame);
+}
+
 void NetLink::Update()
 {
 	const Snapshot before = g_now;

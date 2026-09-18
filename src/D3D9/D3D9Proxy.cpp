@@ -5,6 +5,7 @@
 #include "Core/utils.h"
 #include "D3D9/D3D9Wrapper.h"
 #include "D3D9/DgVoodoo.h"
+#include "D3D9/Dxvk.h"
 
 #include <d3d9.h>
 
@@ -49,12 +50,19 @@ void ResolveIdentity()
 bool LoadRealRuntime()
 {
 	HMODULE loaded = DgVoodoo::Load();
-
-	const std::string path = loaded != nullptr ? DgVoodoo::Folder() + kProxyName
-		: GetSystemDirectoryPath() + kProxyName;
+	std::string path = loaded != nullptr ? DgVoodoo::Folder() + kProxyName : std::string();
 
 	if (loaded == nullptr)
+	{
+		loaded = Dxvk::Load();
+		path = loaded != nullptr ? Dxvk::Folder() + kProxyName : std::string();
+	}
+
+	if (loaded == nullptr)
+	{
+		path = GetSystemDirectoryPath() + kProxyName;
 		loaded = LoadLibraryA(path.c_str());
+	}
 
 	if (loaded == nullptr)
 	{

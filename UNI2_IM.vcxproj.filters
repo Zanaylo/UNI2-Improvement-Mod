@@ -84,6 +84,9 @@
     <ClCompile Include="src\D3D9\DgVoodoo.cpp">
       <Filter>D3D9</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\Dxvk.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\RandomStage.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -1035,6 +1038,9 @@
       <Filter>D3D9</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\DgVoodoo.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Dxvk.h">
       <Filter>D3D9</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\RandomStage.h">

@@ -6,6 +6,7 @@
 #include "Core/interfaces.h"
 #include "D3D9/DeviceHooks.h"
 #include "D3D9/DgVoodoo.h"
+#include "D3D9/Dxvk.h"
 #include "D3D9/GraphicsWrapper.h"
 #include "D3D9/Post/PostChain.h"
 #include "D3D9/Post/PostOptions.h"
@@ -35,6 +36,9 @@ constexpr float kSliderWidth = 240.0f;
 
 AsyncFileDialog g_dgVoodooDialog;
 char g_dgVoodooNote[256] = {};
+
+AsyncFileDialog g_dxvkDialog;
+char g_dxvkNote[256] = {};
 
 bool RadioRow(const char* id, int count, const char* (*name)(int), int current, int& outChosen)
 {
@@ -440,7 +444,12 @@ void GraphicsPanel::DrawDgVoodoo()
 	ImGui::BeginDisabled(!DgVoodoo::IsInstalled());
 
 	if (ImGui::Checkbox("Run the game through dgVoodoo", &enabled))
+	{
 		DgVoodoo::SetEnabled(enabled);
+
+		if (enabled)
+			Dxvk::SetEnabled(false);
+	}
 
 	ImGui::EndDisabled();
 	ImGui::SameLine();
@@ -453,7 +462,8 @@ void GraphicsPanel::DrawDgVoodoo()
 		"The mod copies the dlls into UNI2-IM\\dgVoodoo and writes dgVoodoo.conf from these "
 		"options. Nothing in the game folder is touched.\n\n"
 		"Forcing texture filtering or anti-aliasing can break the character colours. Keep them on "
-		"the game's own or off unless you know you want them.");
+		"the game's own or off unless you know you want them.\n\n"
+		"Only one Direct3D wrapper can run at a time; turning this on turns DXVK off.");
 
 	if (g_dgVoodooNote[0] != 0)
 		Muted("%s", g_dgVoodooNote);
@@ -469,4 +479,49 @@ void GraphicsPanel::DrawDgVoodoo()
 	ImGui::Indent();
 	DrawDgVoodooChoices();
 	ImGui::Unindent();
+}
+
+void GraphicsPanel::DrawDxvk()
+{
+	ImGui::SeparatorText("DXVK");
+
+	std::string picked;
+
+	if (g_dxvkDialog.TakeResult(picked) && !picked.empty())
+		Dxvk::InstallFrom(picked, g_dxvkNote, sizeof(g_dxvkNote));
+
+	bool enabled = Dxvk::IsEnabled();
+
+	ImGui::BeginDisabled(!Dxvk::IsInstalled());
+
+	if (ImGui::Checkbox("Run the game through DXVK", &enabled))
+	{
+		Dxvk::SetEnabled(enabled);
+
+		if (enabled)
+			DgVoodoo::SetEnabled(false);
+	}
+
+	ImGui::EndDisabled();
+	ImGui::SameLine();
+
+	if (ImGui::Button("Pick the DXVK folder...") && !g_dxvkDialog.IsRunning())
+		g_dxvkDialog.BeginFolder("Pick the folder you extracted DXVK into");
+
+	Help("Download DXVK yourself (github.com/doitsujin/dxvk) and extract it. Press \"Pick the DXVK "
+		"folder...\", tick the box and restart the game. Every change here needs a restart.\n\n"
+		"The mod copies x32\\d3d9.dll into UNI2-IM\\DXVK. Nothing in the game folder is touched. DXVK "
+		"translates the game's Direct3D 9 calls to Vulkan, unlike dgVoodoo which goes through "
+		"Direct3D 11/12.\n\n"
+		"The first few matches after enabling this load slower while DXVK compiles and caches "
+		"shaders; it gets faster from there.\n\n"
+		"Only one Direct3D wrapper can run at a time; turning this on turns dgVoodoo off.");
+
+	if (g_dxvkNote[0] != 0)
+		Muted("%s", g_dxvkNote);
+
+	if (Dxvk::IsRunning())
+		Good("%s", Dxvk::StatusText());
+	else
+		Muted("%s", Dxvk::StatusText());
 }

@@ -7,6 +7,8 @@
 #include "Core/interfaces.h"
 #include "Core/utils.h"
 #include "D3D9/DeviceHooks.h"
+#include "D3D9/Dxvk.h"
+#include "D3D9/GraphicsWrapper.h"
 #include "D3D9/PresentTuning.h"
 #include "Game/EngineQuality.h"
 #include "Game/Improvements.h"
@@ -113,6 +115,19 @@ void StatRow(const char* name, double now, double before, bool hasBaseline)
 		DeltaText(now, before);
 	else
 		ImGui::TextDisabled("-");
+}
+
+const char* SwapEffectName(UINT swapEffect)
+{
+	switch (swapEffect)
+	{
+	case D3DSWAPEFFECT_DISCARD: return "Discard";
+	case D3DSWAPEFFECT_FLIP: return "Flip";
+	case D3DSWAPEFFECT_COPY: return "Copy";
+	case D3DSWAPEFFECT_OVERLAY: return "Overlay";
+	case D3DSWAPEFFECT_FLIPEX: return "Flip ex";
+	default: return "Unknown";
+	}
 }
 
 void DrawIntervalTable(const char* title, const Profiler::Stats& now, const Profiler::Stats& before,
@@ -433,6 +448,12 @@ void PerformanceWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
+	if (ImGui::BeginTabItem("DXVK"))
+	{
+		GraphicsPanel::DrawDxvk();
+		ImGui::EndTabItem();
+	}
+
 	if (ImGui::BeginTabItem("Metrics"))
 	{
 		DrawMetricsTab();
@@ -746,6 +767,22 @@ void PerformanceWindow::DrawMetricsTab()
 	}
 
 	ImGui::Text("Presenting %.1f frames a second", metricsFps);
+
+	{
+		const D3DPRESENT_PARAMETERS& setup = DeviceHooks::GetPresentParameters();
+		const bool vsync = setup.PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
+
+		ImGui::Text("Swap effect %s, %s, %s, %u back buffer%s, %s",
+			SwapEffectName(setup.SwapEffect), setup.Windowed ? "windowed" : "exclusive fullscreen",
+			vsync ? "vsync on" : "vsync off", setup.BackBufferCount,
+			setup.BackBufferCount == 1 ? "" : "s",
+			GraphicsWrapper::IsPresent() ? GraphicsWrapper::Name() : "native Direct3D 9");
+
+		const char* const dxvkPresentMode = Dxvk::IsRunning() ? Dxvk::LastPresentMode() : nullptr;
+
+		if (dxvkPresentMode != nullptr)
+			ImGui::Text("DXVK's real present mode: %s", dxvkPresentMode);
+	}
 
 	ImGui::Spacing();
 

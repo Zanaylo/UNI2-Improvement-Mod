@@ -118,6 +118,7 @@
     <ClCompile Include="src\Core\dllmain.cpp" />
     <ClCompile Include="src\D3D9\GraphicsWrapper.cpp" />
     <ClCompile Include="src\D3D9\DgVoodoo.cpp" />
+    <ClCompile Include="src\D3D9\Dxvk.cpp" />
     <ClCompile Include="src\Game\RandomStage.cpp" />
     <ClCompile Include="src\Overlay\Window\SubtitlesWindow.cpp" />
     <ClCompile Include="src\Game\BundledPack.cpp" />
@@ -404,6 +405,7 @@
     <ClInclude Include="src\Core\Settings.h" />
     <ClInclude Include="src\D3D9\GraphicsWrapper.h" />
     <ClInclude Include="src\D3D9\DgVoodoo.h" />
+    <ClInclude Include="src\D3D9\Dxvk.h" />
     <ClInclude Include="src\Game\RandomStage.h" />
     <ClInclude Include="src\Overlay\Window\SubtitlesWindow.h" />
     <ClInclude Include="src\Game\BundledPack.h" />
