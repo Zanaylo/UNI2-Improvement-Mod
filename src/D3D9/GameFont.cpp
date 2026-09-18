@@ -43,9 +43,34 @@ std::string g_directory;
 float g_lineHeight = 22.0f;
 bool g_loaded = false;
 
+int DisableAfterFault(EXCEPTION_POINTERS* pointers)
+{
+	const EXCEPTION_RECORD* const record = pointers->ExceptionRecord;
+
+	LOG("GameFont: fault 0x%08lx at 0x%p while loading a page (device 0x%p); the font is off for this session",
+		static_cast<unsigned long>(record->ExceptionCode), record->ExceptionAddress,
+		static_cast<void*>(g_device));
+
+	g_loaded = false;
+
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
+IDirect3DTexture9* LoadPageTexture(const std::string& path, unsigned& width, unsigned& height)
+{
+	__try
+	{
+		return DdsTexture::LoadFromFile(g_device, path, width, height);
+	}
+	__except (DisableAfterFault(GetExceptionInformation()))
+	{
+		return nullptr;
+	}
+}
+
 Page* GetPage(uint8_t index)
 {
-	if (index >= kMaxPages)
+	if (!g_loaded || index >= kMaxPages)
 		return nullptr;
 
 	Page& page = g_pages[index];
@@ -55,10 +80,17 @@ Page* GetPage(uint8_t index)
 	if (index >= g_pageNames.size())
 		return nullptr;
 
-	page.texture = DdsTexture::LoadFromFile(g_device, g_directory + "\\" + g_pageNames[index],
-		page.width, page.height);
+	const std::string path = g_directory + "\\" + g_pageNames[index];
 
-	return page.texture != nullptr ? &page : nullptr;
+	page.texture = LoadPageTexture(path, page.width, page.height);
+
+	if (page.texture == nullptr)
+		return nullptr;
+
+	LOG("GameFont: page %d loaded, texture 0x%p, %ux%u", static_cast<int>(index),
+		static_cast<void*>(page.texture), page.width, page.height);
+
+	return &page;
 }
 
 }
