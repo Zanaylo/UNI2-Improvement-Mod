@@ -1,6 +1,11 @@
 #include "Game/Camera.h"
 
+#include "Core/logger.h"
 #include "Core/utils.h"
+#include "D3D9/DrawQueueProbe.h"
+#include "D3D9/DrawTrace.h"
+#include "D3D9/SceneScale.h"
+#include "D3D9/UltrawideRects.h"
 #include "Game/GameOffsets.h"
 #include "Game/MemoryMap.h"
 
@@ -10,6 +15,10 @@
 #include <cmath>
 
 namespace {
+
+constexpr int kRequestPollFrames = 30;
+
+int g_framesUntilPoll = 0;
 
 float ReferenceSize(uintptr_t rva, float fallback)
 {
@@ -28,6 +37,22 @@ float ReferenceWidth()
 float ReferenceHeight()
 {
 	return ReferenceSize(GameOffsets::kRenderPhysicalHeight, 720.0f);
+}
+
+void LogMatrix(const char* label, uintptr_t rva)
+{
+	float m[16] = {};
+	if (!TryReadMemory(m, reinterpret_cast<const void*>(RvaToAddress(rva)), sizeof(m)))
+	{
+		LOG_RAW("%s read FAILED", label);
+		return;
+	}
+
+	for (int row = 0; row < 4; ++row)
+	{
+		LOG_RAW("%-14s %10.5f %10.5f %10.5f %10.5f", row == 0 ? label : "", m[row * 4],
+			m[row * 4 + 1], m[row * 4 + 2], m[row * 4 + 3]);
+	}
 }
 
 bool ReadFloatGlobal(uintptr_t rva, float& out)
@@ -157,4 +182,106 @@ bool Camera::TransformPoint(const ScreenTransform& transform, float pixelX, floa
 	}
 
 	return std::isfinite(outScreenX) && std::isfinite(outScreenY);
+}
+
+void Camera::PollDiagnosticRequest()
+{
+	if (!SceneScale::IsApplied() || --g_framesUntilPoll > 0)
+		return;
+
+	g_framesUntilPoll = kRequestPollFrames;
+
+	static const std::string request = GetModRootPath("camera_diagnostic.request");
+	if (GetFileAttributesA(request.c_str()) == INVALID_FILE_ATTRIBUTES)
+		return;
+
+	DeleteFileA(request.c_str());
+	LogDiagnostic();
+}
+
+void Camera::LogDiagnostic()
+{
+	LOG_SECTION("camera diagnostic");
+	DrawTrace::Arm();
+	UltrawideRects::LogSites();
+	DrawQueueProbe::Arm();
+
+	int physicalWidth = 0;
+	int physicalHeight = 0;
+	const bool hasSize = SceneScale::GetSize(physicalWidth, physicalHeight);
+
+	uint32_t virtualWidth = 0;
+	uint32_t virtualHeight = 0;
+	TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kRenderVirtualWidth)),
+		virtualWidth);
+	TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kRenderVirtualHeight)),
+		virtualHeight);
+
+	LOG_RAW("SceneScale: %s", SceneScale::GetStatusText());
+	LOG_RAW("physical %dx%d (read %s)  virtual %ux%u", physicalWidth, physicalHeight,
+		hasSize ? "ok" : "FAILED", virtualWidth, virtualHeight);
+
+	const ImGuiIO& io = ImGui::GetIO();
+	LOG_RAW("ImGui display size %.1fx%.1f", io.DisplaySize.x, io.DisplaySize.y);
+
+	float common = 0.0f;
+	float scaleX = 0.0f;
+	float scaleY = 0.0f;
+	const bool hasScales = GetScales(common, scaleX, scaleY);
+
+	LOG_RAW("kScaleCommon %g  kScaleX %g (1/%.3f)  kScaleY %g (1/%.3f)%s", common, scaleX,
+		scaleX != 0.0f ? 1.0f / scaleX : 0.0f, scaleY, scaleY != 0.0f ? 1.0f / scaleY : 0.0f,
+		hasScales ? "" : "  (read FAILED)");
+
+	float matrix[16] = {};
+	if (GetMatrix(matrix))
+	{
+		LOG_RAW("kScreenMatrix  %8.3f %8.3f %8.3f %8.3f", matrix[0], matrix[1], matrix[2], matrix[3]);
+		LOG_RAW("               %8.3f %8.3f %8.3f %8.3f", matrix[4], matrix[5], matrix[6], matrix[7]);
+		LOG_RAW("               %8.3f %8.3f %8.3f %8.3f", matrix[8], matrix[9], matrix[10], matrix[11]);
+		LOG_RAW("               %8.3f %8.3f %8.3f %8.3f", matrix[12], matrix[13], matrix[14],
+			matrix[15]);
+	}
+	else
+	{
+		LOG_RAW("kScreenMatrix read FAILED");
+	}
+
+	LogMatrix("camera view", GameOffsets::kCameraObject + GameOffsets::kCameraView);
+	LogMatrix("camera proj", GameOffsets::kCameraObject + GameOffsets::kCameraProjection);
+
+	ScreenTransform transform = {};
+	const bool hasTransform = ResolveScreenTransform(transform);
+	LOG_RAW("ScreenTransform reference %.1fx%.1f (%s)", transform.referenceWidth,
+		transform.referenceHeight, hasTransform ? "ok" : "FAILED");
+
+	void* entities[2] = {};
+	const int count = MemoryMap::EnumerateCharaSlots(entities, 2, true);
+	LOG_RAW("chara slots found: %d", count);
+
+	for (int i = 0; i < count; ++i)
+	{
+		int worldX = 0;
+		int worldY = 0;
+		if (!GetWorldPosition(entities[i], worldX, worldY))
+		{
+			LOG_RAW("player %d: world position read FAILED", i);
+			continue;
+		}
+
+		float positionScale = 0.0f;
+		GetPositionScale(positionScale);
+
+		const float pixelX = worldX * positionScale;
+		const float pixelY = worldY * positionScale;
+
+		float screenX = 0.0f;
+		float screenY = 0.0f;
+		const bool transformed = hasTransform &&
+			TransformPoint(transform, pixelX, pixelY, screenX, screenY);
+
+		LOG_RAW("player %d: world (%d, %d)  pixel (%.1f, %.1f)  mod's own screen calc (%.1f, %.1f)%s"
+			"  facing %d", i, worldX, worldY, pixelX, pixelY, screenX, screenY,
+			transformed ? "" : "  (transform FAILED)", GetFacing(entities[i]));
+	}
 }

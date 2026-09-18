@@ -15,6 +15,7 @@ private:
 	void DrawPerformanceTab();
 	void DrawPotatoTab();
 	void DrawImprovementsTab();
+	void DrawUltrawideTab();
 	void DrawMetricsTab();
 
 	bool DrawPotatoHeight();

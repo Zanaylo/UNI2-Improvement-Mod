@@ -50,6 +50,8 @@ namespace GameOffsets
 
 	constexpr uintptr_t kCameraObject = 0x85cca0;
 	constexpr uintptr_t kCameraQuakeList = 0x15c;
+	constexpr uintptr_t kCameraView = 0x278;
+	constexpr uintptr_t kCameraProjection = 0x2f8;
 	constexpr uintptr_t kFnCameraQuake = 0x1356d0;
 
 	constexpr uintptr_t kPlayerDataPattern = 0x1c;
@@ -91,6 +93,9 @@ namespace GameOffsets
 	constexpr uint32_t kMoveCode7AssaultLimitAirAtk = 0x800 | 0x1000;
 
 	constexpr uintptr_t kPlayerDataCommand = 0x698;
+
+	constexpr uint32_t kCommandDashForwardDouji = 0x50;
+	constexpr uint32_t kCommandDashBackDouji = 0x51;
 
 	constexpr uint32_t kCommandAssaultAir = 0x18d;
 	constexpr uint32_t kCommandDashForward = 0x190;
@@ -578,6 +583,10 @@ namespace GameOffsets
 	constexpr uintptr_t kRenderSizeHeightWrites[] = { 0x4df40d, 0xd3dd1 };
 	constexpr uintptr_t kRenderSizeWidthLiterals[] = { 0x4df422, 0x4df44e };
 	constexpr uintptr_t kRenderSizeHeightLiterals[] = { 0x4df432, 0x4df449 };
+
+	constexpr uintptr_t kStageTargetWidthStores[] = { 0x11bc2e, 0x11bcdc, 0x11bd20, 0x11bd68 };
+	constexpr uintptr_t kStageTargetWidthArgs[] = { 0x11bc62, 0x11bc78, 0x11bc92, 0x11bcad };
+	constexpr uintptr_t kStageViewportWidthStore = 0x11bd97;
 
 	constexpr uintptr_t kRenderVirtualCopyBlock = 0x4df500;
 	constexpr int kRenderVirtualCopyBlockLength = 20;

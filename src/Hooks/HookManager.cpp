@@ -853,8 +853,11 @@ uintptr_t HookManager::FindRttiVTable(const char* mangledName)
 			continue;
 
 		const uintptr_t locator = rdataStart + i - (sizeof(uint32_t) * 3);
-		if (!IsAddressInGameModule(locator))
+		if (!IsAddressInGameModule(locator) || i < sizeof(uint32_t) * 3 ||
+			*reinterpret_cast<const uint32_t*>(locator) != 0)
+		{
 			continue;
+		}
 
 		const uint32_t locatorNeedle = static_cast<uint32_t>(locator);
 		for (size_t j = 0; j + sizeof(uint32_t) <= rdataSize; j += sizeof(uint32_t))

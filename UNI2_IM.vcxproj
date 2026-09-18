@@ -376,6 +376,11 @@
     <ClCompile Include="src\Core\ProcessTuning.cpp" />
     <ClCompile Include="src\D3D9\PresentTuning.cpp" />
     <ClCompile Include="src\D3D9\SceneScale.cpp" />
+    <ClCompile Include="src\D3D9\DrawTrace.cpp" />
+    <ClCompile Include="src\D3D9\UltrawideRects.cpp" />
+    <ClCompile Include="src\D3D9\UltrawideHud.cpp" />
+    <ClCompile Include="src\D3D9\DrawQueueProbe.cpp" />
+    <ClCompile Include="src\D3D9\DrawQueue.cpp" />
     <ClCompile Include="src\D3D9\Post\SceneUpscale.cpp" />
     <ClCompile Include="src\D3D9\Post\DeviceState.cpp" />
     <ClCompile Include="src\D3D9\Post\ScratchTarget.cpp" />
@@ -665,6 +670,12 @@
     <ClInclude Include="src\Core\ProcessTuning.h" />
     <ClInclude Include="src\D3D9\PresentTuning.h" />
     <ClInclude Include="src\D3D9\SceneScale.h" />
+    <ClInclude Include="src\D3D9\DrawTrace.h" />
+    <ClInclude Include="src\D3D9\UltrawideRects.h" />
+    <ClInclude Include="src\D3D9\UltrawideHud.h" />
+    <ClInclude Include="src\D3D9\DrawQueueProbe.h" />
+    <ClInclude Include="src\D3D9\DrawQueue.h" />
+    <ClInclude Include="src\D3D9\QueuedQuad.h" />
     <ClInclude Include="src\D3D9\Post\SceneUpscale.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\SceneUpscaleShader.h" />
     <ClInclude Include="src\D3D9\Post\DeviceState.h" />

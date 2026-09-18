@@ -13,6 +13,9 @@
 #include "D3D9/PresentTuning.h"
 #include "D3D9/Post/SceneUpscale.h"
 #include "D3D9/SceneScale.h"
+#include "D3D9/DrawTrace.h"
+#include "D3D9/UltrawideHud.h"
+#include "Game/Camera.h"
 #include "D3D9/Post/PostChain.h"
 #include "Game/GameState.h"
 #include "Game/KeyboardSeat.h"
@@ -319,6 +322,7 @@ HRESULT STDMETHODCALLTYPE HookedDrawPrimitive(IDirect3DDevice9* device, D3DPRIMI
 	UINT startVertex, UINT primitiveCount)
 {
 	PaletteDrawProbe::OnDraw();
+	DrawTrace::OnDraw(device, "dp", type, primitiveCount);
 	return oDrawPrimitive(device, type, startVertex, primitiveCount);
 }
 
@@ -328,6 +332,8 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
 {
 	PaletteDrawProbe::OnDraw();
 	BgVertexProbe::OnDraw(device);
+	DrawTrace::OnIndexedDraw(device, type, primitiveCount, baseVertexIndex, minVertexIndex,
+		numVertices);
 	return oDrawIndexedPrimitive(device, type, baseVertexIndex, minVertexIndex, numVertices,
 		startIndex, primitiveCount);
 }
@@ -336,6 +342,7 @@ HRESULT STDMETHODCALLTYPE HookedDrawPrimitiveUP(IDirect3DDevice9* device, D3DPRI
 	UINT primitiveCount, const void* vertexData, UINT stride)
 {
 	PaletteDrawProbe::OnDraw();
+	DrawTrace::OnDraw(device, "dpup", type, primitiveCount, vertexData, stride);
 	return oDrawPrimitiveUP(device, type, primitiveCount, vertexData, stride);
 }
 
@@ -344,6 +351,7 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitiveUP(IDirect3DDevice9* device,
 	const void* indexData, D3DFORMAT indexFormat, const void* vertexData, UINT stride)
 {
 	PaletteDrawProbe::OnDraw();
+	DrawTrace::OnDraw(device, "dipup", type, primitiveCount, vertexData, stride, numVertices);
 	return oDrawIndexedPrimitiveUP(device, type, minVertexIndex, numVertices, primitiveCount,
 		indexData, indexFormat, vertexData, stride);
 }
@@ -440,6 +448,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 		return lost;
 	}
 
+	DrawTrace::OnPresentBegin(sourceRect, destRect);
+	UltrawideHud::SetRenderThread(GetCurrentThreadId());
 	GraphicsWrapper::Detect(device);
 	SceneWatch::OnFrame();
 
@@ -563,6 +573,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	}
 
 	SceneScale::OnFrame();
+	Camera::PollDiagnosticRequest();
 	SceneUpscale::OnPresent();
 
 	InputProbe::OnFrame();
@@ -574,6 +585,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	if (device == g_device)
 		ReportModWork(modStart);
+
+	DrawTrace::OnPresentEnd();
 
 	{
 		Profiler::Scope scope(Profiler::Section_PresentDevice);

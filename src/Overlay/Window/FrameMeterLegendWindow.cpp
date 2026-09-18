@@ -36,6 +36,7 @@ const FrameMeter::State kStates[] = {
 	FrameMeter::State::Parry,
 	FrameMeter::State::Dodge,
 	FrameMeter::State::Movement,
+	FrameMeter::State::Backdash,
 	FrameMeter::State::Jump,
 	FrameMeter::State::AirMovement,
 	FrameMeter::State::Idle,

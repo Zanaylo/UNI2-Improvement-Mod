@@ -27,4 +27,7 @@ namespace Camera
 	bool ResolveScreenTransform(ScreenTransform& out);
 	bool TransformPoint(const ScreenTransform& transform, float pixelX, float pixelY,
 		float& outScreenX, float& outScreenY);
+
+	void LogDiagnostic();
+	void PollDiagnosticRequest();
 }

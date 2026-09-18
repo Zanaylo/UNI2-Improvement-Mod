@@ -10,6 +10,8 @@
 #include "D3D9/Dxvk.h"
 #include "D3D9/GraphicsWrapper.h"
 #include "D3D9/PresentTuning.h"
+#include "D3D9/SceneScale.h"
+#include "Game/Camera.h"
 #include "Game/EngineQuality.h"
 #include "Game/Improvements.h"
 #include "Game/PotatoMode.h"
@@ -433,6 +435,12 @@ void PerformanceWindow::Draw()
 	if (!PotatoMode::IsActive() && ImGui::BeginTabItem("Improvements"))
 	{
 		DrawImprovementsTab();
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("Ultrawide"))
+	{
+		DrawUltrawideTab();
 		ImGui::EndTabItem();
 	}
 
@@ -1009,6 +1017,72 @@ void PerformanceWindow::DrawImprovementsTab()
 		return;
 
 	Profiler::Reset();
+}
+
+void PerformanceWindow::DrawUltrawideTab()
+{
+	ImGui::Spacing();
+	Muted("Shows more of the stage on a display wider than 16:9. Characters, camera and HUD stay "
+		"as in the game.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Camera");
+
+	bool ultrawide = g_modVals.ultrawideFov;
+	if (ImGui::Checkbox("Widen the camera for an ultrawide display", &ultrawide))
+	{
+		g_modVals.ultrawideFov = ultrawide;
+		Settings::SaveInt("Graphics", "UltrawideFov", ultrawide ? 1 : 0);
+		SceneScale::Apply();
+	}
+
+	Help("Renders the stage wider to match your display's shape (21:9, 32:9 or whatever the "
+		"desktop reports) instead of black bars at the sides. Characters keep their size and the "
+		"camera follows them as usual. How far apart players can walk is unchanged, so matches play "
+		"the same. The battle HUD and training panels stay centred. Menus are not adjusted yet. "
+		"Needs a restart.");
+
+	Muted("%s", SceneScale::GetStatusText());
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Test without real ultrawide hardware");
+
+	int testWidth = g_modVals.ultrawideWidth;
+	Ui::SetItemWidth(120.0f);
+	ImGui::InputInt("Test width", &testWidth, 0, 0);
+	if (ImGui::IsItemDeactivatedAfterEdit())
+	{
+		g_modVals.ultrawideWidth = testWidth < 0 ? 0 : testWidth;
+		Settings::SaveInt("Graphics", "UltrawideWidth", g_modVals.ultrawideWidth);
+		SceneScale::Apply();
+	}
+
+	ImGui::SameLine();
+
+	int testHeight = g_modVals.ultrawideHeight;
+	Ui::SetItemWidth(120.0f);
+	ImGui::InputInt("Test height", &testHeight, 0, 0);
+	if (ImGui::IsItemDeactivatedAfterEdit())
+	{
+		g_modVals.ultrawideHeight = testHeight < 0 ? 0 : testHeight;
+		Settings::SaveInt("Graphics", "UltrawideHeight", g_modVals.ultrawideHeight);
+		SceneScale::Apply();
+	}
+
+	Help("Forces a window size instead of reading your desktop's shape. Try 1720x720 for 21:9 "
+		"to see the effect on a normal 16:9 monitor. In windowed mode the game window is resized "
+		"to exactly this size. Leave both at 0 to use the desktop. Needs a restart and the game's "
+		"Display option set to windowed.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Diagnostics");
+
+	if (ImGui::Button("Log camera diagnostic now"))
+		Camera::LogDiagnostic();
+
+	Help("Writes a snapshot of the next frame to the log: render sizes, the camera matrices, each "
+		"player's position and every draw call. Press it when something looks out of place, then "
+		"send the newest file in UNI2-IM\\Logs.");
 }
 
 bool PerformanceWindow::DrawPotatoHeight()

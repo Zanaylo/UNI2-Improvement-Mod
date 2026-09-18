@@ -115,6 +115,7 @@ struct Tracked
 	FrameMeter::State lastState;
 
 	uint32_t lastCommand;
+	uint32_t moveCommand;
 
 	int charaNumber = -1;
 
@@ -430,8 +431,11 @@ FrameMeter::State MovementKind(uint32_t command)
 	switch (command)
 	{
 	case GameOffsets::kCommandDashForward:
-	case GameOffsets::kCommandDashBack:
+	case GameOffsets::kCommandDashForwardDouji:
 		return FrameMeter::State::Movement;
+	case GameOffsets::kCommandDashBack:
+	case GameOffsets::kCommandDashBackDouji:
+		return FrameMeter::State::Backdash;
 	case GameOffsets::kCommandAssaultAir:
 	case GameOffsets::kCommandAssaultGround:
 		return FrameMeter::State::AirMovement;
@@ -443,6 +447,11 @@ FrameMeter::State MovementKind(uint32_t command)
 		return FrameMeter::State::Jump;
 
 	return FrameMeter::State::None;
+}
+
+bool IsGroundDash(FrameMeter::State kind)
+{
+	return kind == FrameMeter::State::Movement || kind == FrameMeter::State::Backdash;
 }
 
 constexpr int kNoChara = -2;
@@ -565,10 +574,12 @@ FrameMeter::State Movement(Tracked& tracked, const PlayerState::State& state)
 
 	const FrameMeter::State kind = MovementKind(state.command);
 
+	if (kind == FrameMeter::State::Backdash && state.cancelFree)
+		return FrameMeter::State::None;
+
 	if (kind != FrameMeter::State::None)
 	{
-
-		if (kind != FrameMeter::State::Movement || state.airJumpOK != 0)
+		if (!IsGroundDash(kind) || state.airJumpOK != 0)
 			tracked.airKind = kind;
 
 		return kind;
@@ -656,11 +667,16 @@ FrameMeter::State Classify(int player, const PlayerState::State& state)
 
 	tracked.wasAirJumpOK = state.airJumpOK != 0;
 
-	const bool newMove = tracked.hasMvCountFrame && tracked.landingSlack == 0 &&
+	const bool mvCountRestarted = tracked.hasMvCountFrame &&
 		state.mvCountFrame < tracked.lastMvCountFrame;
+	const bool commandChanged = state.command != 0 && state.command != tracked.moveCommand;
+	const bool newMove = mvCountRestarted && (tracked.landingSlack == 0 || commandChanged);
 
 	tracked.lastMvCountFrame = state.mvCountFrame;
 	tracked.hasMvCountFrame = true;
+
+	if (state.command != 0)
+		tracked.moveCommand = state.command;
 
 	if (!samePattern || newMove)
 	{
@@ -2349,6 +2365,7 @@ const char* FrameMeter::GetStateName(State state)
 	case State::Hitstun:   return "Hitstun";
 	case State::Parry:     return "Parry";
 	case State::Movement:  return "Dash";
+	case State::Backdash:  return "Backdash";
 	case State::Jump:      return "Jump";
 	case State::AirMovement: return "Air Movement";
 	case State::Dodge:     return "Dodge";
@@ -2378,6 +2395,7 @@ uint32_t FrameMeter::GetStateColor(State state)
 	case State::Parry:     return Argb(96, 58, 146);
 
 	case State::Movement:  return Argb(212, 184, 72);
+	case State::Backdash:  return Argb(150, 200, 70);
 
 	case State::Jump:        return Argb(36, 132, 180);
 	case State::AirMovement: return Argb(112, 124, 236);

@@ -858,6 +858,21 @@
     <ClCompile Include="src\D3D9\SceneScale.cpp">
       <Filter>D3D9</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\DrawTrace.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\UltrawideRects.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\UltrawideHud.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\DrawQueueProbe.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\DrawQueue.cpp">
+      <Filter>D3D9</Filter>
+    </ClCompile>
     <ClCompile Include="src\D3D9\Post\SceneUpscale.cpp">
       <Filter>D3D9\Post</Filter>
     </ClCompile>
@@ -1818,6 +1833,24 @@
       <Filter>D3D9</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\SceneScale.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\DrawTrace.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\UltrawideRects.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\UltrawideHud.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\DrawQueueProbe.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\DrawQueue.h">
+      <Filter>D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\QueuedQuad.h">
       <Filter>D3D9</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Post\SceneUpscale.h">

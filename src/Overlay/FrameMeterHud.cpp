@@ -58,27 +58,83 @@ bool g_dragging = false;
 float g_dragOffsetX = 0.0f;
 float g_dragOffsetY = 0.0f;
 
-bool DragMeter(const D3DVIEWPORT9& viewport, float x, float y, float width, float height)
+struct Pointer
+{
+	float x;
+	float y;
+	bool down;
+	bool pressed;
+};
+
+bool g_windowButtonWasDown = false;
+
+bool ReadOverlayPointer(const D3DVIEWPORT9& viewport, Pointer& out)
 {
 	if (ImGui::GetCurrentContext() == nullptr)
 		return false;
 
 	const ImGuiIO& io = ImGui::GetIO();
 
-	if (!g_modVals.frameMeterDrag || !WindowManager::GetInstance().IsOverlayActive() ||
-		io.WantCaptureMouse)
+	if (io.WantCaptureMouse || io.DisplaySize.x <= 0.0f || io.DisplaySize.y <= 0.0f)
+		return false;
+
+	out.x = io.MousePos.x * (viewport.Width / io.DisplaySize.x);
+	out.y = io.MousePos.y * (viewport.Height / io.DisplaySize.y);
+	out.down = io.MouseDown[0];
+	out.pressed = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+	return true;
+}
+
+bool ReadWindowPointer(const D3DVIEWPORT9& viewport, Pointer& out)
+{
+	const HWND window = g_gameProc.hWndGame;
+
+	if (window == nullptr || GetForegroundWindow() != window)
+	{
+		g_windowButtonWasDown = false;
+		return false;
+	}
+
+	RECT client = {};
+	POINT cursor = {};
+
+	if (!GetClientRect(window, &client) || client.right <= 0 || client.bottom <= 0 ||
+		!GetCursorPos(&cursor) || !ScreenToClient(window, &cursor))
+	{
+		return false;
+	}
+
+	const bool inside = cursor.x >= 0 && cursor.x < client.right &&
+		cursor.y >= 0 && cursor.y < client.bottom;
+
+	out.down = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+	out.pressed = out.down && !g_windowButtonWasDown && inside;
+	g_windowButtonWasDown = out.down;
+
+	out.x = static_cast<float>(cursor.x) * (static_cast<float>(viewport.Width) / client.right);
+	out.y = static_cast<float>(cursor.y) * (static_cast<float>(viewport.Height) / client.bottom);
+	return true;
+}
+
+bool ReadPointer(const D3DVIEWPORT9& viewport, Pointer& out)
+{
+	if (WindowManager::GetInstance().IsOverlayActive())
+		return ReadOverlayPointer(viewport, out);
+
+	return ReadWindowPointer(viewport, out);
+}
+
+bool DragMeter(const D3DVIEWPORT9& viewport, float x, float y, float width, float height)
+{
+	Pointer pointer = {};
+
+	if (!g_modVals.frameMeterDrag || g_modVals.frameMeterAuto || !ReadPointer(viewport, pointer))
 	{
 		g_dragging = false;
 		return false;
 	}
 
-	if (io.DisplaySize.x <= 0.0f || io.DisplaySize.y <= 0.0f)
-		return false;
-
-	const float mouseX = io.MousePos.x * (viewport.Width / io.DisplaySize.x);
-	const float mouseY = io.MousePos.y * (viewport.Height / io.DisplaySize.y);
-
-	if (!io.MouseDown[0])
+	if (!pointer.down)
 	{
 		if (g_dragging)
 		{
@@ -92,19 +148,19 @@ bool DragMeter(const D3DVIEWPORT9& viewport, float x, float y, float width, floa
 
 	if (!g_dragging)
 	{
-		const bool over = mouseX >= x && mouseX < x + width &&
-			mouseY >= y && mouseY < y + height;
+		const bool over = pointer.x >= x && pointer.x < x + width &&
+			pointer.y >= y && pointer.y < y + height;
 
-		if (!over || !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		if (!over || !pointer.pressed)
 			return false;
 
 		g_dragging = true;
-		g_dragOffsetX = mouseX - x;
-		g_dragOffsetY = mouseY - y;
+		g_dragOffsetX = pointer.x - x;
+		g_dragOffsetY = pointer.y - y;
 	}
 
-	g_modVals.frameMeterX = static_cast<int>(mouseX - g_dragOffsetX);
-	g_modVals.frameMeterY = static_cast<int>(mouseY - g_dragOffsetY);
+	g_modVals.frameMeterX = static_cast<int>(pointer.x - g_dragOffsetX);
+	g_modVals.frameMeterY = static_cast<int>(pointer.y - g_dragOffsetY);
 
 	if (g_modVals.frameMeterX < 0)
 		g_modVals.frameMeterX = 0;

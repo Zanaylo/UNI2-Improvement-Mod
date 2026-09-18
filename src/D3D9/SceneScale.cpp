@@ -1,4 +1,5 @@
 #include "D3D9/SceneScale.h"
+#include "D3D9/UltrawideRects.h"
 
 #include "Core/interfaces.h"
 #include "Core/logger.h"
@@ -28,6 +29,13 @@ Site g_width[kSitesPerAxis] = {};
 Site g_height[kSitesPerAxis] = {};
 int g_widthCount = 0;
 int g_heightCount = 0;
+
+constexpr int kStageSiteCount = 9;
+constexpr uint32_t kStageViewportWidth = 0x44a00000;
+
+Site g_stage[kStageSiteCount] = {};
+int g_stageCount = 0;
+uintptr_t g_stageViewport = 0;
 
 constexpr int kBlockLength = GameOffsets::kRenderVirtualCopyBlockLength;
 
@@ -62,6 +70,7 @@ bool g_probed = false;
 bool g_installed = false;
 bool g_tried = false;
 int g_appliedPercent = 100;
+bool g_appliedUltrawide = false;
 int g_framesUntilReassert = 0;
 
 char g_status[192] = "off";
@@ -133,6 +142,74 @@ bool ValidateLiteral(uintptr_t rva, uint8_t opcode, uint32_t expected, Site& out
 	out.address = address + 1;
 	out.original = immediate;
 	return true;
+}
+
+bool ValidateStore(uintptr_t rva, uint32_t expected, Site& out)
+{
+	const uintptr_t address = RvaToAddress(rva);
+
+	uint16_t opcode = 0;
+	if (!TryReadMemory(&opcode, reinterpret_cast<const void*>(address), sizeof(opcode)) ||
+		opcode != 0x05c7)
+	{
+		return false;
+	}
+
+	uint32_t immediate = 0;
+	if (!ReadCode(address + 6, immediate) || immediate != expected)
+		return false;
+
+	out.address = address + 6;
+	out.original = immediate;
+	return true;
+}
+
+void InstallStageSites()
+{
+	g_stageCount = 0;
+
+	for (const uintptr_t rva : GameOffsets::kStageTargetWidthStores)
+	{
+		if (ValidateStore(rva, kBaseWidth, g_stage[g_stageCount]))
+			++g_stageCount;
+	}
+
+	for (const uintptr_t rva : GameOffsets::kStageTargetWidthArgs)
+	{
+		if (ValidateLiteral(rva, 0xba, kBaseWidth, g_stage[g_stageCount]))
+			++g_stageCount;
+	}
+
+	Site viewport = {};
+	if (ValidateStore(GameOffsets::kStageViewportWidthStore, kStageViewportWidth, viewport))
+	{
+		g_stage[g_stageCount++] = viewport;
+		g_stageViewport = viewport.address;
+	}
+
+	if (g_stageCount == kStageSiteCount)
+		return;
+
+	LOG("[SceneScale] %d of %d stage target sites matched, so the stage stays 1280 wide",
+		g_stageCount, kStageSiteCount);
+	g_stageCount = 0;
+	g_stageViewport = 0;
+}
+
+void WriteStageSites(bool widened, int width)
+{
+	float viewportWidth = static_cast<float>(width);
+	uint32_t viewportBits = 0;
+	memcpy(&viewportBits, &viewportWidth, sizeof(viewportBits));
+
+	for (int i = 0; i < g_stageCount; ++i)
+	{
+		const Site& site = g_stage[i];
+		const uint32_t wanted = site.address == g_stageViewport ? viewportBits
+			: static_cast<uint32_t>(width);
+
+		WriteCode(site.address, widened ? wanted : site.original);
+	}
 }
 
 bool AddPin(uintptr_t address, const uint8_t* expected, const uint8_t* replacement, int length)
@@ -291,16 +368,20 @@ bool ReadFloatData(uintptr_t address, float& out)
 	return true;
 }
 
-void WriteReferences(int percent)
+void WriteReferences(int width, int height)
 {
 	g_referencesTaken = 0;
 
 	for (int i = 0; i < g_referenceCount; ++i)
 	{
 		const Reference& reference = g_reference[i];
+		const bool vertical = reference.base == kBaseHeight / 2.0f;
+		const int size = vertical ? height : width;
+		const int base = vertical ? kBaseHeight : kBaseWidth;
+
 		const float sign = reference.original < 0.0f ? -1.0f : 1.0f;
-		const float scaled = reference.base * static_cast<float>(percent) / 100.0f;
-		const float wanted = percent == 100 || !ReferenceEnabled(reference)
+		const float scaled = static_cast<float>(size) * 0.5f;
+		const float wanted = size == base || !ReferenceEnabled(reference)
 			? reference.original
 			: sign * (reference.reciprocal ? 1.0f / scaled : scaled);
 
@@ -313,7 +394,7 @@ void WriteReferences(int percent)
 			LOG("[SceneScale] 0x%x refused the write, wanted %g", reference.rva, wanted);
 	}
 
-	g_referenceWritten = percent != 100 && g_referencesTaken > 0;
+	g_referenceWritten = (width != kBaseWidth || height != kBaseHeight) && g_referencesTaken > 0;
 }
 
 int ClampPercent(int percent)
@@ -331,6 +412,40 @@ void SizeFor(int percent, int& outWidth, int& outHeight)
 {
 	outWidth = (kBaseWidth * ClampPercent(percent) / 100 + 3) & ~3;
 	outHeight = (kBaseHeight * ClampPercent(percent) / 100 + 3) & ~3;
+}
+
+constexpr float kNativeAspect = static_cast<float>(kBaseWidth) / static_cast<float>(kBaseHeight);
+
+bool DesiredAspect(float& outAspect)
+{
+	int width = g_modVals.ultrawideWidth;
+	int height = g_modVals.ultrawideHeight;
+
+	if (width <= 0 || height <= 0)
+	{
+		width = GetSystemMetrics(SM_CXSCREEN);
+		height = GetSystemMetrics(SM_CYSCREEN);
+	}
+
+	if (width <= 0 || height <= 0)
+		return false;
+
+	outAspect = static_cast<float>(width) / static_cast<float>(height);
+	return true;
+}
+
+bool WidenForAspect(int height, int& inOutWidth)
+{
+	float aspect = 0.0f;
+	if (!DesiredAspect(aspect) || aspect <= kNativeAspect + 0.01f)
+		return false;
+
+	const int widened = (static_cast<int>(height * aspect) + 3) & ~3;
+	if (widened <= inOutWidth)
+		return false;
+
+	inOutWidth = widened;
+	return true;
 }
 
 bool WriteFloat(uintptr_t rva, float value)
@@ -413,6 +528,8 @@ bool SceneScale::Install()
 		return false;
 	}
 
+	InstallStageSites();
+
 	g_referenceCount = 0;
 
 	for (const uintptr_t rva : GameOffsets::kReferenceHalfWidth)
@@ -450,8 +567,9 @@ bool SceneScale::Install()
 void SceneScale::Apply()
 {
 	const int percent = ClampPercent(g_modVals.sceneScalePercent);
+	const bool wantsUltrawide = g_modVals.ultrawideFov;
 
-	if (percent != 100 && !Install())
+	if ((percent != 100 || wantsUltrawide) && !Install())
 		return;
 
 	if (!g_installed)
@@ -461,21 +579,32 @@ void SceneScale::Apply()
 	int height = kBaseHeight;
 	SizeFor(percent, width, height);
 
+	const bool ultrawide = wantsUltrawide && WidenForAspect(height, width);
+
 	for (int i = 0; i < g_widthCount; ++i)
 		WriteCode(g_width[i].address, static_cast<uint32_t>(width));
 
 	for (int i = 0; i < g_heightCount; ++i)
 		WriteCode(g_height[i].address, static_cast<uint32_t>(height));
 
-	WritePins(percent != 100 && g_modVals.scenePinProjection && g_pinCount == 3);
-	WriteReferences(g_modVals.sceneReferenceScale && g_referenceCount == kReferenceCount
-		? percent : 100);
+	WriteStageSites(ultrawide, width);
+
+	WritePins(!ultrawide && percent != 100 && g_modVals.scenePinProjection && g_pinCount == 3);
+
+	const bool referencesMatched = g_referenceCount == kReferenceCount;
+	WriteReferences(referencesMatched ? width : kBaseWidth,
+		referencesMatched ? height : kBaseHeight);
 
 	g_appliedPercent = percent;
+	g_appliedUltrawide = ultrawide;
 	g_framesUntilReassert = 0;
 
-	snprintf(g_status, sizeof(g_status), "%dx%d (%d%%)%s%s, applies the next time the display "
+	UltrawideRects::Apply(ultrawide);
+
+	snprintf(g_status, sizeof(g_status), "%dx%d (%d%%)%s%s%s, applies the next time the display "
 		"is rebuilt", width, height, percent,
+		ultrawide ? ", widened for the display's aspect ratio"
+			: "",
 		g_pinsWritten ? ", projection pinned to 1280x720" : "",
 		g_referenceWritten ? ", reference space scaled with the targets" : "");
 
@@ -492,7 +621,7 @@ namespace {
 
 void ProbeOnce()
 {
-	if (g_probed || g_appliedPercent == 100)
+	if (g_probed || (g_appliedPercent == 100 && !g_appliedUltrawide))
 		return;
 
 	float halfWidth = 0.0f;
@@ -556,7 +685,7 @@ void SceneScale::OnFrame()
 
 bool SceneScale::IsApplied()
 {
-	return g_installed && g_appliedPercent != 100;
+	return g_installed && (g_appliedPercent != 100 || g_appliedUltrawide);
 }
 
 bool SceneScale::GetSize(int& outWidth, int& outHeight)

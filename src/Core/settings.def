@@ -152,6 +152,10 @@ SETTING_INT(sceneReferenceScale,    "Graphics", "SceneReferenceScale",  1)
 
 SETTING_INT(sceneReferenceLiterals, "Graphics", "SceneReferenceLiterals", 1)
 
+SETTING_INT(ultrawideFov,           "Graphics", "UltrawideFov",         0)
+SETTING_INT(ultrawideWidth,         "Graphics", "UltrawideWidth",       0)
+SETTING_INT(ultrawideHeight,        "Graphics", "UltrawideHeight",      0)
+
 SETTING_INT(disableBackBufferAa,    "Graphics", "DisableBackBufferAA",  0)
 
 SETTING_INT(disableCharacterFilter, "Graphics", "DisableCharacterFilter", 0)

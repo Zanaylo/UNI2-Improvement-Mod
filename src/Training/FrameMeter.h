@@ -22,6 +22,7 @@ namespace FrameMeter
 		Cancellable,
 
 		Movement,
+		Backdash,
 		Jump,
 		AirMovement,
 

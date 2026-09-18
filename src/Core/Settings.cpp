@@ -31,6 +31,11 @@ const char* const kIniFileName = "UNI2_IM.ini";
 
 constexpr int kSettingsRevision = 4;
 
+void FlushIniCache(const std::string& path)
+{
+	WritePrivateProfileStringA(nullptr, nullptr, nullptr, path.c_str());
+}
+
 int ClampRange(int value, int lowest, int highest)
 {
 	if (value < lowest)
@@ -227,6 +232,9 @@ int CompleteIniFile(const std::string& path)
 #undef SETTING_FLOAT
 #undef SETTING_INT
 
+	if (added > 0)
+		FlushIniCache(path);
+
 	return added;
 }
 
@@ -258,6 +266,7 @@ void MigrateIni(int from, const std::string& path)
 	char revision[16] = {};
 	sprintf_s(revision, "%d", kSettingsRevision);
 	WritePrivateProfileStringA("Mod", "SettingsRevision", revision, path.c_str());
+	FlushIniCache(path);
 
 	LOG("Settings: brought the ini up from revision %d to %d", from, kSettingsRevision);
 }
@@ -277,6 +286,8 @@ void WriteDefaultIni(const std::string& path)
 #undef SETTING_STRING
 #undef SETTING_FLOAT
 #undef SETTING_INT
+
+	FlushIniCache(path);
 }
 
 }
@@ -291,8 +302,12 @@ void Settings::SaveInt(const char* section, const char* key, int value)
 	char buffer[32] = {};
 	sprintf_s(buffer, "%d", value);
 
-	if (!WritePrivateProfileStringA(section, key, buffer, GetIniPath().c_str()))
+	const std::string path = GetIniPath();
+
+	if (!WritePrivateProfileStringA(section, key, buffer, path.c_str()))
 		LOG("Could not write %s/%s to the ini (error %lu)", section, key, GetLastError());
+
+	FlushIniCache(path);
 }
 
 namespace {
@@ -325,8 +340,12 @@ void ParseStopList(const char* text, int* out)
 
 void Settings::SaveString(const char* section, const char* key, const char* value)
 {
-	if (!WritePrivateProfileStringA(section, key, value, GetIniPath().c_str()))
+	const std::string path = GetIniPath();
+
+	if (!WritePrivateProfileStringA(section, key, value, path.c_str()))
 		LOG("Could not write %s/%s to the ini (error %lu)", section, key, GetLastError());
+
+	FlushIniCache(path);
 }
 
 void Settings::SaveFloat(const char* section, const char* key, float value)
@@ -334,8 +353,12 @@ void Settings::SaveFloat(const char* section, const char* key, float value)
 	char buffer[32] = {};
 	sprintf_s(buffer, "%g", value);
 
-	if (!WritePrivateProfileStringA(section, key, buffer, GetIniPath().c_str()))
+	const std::string path = GetIniPath();
+
+	if (!WritePrivateProfileStringA(section, key, buffer, path.c_str()))
 		LOG("Could not write %s/%s to the ini (error %lu)", section, key, GetLastError());
+
+	FlushIniCache(path);
 }
 
 bool Settings::LoadSettingsFile()
@@ -507,6 +530,9 @@ void Settings::ApplySettings()
 	g_modVals.scenePinProjection = g_settings.scenePinProjection != 0;
 	g_modVals.sceneReferenceScale = g_settings.sceneReferenceScale != 0;
 	g_modVals.sceneReferenceLiterals = g_settings.sceneReferenceLiterals != 0;
+	g_modVals.ultrawideFov = g_settings.ultrawideFov != 0;
+	g_modVals.ultrawideWidth = g_settings.ultrawideWidth;
+	g_modVals.ultrawideHeight = g_settings.ultrawideHeight;
 	g_modVals.sharpenStrength = g_settings.sharpenStrength;
 	if (g_modVals.sharpenStrength < 0 || g_modVals.sharpenStrength > 100)
 		g_modVals.sharpenStrength = 0;

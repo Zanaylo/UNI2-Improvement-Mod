@@ -163,13 +163,65 @@ void RewriteMultiSample(D3DPRESENT_PARAMETERS& parameters)
 }
 
 
-void RewriteBackBufferSize(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
+bool EffectivePresentSize(int& outWidth, int& outHeight)
 {
-	if (g_modVals.presentWidth <= 0 || g_modVals.presentHeight <= 0)
+	if (g_modVals.ultrawideFov && g_modVals.ultrawideWidth > 0 && g_modVals.ultrawideHeight > 0)
+	{
+		outWidth = g_modVals.ultrawideWidth;
+		outHeight = g_modVals.ultrawideHeight;
+		return true;
+	}
+
+	if (!g_modVals.ultrawideFov && g_modVals.presentWidth > 0 && g_modVals.presentHeight > 0)
+	{
+		outWidth = g_modVals.presentWidth;
+		outHeight = g_modVals.presentHeight;
+		return true;
+	}
+
+	return false;
+}
+
+void ResizeUltrawideWindow(const D3DPRESENT_PARAMETERS& parameters)
+{
+	if (!g_modVals.ultrawideFov || g_modVals.ultrawideWidth <= 0 || g_modVals.ultrawideHeight <= 0)
 		return;
 
-	UINT width = static_cast<UINT>(g_modVals.presentWidth);
-	UINT height = static_cast<UINT>(g_modVals.presentHeight);
+	const HWND hwnd = parameters.hDeviceWindow;
+	if (hwnd == nullptr || !IsWindow(hwnd))
+		return;
+
+	RECT client = {};
+	if (!GetClientRect(hwnd, &client))
+		return;
+
+	const int wantWidth = g_modVals.ultrawideWidth;
+	const int wantHeight = g_modVals.ultrawideHeight;
+
+	if (client.right - client.left == wantWidth && client.bottom - client.top == wantHeight)
+		return;
+
+	RECT frame = { 0, 0, wantWidth, wantHeight };
+	const LONG style = static_cast<LONG>(GetWindowLongA(hwnd, GWL_STYLE));
+	const LONG exStyle = static_cast<LONG>(GetWindowLongA(hwnd, GWL_EXSTYLE));
+	AdjustWindowRectEx(&frame, style, FALSE, exStyle);
+
+	SetWindowPos(hwnd, nullptr, 0, 0, frame.right - frame.left, frame.bottom - frame.top,
+		SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+	LOG("[PresentTuning] ultrawide test window resized to a %dx%d client area, so a normal monitor "
+		"can show the shape without real ultrawide hardware", wantWidth, wantHeight);
+}
+
+void RewriteBackBufferSize(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
+{
+	int wantWidth = 0;
+	int wantHeight = 0;
+	if (!EffectivePresentSize(wantWidth, wantHeight))
+		return;
+
+	UINT width = static_cast<UINT>(wantWidth);
+	UINT height = static_cast<UINT>(wantHeight);
 
 	if (!parameters.Windowed)
 	{
@@ -210,6 +262,7 @@ void Rewrite(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
 
 	if (parameters.Windowed)
 	{
+		ResizeUltrawideWindow(parameters);
 		Decide("windowed, back buffer %ux%u, Windows handles the rest",
 			parameters.BackBufferWidth, parameters.BackBufferHeight);
 		return;

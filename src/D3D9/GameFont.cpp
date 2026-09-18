@@ -65,6 +65,9 @@ Page* GetPage(uint8_t index)
 
 bool GameFont::Load(IDirect3DDevice9* device, const std::string& assetDirectory)
 {
+	if (g_loaded && g_device == device)
+		return true;
+
 	Release();
 
 	if (device == nullptr)
