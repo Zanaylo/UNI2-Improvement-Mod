@@ -50,6 +50,7 @@
 #include "Hooks/HookManager.h"
 #include "Hooks/InputProbe.h"
 #include "Game/ExtraStages.h"
+#include "Game/OnlineStage.h"
 #include "Game/SoundPacks.h"
 #include "Game/ModFiles.h"
 #include "Training/StageColor.h"
@@ -579,6 +580,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	InputProbe::OnFrame();
 	StageColor::OnFrame();
 	ExtraStages::OnFrame();
+	OnlineStage::OnFrame();
 	PotatoMode::OnFrame();
 
 	HRESULT result = D3D_OK;

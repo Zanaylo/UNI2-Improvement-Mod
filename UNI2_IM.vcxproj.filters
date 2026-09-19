@@ -909,6 +909,9 @@
     <ClCompile Include="src\Game\ExtraStages.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\OnlineStage.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Improvements.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -1917,6 +1920,9 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\ExtraStages.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\OnlineStage.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Improvements.h">

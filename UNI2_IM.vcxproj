@@ -393,6 +393,7 @@
     <ClCompile Include="src\D3D9\Post\ShaderSource.cpp" />
     <ClCompile Include="src\Game\EngineQuality.cpp" />
     <ClCompile Include="src\Game\ExtraStages.cpp" />
+    <ClCompile Include="src\Game\OnlineStage.cpp" />
     <ClCompile Include="src\Game\Improvements.cpp" />
     <ClCompile Include="src\Game\KeyboardSeat.cpp" />
     <ClCompile Include="src\Game\PotatoMode.cpp" />
@@ -698,6 +699,7 @@
     <ClInclude Include="src\D3D9\Post\Shaders\SharpenShader.h" />
     <ClInclude Include="src\Game\EngineQuality.h" />
     <ClInclude Include="src\Game\ExtraStages.h" />
+    <ClInclude Include="src\Game\OnlineStage.h" />
     <ClInclude Include="src\Game\Improvements.h" />
     <ClInclude Include="src\Game\KeyboardSeat.h" />
     <ClInclude Include="src\Game\PotatoMode.h" />

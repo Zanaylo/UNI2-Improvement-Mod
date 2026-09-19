@@ -766,6 +766,8 @@ namespace GameOffsets
 	constexpr uintptr_t kFnSessionTeardown = 0x1c0460;
 	constexpr uintptr_t kOnlineMatchFlag = 0x1d595ed;
 	constexpr uintptr_t kStageSyncOption = 0x5a8582;
+	constexpr uint8_t kStageSyncOwn = 1;
+	constexpr uintptr_t kNetworkStagePick = 0xc7e694;
 	constexpr uintptr_t kStageOwnPick = 0x4448868;
 	constexpr uintptr_t kAfterMatchState = 0x84380c;
 	constexpr int kAfterMatchAwaitRematch = 0x401;
@@ -818,6 +820,10 @@ namespace GameOffsets
 
 	constexpr uintptr_t kMatchRecords = 0x1d59b50;
 	constexpr size_t kMatchRecordsSize = 0x80;
+	constexpr uintptr_t kMatchRecordStride = 0x40;
+	constexpr uintptr_t kMatchRecordStage = 0x24;
+	constexpr int kMatchRecordLocal = 0;
+	constexpr int kMatchRecordRemote = 1;
 	constexpr uintptr_t kMatchKind = 0x1d58fe4;
 	constexpr int kMatchKindRank = 1;
 	constexpr uintptr_t kMatchLocalSide = 0x1d59520;
