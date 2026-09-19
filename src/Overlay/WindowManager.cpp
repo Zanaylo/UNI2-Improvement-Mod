@@ -37,9 +37,37 @@ namespace {
 
 constexpr float kReferenceFontSize = 13.0f;
 constexpr DWORD kFocusRecheckMs = 250;
+constexpr DWORD kFocusEvidenceMs = 1000;
+constexpr DWORD kGateReportMs = 1000;
+constexpr DWORD kMouseReportMs = 1000;
 constexpr DWORD kRestoreRetryMs = 2000;
 
 WNDPROC g_originalWndProc = nullptr;
+
+DWORD NonZeroTick()
+{
+	const DWORD now = GetTickCount();
+	return now != 0 ? now : 1;
+}
+
+bool IsFocusEvidence(UINT message)
+{
+	switch (message)
+	{
+	case WM_KEYDOWN: case WM_KEYUP:
+	case WM_SYSKEYDOWN: case WM_SYSKEYUP:
+	case WM_CHAR:
+	case WM_SETFOCUS:
+		return true;
+	default:
+		return false;
+	}
+}
+
+bool ButtonIsDown(int virtualKey)
+{
+	return (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+}
 
 bool ForegroundIsThisProcess()
 {
@@ -158,6 +186,7 @@ bool WindowManager::Initialize(HWND window, IDirect3DDevice9* device)
 	m_window = window;
 	m_device = device;
 	m_blockGameMouse = g_modVals.blockGameMouse;
+	m_swappedButtons = GetSystemMetrics(SM_SWAPBUTTON) != 0;
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -195,6 +224,7 @@ bool WindowManager::Initialize(HWND window, IDirect3DDevice9* device)
 	ProcessTuning::SetWindow(window);
 
 	m_hasFocus = ForegroundIsThisProcess();
+	SetHotkeyFocus(m_hasFocus);
 	m_focusCheckedAt = GetTickCount();
 	m_initialized = true;
 
@@ -319,14 +349,94 @@ void WindowManager::ObserveFocus(UINT message, WPARAM wParam)
 {
 	if (message == WM_ACTIVATEAPP)
 	{
+		m_focusFromSystem = true;
 		m_hasFocus = wParam != 0;
+		SetHotkeyFocus(m_hasFocus);
+
+		if (!m_hasFocus)
+			m_focusEvidenceAt.store(0, std::memory_order_relaxed);
+
 		ProcessTuning::Reassert();
 		NetLink::NoteFocusChange(m_hasFocus);
 		return;
 	}
 
+	if (message == WM_KILLFOCUS)
+	{
+		m_focusEvidenceAt.store(0, std::memory_order_relaxed);
+		return;
+	}
+
 	if (message == WM_SETFOCUS)
 		ProcessTuning::Reassert();
+
+	if (IsFocusEvidence(message))
+		NoteFocusEvidence();
+}
+
+void WindowManager::NoteFocusEvidence()
+{
+	m_focusEvidenceAt.store(NonZeroTick(), std::memory_order_relaxed);
+
+	if (m_hasFocus)
+		return;
+
+	m_hasFocus = true;
+	SetHotkeyFocus(true);
+	LOG("WindowManager: a key reached the game window while the system reported another window in "
+		"front, so the game counts as focused");
+}
+
+bool WindowManager::FocusEvidenceIsFresh(DWORD now) const
+{
+	const DWORD at = m_focusEvidenceAt.load(std::memory_order_relaxed);
+
+	return at != 0 && now - at < kFocusEvidenceMs;
+}
+
+void WindowManager::WatchWindowProc()
+{
+	if (m_window == nullptr)
+		return;
+
+	const LONG_PTR current = GetWindowLongPtrA(m_window, GWLP_WNDPROC);
+
+	m_windowProcMine = current == reinterpret_cast<LONG_PTR>(&ModWindowProc);
+
+	if (m_windowProcMine || m_windowProcWarned)
+		return;
+
+	m_windowProcWarned = true;
+	LOG("WindowManager: the window procedure is now 0x%p instead of the mod's, so something else "
+		"took it after the mod did", reinterpret_cast<void*>(current));
+}
+
+bool WindowManager::LooksFocused(DWORD now) const
+{
+	if (FocusEvidenceIsFresh(now))
+		return true;
+
+	if (m_focusFromSystem)
+		return m_hasFocus;
+
+	return ForegroundIsThisProcess();
+}
+
+void WindowManager::ReportHotkeyGate(DWORD now)
+{
+	if (m_overlayActive || now - m_gateReportedAt < kGateReportMs)
+		return;
+
+	m_gateReportedAt = now;
+
+	const int key = g_modVals.toggleOverlayKey;
+
+	LOG("[Hotkeys] focus=%d from=%s foreground=0x%p(%s) keyEvidence=%d capture=%d %s=%s wndproc=%s",
+		m_hasFocus ? 1 : 0, m_focusFromSystem ? "activation" : "poll",
+		static_cast<void*>(GetForegroundWindow()), ForegroundIsThisProcess() ? "ours" : "other",
+		FocusEvidenceIsFresh(now) ? 1 : 0, KeyboardCapture::OwnsKeyboard() ? 1 : 0,
+		GetNameFromVirtualKey(key), (GetAsyncKeyState(key) & 0x8000) != 0 ? "down" : "up",
+		m_windowProcMine ? "the mod's" : "taken");
 }
 
 void WindowManager::RefreshFocus()
@@ -338,7 +448,12 @@ void WindowManager::RefreshFocus()
 
 	m_focusCheckedAt = now;
 
-	const bool focused = ForegroundIsThisProcess();
+	WatchWindowProc();
+
+	const bool focused = LooksFocused(now);
+
+	SetHotkeyFocus(focused);
+	ReportHotkeyGate(now);
 
 	if (focused == m_hasFocus)
 		return;
@@ -400,10 +515,7 @@ void WindowManager::HandleHotkeys()
 
 	RefreshFocus();
 
-	if (!m_hasFocus)
-		return;
-
-	if ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0 && IsHotkeyPressed(VK_F1))
+	if (IsHotkeyHeld(VK_CONTROL) && IsHotkeyPressed(VK_F1))
 	{
 		IWindow* debug = m_container->GetWindow(WindowType_Debug);
 		if (debug != nullptr)
@@ -482,33 +594,142 @@ LPARAM WindowManager::ScaleMousePosition(LPARAM lParam) const
 
 void WindowManager::ScaleToBackBuffer()
 {
-	ImGuiIO& io = ImGui::GetIO();
+	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
 
-	float scaleX = 1.0f;
-	float scaleY = 1.0f;
-
-	if (!GetBackBufferScale(scaleX, scaleY))
+	if (present.BackBufferWidth == 0 || present.BackBufferHeight == 0)
 	{
 		ApplyScale(g_modVals.uiScale);
 		return;
 	}
 
-	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
-
-	RECT client = {};
-	POINT cursor = {};
-
-	if (GetClientRect(m_window, &client) && GetCursorPos(&cursor) &&
-		ScreenToClient(m_window, &cursor) && cursor.x >= 0 && cursor.y >= 0 &&
-		cursor.x < client.right && cursor.y < client.bottom)
-	{
-		io.AddMousePosEvent(cursor.x * scaleX, cursor.y * scaleY);
-	}
+	ImGuiIO& io = ImGui::GetIO();
 
 	io.DisplaySize.x = static_cast<float>(present.BackBufferWidth);
 	io.DisplaySize.y = static_cast<float>(present.BackBufferHeight);
 
+	float scaleX = 1.0f;
+	float scaleY = 1.0f;
+
+	GetBackBufferScale(scaleX, scaleY);
+	FeedOverlayMouse(scaleX, scaleY);
 	ApplyScale(g_modVals.uiScale * scaleX);
+}
+
+void WindowManager::FeedOverlayMouse(float scaleX, float scaleY)
+{
+	if (!m_overlayActive)
+		return;
+
+	ImVec2 position = { -1.0f, -1.0f };
+	const char* const source = OverlayMousePosition(scaleX, scaleY, position);
+
+	ReportOverlayMouse(position, source);
+
+	if (source == nullptr)
+		return;
+
+	ImGui::GetIO().AddMousePosEvent(position.x, position.y);
+
+	if (!m_softwareCursor)
+		return;
+
+	FeedOverlayButtons();
+}
+
+const char* WindowManager::OverlayMousePosition(float scaleX, float scaleY,
+	ImVec2& outPosition) const
+{
+	POINT cursor = {};
+
+	if (GetCursorPos(&cursor) == 0)
+		return nullptr;
+
+	POINT client = cursor;
+	RECT bounds = {};
+
+	if (m_window != nullptr && GetClientRect(m_window, &bounds) != 0 && bounds.right > 0 &&
+		bounds.bottom > 0 && ScreenToClient(m_window, &client) != 0 && client.x >= 0 &&
+		client.y >= 0 && client.x < bounds.right && client.y < bounds.bottom)
+	{
+		outPosition.x = client.x * scaleX;
+		outPosition.y = client.y * scaleY;
+		return "the window";
+	}
+
+	if (!m_softwareCursor || !HotkeyFocus() || !MonitorMousePosition(cursor, outPosition))
+		return nullptr;
+
+	const ImGuiIO& io = ImGui::GetIO();
+
+	outPosition.x = ImClamp(outPosition.x, 0.0f, io.DisplaySize.x - 1.0f);
+	outPosition.y = ImClamp(outPosition.y, 0.0f, io.DisplaySize.y - 1.0f);
+
+	return "the monitor";
+}
+
+bool WindowManager::MonitorMousePosition(POINT cursor, ImVec2& outPosition) const
+{
+	const HMONITOR monitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST);
+
+	if (monitor == nullptr)
+		return false;
+
+	MONITORINFO info = { sizeof(MONITORINFO) };
+
+	if (GetMonitorInfoA(monitor, &info) == 0)
+		return false;
+
+	const float width = static_cast<float>(info.rcMonitor.right - info.rcMonitor.left);
+	const float height = static_cast<float>(info.rcMonitor.bottom - info.rcMonitor.top);
+
+	if (width <= 0.0f || height <= 0.0f)
+		return false;
+
+	const ImGuiIO& io = ImGui::GetIO();
+
+	outPosition.x = (cursor.x - info.rcMonitor.left) * io.DisplaySize.x / width;
+	outPosition.y = (cursor.y - info.rcMonitor.top) * io.DisplaySize.y / height;
+
+	return true;
+}
+
+void WindowManager::FeedOverlayButtons() const
+{
+	if (!HotkeyFocus())
+		return;
+
+	ImGuiIO& io = ImGui::GetIO();
+
+	io.AddMouseButtonEvent(0, ButtonIsDown(m_swappedButtons ? VK_RBUTTON : VK_LBUTTON));
+	io.AddMouseButtonEvent(1, ButtonIsDown(m_swappedButtons ? VK_LBUTTON : VK_RBUTTON));
+	io.AddMouseButtonEvent(2, ButtonIsDown(VK_MBUTTON));
+}
+
+void WindowManager::ReportOverlayMouse(const ImVec2& position, const char* source)
+{
+	const DWORD now = GetTickCount();
+
+	if (now - m_mouseReportedAt < kMouseReportMs)
+		return;
+
+	m_mouseReportedAt = now;
+
+	const ImGuiIO& io = ImGui::GetIO();
+	const HWND foreground = GetForegroundWindow();
+
+	RECT client = {};
+	POINT cursor = {};
+
+	GetClientRect(m_window, &client);
+	GetCursorPos(&cursor);
+
+	LOG("[Overlay mouse] display=%.0fx%.0f client=%ldx%ld screen=%ld,%ld fed=%.0f,%.0f from=%s "
+		"window=0x%p foreground=0x%p(%s) software=%d capture=%d",
+		io.DisplaySize.x, io.DisplaySize.y, client.right, client.bottom, cursor.x, cursor.y,
+		position.x, position.y, source != nullptr ? source : "nothing",
+		static_cast<void*>(m_window), static_cast<void*>(foreground),
+		foreground == m_window ? "ours" : "another window", m_softwareCursor ? 1 : 0,
+		io.WantCaptureMouse ? 1 : 0);
 }
 
 void WindowManager::ApplyScale(float scale)
@@ -579,7 +800,8 @@ void WindowManager::Render()
 		return;
 
 
-	ImGui::GetIO().MouseDrawCursor = WantsSoftwareCursor();
+	m_softwareCursor = WantsSoftwareCursor();
+	ImGui::GetIO().MouseDrawCursor = m_softwareCursor;
 
 	ImGui_ImplDX9_NewFrame();
 	ImGui_ImplWin32_NewFrame();

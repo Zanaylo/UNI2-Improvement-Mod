@@ -394,12 +394,18 @@ namespace {
 constexpr DWORD kKeyMessageFreshMs = 250;
 
 volatile LONG g_keyMessageTick[256] = {};
+volatile LONG g_hotkeyFocus = 1;
 
 bool TakeKeyMessage(int virtualKey)
 {
 	const DWORD at = static_cast<DWORD>(InterlockedExchange(&g_keyMessageTick[virtualKey], 0));
 
 	return at != 0 && GetTickCount() - at < kKeyMessageFreshMs;
+}
+
+bool AsyncKeyDown(int virtualKey)
+{
+	return HotkeyFocus() && (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 }
 
 }
@@ -414,6 +420,16 @@ void NoteHotkeyMessage(int virtualKey)
 	InterlockedExchange(&g_keyMessageTick[virtualKey], static_cast<LONG>(now != 0 ? now : 1));
 }
 
+void SetHotkeyFocus(bool focused)
+{
+	InterlockedExchange(&g_hotkeyFocus, focused ? 1 : 0);
+}
+
+bool HotkeyFocus()
+{
+	return InterlockedCompareExchange(&g_hotkeyFocus, 0, 0) != 0;
+}
+
 bool IsHotkeyPressed(int virtualKey)
 {
 	if (virtualKey <= 0 || virtualKey > 255)
@@ -421,16 +437,16 @@ bool IsHotkeyPressed(int virtualKey)
 
 	static bool previousState[256] = {};
 
-	const bool isDown = (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+	const bool isDown = AsyncKeyDown(virtualKey);
 	const bool wasDown = previousState[virtualKey];
-	const bool messageEdge = TakeKeyMessage(virtualKey) && !wasDown;
+	const bool messageEdge = TakeKeyMessage(virtualKey);
 
 	previousState[virtualKey] = isDown || messageEdge;
 
 	if (KeyboardCapture::OwnsKeyboard())
 		return false;
 
-	return (isDown && !wasDown) || messageEdge;
+	return messageEdge || (isDown && !wasDown);
 }
 
 bool IsHotkeyHeld(int virtualKey)
@@ -438,7 +454,7 @@ bool IsHotkeyHeld(int virtualKey)
 	if (virtualKey <= 0 || virtualKey > 255 || KeyboardCapture::OwnsKeyboard())
 		return false;
 
-	return (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+	return AsyncKeyDown(virtualKey);
 }
 
 bool IsHotkeyRepeating(int virtualKey, unsigned delayMs, unsigned intervalMs)
@@ -449,7 +465,7 @@ bool IsHotkeyRepeating(int virtualKey, unsigned delayMs, unsigned intervalMs)
 	static bool down[256] = {};
 	static DWORD nextFire[256] = {};
 
-	const bool isDown = (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+	const bool isDown = AsyncKeyDown(virtualKey);
 	const bool wasDown = down[virtualKey];
 	down[virtualKey] = isDown;
 

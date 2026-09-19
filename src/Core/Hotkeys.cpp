@@ -54,7 +54,8 @@ bool KeyGatePasses(Hotkeys::Action action)
 
 bool PadGatePasses()
 {
-	return g_functionButton != PadInput::kNone && PadInput::IsDown(g_functionButton);
+	return HotkeyFocus() && g_functionButton != PadInput::kNone &&
+		PadInput::IsDown(g_functionButton);
 }
 
 std::string KeyTextFor(int key, bool needsFunction)

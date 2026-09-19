@@ -51,6 +51,9 @@ bool IsUnderSystemDirectory(const char* path);
 
 void NoteHotkeyMessage(int virtualKey);
 
+void SetHotkeyFocus(bool focused);
+bool HotkeyFocus();
+
 bool IsHotkeyPressed(int virtualKey);
 
 bool IsHotkeyHeld(int virtualKey);
