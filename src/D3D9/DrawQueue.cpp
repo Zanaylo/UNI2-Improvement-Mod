@@ -2,7 +2,6 @@
 
 #include "Core/logger.h"
 #include "D3D9/DrawQueueProbe.h"
-#include "D3D9/UltrawideHud.h"
 #include "Hooks/HookManager.h"
 
 #include <Windows.h>
@@ -22,10 +21,7 @@ bool g_enabled = false;
 
 void __stdcall OnPush(uint32_t layer, const uint32_t* stack, const uint32_t* frame, uint32_t queue)
 {
-	void* const command = reinterpret_cast<void*>(stack[1]);
-
-	UltrawideHud::ShiftCommand(command);
-	DrawQueueProbe::Note(queue, layer, command, stack[0], frame);
+	DrawQueueProbe::Note(queue, layer, reinterpret_cast<void*>(stack[1]), stack[0], frame);
 }
 
 __declspec(naked) void PushDetour()

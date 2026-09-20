@@ -861,12 +861,6 @@
     <ClCompile Include="src\D3D9\DrawTrace.cpp">
       <Filter>D3D9</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\UltrawideRects.cpp">
-      <Filter>D3D9</Filter>
-    </ClCompile>
-    <ClCompile Include="src\D3D9\UltrawideHud.cpp">
-      <Filter>D3D9</Filter>
-    </ClCompile>
     <ClCompile Include="src\D3D9\DrawQueueProbe.cpp">
       <Filter>D3D9</Filter>
     </ClCompile>
@@ -1839,12 +1833,6 @@
       <Filter>D3D9</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\DrawTrace.h">
-      <Filter>D3D9</Filter>
-    </ClInclude>
-    <ClInclude Include="src\D3D9\UltrawideRects.h">
-      <Filter>D3D9</Filter>
-    </ClInclude>
-    <ClInclude Include="src\D3D9\UltrawideHud.h">
       <Filter>D3D9</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\DrawQueueProbe.h">

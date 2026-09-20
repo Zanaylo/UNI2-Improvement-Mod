@@ -530,9 +530,6 @@ void Settings::ApplySettings()
 	g_modVals.scenePinProjection = g_settings.scenePinProjection != 0;
 	g_modVals.sceneReferenceScale = g_settings.sceneReferenceScale != 0;
 	g_modVals.sceneReferenceLiterals = g_settings.sceneReferenceLiterals != 0;
-	g_modVals.ultrawideFov = g_settings.ultrawideFov != 0;
-	g_modVals.ultrawideWidth = g_settings.ultrawideWidth;
-	g_modVals.ultrawideHeight = g_settings.ultrawideHeight;
 	g_modVals.sharpenStrength = g_settings.sharpenStrength;
 	if (g_modVals.sharpenStrength < 0 || g_modVals.sharpenStrength > 100)
 		g_modVals.sharpenStrength = 0;

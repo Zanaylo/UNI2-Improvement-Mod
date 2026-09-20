@@ -268,8 +268,14 @@ void HitboxOverlay::Draw()
 	int firstEffect = 0;
 	const int entityCount = EnumerateEntities(entities, firstEffect);
 
+	ImDrawList* const drawList = ImGui::GetWindowDrawList();
+	drawList->PushClipRect(ImVec2(transform.picture.left, transform.picture.top),
+		ImVec2(transform.picture.right, transform.picture.bottom), true);
+
 	for (int i = 0; i < entityCount; ++i)
 		DrawEntity(transform, entities[i], i >= firstEffect);
+
+	drawList->PopClipRect();
 }
 
 void HitboxOverlay::DrawEntity(const Camera::ScreenTransform& transform, void* entity, bool isEffect)

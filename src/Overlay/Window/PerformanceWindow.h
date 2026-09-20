@@ -15,12 +15,12 @@ private:
 	void DrawPerformanceTab();
 	void DrawPotatoTab();
 	void DrawImprovementsTab();
-	void DrawUltrawideTab();
 	void DrawMetricsTab();
 
 	bool DrawPotatoHeight();
 	void DrawPotatoState();
 	void DrawWhatIsHappening();
+	void DrawDiagnostics();
 	bool DrawOptions();
 	bool DrawDisplayGroup();
 	bool DrawAdvanced();

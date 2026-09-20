@@ -2,6 +2,7 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "D3D9/DrawQueue.h"
 #include "D3D9/QueuedQuad.h"
 
 #include <Windows.h>
@@ -22,6 +23,14 @@ volatile long g_left = 0;
 
 void DrawQueueProbe::Arm()
 {
+	if (!DrawQueue::Install())
+	{
+		LOG_RAW("draw queue probe: the queue push hook is not available");
+		return;
+	}
+
+	DrawQueue::SetEnabled(true);
+
 	LOG_RAW("draw queue probe: wide or bottom-band 2D commands, with the queuing call site");
 	InterlockedExchange(&g_left, kProbedCommands);
 }

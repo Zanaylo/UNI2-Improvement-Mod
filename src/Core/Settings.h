@@ -130,9 +130,6 @@ struct ModValues
 	bool scenePinProjection;
 	bool sceneReferenceScale;
 	bool sceneReferenceLiterals;
-	bool ultrawideFov;
-	int ultrawideWidth;
-	int ultrawideHeight;
 	bool disableBackBufferAa;
 	bool disableCharacterFilter;
 	bool simpleStage;

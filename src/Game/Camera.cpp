@@ -5,8 +5,8 @@
 #include "D3D9/DrawQueueProbe.h"
 #include "D3D9/DrawTrace.h"
 #include "D3D9/SceneScale.h"
-#include "D3D9/UltrawideRects.h"
 #include "Game/GameOffsets.h"
+#include "Game/GameState.h"
 #include "Game/MemoryMap.h"
 
 #include <imgui.h>
@@ -53,6 +53,26 @@ void LogMatrix(const char* label, uintptr_t rva)
 		LOG_RAW("%-14s %10.5f %10.5f %10.5f %10.5f", row == 0 ? label : "", m[row * 4],
 			m[row * 4 + 1], m[row * 4 + 2], m[row * 4 + 3]);
 	}
+}
+
+void ResolveFit(Camera::ScreenTransform& transform)
+{
+	const ImGuiIO& io = ImGui::GetIO();
+
+	const float displayWidth = io.DisplaySize.x > 0.0f ? io.DisplaySize.x : transform.referenceWidth;
+	const float displayHeight = io.DisplaySize.y > 0.0f ? io.DisplaySize.y
+		: transform.referenceHeight;
+
+	transform.fitScale = (std::min)(displayWidth / transform.referenceWidth,
+		displayHeight / transform.referenceHeight);
+
+	const float pictureWidth = transform.referenceWidth * transform.fitScale;
+	const float pictureHeight = transform.referenceHeight * transform.fitScale;
+
+	transform.picture.left = (displayWidth - pictureWidth) * 0.5f;
+	transform.picture.top = (displayHeight - pictureHeight) * 0.5f;
+	transform.picture.right = transform.picture.left + pictureWidth;
+	transform.picture.bottom = transform.picture.top + pictureHeight;
 }
 
 bool ReadFloatGlobal(uintptr_t rva, float& out)
@@ -155,6 +175,8 @@ bool Camera::ResolveScreenTransform(ScreenTransform& out)
 	out.referenceWidth = ReferenceWidth();
 	out.referenceHeight = ReferenceHeight();
 
+	ResolveFit(out);
+
 	return true;
 }
 
@@ -168,28 +190,26 @@ bool Camera::TransformPoint(const ScreenTransform& transform, float pixelX, floa
 	if (std::fabs(w) < 1e-6f)
 		return false;
 
-	outScreenX = (x * transform.matrix[0] + y * transform.matrix[4] + transform.matrix[12]) / w;
-	outScreenY = (x * transform.matrix[1] + y * transform.matrix[5] + transform.matrix[13]) / w;
+	const float referenceX = (x * transform.matrix[0] + y * transform.matrix[4] +
+		transform.matrix[12]) / w;
+	const float referenceY = (x * transform.matrix[1] + y * transform.matrix[5] +
+		transform.matrix[13]) / w;
 
-	const ImGuiIO& io = ImGui::GetIO();
-	if (io.DisplaySize.x > 0.0f && io.DisplaySize.y > 0.0f)
-	{
-		const float scale = (std::min)(io.DisplaySize.x / transform.referenceWidth,
-			io.DisplaySize.y / transform.referenceHeight);
-
-		outScreenX = outScreenX * scale + (io.DisplaySize.x - transform.referenceWidth * scale) * 0.5f;
-		outScreenY = outScreenY * scale + (io.DisplaySize.y - transform.referenceHeight * scale) * 0.5f;
-	}
+	outScreenX = referenceX * transform.fitScale + transform.picture.left;
+	outScreenY = referenceY * transform.fitScale + transform.picture.top;
 
 	return std::isfinite(outScreenX) && std::isfinite(outScreenY);
 }
 
 void Camera::PollDiagnosticRequest()
 {
-	if (!SceneScale::IsApplied() || --g_framesUntilPoll > 0)
+	if (--g_framesUntilPoll > 0)
 		return;
 
 	g_framesUntilPoll = kRequestPollFrames;
+
+	if (!GameState::IsInMatch())
+		return;
 
 	static const std::string request = GetModRootPath("camera_diagnostic.request");
 	if (GetFileAttributesA(request.c_str()) == INVALID_FILE_ATTRIBUTES)
@@ -203,7 +223,6 @@ void Camera::LogDiagnostic()
 {
 	LOG_SECTION("camera diagnostic");
 	DrawTrace::Arm();
-	UltrawideRects::LogSites();
 	DrawQueueProbe::Arm();
 
 	int physicalWidth = 0;
@@ -254,6 +273,10 @@ void Camera::LogDiagnostic()
 	const bool hasTransform = ResolveScreenTransform(transform);
 	LOG_RAW("ScreenTransform reference %.1fx%.1f (%s)", transform.referenceWidth,
 		transform.referenceHeight, hasTransform ? "ok" : "FAILED");
+	LOG_RAW("picture %.1f,%.1f to %.1f,%.1f at %.4fx, so the bars are %.1f wide and %.1f tall",
+		transform.picture.left, transform.picture.top, transform.picture.right,
+		transform.picture.bottom, transform.fitScale, transform.picture.left,
+		transform.picture.top);
 
 	void* entities[2] = {};
 	const int count = MemoryMap::EnumerateCharaSlots(entities, 2, true);

@@ -14,7 +14,6 @@
 #include "D3D9/D3D9Proxy.h"
 #include "D3D9/D3D9Wrapper.h"
 #include "D3D9/SceneScale.h"
-#include "D3D9/UltrawideRects.h"
 #include "D3D9/Post/ShaderPack.h"
 #include "Game/BalanceRules.h"
 #include "Game/BgmControl.h"
@@ -228,7 +227,6 @@ void Stage_GameHooks()
 		return;
 
 	RunStage("game hooks: chara tracker", []() { CharaTracker::Install(); });
-	RunStage("game hooks: ultrawide rects", []() { UltrawideRects::Initialize(); });
 	RunStage("game hooks: frame stepper", []() { FrameStepper::Initialize(); });
 	RunStage("game hooks: player control", []() { PlayerControl::Initialize(); });
 	RunStage("game hooks: palette memory", []() { PaletteMemory::Install(); });

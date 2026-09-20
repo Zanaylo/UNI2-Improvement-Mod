@@ -14,7 +14,6 @@
 #include "D3D9/Post/SceneUpscale.h"
 #include "D3D9/SceneScale.h"
 #include "D3D9/DrawTrace.h"
-#include "D3D9/UltrawideHud.h"
 #include "Game/Camera.h"
 #include "D3D9/Post/PostChain.h"
 #include "Game/GameState.h"
@@ -450,7 +449,6 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	}
 
 	DrawTrace::OnPresentBegin(sourceRect, destRect);
-	UltrawideHud::SetRenderThread(GetCurrentThreadId());
 	GraphicsWrapper::Detect(device);
 	SceneWatch::OnFrame();
 

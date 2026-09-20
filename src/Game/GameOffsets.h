@@ -584,10 +584,6 @@ namespace GameOffsets
 	constexpr uintptr_t kRenderSizeWidthLiterals[] = { 0x4df422, 0x4df44e };
 	constexpr uintptr_t kRenderSizeHeightLiterals[] = { 0x4df432, 0x4df449 };
 
-	constexpr uintptr_t kStageTargetWidthStores[] = { 0x11bc2e, 0x11bcdc, 0x11bd20, 0x11bd68 };
-	constexpr uintptr_t kStageTargetWidthArgs[] = { 0x11bc62, 0x11bc78, 0x11bc92, 0x11bcad };
-	constexpr uintptr_t kStageViewportWidthStore = 0x11bd97;
-
 	constexpr uintptr_t kRenderVirtualCopyBlock = 0x4df500;
 	constexpr int kRenderVirtualCopyBlockLength = 20;
 
