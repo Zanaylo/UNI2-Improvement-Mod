@@ -1,7 +1,7 @@
 #include "Screens/PatTextures.h"
 
 #include "Core/logger.h"
-#include "D3D9/DdsTexture.h"
+#include "D3D9/Draw/DdsTexture.h"
 
 #include <unordered_map>
 #include <utility>

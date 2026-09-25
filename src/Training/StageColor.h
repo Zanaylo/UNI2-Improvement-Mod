@@ -1,5 +1,3 @@
-// The stage replaced by a flat colour for chroma keying. Takes effect the frame it is ticked.
-
 #pragma once
 
 #include <cstdint>

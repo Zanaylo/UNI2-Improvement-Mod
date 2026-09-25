@@ -1,12 +1,12 @@
 #include "Palette/PaletteTexture.h"
 
 #include "Core/logger.h"
-#include "D3D9/DeviceHooks.h"
-#include "Game/GameOffsets.h"
+#include "D3D9/Device/DeviceHooks.h"
+#include "Game/Engine/GameOffsets.h"
 #include "Core/utils.h"
 #include "Training/FrameStepper.h"
-#include "Game/GameState.h"
-#include "Game/MemoryMap.h"
+#include "Game/Engine/GameState.h"
+#include "Game/Engine/MemoryMap.h"
 #include "Palette/PaletteMemory.h"
 #include "Palette/PaletteTrace.h"
 
@@ -473,7 +473,6 @@ bool PaletteTexture::GetMatchTextures(int& outFirst, int& outSecond)
 
 void PaletteTexture::OnFrame()
 {
-	// Same reason as PaletteSeat: with the game's frame suppressed nothing binds a texture, so the
 	if (FrameStepper::NeedsFrozenFrameReplay())
 		return;
 

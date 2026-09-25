@@ -2,7 +2,7 @@
 
 #include "Network/NetGate.h"
 #include "Network/NetLog.h"
-#include "Network/SteamNetwork.h"
+#include "Network/Steam/SteamNetwork.h"
 
 #include <cstring>
 

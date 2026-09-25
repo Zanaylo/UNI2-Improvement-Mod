@@ -4,12 +4,13 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
-#include "Game/MemoryMap.h"
-#include "Game/MemoryScanner.h"
-#include "Hooks/HookManager.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/MemoryMap.h"
+#include "Game/Engine/MemoryScanner.h"
+#include "Hooks/GameHook.h"
 
 #include "MinHook.h"
+#include "Game/Engine/CodeSignatures.h"
 
 #include <Windows.h>
 
@@ -89,7 +90,7 @@ int g_loaderCalls = 0;
 constexpr int kLoaderCallsLogged = 24;
 
 using LoadPalette_t = void*(__fastcall*)(void*, void*, const char*);
-LoadPalette_t oLoadPalette = nullptr;
+GameHook<LoadPalette_t> g_loadPaletteHook("LoadCharaPalette");
 
 void Record(const char* name, void* buffer)
 {
@@ -140,7 +141,7 @@ void* __fastcall HookedLoadPalette(void* self, void* unused, const char* name)
 {
 	++g_loaderCalls;
 
-	void* buffer = oLoadPalette(self, unused, name);
+	void* buffer = g_loadPaletteHook.Original()(self, unused, name);
 
 	if (g_loaderCalls <= kLoaderCallsLogged)
 	{
@@ -209,13 +210,10 @@ bool PaletteMemory::Install()
 	if (g_installed)
 		return true;
 
-	void* target = reinterpret_cast<void*>(RvaToAddress(GameOffsets::kFnLoadCharaPalette));
+	void* target = reinterpret_cast<void*>(CodeSignatures::Address(GameOffsets::kFnLoadCharaPalette));
 
-	if (!HookManager::CreateAndEnableHook(target, &HookedLoadPalette,
-		reinterpret_cast<void**>(&oLoadPalette), "LoadCharaPalette"))
-	{
+	if (!g_loadPaletteHook.Install(target, &HookedLoadPalette))
 		return false;
-	}
 
 	g_installed = true;
 	LOG("PaletteMemory installed on the palette loader at 0x%p", target);

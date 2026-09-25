@@ -1,7 +1,7 @@
 #include "Palette/PlayerSides.h"
 
-#include "Game/GameOffsets.h"
-#include "Game/MemoryMap.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/MemoryMap.h"
 
 namespace {
 

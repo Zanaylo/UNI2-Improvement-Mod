@@ -3,7 +3,7 @@
 #include "Core/info.h"
 #include "Network/NetGate.h"
 #include "Network/NetLog.h"
-#include "Network/SteamInterfaces.h"
+#include "Network/Steam/SteamInterfaces.h"
 
 #include <Windows.h>
 

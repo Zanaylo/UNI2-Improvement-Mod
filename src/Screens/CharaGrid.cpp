@@ -1,7 +1,7 @@
 #include "Screens/CharaGrid.h"
 
 #include "Core/logger.h"
-#include "Game/DataArchive.h"
+#include "Game/Files/DataArchive.h"
 #include "Screens/PatTextures.h"
 
 #include <cstdio>

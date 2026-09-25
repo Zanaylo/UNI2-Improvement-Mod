@@ -1,15 +1,15 @@
 #include "Palette/PaletteReport.h"
 
 #include "Core/info.h"
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
-#include "Game/GameState.h"
-#include "Game/MemoryMap.h"
-#include "Game/OnlineState.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/GameState.h"
+#include "Game/Engine/MemoryMap.h"
+#include "Game/Engine/OnlineState.h"
 #include "Network/PaletteShare.h"
 #include "Network/NetLink.h"
-#include "Network/SteamNetwork.h"
+#include "Network/Steam/SteamNetwork.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteDrawProbe.h"
 #include "Palette/PaletteBinder.h"
@@ -29,7 +29,6 @@ namespace {
 constexpr int kColoursSampled = 8;
 constexpr int kSlotsSampled = 4;
 constexpr int kSeatWindowDwords = 12;
-constexpr uintptr_t kSeatWindowStart = 0x5a5960;
 
 const char* OwnerKindName(PaletteTexture::OwnerKind kind)
 {
@@ -179,7 +178,7 @@ void WriteSeatSignals(FILE* file)
 
 	for (int i = 0; i < kSeatWindowDwords; ++i)
 	{
-		const uintptr_t rva = kSeatWindowStart + static_cast<uintptr_t>(i) * 4;
+		const uintptr_t rva = GameOffsets::kSeatWindowStart + static_cast<uintptr_t>(i) * 4;
 
 		const char* const mark = rva == GameOffsets::kPlayerSideIndex
 			? "   <- the one the mod uses" : "";

@@ -1,9 +1,9 @@
 src/D3D9/Post/Shaders/*.h linguist-generated=true -diff
-src/Core/default_ini.h linguist-generated=true -diff
-src/Game/FrameDataTable.cpp linguist-generated=true -diff
-src/Game/EffectTable.cpp linguist-generated=true -diff
-src/Game/CharaTables.cpp linguist-generated=true -diff
-src/Game/GameTables.cpp linguist-generated=true -diff
+src/Core/Config/default_ini.h linguist-generated=true -diff
+src/Game/Tables/FrameDataTable.cpp linguist-generated=true -diff
+src/Game/Tables/EffectTable.cpp linguist-generated=true -diff
+src/Game/Tables/CharaTables.cpp linguist-generated=true -diff
+src/Game/Tables/GameTables.cpp linguist-generated=true -diff
 resource/basepals.rc linguist-generated=true -diff
 resource/basepals/*.png binary
 resource/patches/*.pack binary linguist-generated=true -diff

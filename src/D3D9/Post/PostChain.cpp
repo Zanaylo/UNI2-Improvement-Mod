@@ -1,7 +1,7 @@
 #include "D3D9/Post/PostChain.h"
 
-#include "Core/Settings.h"
-#include "Core/interfaces.h"
+#include "Core/Config/Settings.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "D3D9/Post/Shaders/BloomBlurShader.h"
 #include "D3D9/Post/Shaders/BloomBrightShader.h"

@@ -1,12 +1,3 @@
-// AMD FidelityFX EASU over the 1280x720 scene target, drawn into a back buffer sized copy.
-//
-// The engine composites its five scene targets into the back buffer with a linear filter, and that
-// magnification is the only one in the whole frame - the sprites land in the targets at about 1:1.
-// An edge directed kernel earns its keep exactly there and nowhere else, so this runs before the
-// composite rather than over the finished frame.
-//
-// c0.xy is the source size in texels and c0.zw its reciprocal.
-
 sampler2D Scene : register(s0);
 
 float4 SourceSize : register(c0);

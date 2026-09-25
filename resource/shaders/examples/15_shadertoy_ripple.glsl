@@ -1,10 +1,3 @@
-// UNI2-Improvement-Mod shader pack: Shadertoy ripple
-//
-// A Shadertoy shader, pasted as it stands: one mainImage, iResolution, iTime and iChannel0. The mod
-// wraps it - iChannel0 is the frame, fragCoord is in pixels with y up the way Shadertoy has it, and
-// iTime is seconds since the mod loaded. Anything on Shadertoy that only reads iChannel0 as the
-// screen drops in here; anything that wants a second buffer or a texture of its own does not.
-
 #define STRENGTH 0.004
 #define SPEED 1.6
 #define RINGS 26.0

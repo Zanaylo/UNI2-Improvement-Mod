@@ -4,8 +4,26 @@
     <Filter Include="Core">
       <UniqueIdentifier>{0bf2fb91-1980-759e-0b3a-05bc77ef3cbc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Boot">
+      <UniqueIdentifier>{a112059f-e3c5-9722-e024-1762979d18c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Config">
+      <UniqueIdentifier>{698cf913-5bb9-8600-27c8-91b52a37a9e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Formats">
+      <UniqueIdentifier>{12aaddff-a3ab-c972-feac-dd0a0f4e7198}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Input">
+      <UniqueIdentifier>{3370b467-1f15-127a-d992-4e1fe1113ea4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="D3D9">
       <UniqueIdentifier>{126d8768-1125-f82f-157c-9df5afd0fa57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="D3D9\Device">
+      <UniqueIdentifier>{6ab8651d-f0ff-7f27-72fc-2128586c4913}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="D3D9\Draw">
+      <UniqueIdentifier>{f86cd940-b17e-5fb7-826d-fe7710a30d2b}</UniqueIdentifier>
     </Filter>
     <Filter Include="D3D9\Post">
       <UniqueIdentifier>{55a2e3a1-41ad-d0cb-1573-fff5b90c9d3f}</UniqueIdentifier>
@@ -37,20 +55,83 @@
     <Filter Include="Game">
       <UniqueIdentifier>{8adaa572-0431-2527-3db7-4cc82812c2d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Audio">
+      <UniqueIdentifier>{75489d1a-8923-c105-b149-d3f074d2648d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Battle">
+      <UniqueIdentifier>{fcf9d911-4456-2113-6ebb-148176f19eeb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Customize">
+      <UniqueIdentifier>{24d751bc-9847-8364-096a-ccda9036303e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Display">
+      <UniqueIdentifier>{86eef5fb-8022-6699-d478-2e83e8ce0c19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Engine">
+      <UniqueIdentifier>{5d2b7d76-92b0-081f-728c-f5ee3d27392f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Files">
+      <UniqueIdentifier>{d167c6e8-a207-c51c-5a40-2271a0831ad6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Lobby">
+      <UniqueIdentifier>{4e647b9f-f606-bbd7-d9f5-00d81b3bdd6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Menus">
+      <UniqueIdentifier>{b056a667-5ffc-645f-2b29-b4ae740e7c27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Patches">
+      <UniqueIdentifier>{c4702feb-f305-97e9-7ecf-6af201afe4b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Replays">
+      <UniqueIdentifier>{c7dd8ce1-a588-91c7-4085-4a05dbfca5cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Stages">
+      <UniqueIdentifier>{ae70ba32-4925-05de-f154-7d4e7a054194}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Stages\Bbtag">
+      <UniqueIdentifier>{b8427edf-61af-34f2-e9ab-58353bc2bb34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Subtitles">
+      <UniqueIdentifier>{67ed653b-a097-1c5a-c3aa-ff7deadf592c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Tables">
+      <UniqueIdentifier>{f5a43538-c9c2-f4f8-40fb-a54c1c05e356}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Hooks">
       <UniqueIdentifier>{8dc6a37a-e1a1-a81b-cdb7-6eb24bb92a03}</UniqueIdentifier>
     </Filter>
     <Filter Include="Network">
       <UniqueIdentifier>{1e8e57b2-909b-2a85-3983-a93f378eb6b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Network\Spectate">
+      <UniqueIdentifier>{a47ead35-3d25-9258-00d7-2f38bd51d6e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Network\Steam">
+      <UniqueIdentifier>{2e93b373-5220-1821-fe7a-f18e1468fc2d}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Overlay">
       <UniqueIdentifier>{5cb27212-0b10-9463-f43d-d2d90de1bc67}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Overlay\Window">
-      <UniqueIdentifier>{6d748d6a-9131-d495-4248-2b79235b0531}</UniqueIdentifier>
+    <Filter Include="Overlay\Framework">
+      <UniqueIdentifier>{6beae41b-9e3f-b8b3-566b-014e8af7a77f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Overlay\WindowContainer">
-      <UniqueIdentifier>{3d43096c-1a13-bcc8-8952-7fa04f4dfaba}</UniqueIdentifier>
+    <Filter Include="Overlay\Guides">
+      <UniqueIdentifier>{d9eb4383-9722-e080-fa2a-28584be765ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay\Hud">
+      <UniqueIdentifier>{9832348d-fce5-efce-6c62-51815f2b38b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay\Native">
+      <UniqueIdentifier>{d3c86014-2641-eb52-facc-95ff70192338}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay\Panels">
+      <UniqueIdentifier>{1129f397-4745-f8aa-5d73-ee294816d608}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay\Widgets">
+      <UniqueIdentifier>{8ee12055-8095-faea-73eb-5d4c8d764518}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Overlay\Windows">
+      <UniqueIdentifier>{2ee13214-b7ac-c2d2-fbfc-49d713f274d0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Palette">
       <UniqueIdentifier>{9dd69108-8352-b680-025d-8f853d2d59e2}</UniqueIdentifier>
@@ -70,82 +151,88 @@
     <Filter Include="Training">
       <UniqueIdentifier>{e0ad314c-b345-1fb7-a5ed-68bb70aa22ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Training\Dummy">
+      <UniqueIdentifier>{165cc816-7bf8-daff-ed89-9e6346522e63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Training\Meter">
+      <UniqueIdentifier>{98227d89-ea2a-0dc6-b044-7346356a9fa4}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Web">
       <UniqueIdentifier>{5ea0e119-4872-1ef1-f5cb-85505db1a525}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Core\dllmain.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Boot\dllmain.cpp">
+      <Filter>Core\Boot</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\GraphicsWrapper.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Device\GraphicsWrapper.cpp">
+      <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\DgVoodoo.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Device\DgVoodoo.cpp">
+      <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\Dxvk.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Device\Dxvk.cpp">
+      <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\RandomStage.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\RandomStage.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\SubtitlesWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\SubtitlesWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BundledPack.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Patches\BundledPack.cpp">
+      <Filter>Game\Patches</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Json.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Formats\Json.cpp">
+      <Filter>Core\Formats</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\NameCensor.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Lobby\NameCensor.cpp">
+      <Filter>Game\Lobby</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\RoomNameCensor.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Lobby\RoomNameCensor.cpp">
+      <Filter>Game\Lobby</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SteamFriends.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Steam\SteamFriends.cpp">
+      <Filter>Network\Steam</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SpectateCode.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Spectate\SpectateCode.cpp">
+      <Filter>Network\Spectate</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SpectateRelay.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Spectate\SpectateRelay.cpp">
+      <Filter>Network\Spectate</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SpectateMatch.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Spectate\SpectateMatch.cpp">
+      <Filter>Network\Spectate</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SpectateHost.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Spectate\SpectateHost.cpp">
+      <Filter>Network\Spectate</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SpectateViewer.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Spectate\SpectateViewer.cpp">
+      <Filter>Network\Spectate</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SpectateFeed.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Spectate\SpectateFeed.cpp">
+      <Filter>Network\Spectate</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\Spectate.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Spectate\Spectate.cpp">
+      <Filter>Network\Spectate</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\ReadyFlags.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SubtitleTable.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Subtitles\SubtitleTable.cpp">
+      <Filter>Game\Subtitles</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SubtitleText.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Subtitles\SubtitleText.cpp">
+      <Filter>Game\Subtitles</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SubtitleWatch.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Subtitles\SubtitleWatch.cpp">
+      <Filter>Game\Subtitles</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\SubtitleHud.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Hud\SubtitleHud.cpp">
+      <Filter>Overlay\Hud</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\SubtitlesPanel.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Panels\SubtitlesPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
     </ClCompile>
     <ClCompile Include="src\Web\Http.cpp">
       <Filter>Web</Filter>
@@ -159,11 +246,11 @@
     <ClCompile Include="src\Web\UpdateInstall.cpp">
       <Filter>Web</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BasePals.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\BasePals.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PatchPacks.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Patches\PatchPacks.cpp">
+      <Filter>Game\Patches</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\NetLog.cpp">
       <Filter>Network</Filter>
@@ -177,266 +264,272 @@
     <ClCompile Include="src\Network\NetWorker.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SteamWatch.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Steam\SteamWatch.cpp">
+      <Filter>Network\Steam</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SteamLink.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Steam\SteamLink.cpp">
+      <Filter>Network\Steam</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\GgpoLogCapture.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\CrashContext.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Boot\CrashContext.cpp">
+      <Filter>Core\Boot</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmTable.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmTable.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmVolume.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmVolume.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\AudioFile.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\AudioFile.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OggWriter.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\OggWriter.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\MusicRefresh.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\MusicRefresh.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\FileIndex.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BalanceRules.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Battle\BalanceRules.cpp">
+      <Filter>Game\Battle</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ScreenShake.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Battle\ScreenShake.cpp">
+      <Filter>Game\Battle</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\DataSearchPath.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Menus\MenuInput.cpp">
+      <Filter>Game\Menus</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\GamePatches.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Menus\TrainingMenu.cpp">
+      <Filter>Game\Menus</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PatchLibrary.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Files\DataSearchPath.cpp">
+      <Filter>Game\Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\PatchWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Game\Patches\GamePatches.cpp">
+      <Filter>Game\Patches</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\UserMusic.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Patches\PatchLibrary.cpp">
+      <Filter>Game\Patches</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SeListFile.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Overlay\Windows\PatchWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SoundPacks.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\UserMusic.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\CharaSounds.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\SeListFile.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\GameArchive.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\SoundPacks.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SeList.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\CharaSounds.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\VoiceImport.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Files\GameArchive.cpp">
+      <Filter>Game\Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\VoiceMap.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\SeList.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OggReader.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\VoiceImport.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SoundsReadme.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\VoiceMap.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\OggReader.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\SoundsReadme.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\SoundOutput.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SoundpackBuilder.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\SoundpackBuilder.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmLibrary.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmLibrary.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ModFiles.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Files\ModFiles.cpp">
+      <Filter>Game\Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ModPacks.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Files\ModPacks.cpp">
+      <Filter>Game\Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\ModsPanel.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Panels\ModsPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\ModsWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\ModsWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OstImport.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\OstImport.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgListOverride.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgListOverride.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgObjectFix.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgObjectFix.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BbtagArt.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagArt.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BbtagCrypt.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagCrypt.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BbtagMmot.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagMmot.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BbtagMua.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagMua.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BbtagPac.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagPac.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BbtagScript.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagScript.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BbtagStage.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagStage.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\FbxExWriter.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\FbxExWriter.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgClear.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgClear.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgMipmaps.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgMipmaps.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\DxtMips.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\DxtMips.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StagePlacement.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StagePlacement.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageSettingKey.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageSettingKey.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgVertexProbe.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgVertexProbe.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgGrade.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgGrade.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgShaderText.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgShaderText.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\FbGameFolder.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Files\FbGameFolder.cpp">
+      <Filter>Game\Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\FbxAscii.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\FbxAscii.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgCeiling.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgCeiling.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\FbxExLocal.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\FbxExLocal.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\FbxToFbxEx.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\FbxToFbxEx.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\MbtlCipher.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Files\MbtlCipher.cpp">
+      <Filter>Game\Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\UnielCipher.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Files\UnielCipher.cpp">
+      <Filter>Game\Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageArchive.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageArchive.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageImport.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageImport.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgRecord.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\BgRecord.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageLibrary.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageLibrary.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageNote.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageNote.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageReplacements.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageReplacements.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageThumb.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageThumb.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageObjects.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageObjects.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StageCards.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\StageCards.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PlayerHealth.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\PlayerHealth.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\CharaTint.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Battle\CharaTint.cpp">
+      <Filter>Game\Battle</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BattleCockpit.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Menus\BattleCockpit.cpp">
+      <Filter>Game\Menus</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\HealthReadout.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Hud\HealthReadout.cpp">
+      <Filter>Overlay\Hud</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\RestartPrompt.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Panels\RestartPrompt.cpp">
+      <Filter>Overlay\Panels</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\StagesPanel.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Panels\StagesPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\StagesWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\StagesWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OstPac.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\OstPac.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OstUniNames.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\OstUniNames.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SoundpackTransfer.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\SoundpackTransfer.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\ZipArchive.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Formats\ZipArchive.cpp">
+      <Filter>Core\Formats</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmNames.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmNames.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmRules.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmRules.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmThemes.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmThemes.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmTableFile.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmTableFile.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmCatalog.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmCatalog.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BgmControl.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Audio\BgmControl.cpp">
+      <Filter>Game\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OpponentLog.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Lobby\OpponentLog.cpp">
+      <Filter>Game\Lobby</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SteamInterfaces.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Steam\SteamInterfaces.cpp">
+      <Filter>Network\Steam</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\RollbackStats.cpp">
       <Filter>Network</Filter>
@@ -456,44 +549,44 @@
     <ClCompile Include="src\Network\NetplayTick.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\NetplayWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\NetplayWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\MusicPanel.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Panels\MusicPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\MusicWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\MusicWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\SoundWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\SoundWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\ThemeWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\ThemeWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Settings.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Config\Settings.cpp">
+      <Filter>Core\Config</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\logger.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Compat.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Boot\Compat.cpp">
+      <Filter>Core\Boot</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Deflate.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Formats\Deflate.cpp">
+      <Filter>Core\Formats</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\PngImage.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Formats\PngImage.cpp">
+      <Filter>Core\Formats</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\DpiScaling.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\crashdump.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Boot\crashdump.cpp">
+      <Filter>Core\Boot</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\ModuleInventory.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Boot\ModuleInventory.cpp">
+      <Filter>Core\Boot</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\utils.cpp">
       <Filter>Core</Filter>
@@ -501,23 +594,23 @@
     <ClCompile Include="src\Core\AsyncFileDialog.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\TextEncoding.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Formats\TextEncoding.cpp">
+      <Filter>Core\Formats</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\KeyboardCapture.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Input\KeyboardCapture.cpp">
+      <Filter>Core\Input</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\keycodes.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Config\keycodes.cpp">
+      <Filter>Core\Config</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Hotkeys.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Config\Hotkeys.cpp">
+      <Filter>Core\Config</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\PadInput.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Input\PadInput.cpp">
+      <Filter>Core\Input</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\interfaces.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Config\interfaces.cpp">
+      <Filter>Core\Config</Filter>
     </ClCompile>
     <ClCompile Include="src\Hooks\HookManager.cpp">
       <Filter>Hooks</Filter>
@@ -528,86 +621,86 @@
     <ClCompile Include="src\Hooks\InputProbe.cpp">
       <Filter>Hooks</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\D3D9Proxy.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Device\D3D9Proxy.cpp">
+      <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\D3D9Wrapper.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Device\D3D9Wrapper.cpp">
+      <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\DeviceHooks.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Device\DeviceHooks.cpp">
+      <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\FrozenFrame.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Draw\FrozenFrame.cpp">
+      <Filter>D3D9\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\WindowManager.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Framework\WindowManager.cpp">
+      <Filter>Overlay\Framework</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\NotificationBar.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Hud\NotificationBar.cpp">
+      <Filter>Overlay\Hud</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\UiText.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Widgets\UiText.cpp">
+      <Filter>Overlay\Widgets</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\UiScale.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Widgets\UiScale.cpp">
+      <Filter>Overlay\Widgets</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\OverlayFont.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Widgets\OverlayFont.cpp">
+      <Filter>Overlay\Widgets</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\PlatePreview.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Widgets\PlatePreview.cpp">
+      <Filter>Overlay\Widgets</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\ComboNav.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Widgets\ComboNav.cpp">
+      <Filter>Overlay\Widgets</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\CharaPreview.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Widgets\CharaPreview.cpp">
+      <Filter>Overlay\Widgets</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\IWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Framework\IWindow.cpp">
+      <Filter>Overlay\Framework</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\MainWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\MainWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\PlayerCardPanel.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Panels\PlayerCardPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\ColorCustomizePanel.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Panels\ColorCustomizePanel.cpp">
+      <Filter>Overlay\Panels</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\PaletteWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\PaletteWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\DebugWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\DebugWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\MemoryMap.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\MemoryMap.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\CharaTracker.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\CharaTracker.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\HitboxData.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\HitboxData.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\Camera.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\Camera.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\GameRestart.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Battle\GameRestart.cpp">
+      <Filter>Game\Battle</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\GameState.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\GameState.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OnlineState.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\OnlineState.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\MemoryScanner.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\MemoryScanner.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Network\SteamNetwork.cpp">
-      <Filter>Network</Filter>
+    <ClCompile Include="src\Network\Steam\SteamNetwork.cpp">
+      <Filter>Network\Steam</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\PaletteShare.cpp">
       <Filter>Network</Filter>
@@ -624,8 +717,8 @@
     <ClCompile Include="src\Network\OnlinePatch.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\BattleDataReload.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Battle\BattleDataReload.cpp">
+      <Filter>Game\Battle</Filter>
     </ClCompile>
     <ClCompile Include="src\Palette\PaletteBinder.cpp">
       <Filter>Palette</Filter>
@@ -681,59 +774,59 @@
     <ClCompile Include="src\Palette\PaletteTrace.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\CharaTables.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Tables\CharaTables.cpp">
+      <Filter>Game\Tables</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OfferedEntries.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Tables\OfferedEntries.cpp">
+      <Filter>Game\Tables</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PartColourTable.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Tables\PartColourTable.cpp">
+      <Filter>Game\Tables</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\EffectTable.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Tables\EffectTable.cpp">
+      <Filter>Game\Tables</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PartName.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\PartName.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PlayerCard.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\PlayerCard.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PlateCatalog.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\PlateCatalog.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ColorCustomize.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\ColorCustomize.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ColorOverride.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\ColorOverride.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\LivePalette.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\LivePalette.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PngPalette.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\PngPalette.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\CgImage.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\CgImage.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PatParts.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\PatParts.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ScriptReload.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Battle\ScriptReload.cpp">
+      <Filter>Game\Battle</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SaveData.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\SaveData.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SceneWatch.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\SceneWatch.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\CharaSelectProbe.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Menus\CharaSelectProbe.cpp">
+      <Filter>Game\Menus</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\CharaSelectState.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Menus\CharaSelectState.cpp">
+      <Filter>Game\Menus</Filter>
     </ClCompile>
     <ClCompile Include="src\Screens\CharaGrid.cpp">
       <Filter>Screens</Filter>
@@ -753,29 +846,29 @@
     <ClCompile Include="src\Screens\ScreenDirector.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ColorPartTable.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\ColorPartTable.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\StockPalettes.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Customize\StockPalettes.cpp">
+      <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\UsedEntryTable.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Tables\UsedEntryTable.cpp">
+      <Filter>Game\Tables</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\FrameDataTable.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Tables\FrameDataTable.cpp">
+      <Filter>Game\Tables</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\GameTables.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Tables\GameTables.cpp">
+      <Filter>Game\Tables</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PlayerState.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Engine\PlayerState.cpp">
+      <Filter>Game\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ReplayState.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Replays\ReplayState.cpp">
+      <Filter>Game\Replays</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\SteamNames.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Lobby\SteamNames.cpp">
+      <Filter>Game\Lobby</Filter>
     </ClCompile>
     <ClCompile Include="src\Training\FrameStepper.cpp">
       <Filter>Training</Filter>
@@ -786,95 +879,104 @@
     <ClCompile Include="src\Training\StageColor.cpp">
       <Filter>Training</Filter>
     </ClCompile>
-    <ClCompile Include="src\Training\DummyScript.cpp">
-      <Filter>Training</Filter>
+    <ClCompile Include="src\Training\Dummy\DummyScript.cpp">
+      <Filter>Training\Dummy</Filter>
     </ClCompile>
-    <ClCompile Include="src\Training\StateRecorder.cpp">
-      <Filter>Training</Filter>
+    <ClCompile Include="src\Training\Meter\StateRecorder.cpp">
+      <Filter>Training\Meter</Filter>
     </ClCompile>
-    <ClCompile Include="src\Training\DummyRecorder.cpp">
-      <Filter>Training</Filter>
+    <ClCompile Include="src\Training\Dummy\DummyRecorder.cpp">
+      <Filter>Training\Dummy</Filter>
     </ClCompile>
-    <ClCompile Include="src\Training\FrameMeter.cpp">
-      <Filter>Training</Filter>
+    <ClCompile Include="src\Training\Meter\FrameMeter.cpp">
+      <Filter>Training\Meter</Filter>
     </ClCompile>
-    <ClCompile Include="src\Training\SuperFlash.cpp">
-      <Filter>Training</Filter>
+    <ClCompile Include="src\Training\Meter\SuperFlash.cpp">
+      <Filter>Training\Meter</Filter>
     </ClCompile>
     <ClCompile Include="src\Training\TrainingSave.cpp">
       <Filter>Training</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\FrameMeterHud.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Hud\FrameMeterHud.cpp">
+      <Filter>Overlay\Hud</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\GrdPopupHud.cpp">
-      <Filter>Overlay</Filter>
+    <ClCompile Include="src\Overlay\Hud\GrdPopupHud.cpp">
+      <Filter>Overlay\Hud</Filter>
     </ClCompile>
-    <ClCompile Include="src\Training\GrdWatch.cpp">
-      <Filter>Training</Filter>
+    <ClCompile Include="src\Training\Meter\GrdWatch.cpp">
+      <Filter>Training\Meter</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\DdsTexture.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Draw\DdsTexture.cpp">
+      <Filter>D3D9\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\QuadRenderer.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Draw\QuadRenderer.cpp">
+      <Filter>D3D9\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\GameFont.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Draw\GameFont.cpp">
+      <Filter>D3D9\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\FrameMeterLegendWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\FrameMeterLegendWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\DummyScriptGuideWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Guides\FrameMeterLegend.cpp">
+      <Filter>Overlay\Guides</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\HitboxLegendWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Native\GuideScreen.cpp">
+      <Filter>Overlay\Native</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\PlayerControlWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Native\TrainingMenuItems.cpp">
+      <Filter>Overlay\Native</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\UpdateNotifierWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\DummyScriptGuideWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\HitboxLegendWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\PlayerControlWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\UpdateNotifierWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Web\UpdateCheck.cpp">
       <Filter>Web</Filter>
     </ClCompile>
-    <ClCompile Include="src\Training\PlayerControl.cpp">
-      <Filter>Training</Filter>
+    <ClCompile Include="src\Training\Dummy\PlayerControl.cpp">
+      <Filter>Training\Dummy</Filter>
     </ClCompile>
-    <ClCompile Include="src\Training\InputLagMeter.cpp">
-      <Filter>Training</Filter>
+    <ClCompile Include="src\Training\Meter\InputLagMeter.cpp">
+      <Filter>Training\Meter</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\PaletteEditorWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\PaletteEditorWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\HitboxOverlay.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\HitboxOverlay.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\WindowContainer\WindowContainer.cpp">
-      <Filter>Overlay\WindowContainer</Filter>
+    <ClCompile Include="src\Overlay\Framework\WindowContainer.cpp">
+      <Filter>Overlay\Framework</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Profiler.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\ProcessTuning.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="src\Core\Boot\ProcessTuning.cpp">
+      <Filter>Core\Boot</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\PresentTuning.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Device\PresentTuning.cpp">
+      <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\SceneScale.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Device\SceneScale.cpp">
+      <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\DrawTrace.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Draw\DrawTrace.cpp">
+      <Filter>D3D9\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\DrawQueueProbe.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Draw\DrawQueueProbe.cpp">
+      <Filter>D3D9\Draw</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\DrawQueue.cpp">
-      <Filter>D3D9</Filter>
+    <ClCompile Include="src\D3D9\Draw\DrawQueue.cpp">
+      <Filter>D3D9\Draw</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Post\SceneUpscale.cpp">
       <Filter>D3D9\Post</Filter>
@@ -906,47 +1008,104 @@
     <ClCompile Include="src\D3D9\Post\ShaderSource.cpp">
       <Filter>D3D9\Post</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\EngineQuality.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Display\EngineQuality.cpp">
+      <Filter>Game\Display</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ExtraStages.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\ExtraStages.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\OnlineStage.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Stages\OnlineStage.cpp">
+      <Filter>Game\Stages</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\Improvements.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Display\Improvements.cpp">
+      <Filter>Game\Display</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\KeyboardSeat.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Battle\KeyboardSeat.cpp">
+      <Filter>Game\Battle</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PotatoMode.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Display\PotatoMode.cpp">
+      <Filter>Game\Display</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ReplayArchive.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Replays\ReplayArchive.cpp">
+      <Filter>Game\Replays</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\ReplayFiles.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Replays\ReplayFiles.cpp">
+      <Filter>Game\Replays</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PresentSize.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Display\PresentSize.cpp">
+      <Filter>Game\Display</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\PumpWait.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Display\PumpWait.cpp">
+      <Filter>Game\Display</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\DataArchive.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Files\DataArchive.cpp">
+      <Filter>Game\Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\UiAssets.cpp">
-      <Filter>Game</Filter>
+    <ClCompile Include="src\Game\Menus\UiAssets.cpp">
+      <Filter>Game\Menus</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\PerformanceWindow.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Windows\PerformanceWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Window\GraphicsPanel.cpp">
-      <Filter>Overlay\Window</Filter>
+    <ClCompile Include="src\Overlay\Panels\GraphicsPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Boot\Modules.cpp">
+      <Filter>Core\Boot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\MenuKeys.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\MenuWords.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Guides\GuideImGui.cpp">
+      <Filter>Overlay\Guides</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Guides\HitboxLegend.cpp">
+      <Filter>Overlay\Guides</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Native\GameArt.cpp">
+      <Filter>Overlay\Native</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Native\KeyGlyph.cpp">
+      <Filter>Overlay\Native</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\BitmapFont.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Engine\CodeSignatures.cpp">
+      <Filter>Game\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ThreadRole.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\ConfigPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\PalettesPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\ReplayPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\TrainingPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\DebugWindowMeter.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\DebugWindowPalette.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\DebugWindowPlayer.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\Meter\FrameMeterStyle.cpp">
+      <Filter>Training\Meter</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\Meter\MeterTrace.cpp">
+      <Filter>Training\Meter</Filter>
     </ClCompile>
     <ClCompile Include="depends\imgui\imgui.cpp">
       <Filter>Dependencies\ImGui</Filter>
@@ -1052,80 +1211,80 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Core\Settings.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Config\Settings.h">
+      <Filter>Core\Config</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\GraphicsWrapper.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Device\GraphicsWrapper.h">
+      <Filter>D3D9\Device</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\DgVoodoo.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Device\DgVoodoo.h">
+      <Filter>D3D9\Device</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\Dxvk.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Device\Dxvk.h">
+      <Filter>D3D9\Device</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\RandomStage.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\RandomStage.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\SubtitlesWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\SubtitlesWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BundledPack.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Patches\BundledPack.h">
+      <Filter>Game\Patches</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Json.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Formats\Json.h">
+      <Filter>Core\Formats</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\NameCensor.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Lobby\NameCensor.h">
+      <Filter>Game\Lobby</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\RoomNameCensor.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Lobby\RoomNameCensor.h">
+      <Filter>Game\Lobby</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SteamFriends.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Steam\SteamFriends.h">
+      <Filter>Network\Steam</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SpectateCode.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Spectate\SpectateCode.h">
+      <Filter>Network\Spectate</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SpectateWire.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Spectate\SpectateWire.h">
+      <Filter>Network\Spectate</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SpectateRelay.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Spectate\SpectateRelay.h">
+      <Filter>Network\Spectate</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SpectateMatch.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Spectate\SpectateMatch.h">
+      <Filter>Network\Spectate</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SpectateHost.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Spectate\SpectateHost.h">
+      <Filter>Network\Spectate</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SpectateViewer.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Spectate\SpectateViewer.h">
+      <Filter>Network\Spectate</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SpectateFeed.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Spectate\SpectateFeed.h">
+      <Filter>Network\Spectate</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\Spectate.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Spectate\Spectate.h">
+      <Filter>Network\Spectate</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\ReadyFlags.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SubtitleTable.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Subtitles\SubtitleTable.h">
+      <Filter>Game\Subtitles</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SubtitleText.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Subtitles\SubtitleText.h">
+      <Filter>Game\Subtitles</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SubtitleWatch.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Subtitles\SubtitleWatch.h">
+      <Filter>Game\Subtitles</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\SubtitleHud.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Hud\SubtitleHud.h">
+      <Filter>Overlay\Hud</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\SubtitlesPanel.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Panels\SubtitlesPanel.h">
+      <Filter>Overlay\Panels</Filter>
     </ClInclude>
     <ClInclude Include="src\Web\Http.h">
       <Filter>Web</Filter>
@@ -1139,11 +1298,11 @@
     <ClInclude Include="src\Web\UpdateInstall.h">
       <Filter>Web</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BasePals.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\BasePals.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PatchPacks.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Patches\PatchPacks.h">
+      <Filter>Game\Patches</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\NetLog.h">
       <Filter>Network</Filter>
@@ -1157,263 +1316,269 @@
     <ClInclude Include="src\Network\NetWorker.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SteamWatch.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Steam\SteamWatch.h">
+      <Filter>Network\Steam</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SteamLink.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Steam\SteamLink.h">
+      <Filter>Network\Steam</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\GgpoLogCapture.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\CrashContext.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Boot\CrashContext.h">
+      <Filter>Core\Boot</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmTable.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmTable.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmVolume.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmVolume.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\AudioFile.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\AudioFile.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OggWriter.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\OggWriter.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\MusicRefresh.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\MusicRefresh.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\FileIndex.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BalanceRules.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Battle\BalanceRules.h">
+      <Filter>Game\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ScreenShake.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Battle\ScreenShake.h">
+      <Filter>Game\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\DataSearchPath.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Menus\MenuInput.h">
+      <Filter>Game\Menus</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\GamePatches.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Menus\TrainingMenu.h">
+      <Filter>Game\Menus</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PatchLibrary.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Files\DataSearchPath.h">
+      <Filter>Game\Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\PatchWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Game\Patches\GamePatches.h">
+      <Filter>Game\Patches</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\UserMusic.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Patches\PatchLibrary.h">
+      <Filter>Game\Patches</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SeListFile.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Overlay\Windows\PatchWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SoundPacks.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\UserMusic.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\CharaSounds.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\SeListFile.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\GameArchive.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\SoundPacks.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SeList.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\CharaSounds.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\VoiceImport.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Files\GameArchive.h">
+      <Filter>Game\Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\VoiceMap.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\SeList.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OggReader.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\VoiceImport.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PcmSink.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\VoiceMap.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SoundsReadme.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\OggReader.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\PcmSink.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\SoundsReadme.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\SoundOutput.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SoundpackBuilder.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\SoundpackBuilder.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmLibrary.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmLibrary.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ModFiles.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Files\ModFiles.h">
+      <Filter>Game\Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OstImport.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\OstImport.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgListOverride.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgListOverride.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgObjectFix.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgObjectFix.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BbtagArt.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagArt.h">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BbtagCrypt.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagCrypt.h">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BbtagMmot.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagMmot.h">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BbtagMua.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagMua.h">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BbtagPac.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagPac.h">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BbtagScript.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagScript.h">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BbtagStage.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagStage.h">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\FbxExWriter.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\FbxExWriter.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BbtagPaths.inc">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagPaths.inc">
+      <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgClear.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgClear.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgMipmaps.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgMipmaps.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\DxtMips.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\DxtMips.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StagePlacement.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StagePlacement.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageSettingKey.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageSettingKey.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgVertexProbe.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgVertexProbe.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgGrade.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgGrade.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgShaderText.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgShaderText.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\FbGameFolder.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Files\FbGameFolder.h">
+      <Filter>Game\Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\FbxAscii.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\FbxAscii.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgCeiling.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgCeiling.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\FbxExLocal.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\FbxExLocal.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\FbxToFbxEx.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\FbxToFbxEx.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\MbtlCipher.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Files\MbtlCipher.h">
+      <Filter>Game\Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\UnielCipher.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Files\UnielCipher.h">
+      <Filter>Game\Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageArchive.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageArchive.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageImport.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageImport.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgRecord.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\BgRecord.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageLibrary.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageLibrary.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageNote.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageNote.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageReplacements.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageReplacements.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageThumb.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageThumb.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageObjects.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageObjects.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StageCards.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\StageCards.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PlayerHealth.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\PlayerHealth.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\CharaTint.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Battle\CharaTint.h">
+      <Filter>Game\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BattleCockpit.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Menus\BattleCockpit.h">
+      <Filter>Game\Menus</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\HealthReadout.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Hud\HealthReadout.h">
+      <Filter>Overlay\Hud</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\RestartPrompt.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Panels\RestartPrompt.h">
+      <Filter>Overlay\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\StagesPanel.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Panels\StagesPanel.h">
+      <Filter>Overlay\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\StagesWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\StagesWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OstPac.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\OstPac.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OstUniNames.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\OstUniNames.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SoundpackTransfer.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\SoundpackTransfer.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\ZipArchive.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Formats\ZipArchive.h">
+      <Filter>Core\Formats</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmNames.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmNames.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmRules.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmRules.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmThemes.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmThemes.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmTableFile.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmTableFile.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmCatalog.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmCatalog.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BgmControl.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Audio\BgmControl.h">
+      <Filter>Game\Audio</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OpponentLog.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Lobby\OpponentLog.h">
+      <Filter>Game\Lobby</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SteamInterfaces.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Steam\SteamInterfaces.h">
+      <Filter>Network\Steam</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\RollbackStats.h">
       <Filter>Network</Filter>
@@ -1433,44 +1598,44 @@
     <ClInclude Include="src\Network\NetplayTick.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\NetplayWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\NetplayWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\MusicPanel.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Panels\MusicPanel.h">
+      <Filter>Overlay\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\MusicWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\MusicWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\SoundWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\SoundWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\ThemeWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\ThemeWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\settings.def">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Config\settings.def">
+      <Filter>Core\Config</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\logger.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Compat.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Boot\Compat.h">
+      <Filter>Core\Boot</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Deflate.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Formats\Deflate.h">
+      <Filter>Core\Formats</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\PngImage.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Formats\PngImage.h">
+      <Filter>Core\Formats</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\DpiScaling.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\crashdump.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Boot\crashdump.h">
+      <Filter>Core\Boot</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\ModuleInventory.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Boot\ModuleInventory.h">
+      <Filter>Core\Boot</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\utils.h">
       <Filter>Core</Filter>
@@ -1478,23 +1643,23 @@
     <ClInclude Include="src\Core\AsyncFileDialog.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\TextEncoding.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Formats\TextEncoding.h">
+      <Filter>Core\Formats</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\KeyboardCapture.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Input\KeyboardCapture.h">
+      <Filter>Core\Input</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\keycodes.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Config\keycodes.h">
+      <Filter>Core\Config</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Hotkeys.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Config\Hotkeys.h">
+      <Filter>Core\Config</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\PadInput.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Input\PadInput.h">
+      <Filter>Core\Input</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\interfaces.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Config\interfaces.h">
+      <Filter>Core\Config</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\info.h">
       <Filter>Core</Filter>
@@ -1508,95 +1673,95 @@
     <ClInclude Include="src\Hooks\InputProbe.h">
       <Filter>Hooks</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\D3D9Proxy.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Device\D3D9Proxy.h">
+      <Filter>D3D9\Device</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\D3D9Wrapper.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Device\D3D9Wrapper.h">
+      <Filter>D3D9\Device</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\DeviceHooks.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Device\DeviceHooks.h">
+      <Filter>D3D9\Device</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\FrozenFrame.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Draw\FrozenFrame.h">
+      <Filter>D3D9\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\WindowManager.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Framework\WindowManager.h">
+      <Filter>Overlay\Framework</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\NotificationBar.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Hud\NotificationBar.h">
+      <Filter>Overlay\Hud</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\UiText.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Widgets\UiText.h">
+      <Filter>Overlay\Widgets</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\UiScale.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Widgets\UiScale.h">
+      <Filter>Overlay\Widgets</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\OverlayFont.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Widgets\OverlayFont.h">
+      <Filter>Overlay\Widgets</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\PlatePreview.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Widgets\PlatePreview.h">
+      <Filter>Overlay\Widgets</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\ComboNav.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Widgets\ComboNav.h">
+      <Filter>Overlay\Widgets</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\CharaPreview.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Widgets\CharaPreview.h">
+      <Filter>Overlay\Widgets</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\IWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Framework\IWindow.h">
+      <Filter>Overlay\Framework</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\MainWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\MainWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\PlayerCardPanel.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Panels\PlayerCardPanel.h">
+      <Filter>Overlay\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\ColorCustomizePanel.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Panels\ColorCustomizePanel.h">
+      <Filter>Overlay\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\PaletteWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\PaletteWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PlayerCard.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\PlayerCard.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PlateCatalog.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\PlateCatalog.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ColorCustomize.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\ColorCustomize.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ColorOverride.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\ColorOverride.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\LivePalette.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\LivePalette.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PngPalette.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\PngPalette.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\CgImage.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\CgImage.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PatParts.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\PatParts.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ScriptReload.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Battle\ScriptReload.h">
+      <Filter>Game\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SaveData.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\SaveData.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SceneWatch.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\SceneWatch.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\CharaSelectProbe.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Menus\CharaSelectProbe.h">
+      <Filter>Game\Menus</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\CharaSelectState.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Menus\CharaSelectState.h">
+      <Filter>Game\Menus</Filter>
     </ClInclude>
     <ClInclude Include="src\Screens\CharaGrid.h">
       <Filter>Screens</Filter>
@@ -1616,44 +1781,44 @@
     <ClInclude Include="src\Screens\ScreenDirector.h">
       <Filter>Screens</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ColorPartTable.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\ColorPartTable.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\StockPalettes.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\StockPalettes.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\UsedEntryTable.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Tables\UsedEntryTable.h">
+      <Filter>Game\Tables</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\DebugWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\DebugWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\MemoryMap.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\MemoryMap.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\CharaTracker.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\CharaTracker.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\HitboxData.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\HitboxData.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Camera.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\Camera.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\GameRestart.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Battle\GameRestart.h">
+      <Filter>Game\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\GameState.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\GameState.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OnlineState.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\OnlineState.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\MemoryScanner.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\MemoryScanner.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Network\SteamNetwork.h">
-      <Filter>Network</Filter>
+    <ClInclude Include="src\Network\Steam\SteamNetwork.h">
+      <Filter>Network\Steam</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\PaletteShare.h">
       <Filter>Network</Filter>
@@ -1670,8 +1835,8 @@
     <ClInclude Include="src\Network\OnlinePatch.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\BattleDataReload.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Battle\BattleDataReload.h">
+      <Filter>Game\Battle</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\PaletteBinder.h">
       <Filter>Palette</Filter>
@@ -1727,35 +1892,35 @@
     <ClInclude Include="src\Palette\PaletteTrace.h">
       <Filter>Palette</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\CharaTables.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Tables\CharaTables.h">
+      <Filter>Game\Tables</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OfferedEntries.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Tables\OfferedEntries.h">
+      <Filter>Game\Tables</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PartColourTable.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Tables\PartColourTable.h">
+      <Filter>Game\Tables</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\EffectTable.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Tables\EffectTable.h">
+      <Filter>Game\Tables</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PartName.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Customize\PartName.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\FrameDataTable.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Tables\FrameDataTable.h">
+      <Filter>Game\Tables</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\GameTables.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Tables\GameTables.h">
+      <Filter>Game\Tables</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PlayerState.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\PlayerState.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ReplayState.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Replays\ReplayState.h">
+      <Filter>Game\Replays</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\SteamNames.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Lobby\SteamNames.h">
+      <Filter>Game\Lobby</Filter>
     </ClInclude>
     <ClInclude Include="src\Training\FrameStepper.h">
       <Filter>Training</Filter>
@@ -1766,101 +1931,113 @@
     <ClInclude Include="src\Training\StageColor.h">
       <Filter>Training</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\DummyScript.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Dummy\DummyScript.h">
+      <Filter>Training\Dummy</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\StateRecorder.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Meter\StateRecorder.h">
+      <Filter>Training\Meter</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\DummyRecorder.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Dummy\DummyRecorder.h">
+      <Filter>Training\Dummy</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\FrameMeter.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Meter\FrameMeter.h">
+      <Filter>Training\Meter</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\SuperFlash.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Meter\SuperFlash.h">
+      <Filter>Training\Meter</Filter>
     </ClInclude>
     <ClInclude Include="src\Training\TrainingSave.h">
       <Filter>Training</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\FrameMeterHud.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Hud\FrameMeterHud.h">
+      <Filter>Overlay\Hud</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\GrdPopupHud.h">
-      <Filter>Overlay</Filter>
+    <ClInclude Include="src\Overlay\Hud\GrdPopupHud.h">
+      <Filter>Overlay\Hud</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\GrdWatch.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Meter\GrdWatch.h">
+      <Filter>Training\Meter</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\DdsTexture.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Draw\DdsTexture.h">
+      <Filter>D3D9\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\QuadRenderer.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Draw\QuadRenderer.h">
+      <Filter>D3D9\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\GameFont.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Draw\GameFont.h">
+      <Filter>D3D9\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\FrameMeterLegendWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\FrameMeterLegendWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\DummyScriptGuideWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Guides\FrameMeterLegend.h">
+      <Filter>Overlay\Guides</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\HitboxLegendWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Guides\GuideContent.h">
+      <Filter>Overlay\Guides</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\PlayerControlWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Native\GuideScreen.h">
+      <Filter>Overlay\Native</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\UpdateNotifierWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Native\TrainingMenuItems.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\DummyScriptGuideWindow.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\HitboxLegendWindow.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\PlayerControlWindow.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\UpdateNotifierWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\Web\UpdateCheck.h">
       <Filter>Web</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\PlayerControl.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Dummy\PlayerControl.h">
+      <Filter>Training\Dummy</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\InputFrame.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Dummy\InputFrame.h">
+      <Filter>Training\Dummy</Filter>
     </ClInclude>
-    <ClInclude Include="src\Training\InputLagMeter.h">
-      <Filter>Training</Filter>
+    <ClInclude Include="src\Training\Meter\InputLagMeter.h">
+      <Filter>Training\Meter</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\PaletteEditorWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\PaletteEditorWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\HitboxOverlay.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\HitboxOverlay.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Profiler.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\default_ini.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Config\default_ini.h">
+      <Filter>Core\Config</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\ProcessTuning.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\Boot\ProcessTuning.h">
+      <Filter>Core\Boot</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\PresentTuning.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Device\PresentTuning.h">
+      <Filter>D3D9\Device</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\SceneScale.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Device\SceneScale.h">
+      <Filter>D3D9\Device</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\DrawTrace.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Draw\DrawTrace.h">
+      <Filter>D3D9\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\DrawQueueProbe.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Draw\DrawQueueProbe.h">
+      <Filter>D3D9\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\DrawQueue.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Draw\DrawQueue.h">
+      <Filter>D3D9\Draw</Filter>
     </ClInclude>
-    <ClInclude Include="src\D3D9\QueuedQuad.h">
-      <Filter>D3D9</Filter>
+    <ClInclude Include="src\D3D9\Draw\QueuedQuad.h">
+      <Filter>D3D9\Draw</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Post\SceneUpscale.h">
       <Filter>D3D9\Post</Filter>
@@ -1922,56 +2099,161 @@
     <ClInclude Include="src\D3D9\Post\Shaders\SharpenShader.h">
       <Filter>D3D9\Post\Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\EngineQuality.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Display\EngineQuality.h">
+      <Filter>Game\Display</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ExtraStages.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\ExtraStages.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\OnlineStage.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Stages\OnlineStage.h">
+      <Filter>Game\Stages</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Improvements.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Display\Improvements.h">
+      <Filter>Game\Display</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\KeyboardSeat.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Battle\KeyboardSeat.h">
+      <Filter>Game\Battle</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PotatoMode.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Display\PotatoMode.h">
+      <Filter>Game\Display</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ReplayArchive.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Replays\ReplayArchive.h">
+      <Filter>Game\Replays</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\ReplayFiles.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Replays\ReplayFiles.h">
+      <Filter>Game\Replays</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PresentSize.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Display\PresentSize.h">
+      <Filter>Game\Display</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\PumpWait.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Display\PumpWait.h">
+      <Filter>Game\Display</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\DataArchive.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Files\DataArchive.h">
+      <Filter>Game\Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\UiAssets.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Menus\UiAssets.h">
+      <Filter>Game\Menus</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\PerformanceWindow.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Windows\PerformanceWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Window\GraphicsPanel.h">
-      <Filter>Overlay\Window</Filter>
+    <ClInclude Include="src\Overlay\Panels\GraphicsPanel.h">
+      <Filter>Overlay\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\GameOffsets.h">
-      <Filter>Game</Filter>
+    <ClInclude Include="src\Game\Engine\GameOffsets.h">
+      <Filter>Game\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\WindowContainer\WindowContainer.h">
-      <Filter>Overlay\WindowContainer</Filter>
+    <ClInclude Include="src\Overlay\Framework\WindowContainer.h">
+      <Filter>Overlay\Framework</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\WindowContainer\WindowType.h">
-      <Filter>Overlay\WindowContainer</Filter>
+    <ClInclude Include="src\Overlay\Framework\WindowType.h">
+      <Filter>Overlay\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Boot\Modules.h">
+      <Filter>Core\Boot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmTitles.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstDfciScenes.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstDfciTracks.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstMbaaScenes.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstMbaaTracks.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstMbtlIndex.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstMbtlKey.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstMbtlScenes.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstMbtlTracks.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstUniScenes.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\OstUniTracks.inc">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\ModPacks.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\OwnStageNames.inc">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageMbtlIndex.inc">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageNames.inc">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks\GameHook.h">
+      <Filter>Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\ModsPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\ModsWindow.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Menus\MenuKeys.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Menus\MenuWords.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Guides\GuideImGui.h">
+      <Filter>Overlay\Guides</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Guides\HitboxLegend.h">
+      <Filter>Overlay\Guides</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Native\GameArt.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Native\KeyGlyph.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\BitmapFont.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Engine\CodeSignatures.h">
+      <Filter>Game\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Engine\CodeSignatures.inc">
+      <Filter>Game\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\CrossThread.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ThreadRole.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\ConfigPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\PalettesPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\ReplayPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\TrainingPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\Meter\MeterTrace.h">
+      <Filter>Training\Meter</Filter>
     </ClInclude>
     <ClInclude Include="depends\minimp3\minimp3.h">
       <Filter>Dependencies\minimp3</Filter>

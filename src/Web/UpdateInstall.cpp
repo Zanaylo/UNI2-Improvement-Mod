@@ -1,7 +1,7 @@
 #include "Web/UpdateInstall.h"
 
-#include "Core/Json.h"
-#include "Core/ZipArchive.h"
+#include "Core/Formats/Json.h"
+#include "Core/Formats/ZipArchive.h"
 #include "Core/info.h"
 #include "Core/logger.h"
 #include "Core/utils.h"

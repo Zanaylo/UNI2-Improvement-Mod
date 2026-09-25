@@ -1,6 +1,6 @@
 #include "Screens/PatPainter.h"
 
-#include "D3D9/QuadRenderer.h"
+#include "D3D9/Draw/QuadRenderer.h"
 #include "Screens/PatTextures.h"
 
 #include <algorithm>

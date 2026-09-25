@@ -1,5 +1,6 @@
 #include "Web/Job.h"
 
+#include "Core/ThreadRole.h"
 #include "Core/logger.h"
 
 #include <cstring>
@@ -44,6 +45,7 @@ bool Job::Start(const char* step, Work work)
 
 void Job::Run(Work work)
 {
+	ThreadRole::Mark(ThreadRole::Role_Worker);
 	const bool ok = work ? work(*this) : false;
 
 	{

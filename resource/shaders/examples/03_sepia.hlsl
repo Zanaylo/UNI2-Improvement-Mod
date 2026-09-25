@@ -1,8 +1,5 @@
-// UNI2-Improvement-Mod shader pack: Sepia
-// Grayscale with an old paper tint on it.
-
-#define STRENGTH 0.9                    // 0 = untouched, 1 = full sepia
-#define TINT float3(1.07f, 0.82f, 0.58f) // the paper colour
+#define STRENGTH 0.9
+#define TINT float3(1.07f, 0.82f, 0.58f)
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

@@ -1,10 +1,3 @@
-// UNI2-Improvement-Mod shader pack: Dot matrix
-//
-// A modern GLSL fragment shader - the shape a .frag from a GL renderer or a shader editor has:
-// a sampler uniform, an `in` varying carrying the coordinate, an `out vec4`, and a void main. The
-// mod points the sampler at the frame, turns the varying into the coordinate it draws with, and
-// rewrites the GLSL as HLSL.
-
 #version 330 core
 
 uniform sampler2D uScreen;

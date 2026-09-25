@@ -1,23 +1,25 @@
 #include "Training/FrameStepper.h"
 
+#include "Core/ThreadRole.h"
 #include "Core/Profiler.h"
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
-#include "Game/GameState.h"
-#include "Game/KeyboardSeat.h"
-#include "Game/HitboxData.h"
-#include "Game/MemoryMap.h"
-#include "Game/OnlineState.h"
-#include "Game/ReplayState.h"
-#include "Hooks/HookManager.h"
-#include "Training/DummyRecorder.h"
-#include "Training/FrameMeter.h"
-#include "Training/GrdWatch.h"
-#include "Training/StateRecorder.h"
-#include "Training/PlayerControl.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/GameState.h"
+#include "Game/Battle/KeyboardSeat.h"
+#include "Game/Engine/HitboxData.h"
+#include "Game/Engine/MemoryMap.h"
+#include "Game/Engine/OnlineState.h"
+#include "Game/Replays/ReplayState.h"
+#include "Hooks/GameHook.h"
+#include "Training/Dummy/DummyRecorder.h"
+#include "Training/Meter/FrameMeter.h"
+#include "Training/Meter/GrdWatch.h"
+#include "Training/Meter/StateRecorder.h"
+#include "Training/Dummy/PlayerControl.h"
 #include "Training/StopTime.h"
+#include "Game/Engine/CodeSignatures.h"
 
 #include <MinHook.h>
 #include <Windows.h>
@@ -29,7 +31,7 @@ using FrameUpdate_t = void(__fastcall*)(void*, void*);
 constexpr int kDefaultStopTimeFrames = 120;
 constexpr int kDefaultRefreshTicks = 60;
 
-FrameUpdate_t oFrameUpdate = nullptr;
+GameHook<FrameUpdate_t> g_frameUpdateHook("BattleFrameUpdate");
 
 bool g_initialized = false;
 bool g_hooked = false;
@@ -76,6 +78,7 @@ void SampleObservers()
 
 void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 {
+	ThreadRole::Mark(ThreadRole::Role_Game);
 	++g_callCount;
 
 	MemoryMap::InvalidateEffectSlotCache();
@@ -147,7 +150,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 
 		{
 			Profiler::Scope scope(Profiler::Section_TickGame);
-			oFrameUpdate(outputByte, unused);
+			g_frameUpdateHook.Original()(outputByte, unused);
 		}
 
 		if (advancing)
@@ -172,7 +175,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 
 			{
 				Profiler::Scope scope(Profiler::Section_TickGame);
-				oFrameUpdate(outputByte, unused);
+				g_frameUpdateHook.Original()(outputByte, unused);
 			}
 
 			Profiler::EndTickFrame();
@@ -200,7 +203,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 
 	{
 		Profiler::Scope scope(Profiler::Section_TickGame);
-		oFrameUpdate(outputByte, unused);
+		g_frameUpdateHook.Original()(outputByte, unused);
 	}
 
 	SampleObservers();
@@ -216,13 +219,10 @@ bool FrameStepper::Initialize()
 
 	g_initialized = true;
 
-	void* target = reinterpret_cast<void*>(RvaToAddress(GameOffsets::kFnFrameUpdate));
+	void* target = reinterpret_cast<void*>(CodeSignatures::Address(GameOffsets::kFnFrameUpdate));
 
-	if (!HookManager::CreateAndEnableHook(target, &HookedFrameUpdate,
-		reinterpret_cast<void**>(&oFrameUpdate), "BattleFrameUpdate"))
-	{
+	if (!g_frameUpdateHook.Install(target, &HookedFrameUpdate))
 		return false;
-	}
 
 	g_hooked = true;
 	StopTime::Initialize();

@@ -1,9 +1,10 @@
 #include "Network/GgpoLogCapture.h"
 
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
-#include "Hooks/HookManager.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Hooks/GameHook.h"
 #include "Network/NetLog.h"
+#include "Game/Engine/CodeSignatures.h"
 
 #include <cstdarg>
 #include <cstdio>
@@ -11,8 +12,8 @@
 
 namespace {
 
-void* oUdpLog = nullptr;
-void* oProtocolLog = nullptr;
+GameHook<void*> g_udpLogHook("GGPO udp log");
+GameHook<void*> g_protocolLogHook("GGPO udpproto log");
 
 bool g_installed = false;
 bool g_enabled = false;
@@ -97,7 +98,7 @@ void __cdecl HookedProtocolLog(void* protocol, const char* format, ...)
 
 void* Target(uintptr_t rva)
 {
-	const uintptr_t address = RvaToAddress(rva);
+	const uintptr_t address = CodeSignatures::Address(rva);
 
 	return address != 0 && IsAddressInGameModule(address) ? reinterpret_cast<void*>(address) : nullptr;
 }
@@ -116,8 +117,7 @@ bool Install()
 		return false;
 	}
 
-	if (!HookManager::CreateHook(udp, &HookedUdpLog, &oUdpLog, "GGPO udp log") ||
-		!HookManager::CreateHook(protocol, &HookedProtocolLog, &oProtocolLog, "GGPO udpproto log"))
+	if (!g_udpLogHook.Create(udp, &HookedUdpLog) || !g_protocolLogHook.Create(protocol, &HookedProtocolLog))
 	{
 		strncpy_s(g_status, "the hooks could not be created", _TRUNCATE);
 		return false;
@@ -129,8 +129,8 @@ bool Install()
 
 void Switch(bool enabled)
 {
-	HookManager::SetHookEnabled(Target(GameOffsets::kFnGgpoUdpLog), enabled);
-	HookManager::SetHookEnabled(Target(GameOffsets::kFnGgpoProtocolLog), enabled);
+	g_udpLogHook.SetEnabled(enabled);
+	g_protocolLogHook.SetEnabled(enabled);
 }
 
 }

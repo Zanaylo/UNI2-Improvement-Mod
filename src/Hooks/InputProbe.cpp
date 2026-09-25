@@ -1,7 +1,7 @@
 #include "Hooks/InputProbe.h"
 
 #include "Core/logger.h"
-#include "Hooks/HookManager.h"
+#include "Hooks/GameHook.h"
 
 #include <MinHook.h>
 
@@ -22,9 +22,9 @@ using GetDeviceState_t = HRESULT(STDMETHODCALLTYPE*)(IDirectInputDevice8A*, DWOR
 using GetDeviceData_t = HRESULT(STDMETHODCALLTYPE*)(IDirectInputDevice8A*, DWORD,
 	LPDIDEVICEOBJECTDATA, LPDWORD, DWORD);
 
-CreateDevice_t oCreateDevice = nullptr;
-GetDeviceState_t oGetDeviceState = nullptr;
-GetDeviceData_t oGetDeviceData = nullptr;
+GameHook<CreateDevice_t> g_createDeviceHook("IDirectInput8::CreateDevice");
+GameHook<GetDeviceState_t> g_getDeviceStateHook("IDirectInputDevice8::GetDeviceState");
+GameHook<GetDeviceData_t> g_getDeviceDataHook("IDirectInputDevice8::GetDeviceData");
 
 void* g_pending = nullptr;
 bool g_active = false;
@@ -70,9 +70,10 @@ void RememberPad(IDirectInputDevice8A* device)
 	LOG("input probe: pad device %p kept for sampling", static_cast<void*>(device));
 }
 
-bool HookVTableEntry(void** vtable, int index, void* detour, void** original, const char* label)
+template <typename Fn, typename Handler>
+bool HookVTableEntry(void** vtable, int index, GameHook<Fn>& hook, Handler handler)
 {
-	return HookManager::CreateAndEnableHook(vtable[index], detour, original, label);
+	return hook.Install(vtable[index], handler);
 }
 
 const GUID kSysKeyboard = { 0x6f1d2b61, 0xd5a0, 0x11cf, { 0xbf, 0xc7, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00 } };
@@ -102,20 +103,20 @@ HRESULT STDMETHODCALLTYPE HookedGetDeviceState(IDirectInputDevice8A* device, DWO
 			RememberPad(device);
 	}
 
-	return oGetDeviceState(device, size, data);
+	return g_getDeviceStateHook.Original()(device, size, data);
 }
 
 HRESULT STDMETHODCALLTYPE HookedGetDeviceData(IDirectInputDevice8A* device, DWORD objectSize,
 	LPDIDEVICEOBJECTDATA data, LPDWORD count, DWORD flags)
 {
 	++g_dataCalls;
-	return oGetDeviceData(device, objectSize, data, count, flags);
+	return g_getDeviceDataHook.Original()(device, objectSize, data, count, flags);
 }
 
 HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirectInput8A* self, REFGUID guid,
 	LPDIRECTINPUTDEVICE8A* device, LPUNKNOWN outer)
 {
-	const HRESULT result = oCreateDevice(self, guid, device, outer);
+	const HRESULT result = g_createDeviceHook.Original()(self, guid, device, outer);
 
 	if (FAILED(result) || device == nullptr || *device == nullptr)
 		return result;
@@ -131,10 +132,8 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirectInput8A* self, REFGUID guid,
 	{
 		void** vtable = *reinterpret_cast<void***>(*device);
 
-		const bool state = HookVTableEntry(vtable, kGetDeviceStateIndex, &HookedGetDeviceState,
-			reinterpret_cast<void**>(&oGetDeviceState), "IDirectInputDevice8::GetDeviceState");
-		const bool data = HookVTableEntry(vtable, kGetDeviceDataIndex, &HookedGetDeviceData,
-			reinterpret_cast<void**>(&oGetDeviceData), "IDirectInputDevice8::GetDeviceData");
+		const bool state = HookVTableEntry(vtable, kGetDeviceStateIndex, g_getDeviceStateHook, &HookedGetDeviceState);
+		const bool data = HookVTableEntry(vtable, kGetDeviceDataIndex, g_getDeviceDataHook, &HookedGetDeviceData);
 
 		g_deviceHooked = state || data;
 	}
@@ -159,8 +158,7 @@ void InputProbe::OnFrame()
 	{
 		void** vtable = *reinterpret_cast<void***>(g_pending);
 
-		g_active = HookVTableEntry(vtable, kCreateDeviceIndex, &HookedCreateDevice,
-			reinterpret_cast<void**>(&oCreateDevice), "IDirectInput8::CreateDevice");
+		g_active = HookVTableEntry(vtable, kCreateDeviceIndex, g_createDeviceHook, &HookedCreateDevice);
 
 		LOG("input probe: %s", g_active ? "watching CreateDevice" : "could not hook CreateDevice");
 
@@ -203,23 +201,23 @@ using GetAsyncKeyState_t = SHORT(WINAPI*)(int);
 using GetRawInputData_t = UINT(WINAPI*)(HRAWINPUT, UINT, LPVOID, PUINT, UINT);
 using RegisterRawInputDevices_t = BOOL(WINAPI*)(PCRAWINPUTDEVICE, UINT, UINT);
 
-GetAsyncKeyState_t oGetAsyncKeyState = nullptr;
-GetRawInputData_t oGetRawInputData = nullptr;
-RegisterRawInputDevices_t oRegisterRawInputDevices = nullptr;
+GameHook<GetAsyncKeyState_t> g_getAsyncKeyStateHook("GetAsyncKeyState");
+GameHook<GetRawInputData_t> g_getRawInputDataHook("GetRawInputData");
+GameHook<RegisterRawInputDevices_t> g_registerRawInputDevicesHook("RegisterRawInputDevices");
 
 SHORT WINAPI HookedGetAsyncKeyState(int key)
 {
 	if (GetCurrentThreadId() != g_samplerThread)
 		++g_asyncCalls;
 
-	return oGetAsyncKeyState(key);
+	return g_getAsyncKeyStateHook.Original()(key);
 }
 
 UINT WINAPI HookedGetRawInputData(HRAWINPUT input, UINT command, LPVOID data, PUINT size,
 	UINT headerSize)
 {
 	++g_rawCalls;
-	return oGetRawInputData(input, command, data, size, headerSize);
+	return g_getRawInputDataHook.Original()(input, command, data, size, headerSize);
 }
 
 BOOL WINAPI HookedRegisterRawInputDevices(PCRAWINPUTDEVICE devices, UINT count, UINT size)
@@ -231,7 +229,7 @@ BOOL WINAPI HookedRegisterRawInputDevices(PCRAWINPUTDEVICE devices, UINT count, 
 			devices[i].usUsagePage, devices[i].usUsage, devices[i].dwFlags);
 	}
 
-	return oRegisterRawInputDevices(devices, count, size);
+	return g_registerRawInputDevicesHook.Original()(devices, count, size);
 }
 
 }
@@ -240,12 +238,9 @@ bool InputProbe::InstallApiProbes()
 {
 	bool ok = true;
 
-	ok &= HookManager::CreateApiHook("user32.dll", "GetAsyncKeyState", &HookedGetAsyncKeyState,
-		reinterpret_cast<void**>(&oGetAsyncKeyState));
-	ok &= HookManager::CreateApiHook("user32.dll", "GetRawInputData", &HookedGetRawInputData,
-		reinterpret_cast<void**>(&oGetRawInputData));
-	ok &= HookManager::CreateApiHook("user32.dll", "RegisterRawInputDevices",
-		&HookedRegisterRawInputDevices, reinterpret_cast<void**>(&oRegisterRawInputDevices));
+	ok &= g_getAsyncKeyStateHook.InstallApi("user32.dll", "GetAsyncKeyState", &HookedGetAsyncKeyState);
+	ok &= g_getRawInputDataHook.InstallApi("user32.dll", "GetRawInputData", &HookedGetRawInputData);
+	ok &= g_registerRawInputDevicesHook.InstallApi("user32.dll", "RegisterRawInputDevices", &HookedRegisterRawInputDevices);
 
 	if (!ok)
 		LOG("input probe: some user32 probes failed");

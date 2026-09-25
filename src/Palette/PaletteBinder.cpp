@@ -1,9 +1,9 @@
 #include "Palette/PaletteBinder.h"
 
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
-#include "Core/Settings.h"
-#include "Game/GameState.h"
+#include "Core/Config/Settings.h"
+#include "Game/Engine/GameState.h"
 #include "Palette/PaletteDrawProbe.h"
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteMemory.h"

@@ -1,6 +1,6 @@
 #include "Network/NetGate.h"
 
-#include "Game/GameOffsets.h"
+#include "Game/Engine/GameOffsets.h"
 
 namespace {
 

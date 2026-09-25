@@ -2,7 +2,7 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
+#include "Game/Engine/GameOffsets.h"
 
 namespace {
 

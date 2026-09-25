@@ -1,9 +1,6 @@
-// UNI2-Improvement-Mod shader pack: LCD grid
-// The dot grid of a handheld screen, with the flat wash of a cheap panel.
-
-#define CELL 3.0        // screen pixels per LCD dot
-#define GRID_DEPTH 0.35 // how dark the gaps between dots are
-#define WASH 0.15       // 0 = the colour as it was, 1 = fully washed out
+#define CELL 3.0
+#define GRID_DEPTH 0.35
+#define WASH 0.15
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

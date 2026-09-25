@@ -1,8 +1,8 @@
 #include "Hooks/hooks_input.h"
 
-#include "Core/KeyboardCapture.h"
+#include "Core/Input/KeyboardCapture.h"
 #include "Core/logger.h"
-#include "Hooks/HookManager.h"
+#include "Hooks/GameHook.h"
 #include "Hooks/InputProbe.h"
 
 #include <cstring>
@@ -12,8 +12,8 @@ namespace {
 using GetKeyboardState_t = BOOL(WINAPI*)(PBYTE);
 using GetKeyState_t = SHORT(WINAPI*)(int);
 
-GetKeyboardState_t oGetKeyboardState = nullptr;
-GetKeyState_t oGetKeyState = nullptr;
+GameHook<GetKeyboardState_t> g_getKeyboardStateHook("GetKeyboardState");
+GameHook<GetKeyState_t> g_getKeyStateHook("GetKeyState");
 
 constexpr int kKeyCount = 256;
 
@@ -33,8 +33,6 @@ bool IsModifierKey(int virtualKey)
 	}
 }
 
-// A key that is still physically down when the overlay gives the keyboard back would otherwise
-// arrive at the game as a fresh press. It stays masked until it is seen released.
 void HoldDownKeys(const BYTE* state)
 {
 	for (int key = 0; key < kKeyCount; ++key)
@@ -68,7 +66,7 @@ BOOL WINAPI HookedGetKeyboardState(PBYTE keyState)
 {
 	InputProbe::CountKeyboardState();
 
-	const BOOL result = oGetKeyboardState(keyState);
+	const BOOL result = g_getKeyboardStateHook.Original()(keyState);
 
 	if (!result || keyState == nullptr)
 		return result;
@@ -88,7 +86,7 @@ SHORT WINAPI HookedGetKeyState(int virtualKey)
 {
 	InputProbe::CountKeyState();
 
-	const SHORT state = oGetKeyState(virtualKey);
+	const SHORT state = g_getKeyStateHook.Original()(virtualKey);
 
 	if (IsModifierKey(virtualKey) || virtualKey < 0 || virtualKey >= kKeyCount)
 		return state;
@@ -119,10 +117,8 @@ bool InputHooks::InstallHooks()
 {
 	bool ok = true;
 
-	ok &= HookManager::CreateApiHook("user32.dll", "GetKeyboardState", &HookedGetKeyboardState,
-		reinterpret_cast<void**>(&oGetKeyboardState));
-	ok &= HookManager::CreateApiHook("user32.dll", "GetKeyState", &HookedGetKeyState,
-		reinterpret_cast<void**>(&oGetKeyState));
+	ok &= g_getKeyboardStateHook.InstallApi("user32.dll", "GetKeyboardState", &HookedGetKeyboardState);
+	ok &= g_getKeyStateHook.InstallApi("user32.dll", "GetKeyState", &HookedGetKeyState);
 
 	if (!ok)
 		LOG("Input hooks partially failed");

@@ -1,6 +1,6 @@
 #include "Core/logger.h"
 
-#include "Core/Settings.h"
+#include "Core/Config/Settings.h"
 #include "Core/utils.h"
 
 #include <Windows.h>

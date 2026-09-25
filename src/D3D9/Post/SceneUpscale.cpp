@@ -1,11 +1,11 @@
 #include "D3D9/Post/SceneUpscale.h"
 
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "D3D9/Post/DeviceState.h"
 #include "D3D9/Post/FullScreenPass.h"
 #include "D3D9/Post/ScratchTarget.h"
-#include "D3D9/SceneScale.h"
+#include "D3D9/Device/SceneScale.h"
 #include "D3D9/Post/UpscaleFilter.h"
 
 #include <cstdarg>

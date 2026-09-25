@@ -1,7 +1,7 @@
 #include "Network/ReadyFlags.h"
 
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
+#include "Game/Engine/GameOffsets.h"
 
 #include <cstdint>
 #include <cstdio>

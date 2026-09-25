@@ -1,10 +1,10 @@
 #include "Core/Profiler.h"
 
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
-#include "D3D9/DeviceHooks.h"
-#include "D3D9/PresentTuning.h"
-#include "Game/PumpWait.h"
+#include "D3D9/Device/DeviceHooks.h"
+#include "D3D9/Device/PresentTuning.h"
+#include "Game/Display/PumpWait.h"
 
 #include <Windows.h>
 
@@ -398,7 +398,6 @@ bool Profiler::FindModes(double& outFirstMs, double& outSecondMs, double& outSep
 	if (first < 0 || g_fineHistogram[first] == 0)
 		return false;
 
-	// A neighbouring bucket is the same mode, not a second one.
 	for (int i = 0; i < kFineBuckets; ++i)
 	{
 		if (i >= first - 2 && i <= first + 2)
@@ -416,7 +415,6 @@ bool Profiler::FindModes(double& outFirstMs, double& outSecondMs, double& outSep
 	outSecondMs = base + (second + 0.5) * kFineBucketMs;
 	outSeparationMs = outFirstMs > outSecondMs ? outFirstMs - outSecondMs : outSecondMs - outFirstMs;
 
-	// Only worth reporting when the second cluster is a real population rather than a tail.
 	return g_fineHistogram[second] * 4 >= g_fineHistogram[first];
 }
 

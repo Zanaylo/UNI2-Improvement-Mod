@@ -1,10 +1,3 @@
-// UNI2-Improvement-Mod shader pack: libretro scanlines
-//
-// A libretro .slang, written the way RetroArch wants one: two stages behind #pragma stage, a UBO,
-// #pragma parameter defaults and Vulkan style bindings. The mod keeps the fragment stage, turns
-// each parameter into its default, points Source at the frame and rewrites the GLSL as HLSL. The
-// vertex stage below is read and dropped - there is only ever one pass here.
-
 #version 450
 
 #pragma name scanlines

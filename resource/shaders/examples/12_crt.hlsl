@@ -1,15 +1,11 @@
-// UNI2-Improvement-Mod shader pack: CRT
-// Drop in UNI2-IM/Shaders and pick it in the Shaders tab.
-// Everything you may want to change is in this block.
-
-#define CURVATURE      0.55   // 0 = flat glass, 1.5 = fishbowl
-#define SCANLINE_PITCH 2.0    // screen pixels per scanline. 2 at 720p, 3 or 4 on a big window
-#define SCANLINE_DEPTH 0.35   // 0 = none, 1 = black between lines
-#define MASK_STRENGTH  0.30   // phosphor stripes. 0 = none, 1 = hard RGB
-#define BLEED          0.35   // horizontal smear, the CRT's soft focus
-#define VIGNETTE       0.25   // corner darkening
-#define BRIGHTNESS     1.25   // put back the light the mask and lines take away
-#define BORDER         0.0    // 1 = black outside the curved glass, 0 = stretch to fill
+#define CURVATURE      0.55
+#define SCANLINE_PITCH 2.0
+#define SCANLINE_DEPTH 0.35
+#define MASK_STRENGTH  0.30
+#define BLEED          0.35
+#define VIGNETTE       0.25
+#define BRIGHTNESS     1.25
+#define BORDER         0.0
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

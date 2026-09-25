@@ -1,8 +1,5 @@
-// UNI2-Improvement-Mod shader pack: Film grain
-// Moving noise, and the first pack here that uses FrameTime.
-
-#define GRAIN 0.06     // 0 = none, 0.2 = a bad print
-#define IN_SHADOWS 1.0 // 1 = grain sits mostly in the dark parts, 0 = evenly everywhere
+#define GRAIN 0.06
+#define IN_SHADOWS 1.0
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

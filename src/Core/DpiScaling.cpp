@@ -1,6 +1,6 @@
 #include "Core/DpiScaling.h"
 
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 
 #include <Windows.h>

@@ -1,6 +1,3 @@
-// Per-section timing for the Present and tick paths. Off unless [Debug] Profiler is set, and a
-// disabled Scope costs one predictable branch.
-
 #pragma once
 
 #include <cstdint>
@@ -28,9 +25,6 @@ namespace Profiler
 
 	constexpr int kHistogramBuckets = 40;
 
-	// Judder is a spread, not an average. A display that cannot show 60 evenly puts every frame
-	// either side of the target while the median and the 99th percentile both read perfectly, which
-	// is how a regression shipped past this tab once already.
 	constexpr int kFineBuckets = 40;
 	constexpr double kFineBucketMs = 0.25;
 	constexpr double kTargetMs = 1000.0 / 60.0;
@@ -67,8 +61,6 @@ namespace Profiler
 	int GetFineHistogramBucket(int index);
 	double GetFineHistogramBaseMs();
 
-	// The two biggest clusters of frame interval and how far apart they are. A gap near a whole
-	// number of refreshes is a display that cannot divide 60 evenly.
 	bool FindModes(double& outFirstMs, double& outSecondMs, double& outSeparationMs);
 
 	double GetPresentedFps();

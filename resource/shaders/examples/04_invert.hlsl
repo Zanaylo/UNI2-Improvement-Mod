@@ -1,7 +1,4 @@
-// UNI2-Improvement-Mod shader pack: Invert
-// A photographic negative. Two lines of maths, and it shows what a pack is.
-
-#define STRENGTH 1.0   // 0 = untouched, 1 = fully inverted
+#define STRENGTH 1.0
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

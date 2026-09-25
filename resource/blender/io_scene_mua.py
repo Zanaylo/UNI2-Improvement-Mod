@@ -1,11 +1,3 @@
-#OBS: Não sei se vou fazer manutenção dessa poha aqui. o importer para o UNI2 ainda está fudido mas agradeço por ler ou traduzir essa mensagem :)
-
-"""Read AWS `MUA` model that is on bobleis games.
-mot -> stage character or even effect -> skeleton, mashes 
-(ca) mmot -> model own bones tracks, uv scroll
-evb -> scripts
-"""
-
 bl_info = {
     "name": "Mua model (.mua)",
     "author": "PrimoZanaylo",
@@ -28,17 +20,14 @@ import mathutils
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
 from bpy_extras.io_utils import ExportHelper, ImportHelper
 
-#just some eye balling stuff ignore it
 CHARACTER = 213.0 
 UNI2_CHARACTER = 0.132
 FPS = 60
 
-#Noesis information
 PAC_HEADER = 0x20
 VERTEX = 0x50
 SECTIONS = 17
 
-#.Mua
 SKELETON, BONE, MESH, PART, MATERIAL, ASSIGN, TEXTURE = 0, 1, 2, 3, 4, 5, 6
 UVANIM, TRACKLIST, TRACKKEY = 7, 8, 9
 SCRIPT, MESHPART, VERTEX_SECTION, INDEX, STRING_INFO, STRING = 11, 12, 13, 14, 15, 16
@@ -47,7 +36,6 @@ TRANSLATION, ROTATION, SHEAR, SCALE = 0x04, 0x14, 0x24, 0x34
 KINDS = (TRANSLATION, ROTATION, SHEAR, SCALE)
 WIDTH = {TRANSLATION: 3, ROTATION: 3, SHEAR: 4, SCALE: 3}
 
-#.MMOT
 MOTION_SECTIONS = 11
 
 MOTION_BONES, MOTION_LIST, MOTION_KEYS, MOTION_INFO, MOTION_STRINGS = 1, 2, 3, 8, 9
@@ -116,7 +104,6 @@ def decrypted(name, blob):
 
 
 def unpacked(blob):
-    #DFAS CF parte 
     if len(blob) < 16 or blob[:4] != PACKED:
         return blob
 
@@ -284,7 +271,6 @@ class Track(object):
 
 
 class Tracks(object):
-    #Four tracks per bone(to do?) in the one order both containers store them in
 
     def __init__(self, bones):
         self.bones = bones
@@ -313,7 +299,6 @@ class Tracks(object):
 
         return out
 
-#Remodular
 class Motion(Tracks):
     def __init__(self, blob):
         if blob[:4] != b"MMOT":
@@ -340,9 +325,7 @@ class Motion(Tracks):
     def target(self):
         return self.string[1] if len(self.string) > 1 else ""
 
-#...
 class Take(Tracks):
-    #Sec 8 and 9 seems to be like mmot but in mua?
 
     def __init__(self, model, first, count):
         Tracks.__init__(self, count)
@@ -371,7 +354,6 @@ def strings(blob, info, base):
 
     return out
 
-#Thanks a lot Noesis goat
 class Model(object):
     def __init__(self, blob):
         if blob[:4] != b"MUA\x00":
@@ -600,7 +582,6 @@ class Model(object):
 
         return self.skeletonFlags[which]
         
-#Todo: optimize the load script processing + 
 
 
 def evb_names(blob, at, count, stride):
@@ -618,7 +599,6 @@ def evb_names(blob, at, count, stride):
 
 
 class Script(object):
-    #EVT0 7 blocks 0x20, sheets in 0x20, names in 0x22, records off 0x10
 
     def __init__(self, blob):
         if blob[:4] != b"EVT0":
@@ -935,7 +915,6 @@ def shown_run(script, label):
 
     return run
 
-#oh formato lixo da desgraça
 BIN_SECTIONS = 3
 BIN_RECORD = 0x40
 JONB_HEAD = 211
@@ -953,7 +932,6 @@ def bin_strings(blob, info, count, base):
 
 
 def bin_listing(blob):
-    #WHY? cmds are named in here but not in....?????????????
     if blob[:4] != b"EVT\x00":
         raise ValueError("not an EVT script")
 
@@ -990,9 +968,7 @@ def bin_listing(blob):
 
     return "\n".join(out) + "\n"
 
-#formato lixo 2
 def jonbin_listing(blob):
-    #211 bytes header -> +20 per box 4 floats (not in model unit?) needs to be verified again but works for now and seems to be just collision shit
     if blob[:4] != b"JONB":
         raise ValueError("not a JONB collision")
 
@@ -1017,7 +993,6 @@ def jonbin_listing(blob):
 
 
 def build_bins(files, label):
-    #2 containers, just that
     made = 0
 
     for leaf in sorted(files):
@@ -1052,7 +1027,6 @@ def named_bones(model):
 
 
 def takes(model, files):
-    #to do
     out = {}
     named = named_bones(model)
 
@@ -1112,7 +1086,6 @@ def stage_of(path):
 
 
 def unpacked_into(art, folder):
-    #Needs a better way of doing this shit
     if os.path.isdir(folder) and any(leaf.lower().endswith(".dds") for leaf in os.listdir(folder)):
         return folder
 
@@ -1156,7 +1129,6 @@ def unpack_textures(where, stage):
 
     return [folder for i, folder in enumerate(out) if folder not in out[:i]]
 
-#todo: arquivos em caixa baixa
 def texture_index(folders):
     out = {}
 
@@ -1220,7 +1192,6 @@ def with_geometry(files):
 
 
 def gathered(path):
-    #working for now, may break later
     files = opened(path)
     models = with_geometry(files)
     origin = path if models else ""
@@ -1356,7 +1327,6 @@ def sheet_of(model, slot):
 def material_name(model, slot, prefix):
     return "%sm%03d %s" % (prefix + " " if prefix else "", slot, sheet_of(model, slot))
 
-#thanks that blazblue and uni uses the same fucking thing
 def dds_blocks(blob):
     if len(blob) < 148 or blob[:4] != b"DDS ":
         return (None, 0, 0, 0)
@@ -1544,7 +1514,6 @@ class AlphaSheet(object):
         return max(max(alpha_texels(self.body, block * self.step, self.explicit))
                    for block in range(0, count, stride)) / 255.0
 
-#same decode to a small dds. (8x8 shit)
 def dds_pixels(blob):
     if len(blob) < 148 or blob[:4] != b"DDS ":
         return None
@@ -1889,7 +1858,6 @@ def scroll_material(material, keys, flip):
     return written
 
 
-# :) ..... :( 
 def drawn_as(model, mesh, sheer, dark):
     mode = model.blendOf(mesh)
 
@@ -2235,7 +2203,6 @@ def bind(obj, weights, model, mesh, rig, names):
 
 
 def deltas(model, first, count, take, place):
-    #inverse * frame, dumb convention + blender unit
     rest = [model.bone[first + i]["matrix"] for i in range(count)]
     settled = [as_matrix(model.chain(first, i, rest)).inverted() for i in range(count)]
     unplace = place.inverted()
@@ -2367,7 +2334,6 @@ def keyed(action, rig, bone, frames, basis):
 
 
 def arrange(rig, actions, model, runs, picked):
-    #script own thing
     longest = 0
 
     for first in sorted(actions):
@@ -2576,7 +2542,6 @@ def build_sequence(objects, run, script, sizes, collection, flip, index):
 
 
 def swap_sheet(obj, leaf, index):
-    #same material, dif sheet
     if not obj.data.materials or obj.data.materials[0] is None:
         return
 
@@ -2772,7 +2737,6 @@ def placement(scale, mirror):
     return mathutils.Matrix.Diagonal((scale, scale, z, 1.0))
 
 
-#still needs some fix
 class ImportMua(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.mua"
     bl_label = "Import Mua model"
@@ -2781,7 +2745,6 @@ class ImportMua(bpy.types.Operator, ImportHelper):
     filename_ext = ".pac"
     filter_glob: StringProperty(default="*.pac;*.mua;*.MUA", options={"HIDDEN"})
     
-    #uni shit
     character: FloatProperty(
         name="Character height",
         description="How tall a character is in the model's own units. Lower it to make the model bigger",
@@ -2830,7 +2793,7 @@ class ImportMua(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         options = {
-            "scale": UNI2_CHARACTER / self.character, #unit shit again needs to be redone 
+            "scale": UNI2_CHARACTER / self.character,
             "mirror": self.mirror,
             "flip": self.flip,
             "textures": self.textures,
@@ -2881,7 +2844,6 @@ def section_of(model, index):
 
 
 def as_strip(triangles):
-    #triangl list
     out = []
 
     for a, b, c in triangles:
@@ -2919,7 +2881,6 @@ def written_vertex(block, vertex, weights):
 
 
 def bounds_block(points):
-    #+0x18 8x 8y 8z
     low = [min(p[k] for p in points) for k in range(3)]
     high = [max(p[k] for p in points) for k in range(3)]
     mid = [(low[k] + high[k]) / 2.0 for k in range(3)]
@@ -2934,7 +2895,6 @@ def bounds_block(points):
 
 
 def written_mua(model, rebuilt):
-    #replace sec 2 3 13 14. needs to do others sections (I don't think I wanna do that to be clear)
     vertices = bytearray()
     indices = bytearray()
     meshes = bytearray()
@@ -3029,7 +2989,6 @@ def written_mua(model, rebuilt):
 
     return bytes(out)
 
-#lit end and pack (16 bytes)
 def rewrapped(original, plain):
     if original[:4] != PACKED:
         return plain
@@ -3143,7 +3102,6 @@ def local_bone(obj, group, mesh):
 
     return at - mesh["bone"] if at >= 0 else -1
 
-#to do: a lot of things :skull:
 def exported(model, objects, place, mirror, flip):
     out = {}
     unplace = place.inverted()
@@ -3230,7 +3188,6 @@ def upright(objects, turn):
     for obj in objects:
         obj.matrix_world = turn @ obj.matrix_world
 
-#maybe theres a plugin texture for that, search that later (dds)
 def as_png(folder):
     kept = []
 
@@ -3277,7 +3234,6 @@ def as_they_were(kept):
         if os.path.exists(made):
             os.remove(made)
 
-#BSDF
 def through_principled():
     kept = []
 
@@ -3326,7 +3282,7 @@ class ExportModelFbx(bpy.types.Operator, ExportHelper):
 
     animation: EnumProperty(
         name="Animation",
-        items=(("NLA", "NLA tracks", "One take per NLA strip, the way the scripts lay them out"), #still needs to investigate more but mostly true
+        items=(("NLA", "NLA tracks", "One take per NLA strip, the way the scripts lay them out"),
                ("ALL", "Every action", "Every action in the file, whether arranged or not"),
                ("NONE", "None", "Geometry only")),
         default="NLA")
@@ -3368,7 +3324,6 @@ class ExportModelFbx(bpy.types.Operator, ExportHelper):
             as_they_drew(drawn)
             upright(roots, turn.inverted())
 
-#To do better way to keep everything opened
 class ExportMua(bpy.types.Operator, ExportHelper):
     bl_idname = "export_scene.mua"
     bl_label = "Export Mua model"

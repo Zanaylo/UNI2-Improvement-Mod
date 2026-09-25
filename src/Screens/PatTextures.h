@@ -1,5 +1,3 @@
-// The atlases of a .pat as Direct3D textures, uploaded once and kept until the device is lost.
-
 #pragma once
 
 #include "Screens/PatFile.h"

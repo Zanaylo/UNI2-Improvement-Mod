@@ -1,6 +1,7 @@
 # Hitbox viewer
 
-Press **F2**.
+Press **F2**, or set **Hitbox Display** on the training menu's *Improvement Mod* page, the one after
+*Training display*. On that line, the menu's **Open menu** button opens a guide to what every box means.
 
 It draws every box the engine has, for characters and projectiles, in the game's own colours.
 Decoration is hidden with the engine's own `_Exist_NoHantei` flag, not by guessing, so what you see is

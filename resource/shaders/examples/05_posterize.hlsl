@@ -1,8 +1,5 @@
-// UNI2-Improvement-Mod shader pack: Posterize
-// Cuts the colour down to a few steps per channel, the way an old palette did.
-
-#define LEVELS 8.0   // steps per channel. 2 is a poster, 32 is nearly untouched
-#define DITHER 1.0   // 0 = hard bands, 1 = a 2x2 pattern to break them up
+#define LEVELS 8.0
+#define DITHER 1.0
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

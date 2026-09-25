@@ -1,10 +1,10 @@
 #include "Training/TrainingSave.h"
 
 #include "Core/logger.h"
-#include "Game/GameState.h"
-#include "Game/OnlineState.h"
-#include "Game/ReplayState.h"
-#include "Game/SaveData.h"
+#include "Game/Engine/GameState.h"
+#include "Game/Engine/OnlineState.h"
+#include "Game/Replays/ReplayState.h"
+#include "Game/Engine/SaveData.h"
 
 #include <Windows.h>
 

@@ -1,11 +1,3 @@
-// A reader for a whole .pat: its atlases, the parts cut out of them, and the patterns that say
-// where each part is drawn. `Game/PatParts` is the other reader and a different job - it builds the
-// colour editor's 3D effect meshes and hands back CPU pixels. This one is for drawing a screen.
-//
-// The container has no chunk lengths, so an unknown tag is passed by scanning for the next known
-// one, never by a fixed size. An atlas comes back as the DDS it is stored as, decompressed if it
-// was packed, because `DdsTexture::LoadFromMemory` already takes both formats these games use.
-
 #pragma once
 
 #include <cstddef>

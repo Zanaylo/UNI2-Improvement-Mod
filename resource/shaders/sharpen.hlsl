@@ -1,10 +1,3 @@
-// Contrast adaptive sharpening over the finished frame.
-//
-// The game rasterises everything at 1280x720 and the composite blows that up to the window with a
-// linear filter, which is where the softness comes from. This puts the edge contrast back without
-// the halo an unsharp mask leaves, and it runs on the back buffer so it needs nothing from the
-// engine. c0 is the texel size, c1.x the strength.
-
 sampler2D Frame : register(s0);
 
 float4 TexelSize : register(c0);

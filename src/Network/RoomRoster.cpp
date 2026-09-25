@@ -1,12 +1,14 @@
 #include "Network/RoomRoster.h"
 
-#include "Core/CrashContext.h"
+#include "Core/Boot/CrashContext.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Hooks/GameHook.h"
 #include "Hooks/HookManager.h"
 #include "Network/NetGate.h"
 #include "Network/NetLog.h"
+#include "Game/Engine/CodeSignatures.h"
 
 #include <Windows.h>
 
@@ -17,7 +19,7 @@ namespace {
 
 using OnLobbyChatUpdate_t = int(__fastcall*)(void*, void*, void*);
 
-OnLobbyChatUpdate_t oOnLobbyChatUpdate = nullptr;
+GameHook<OnLobbyChatUpdate_t> g_onLobbyChatUpdateHook("CGameSessionJoinedRoomManager::OnLobbyChatUpdate");
 bool g_hooked = false;
 bool g_fixEnabled = false;
 
@@ -47,13 +49,13 @@ bool WillRewrite(int flags)
 
 void* Target()
 {
-	return reinterpret_cast<void*>(RvaToAddress(GameOffsets::kFnOnLobbyChatUpdate));
+	return reinterpret_cast<void*>(CodeSignatures::Address(GameOffsets::kFnOnLobbyChatUpdate));
 }
 
 int __fastcall HookedOnLobbyChatUpdate(void* self, void* edx, void* param)
 {
 	if (param == nullptr || !g_fixEnabled || !NetGate::MayTouchRoom())
-		return oOnLobbyChatUpdate(self, edx, param);
+		return g_onLobbyChatUpdateHook.Original()(self, edx, param);
 
 	auto* const flagField = reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(param) + GameOffsets::kLobbyChatUpdateFlags);
 
@@ -62,13 +64,13 @@ int __fastcall HookedOnLobbyChatUpdate(void* self, void* edx, void* param)
 	if (!TryReadDword(flagField, flags) || !NeedsRewrite(static_cast<int>(flags)) ||
 		!TryWriteDword(flagField, RoomRoster::StateChange_Left))
 	{
-		return oOnLobbyChatUpdate(self, edx, param);
+		return g_onLobbyChatUpdateHook.Original()(self, edx, param);
 	}
 
 	InterlockedIncrement(&g_ghostsPrevented);
 	NetLog::Write("room roster: a member left with flags 0x%02x, routed to the game's leave handler", flags);
 
-	const int result = oOnLobbyChatUpdate(self, edx, param);
+	const int result = g_onLobbyChatUpdateHook.Original()(self, edx, param);
 
 	TryWriteDword(flagField, flags);
 	return result;
@@ -87,8 +89,7 @@ bool Install()
 		return false;
 	}
 
-	g_hooked = HookManager::CreateAndEnableHook(target, &HookedOnLobbyChatUpdate,
-		reinterpret_cast<void**>(&oOnLobbyChatUpdate), "CGameSessionJoinedRoomManager::OnLobbyChatUpdate");
+	g_hooked = g_onLobbyChatUpdateHook.Install(target, &HookedOnLobbyChatUpdate);
 
 	if (!g_hooked)
 		strncpy_s(g_status, "the room handler could not be hooked", _TRUNCATE);

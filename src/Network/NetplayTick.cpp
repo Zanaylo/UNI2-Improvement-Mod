@@ -1,12 +1,12 @@
 #include "Network/NetplayTick.h"
 
 #include "Core/info.h"
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/GamePatches.h"
-#include "Game/OnlineState.h"
-#include "Game/OpponentLog.h"
+#include "Game/Patches/GamePatches.h"
+#include "Game/Engine/OnlineState.h"
+#include "Game/Lobby/OpponentLog.h"
 #include "Network/GgpoLogCapture.h"
 #include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
@@ -18,9 +18,9 @@
 #include "Network/RollbackStats.h"
 #include "Network/RoomPing.h"
 #include "Network/RoomRoster.h"
-#include "Network/Spectate.h"
-#include "Network/SteamInterfaces.h"
-#include "Network/SteamWatch.h"
+#include "Network/Spectate/Spectate.h"
+#include "Network/Steam/SteamInterfaces.h"
+#include "Network/Steam/SteamWatch.h"
 
 namespace {
 

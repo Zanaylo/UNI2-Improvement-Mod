@@ -1,6 +1,6 @@
 ﻿#include "Core/utils.h"
 
-#include "Core/KeyboardCapture.h"
+#include "Core/Input/KeyboardCapture.h"
 #include "Core/info.h"
 
 #include <Psapi.h>

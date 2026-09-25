@@ -1,5 +1,3 @@
-// The engine's own hitstop, appended as a message to the battle object's queue.
-
 #pragma once
 
 #include <cstdint>

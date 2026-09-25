@@ -1,18 +1,18 @@
 #include "Network/OnlinePatch.h"
 
 #include "Core/logger.h"
-#include "Game/BattleDataReload.h"
-#include "Game/BgmControl.h"
-#include "Game/GameOffsets.h"
-#include "Game/GamePatches.h"
-#include "Game/GameState.h"
-#include "Game/OnlineState.h"
+#include "Game/Battle/BattleDataReload.h"
+#include "Game/Audio/BgmControl.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Patches/GamePatches.h"
+#include "Game/Engine/GameState.h"
+#include "Game/Engine/OnlineState.h"
 #include "Network/MatchKind.h"
 #include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
 #include "Network/NetLink.h"
 #include "Network/NetLog.h"
-#include "Network/SpectateViewer.h"
+#include "Network/Spectate/SpectateViewer.h"
 
 #include <cstdio>
 #include <cstring>

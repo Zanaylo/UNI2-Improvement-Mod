@@ -2,17 +2,17 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
-#include "Game/MemoryMap.h"
-#include "Hooks/HookManager.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/MemoryMap.h"
+#include "Hooks/GameHook.h"
 #include "Palette/PalettePaint.h"
 #include "Palette/PaletteSeat.h"
+#include "Game/Engine/CodeSignatures.h"
 
 #include <cstring>
 
 namespace {
 
-constexpr uintptr_t kCharaDrawRva = 0xbe140;
 
 constexpr uintptr_t kDrawOverride = 0x24;
 constexpr uintptr_t kDrawOwner = 0x48;
@@ -25,7 +25,7 @@ constexpr int kMaxRows = 32;
 
 typedef void(__fastcall* CharaDraw)(void* self, void* unused);
 
-CharaDraw g_original = nullptr;
+GameHook<CharaDraw> g_charaDrawHook("chara draw (palette owner probe)");
 
 PaletteOwnerProbe::Row g_rows[kMaxRows] = {};
 int g_count = 0;
@@ -144,19 +144,18 @@ void __fastcall Detour(void* self, void* unused)
 		}
 	}
 
-	g_original(self, unused);
+	g_charaDrawHook.Original()(self, unused);
 }
 
 }
 
 bool PaletteOwnerProbe::Install()
 {
-	void* const target = reinterpret_cast<void*>(RvaToAddress(kCharaDrawRva));
+	void* const target = reinterpret_cast<void*>(CodeSignatures::Address(GameOffsets::kFnCharaDraw));
 	if (target == nullptr)
 		return false;
 
-	return HookManager::CreateAndEnableHook(target, &Detour,
-		reinterpret_cast<void**>(&g_original), "chara draw (palette owner probe)");
+	return g_charaDrawHook.Install(target, &Detour);
 }
 
 void PaletteOwnerProbe::SetEnabled(bool enabled)

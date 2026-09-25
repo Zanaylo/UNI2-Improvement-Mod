@@ -1,10 +1,12 @@
 #include "Palette/EffectPaint.h"
 
 #include "Core/utils.h"
-#include "Hooks/HookManager.h"
-#include "Core/interfaces.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Hooks/GameHook.h"
+#include "Core/Config/interfaces.h"
 #include "Palette/EffectOwner.h"
 #include "Palette/PaletteControl.h"
+#include "Game/Engine/CodeSignatures.h"
 
 #include <intrin.h>
 
@@ -12,8 +14,6 @@
 
 namespace {
 
-constexpr uintptr_t kSetParamRva = 0x15790;
-constexpr uintptr_t kTintCallerRva = 0x1541d;
 
 constexpr uintptr_t kValuesToFrame = 0x5c;
 constexpr uintptr_t kPieceSlot = 0x50;
@@ -23,7 +23,7 @@ constexpr uintptr_t kIndexOffset = 0x40;
 typedef void(__fastcall* SetParam)(void* self, void* edx, const char* name, const float* values,
 	int count);
 
-SetParam g_original = nullptr;
+GameHook<SetParam> g_tintHook("effect tint");
 bool g_installed = false;
 
 int g_tintCalls = 0;
@@ -208,7 +208,7 @@ struct Tint
 
 void PassThrough(const Tint& tint)
 {
-	g_original(tint.self, tint.edx, tint.name, tint.values, tint.count);
+	g_tintHook.Original()(tint.self, tint.edx, tint.name, tint.values, tint.count);
 }
 
 void Replace(const Tint& tint, const uint8_t* rgb)
@@ -220,7 +220,7 @@ void Replace(const Tint& tint, const uint8_t* rgb)
 		tint.alpha,
 	};
 
-	g_original(tint.self, tint.edx, tint.name, swapped, tint.count);
+	g_tintHook.Original()(tint.self, tint.edx, tint.name, swapped, tint.count);
 }
 
 bool IsOurCall(const char* name, const float* values, int count, uintptr_t caller)
@@ -345,15 +345,12 @@ bool EffectPaint::Install()
 	if (g_installed)
 		return true;
 
-	void* const target = reinterpret_cast<void*>(RvaToAddress(kSetParamRva));
+	void* const target = reinterpret_cast<void*>(CodeSignatures::Address(GameOffsets::kFnSetEffectFloatParam));
 
-	if (target == nullptr || !HookManager::CreateAndEnableHook(target, &Detour,
-		reinterpret_cast<void**>(&g_original), "effect tint"))
-	{
+	if (target == nullptr || !g_tintHook.Install(target, &Detour))
 		return false;
-	}
 
-	g_tintCaller = RvaToAddress(kTintCallerRva);
+	g_tintCaller = RvaToAddress(GameOffsets::kEffectTintCallSite);
 
 	g_installed = true;
 

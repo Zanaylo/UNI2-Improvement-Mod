@@ -1,7 +1,7 @@
 #include "Network/PlayerCount.h"
 
 #include "Network/NetLog.h"
-#include "Network/SteamInterfaces.h"
+#include "Network/Steam/SteamInterfaces.h"
 
 #include <Windows.h>
 

@@ -1,6 +1,3 @@
-// Freezes the match two ways: TickSuppress skips the game's tick, StopTime reuses its own hitstop.
-// Never reapply stop time every tick - the engine counts it down itself.
-
 #pragma once
 
 #include <cstdint>

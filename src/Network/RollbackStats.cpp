@@ -3,7 +3,7 @@
 #include "Core/Profiler.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
+#include "Game/Engine/GameOffsets.h"
 #include "Network/NetLink.h"
 
 #include <Windows.h>

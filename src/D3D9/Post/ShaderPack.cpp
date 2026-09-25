@@ -1,8 +1,8 @@
 ﻿#include "D3D9/Post/ShaderPack.h"
 
-#include "Core/Settings.h"
+#include "Core/Config/Settings.h"
 #include "Core/info.h"
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Post/BundledShaders.h"

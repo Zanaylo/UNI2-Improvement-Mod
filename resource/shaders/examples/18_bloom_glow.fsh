@@ -1,9 +1,3 @@
-// UNI2-Improvement-Mod shader pack: Bloom glow
-//
-// Old style GLSL, the shape a .fsh usually has: a varying instead of an in, gl_FragColor instead of
-// an out, texture2D instead of texture, and precision qualifiers. All four are rewritten on the way
-// in, so a shader written for GLSL ES or for a 2010 era renderer still loads.
-
 #ifdef GL_ES
 precision mediump float;
 #endif

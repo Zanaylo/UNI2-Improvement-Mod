@@ -1,7 +1,7 @@
 #include "Network/ModHandshake.h"
 
 #include "Core/info.h"
-#include "Game/GamePatches.h"
+#include "Game/Patches/GamePatches.h"
 #include "Network/ModChannel.h"
 #include "Network/ModPresence.h"
 #include "Network/NetLink.h"

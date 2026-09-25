@@ -1,7 +1,7 @@
 #include "Network/NetLink.h"
 
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
+#include "Game/Engine/GameOffsets.h"
 #include "Network/GgpoLogCapture.h"
 #include "Network/NetLog.h"
 

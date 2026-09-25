@@ -29,8 +29,6 @@ VERTEX_FLOATS = 12
 MESH_PREFIX = 4 + 4 + 64
 
 
-
-
 class Block(object):
     def __init__(self, count, body):
         self.count = count
@@ -333,8 +331,6 @@ def inverse(m):
                              + m[14] * upper[6 + column])
 
     return out
-
-
 
 
 def to_blender(matrix):

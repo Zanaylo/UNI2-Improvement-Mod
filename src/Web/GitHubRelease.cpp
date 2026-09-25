@@ -1,6 +1,6 @@
 #include "Web/GitHubRelease.h"
 
-#include "Core/Json.h"
+#include "Core/Formats/Json.h"
 #include "Core/info.h"
 #include "Web/Http.h"
 

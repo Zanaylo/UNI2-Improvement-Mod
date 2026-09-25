@@ -1,0 +1,218 @@
+﻿#ifndef SETTING_BOOL
+#define SETTING_BOOL(member, section, key, defaultValue) SETTING_INT(member, section, key, defaultValue)
+#define SETTING_BOOL_FALLBACK
+#endif
+
+#ifndef SETTING_CLAMP
+#define SETTING_CLAMP(member, section, key, defaultValue, low, high) SETTING_INT(member, section, key, defaultValue)
+#define SETTING_CLAMP_FALLBACK
+#endif
+
+#ifndef SETTING_RANGE
+#define SETTING_RANGE(member, section, key, defaultValue, low, high) SETTING_INT(member, section, key, defaultValue)
+#define SETTING_RANGE_FALLBACK
+#endif
+
+#ifndef SETTING_RANGE_FLOAT
+#define SETTING_RANGE_FLOAT(member, section, key, defaultValue, low, high) SETTING_FLOAT(member, section, key, defaultValue)
+#define SETTING_RANGE_FLOAT_FALLBACK
+#endif
+
+#ifndef SETTING_COPY
+#define SETTING_COPY(member, section, key, defaultValue) SETTING_INT(member, section, key, defaultValue)
+#define SETTING_COPY_FALLBACK
+#endif
+
+SETTING_STRING(dinputDllWrapper,    "Mod",      "DinputDllWrapper",     "")
+
+SETTING_BOOL(checkForUpdates, "Mod", "CheckForUpdates", 1)
+SETTING_INT(settingsRevision,       "Mod",      "SettingsRevision",     2)
+
+SETTING_STRING(toggleOverlayKey,    "Keybinds", "ToggleOverlay",        "F1")
+SETTING_STRING(toggleHitboxKey,     "Keybinds", "ToggleHitboxOverlay",  "F2")
+SETTING_STRING(toggleFrameMeterKey, "Keybinds", "ToggleFrameMeter",     "F3")
+SETTING_STRING(freezeFrameKey,      "Keybinds", "FreezeFrame",          "F5")
+SETTING_STRING(stepForwardKey,      "Keybinds", "StepForward",          "F6")
+SETTING_STRING(nextPaletteKey,      "Keybinds", "NextPalette",          "F8")
+SETTING_STRING(prevPaletteKey,      "Keybinds", "PreviousPalette",      "F7")
+SETTING_STRING(hideHudKey,          "Keybinds", "HideHud",              "")
+SETTING_STRING(restartGameKey,      "Keybinds", "RestartGame",          "")
+
+SETTING_STRING(functionKey,         "Keybinds", "FunctionKey",          "")
+
+SETTING_STRING(padFunctionButton,   "PadKeybinds", "FunctionButton",    "Back")
+SETTING_STRING(padToggleOverlay,    "PadKeybinds", "ToggleOverlay",     "A")
+SETTING_STRING(padToggleHitbox,     "PadKeybinds", "ToggleHitboxOverlay", "B")
+SETTING_STRING(padToggleFrameMeter, "PadKeybinds", "ToggleFrameMeter",  "LB")
+SETTING_STRING(padFreezeFrame,      "PadKeybinds", "FreezeFrame",       "X")
+SETTING_STRING(padStepForward,      "PadKeybinds", "StepForward",       "Y")
+SETTING_STRING(padNextPalette,      "PadKeybinds", "NextPalette",       "DPad Right")
+SETTING_STRING(padPrevPalette,      "PadKeybinds", "PreviousPalette",   "DPad Left")
+SETTING_STRING(padHideHud,          "PadKeybinds", "HideHud",           "")
+SETTING_STRING(padRestartGame,      "PadKeybinds", "RestartGame",       "")
+
+SETTING_INT(freezeMode,             "Training", "FreezeMode",           0)
+
+SETTING_INT(showHealthValues,       "Training", "ShowHealthValues",     0)
+SETTING_COPY(healthValuesX, "Training", "HealthValuesX", 0)
+SETTING_COPY(healthValuesY, "Training", "HealthValuesY", 0)
+SETTING_COPY(healthValuesScale, "Training", "HealthValuesScale", 100)
+SETTING_BOOL(grdPopups, "Training", "GrdPopups", 1)
+SETTING_BOOL(grdTimer, "Training", "GrdTimer", 1)
+SETTING_INT(hideBattleHud,          "Training", "HideHud",              0)
+
+SETTING_COPY(autoPauseMode, "Training", "AutoPauseOnAttack", 0)
+SETTING_STRING(autoPauseComboStops, "Training", "AutoPauseComboStops",  "3")
+
+SETTING_STRING(autoPauseBlockStops, "Training", "AutoPauseBlockStops",  "3")
+
+SETTING_RANGE(resumeDelayFrames, "Training", "ResumeDelayFrames", 60, 5, 600)
+SETTING_RANGE(stepRepeatDelayMs, "Training", "StepRepeatDelayMs", 250, 0, 3000)
+SETTING_RANGE(stepRepeatIntervalMs, "Training", "StepRepeatIntervalMs", 90, 16, 2000)
+SETTING_COPY(recordFrameCounterRva, "Training", "RecordFrameCounterRva", 0)
+SETTING_BOOL(frameMeterAuto, "FrameMeter", "PlaceAutomatically", 0)
+SETTING_COPY(frameMeterX, "FrameMeter", "PositionX", -1)
+SETTING_COPY(frameMeterY, "FrameMeter", "PositionY", -1)
+SETTING_RANGE_FLOAT(frameMeterScale, "FrameMeter", "Scale", 1.5f, 0.5f, 4.0f)
+SETTING_BOOL(frameMeterCounts, "FrameMeter", "BandCounts", 1)
+SETTING_BOOL(frameMeterTotals, "FrameMeter", "LineTotals", 1)
+SETTING_BOOL(frameMeterAttributes, "FrameMeter", "AttributeRow", 1)
+SETTING_BOOL(frameMeterAttackRow, "FrameMeter", "AttackRow", 1)
+SETTING_RANGE(frameMeterOpacity, "FrameMeter", "Opacity", 100, 10, 100)
+SETTING_BOOL(frameMeterDrag, "FrameMeter", "MouseDrag", 1)
+SETTING_STRING(paletteCompanions,   "Palette",  "CompanionCharacters",  "15")
+
+SETTING_BOOL(showOnlinePalettes, "Palette", "ShowOnlinePalettes", 1)
+SETTING_BOOL(paletteOwnersFromDraws, "Palette", "OwnersFromDraws", 1)
+SETTING_BOOL(paletteIdentifyByColours, "Palette", "IdentifyByColours", 0)
+SETTING_BOOL(paletteOutOfMatch, "Palette", "PaintOutOfMatch", 0)
+SETTING_BOOL(paletteEffectRows, "Palette", "PaintEffectRows", 1)
+SETTING_INT(showlegacypalettes,     "Palette",  "ShowLegacyTab",        0)
+
+SETTING_BOOL(paletteGroupByPart, "Palette", "GroupByPart", 1)
+SETTING_BOOL(paletteFlashEntry, "Palette", "FlashEntry", 1)
+SETTING_BOOL(paletteFilterJunk, "Palette", "FilterJunk", 1)
+SETTING_INT(stageFlatColour,        "Video",    "FlatStage",            0)
+SETTING_INT(stageFlatColourValue,   "Video",    "FlatStageColour",      0x00ff00)
+
+SETTING_CLAMP(screenShake, "Video", "ScreenShake", 100, 0, ScreenShake::kFullPercent)
+SETTING_BOOL(keepMenuMusic, "Music", "KeepMenuMusic", 1)
+SETTING_BOOL(timerResolution, "Video", "TimerResolution", 1)
+SETTING_BOOL(powerThrottlingOptOut, "Video", "PowerThrottlingOptOut", 1)
+SETTING_BOOL(displayTuning, "Video", "DisplayTuning", 1)
+SETTING_RANGE(fullscreenRefreshHz, "Video", "FullscreenRefreshHz", 0, 0, 1000)
+SETTING_BOOL(extraBackBuffer, "Video", "ExtraBackBuffer", 0)
+SETTING_BOOL(pumpWait, "Video", "PumpWait", 0)
+SETTING_BOOL(pumpWaitAllInput, "Video", "PumpWaitAllInput", 0)
+SETTING_COPY(presentWidth, "Graphics", "PresentWidth", 0)
+SETTING_COPY(presentHeight, "Graphics", "PresentHeight", 0)
+SETTING_INT(potatoHeight,           "Graphics", "PotatoHeight",         360)
+
+SETTING_COPY(supersample, "Graphics", "Supersample", 0)
+SETTING_RANGE(sharpenStrength, "Graphics", "Sharpen", 0, 0, 100)
+SETTING_INT(sceneUpscale,           "Graphics", "SceneUpscale",         0)
+
+SETTING_INT(upscaleFilter,          "Graphics", "UpscaleFilter",        0)
+
+SETTING_INT(antiAliasing,           "Graphics", "AntiAliasing",         0)
+
+SETTING_INT(sharpenMode,            "Graphics", "SharpenMode",          0)
+
+SETTING_BOOL(bloomEnabled, "Graphics", "Bloom", 0)
+SETTING_CLAMP(bloomIntensity, "Graphics", "BloomIntensity", 40, 0, 100)
+SETTING_CLAMP(bloomThreshold, "Graphics", "BloomThreshold", 75, 0, 100)
+SETTING_BOOL(lookEnabled, "Graphics", "Look", 0)
+SETTING_CLAMP(lookBrightness, "Graphics", "LookBrightness", 0, -100, 100)
+SETTING_CLAMP(lookContrast, "Graphics", "LookContrast", 0, -100, 100)
+SETTING_CLAMP(lookGamma, "Graphics", "LookGamma", 100, 25, 400)
+SETTING_CLAMP(lookSaturation, "Graphics", "LookSaturation", 0, -100, 100)
+SETTING_CLAMP(lookVibrance, "Graphics", "LookVibrance", 0, -100, 100)
+SETTING_CLAMP(lookTemperature, "Graphics", "LookTemperature", 0, -100, 100)
+SETTING_CLAMP(lookVignette, "Graphics", "LookVignette", 0, 0, 100)
+SETTING_CLAMP(lookScanlines, "Graphics", "LookScanlines", 0, 0, 100)
+SETTING_BOOL(lookDither, "Graphics", "LookDither", 0)
+SETTING_STRING(shaderPack,          "Graphics", "ShaderPack",           "")
+
+SETTING_COPY(sceneScalePercent, "Graphics", "SceneScale", 100)
+SETTING_BOOL(sceneDrawScale, "Graphics", "SceneDrawScale", 0)
+SETTING_BOOL(scenePinProjection, "Graphics", "ScenePinProjection", 0)
+SETTING_BOOL(sceneReferenceScale, "Graphics", "SceneReferenceScale", 1)
+SETTING_BOOL(sceneReferenceLiterals, "Graphics", "SceneReferenceLiterals", 1)
+SETTING_BOOL(disableBackBufferAa, "Graphics", "DisableBackBufferAA", 0)
+SETTING_BOOL(disableCharacterFilter, "Graphics", "DisableCharacterFilter", 0)
+SETTING_INT(simpleStage,            "Graphics", "SimpleStage",          0)
+
+SETTING_INT(stageMipmaps,           "Graphics", "StageMipmaps",         1)
+
+SETTING_BOOL(advancedStages, "Stages", "AdvancedOptions", 0)
+SETTING_INT(stageTargetWidth,       "Stages",   "TargetWidth",          0)
+SETTING_INT(stageTargetHeight,      "Stages",   "TargetHeight",         0)
+
+SETTING_COPY(potatoMode, "Graphics", "PotatoMode", 0)
+SETTING_BOOL(blockGameMouse, "Overlay", "BlockGameMouse", 0)
+SETTING_RANGE_FLOAT(uiScale, "Overlay", "UiScale", 1.0f, 0.5f, 4.0f)
+SETTING_STRING(fontPath,            "Overlay",  "FontPath",             "")
+SETTING_RANGE_FLOAT(fontSize,       "Overlay",  "FontSize",             16.0f, 8.0f, 64.0f)
+
+SETTING_STRING(fallbackFontPath,    "Overlay",  "FallbackFontPath",     "")
+
+SETTING_STRING(screenTheme,         "Theme",    "Screens",              "")
+
+SETTING_INT(screenThemeDrawn,       "Theme",    "ScreensDrawn",         1)
+
+SETTING_CLAMP(overlayCursor, "Overlay", "SoftwareCursor", 0, 0, 2)
+SETTING_BOOL(dpiAware, "Overlay", "DpiAware", 0)
+SETTING_BOOL(notifications, "Overlay", "Notifications", 1)
+SETTING_BOOL(drawWhilePaused, "Overlay", "DrawWhileGamePaused", 0)
+SETTING_BOOL(memoryDebugEnabled, "Debug", "MemoryDebug", 0)
+SETTING_BOOL(profilerEnabled, "Debug", "Profiler", 0)
+SETTING_BOOL(meterTrace, "Debug", "MeterTrace", 0)
+SETTING_COPY(wineSafeMode, "Compat", "WineSafeMode", -1)
+SETTING_COPY(keyboardSeat, "Input", "KeyboardSeat", 0)
+SETTING_BOOL(keyboardSeatRouteSides, "Input", "KeyboardSeatRouteSides", 1)
+SETTING_BOOL(replayAutoExport, "Replays", "AutoExport", 1)
+SETTING_BOOL(roomRosterFix, "Netplay", "RoomRosterFix", 0)
+SETTING_BOOL(republishPingLocation, "Netplay", "RepublishPingLocation", 0)
+SETTING_BOOL(netLog, "Netplay", "NetLog", 0)
+SETTING_BOOL(netLogGgpo, "Netplay", "CaptureGgpoLog", 0)
+SETTING_BOOL(sharePalettes, "Netplay", "SharePalettes", 1)
+SETTING_INT(spectateAllow,          "Spectate", "AllowSpectators",      0)
+SETTING_INT(spectateMaxViewers,     "Spectate", "MaxViewers",           24)
+
+SETTING_BOOL(censorNames, "Privacy", "CensorOpponentNames", 0)
+SETTING_STRING(censorNameMask,      "Privacy",  "CensorMask",           "Player")
+SETTING_BOOL(censorOwnName, "Privacy", "CensorMyName", 0)
+SETTING_BOOL(censorRoomNames, "Privacy", "CensorRoomNames", 0)
+SETTING_BOOL(subtitles, "Subtitles", "Subtitles", 0)
+SETTING_STRING(subtitlePack,        "Subtitles", "File",                "")
+
+SETTING_COPY(subtitleHoldMs, "Subtitles", "HoldMs", 2600)
+SETTING_CLAMP(subtitleScale, "Subtitles", "Scale", 140, 50, 400)
+SETTING_CLAMP(subtitleY, "Subtitles", "PositionY", 86, 5, 98)
+SETTING_BOOL(subtitleNames, "Subtitles", "ShowSpeaker", 1)
+
+
+#ifdef SETTING_BOOL_FALLBACK
+#undef SETTING_BOOL
+#undef SETTING_BOOL_FALLBACK
+#endif
+
+#ifdef SETTING_CLAMP_FALLBACK
+#undef SETTING_CLAMP
+#undef SETTING_CLAMP_FALLBACK
+#endif
+
+#ifdef SETTING_RANGE_FALLBACK
+#undef SETTING_RANGE
+#undef SETTING_RANGE_FALLBACK
+#endif
+
+#ifdef SETTING_RANGE_FLOAT_FALLBACK
+#undef SETTING_RANGE_FLOAT
+#undef SETTING_RANGE_FLOAT_FALLBACK
+#endif
+
+#ifdef SETTING_COPY_FALLBACK
+#undef SETTING_COPY
+#undef SETTING_COPY_FALLBACK
+#endif

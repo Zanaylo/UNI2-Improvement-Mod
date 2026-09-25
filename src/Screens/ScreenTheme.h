@@ -1,10 +1,3 @@
-// A theme is another French-Bread game's screens, sitting in UNI2-IM/Screens/<id>/ with the .pat
-// files that game ships and one screen.ini that says which of their patterns make up a screen and
-// which UNI2 scene it stands in for.
-//
-// Layout is data because it has to be: cl-r ships no play order of its own, so the choice of what
-// to draw is the mod's, and a choice that lives in a file can be corrected without a rebuild.
-
 #pragma once
 
 #include <cstdint>

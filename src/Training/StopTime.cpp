@@ -2,7 +2,8 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/GameOffsets.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/CodeSignatures.h"
 
 namespace {
 
@@ -91,7 +92,7 @@ bool StopTime::Initialize()
 
 	g_initialized = true;
 
-	g_setStopTimeAll = reinterpret_cast<SetStopTimeAll_t>(RvaToAddress(GameOffsets::kFnSetStopTime));
+	g_setStopTimeAll = reinterpret_cast<SetStopTimeAll_t>(CodeSignatures::Address(GameOffsets::kFnSetStopTime));
 
 	g_battleObject = reinterpret_cast<void*>(RvaToAddress(GameOffsets::kBattleObject));
 

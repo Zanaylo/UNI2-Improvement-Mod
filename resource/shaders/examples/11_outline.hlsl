@@ -1,10 +1,7 @@
-// UNI2-Improvement-Mod shader pack: Outline
-// A Sobel edge detector inking the picture, for a comic book look.
-
-#define THICKNESS 1.0  // screen pixels between the taps
-#define STRENGTH 1.0   // how black the ink goes
-#define THRESHOLD 0.12 // edges weaker than this are ignored
-#define FLATTEN 0.0    // 1 = ink on a white page, 0 = ink over the game
+#define THICKNESS 1.0
+#define STRENGTH 1.0
+#define THRESHOLD 0.12
+#define FLATTEN 0.0
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

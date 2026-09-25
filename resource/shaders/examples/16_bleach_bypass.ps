@@ -1,10 +1,5 @@
-// UNI2-Improvement-Mod shader pack: Bleach bypass
-//
-// The same HLSL as the .hlsl examples - .ps is only a second extension for it, because a lot of
-// loose pixel shaders on the internet are named that way. Nothing about this file is translated.
-
-#define STRENGTH 0.55f // 0 = untouched, 1 = the full silver retention look
-#define CONTRAST 1.20f // applied after the mix
+#define STRENGTH 0.55f
+#define CONTRAST 1.20f
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

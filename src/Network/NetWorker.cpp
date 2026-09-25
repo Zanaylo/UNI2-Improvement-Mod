@@ -1,5 +1,6 @@
 #include "Network/NetWorker.h"
 
+#include "Core/ThreadRole.h"
 #include "Network/MatchKind.h"
 #include "Network/ModChannel.h"
 #include "Network/ModPresence.h"
@@ -7,11 +8,11 @@
 #include "Network/NetLog.h"
 #include "Network/PlayerCount.h"
 #include "Network/RoomPing.h"
-#include "Network/SpectateHost.h"
-#include "Network/SpectateViewer.h"
-#include "Network/SteamInterfaces.h"
-#include "Network/SteamLink.h"
-#include "Network/SteamNetwork.h"
+#include "Network/Spectate/SpectateHost.h"
+#include "Network/Spectate/SpectateViewer.h"
+#include "Network/Steam/SteamInterfaces.h"
+#include "Network/Steam/SteamLink.h"
+#include "Network/Steam/SteamNetwork.h"
 
 #include <Windows.h>
 
@@ -145,6 +146,7 @@ bool SteamSettled(const NetLink::Snapshot& snapshot)
 
 DWORD WINAPI Loop(LPVOID)
 {
+	ThreadRole::Mark(ThreadRole::Role_Worker);
 	QueryPerformanceFrequency(&g_frequency);
 	NetLog::Write("worker: started, the mod's Steam calls run here and never on the game thread");
 

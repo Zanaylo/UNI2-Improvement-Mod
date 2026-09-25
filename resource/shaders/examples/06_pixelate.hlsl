@@ -1,7 +1,4 @@
-// UNI2-Improvement-Mod shader pack: Pixelate
-// Snaps the picture to a coarser grid. Raise BLOCK until it hurts.
-
-#define BLOCK 4.0   // screen pixels per block
+#define BLOCK 4.0
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

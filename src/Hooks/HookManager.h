@@ -25,6 +25,18 @@ namespace HookManager
 	bool AnyHookBroken();
 	const char* IntegrityStatus();
 
+	struct HookInfo
+	{
+		const char* label;
+		const void* target;
+		long calls;
+		bool parked;
+	};
+
+	int HookCount();
+	bool GetHookInfo(int index, HookInfo& out);
+	long CallCount(const void* target);
+
 	uintptr_t FindPattern(const char* pattern, const char* mask);
 	uintptr_t FindPatternInRange(uintptr_t start, size_t size, const char* pattern, const char* mask);
 

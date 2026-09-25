@@ -1,8 +1,8 @@
 #include "Palette/EffectOwner.h"
 
-#include "Game/EffectTable.h"
-#include "Game/PartColourTable.h"
-#include "Game/StockPalettes.h"
+#include "Game/Tables/EffectTable.h"
+#include "Game/Tables/PartColourTable.h"
+#include "Game/Customize/StockPalettes.h"
 #include "Palette/PaletteMemory.h"
 #include "Palette/PalettePaint.h"
 #include "Palette/PaletteSeat.h"

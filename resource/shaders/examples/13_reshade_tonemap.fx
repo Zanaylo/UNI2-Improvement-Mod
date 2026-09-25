@@ -1,10 +1,3 @@
-// UNI2-Improvement-Mod shader pack: ReShade tone map
-//
-// A ReShade .fx, written the way ReShade wants one: an include, annotated uniforms, a sampler of
-// its own and a technique. The mod translates it on the way in - the uniforms become their default
-// values, the sampler becomes the frame, and the technique's PixelShader becomes the pass. Pick it
-// on the Shaders tab and read Translated\13_reshade_tonemap.fx.hlsl to see what it turned into.
-
 #include "ReShade.fxh"
 
 uniform float Exposure <

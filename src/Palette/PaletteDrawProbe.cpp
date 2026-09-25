@@ -1,15 +1,16 @@
 #include "Palette/PaletteDrawProbe.h"
 
-#include "Core/interfaces.h"
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/CharaTracker.h"
-#include "Game/GameOffsets.h"
-#include "Game/MemoryMap.h"
-#include "Hooks/HookManager.h"
+#include "Game/Engine/CharaTracker.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/MemoryMap.h"
+#include "Hooks/GameHook.h"
 #include "Palette/PaletteTexture.h"
 
 #include "MinHook.h"
+#include "Game/Engine/CodeSignatures.h"
 
 #include <atomic>
 #include <cmath>
@@ -18,7 +19,7 @@
 namespace {
 
 using SetFloatParam_t = void(__fastcall*)(void*, void*, const char*, const float*, int);
-SetFloatParam_t oSetFloatParam = nullptr;
+GameHook<SetFloatParam_t> g_setFloatParamHook("SetEffectFloatParam");
 
 std::atomic<bool> g_capturing{ false };
 bool g_installed = false;
@@ -193,7 +194,6 @@ std::atomic<int> g_objectElsewhere{ 0 };
 std::atomic<uintptr_t> g_objectSample{ 0 };
 std::atomic<bool> g_objectScanned{ false };
 
-constexpr uintptr_t kTintCallerRva = 0x1541d;
 constexpr uintptr_t kTintValuesToEbp = 0x5c;
 constexpr uintptr_t kTintObjectSlot = 0x50;
 constexpr uintptr_t kTintIndexOffset = 0x40;
@@ -270,7 +270,7 @@ int ReadTintSource(const float* values, uintptr_t& outObject)
 {
 	outObject = 0;
 
-	if (g_pendingCaller != kTintCallerRva)
+	if (g_pendingCaller != GameOffsets::kEffectTintCallSite)
 		return -1;
 
 	const uintptr_t ebp = reinterpret_cast<uintptr_t>(values) + kTintValuesToEbp;
@@ -620,12 +620,12 @@ void __fastcall HookedSetFloatParam(void* self, void* edx, const char* name, con
 			float forced[4] = { g_forcedRgb[0], g_forcedRgb[1], g_forcedRgb[2],
 				count > 3 ? values[3] : 0.0f };
 
-			oSetFloatParam(self, edx, name, forced, count);
+			g_setFloatParamHook.Original()(self, edx, name, forced, count);
 			return;
 		}
 	}
 
-	if (name != nullptr && values != nullptr && count >= 3 && g_pendingCaller == kTintCallerRva &&
+	if (name != nullptr && values != nullptr && count >= 3 && g_pendingCaller == GameOffsets::kEffectTintCallSite &&
 		IsLastColorName(name))
 	{
 		uintptr_t object = 0;
@@ -649,13 +649,13 @@ void __fastcall HookedSetFloatParam(void* self, void* edx, const char* name, con
 				const float edited[4] = { rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f,
 					count > 3 ? values[3] : 0.0f };
 
-				oSetFloatParam(self, edx, name, edited, count);
+				g_setFloatParamHook.Original()(self, edx, name, edited, count);
 				return;
 			}
 		}
 	}
 
-	oSetFloatParam(self, edx, name, values, count);
+	g_setFloatParamHook.Original()(self, edx, name, values, count);
 }
 
 }
@@ -665,13 +665,10 @@ bool PaletteDrawProbe::Install()
 	if (g_installed)
 		return true;
 
-	void* target = reinterpret_cast<void*>(RvaToAddress(GameOffsets::kFnSetEffectFloatParam));
+	void* target = reinterpret_cast<void*>(CodeSignatures::Address(GameOffsets::kFnSetEffectFloatParam));
 
-	if (!HookManager::CreateAndEnableHook(target, &HookedSetFloatParam,
-		reinterpret_cast<void**>(&oSetFloatParam), "SetEffectFloatParam"))
-	{
+	if (!g_setFloatParamHook.Install(target, &HookedSetFloatParam))
 		return false;
-	}
 
 	g_installed = true;
 	LOG("PaletteDrawProbe installed on the float setter at 0x%p", target);

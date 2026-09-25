@@ -1,7 +1,7 @@
 #include "Palette/PaletteControl.h"
 
-#include "Core/interfaces.h"
-#include "Game/OnlineState.h"
+#include "Core/Config/interfaces.h"
+#include "Game/Engine/OnlineState.h"
 #include "Network/PaletteShare.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PlayerSides.h"

@@ -1,10 +1,10 @@
 #include "Hooks/HookManager.h"
 
-#include "Core/Compat.h"
-#include "Core/crashdump.h"
+#include "Core/Boot/Compat.h"
+#include "Core/Boot/crashdump.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "D3D9/DeviceHooks.h"
+#include "D3D9/Device/DeviceHooks.h"
 
 #include <MinHook.h>
 #include <cstdio>
@@ -49,19 +49,65 @@ uintptr_t ScanRange(uintptr_t start, size_t size, const char* pattern, const cha
 constexpr int kMaxJmpHops = 8;
 constexpr int kMaxRecords = 96;
 
+constexpr size_t kStubBytes = 16;
+constexpr uint8_t kLockPrefix = 0xF0;
+constexpr uint8_t kIncOpcode = 0xFF;
+constexpr uint8_t kAbsoluteDisp32 = 0x05;
+constexpr uint8_t kJmpRel32 = 0xE9;
+
 struct HookRecord
 {
 	void* requested;
 	void* resolved;
 	void* detour;
+	void* handler;
 	const char* label;
 	DWORD createdTick;
 	bool reported;
 	bool parked;
+	volatile LONG calls;
 };
 
 HookRecord g_records[kMaxRecords] = {};
 int g_recordCount = 0;
+uint8_t* g_stubs = nullptr;
+
+uint8_t* StubFor(int index)
+{
+	if (g_stubs == nullptr)
+	{
+		g_stubs = static_cast<uint8_t*>(VirtualAlloc(nullptr, kMaxRecords * kStubBytes,
+			MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+	}
+
+	return g_stubs == nullptr ? nullptr : g_stubs + index * kStubBytes;
+}
+
+void* CountingStub(int index, volatile LONG* counter, void* handler)
+{
+	uint8_t* const stub = StubFor(index);
+
+	if (stub == nullptr)
+		return handler;
+
+	stub[0] = kLockPrefix;
+	stub[1] = kIncOpcode;
+	stub[2] = kAbsoluteDisp32;
+	*reinterpret_cast<volatile LONG**>(stub + 3) = counter;
+	stub[7] = kJmpRel32;
+	*reinterpret_cast<int32_t*>(stub + 8) =
+		static_cast<int32_t>(static_cast<uint8_t*>(handler) - (stub + 12));
+
+	FlushInstructionCache(GetCurrentProcess(), stub, kStubBytes);
+	return stub;
+}
+
+bool IsCountingStub(const void* address)
+{
+	const uint8_t* const at = static_cast<const uint8_t*>(address);
+
+	return g_stubs != nullptr && at >= g_stubs && at < g_stubs + kMaxRecords * kStubBytes;
+}
 
 bool g_anyBroken = false;
 char g_integrityStatus[192] = "no hooks checked yet";
@@ -226,19 +272,23 @@ HookRecord* FindRecordByResolved(const void* resolved)
 	return nullptr;
 }
 
-void RememberHook(void* requested, void* resolved, void* detour, const char* label)
+HookRecord* ReserveRecord(void* requested, void* resolved, void* handler, const char* label)
 {
 	if (g_recordCount >= kMaxRecords)
-		return;
+		return nullptr;
 
-	HookRecord& record = g_records[g_recordCount++];
+	HookRecord& record = g_records[g_recordCount];
 	record.requested = requested;
 	record.resolved = resolved;
-	record.detour = detour;
+	record.handler = handler;
 	record.label = label;
 	record.createdTick = GetTickCount();
 	record.reported = false;
 	record.parked = false;
+	record.calls = 0;
+	record.detour = CountingStub(g_recordCount, &record.calls, handler);
+
+	return &record;
 }
 
 void* ResolvedAddressFor(void* target)
@@ -346,7 +396,7 @@ namespace {
 
 bool HookTargetIsAvailable(void* requested, void* resolved, const char* label)
 {
-	if (AddressIsInModModule(resolved))
+	if (AddressIsInModModule(resolved) || IsCountingStub(resolved))
 	{
 		LOG("CreateHook '%s' refused: 0x%p already ends in this mod's own handler", label, requested);
 		return false;
@@ -412,16 +462,49 @@ bool HookManager::CreateHook(void* target, void* detour, void** original, const 
 	if (!HookTargetIsAvailable(target, resolved, label))
 		return false;
 
-	const MH_STATUS status = MH_CreateHook(resolved, detour, original);
+	HookRecord* const record = ReserveRecord(target, resolved, detour, label);
+
+	if (record == nullptr)
+	{
+		LOG("CreateHook '%s' failed: all %d hook slots are taken", label, kMaxRecords);
+		return false;
+	}
+
+	const MH_STATUS status = MH_CreateHook(resolved, record->detour, original);
 	if (status != MH_OK)
 	{
 		LOG("MH_CreateHook '%s' failed: %d", label, status);
 		return false;
 	}
 
-	RememberHook(target, resolved, detour, label);
+	++g_recordCount;
 	LogHookCreated(label, target, resolved, hops);
 	return true;
+}
+
+int HookManager::HookCount()
+{
+	return g_recordCount;
+}
+
+bool HookManager::GetHookInfo(int index, HookInfo& out)
+{
+	if (index < 0 || index >= g_recordCount)
+		return false;
+
+	const HookRecord& record = g_records[index];
+	out.label = record.label;
+	out.target = record.resolved;
+	out.calls = record.calls;
+	out.parked = record.parked;
+	return true;
+}
+
+long HookManager::CallCount(const void* target)
+{
+	const HookRecord* const record = FindRecordByRequested(target);
+
+	return record == nullptr ? 0 : record->calls;
 }
 
 bool HookManager::CreateAndEnableHook(void* target, void* detour, void** original, const char* label)

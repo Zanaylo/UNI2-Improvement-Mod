@@ -1,13 +1,10 @@
-// UNI2-Improvement-Mod shader pack: VHS
-// Tape wobble, colour split and a head switching band crawling up the picture.
-
-#define WOBBLE 1.5       // screen pixels the picture waves side to side
-#define WOBBLE_BANDS 90.0 // how many waves fit down the screen
-#define WOBBLE_SPEED 2.0  // how fast they travel
-#define SPLIT 2.0         // screen pixels between the red and blue copies
-#define BAND_SPEED 0.15   // how fast the bright band crawls. 0 parks it
-#define BAND_SIZE 0.03    // its height as a fraction of the screen
-#define NOISE 0.05        // static over the whole picture
+#define WOBBLE 1.5
+#define WOBBLE_BANDS 90.0
+#define WOBBLE_SPEED 2.0
+#define SPLIT 2.0
+#define BAND_SPEED 0.15
+#define BAND_SIZE 0.03
+#define NOISE 0.05
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);

@@ -1,7 +1,4 @@
-// UNI2-Improvement-Mod shader pack: Grayscale
-// Black and white, by the weights the eye actually uses.
-
-#define STRENGTH 1.0   // 0 = untouched, 1 = fully grey
+#define STRENGTH 1.0
 
 sampler2D Frame : register(s0);
 float4 FrameSize : register(c0);
