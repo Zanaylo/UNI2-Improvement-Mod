@@ -6,7 +6,6 @@
 #include "Game/ModFiles.h"
 #include "Game/StagePlacement.h"
 #include "Game/ExtraStages.h"
-#include "Game/GameRestart.h"
 #include "Game/OnlineStage.h"
 #include "Game/BgCeiling.h"
 #include "Game/StageImport.h"
@@ -16,6 +15,7 @@
 #include "Core/interfaces.h"
 #include "Overlay/UiScale.h"
 #include "Overlay/UiText.h"
+#include "Overlay/Window/RestartPrompt.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -652,6 +652,79 @@ void StagesPanel::DrawPlacement()
 	UiText::Muted("%s.", StagePlacement::StatusText());
 }
 
+void StagesPanel::DrawTuning(int key, int slot)
+{
+	ImGui::TableNextColumn();
+
+	bool graded = !BgGrade::IsOff(key);
+
+	if (ImGui::Checkbox("##graded", &graded))
+		BgGrade::SetOff(key, !graded);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Untick to show this stage in the game's own colour, without Lift, "
+			"Contrast or Light. Your values are kept for when you tick it again.");
+	}
+
+	BgGrade::Grade grade = BgGrade::Of(key);
+	float glow = BgGrade::GlowOf(key);
+
+	ImGui::BeginDisabled(!graded);
+
+	ImGui::TableNextColumn();
+	bool changed = Number("##lift", &grade.lift, 0.0f, 0.25f, "%.2f");
+
+	ImGui::TableNextColumn();
+	changed = Number("##contrast", &grade.contrast, 0.5f, 3.0f, "%.2f") || changed;
+
+	if (changed)
+		BgGrade::Set(key, grade);
+
+	ImGui::TableNextColumn();
+
+	if (Number("##glow", &glow, 0.0f, kMostGlow, "%.2f"))
+		BgGrade::SetGlow(key, glow);
+
+	ImGui::EndDisabled();
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Changes only the glowing parts of this stage, like lamps, glows "
+			"and flares. The rest keeps its brightness. UNI2's own stages have none, so this "
+			"does nothing on them.");
+	}
+
+	ImGui::TableNextColumn();
+
+	StagePlacement::Place place = {};
+
+	if (slot < 0 || !StagePlacement::Of(slot, place))
+	{
+		ImGui::TextDisabled("-");
+		return;
+	}
+
+	float size = place.scale[0];
+	float low = kLeastScale;
+	float high = kMostScale;
+
+	ScaleRange(slot, low, high);
+
+	if (Number("##size", &size, low, high, "%.2f"))
+	{
+		Resize(place, size);
+		StagePlacement::Set(slot, place);
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("How big the stage is around the fight. A bigger stage "
+			"makes the fighters look smaller. The slider goes from %.2f to %.2f; "
+			"double click it to type any number.", low, high);
+	}
+}
+
 void StagesPanel::DrawPorted()
 {
 	if (ExtraStages::StageCount() == 0 && StageLibrary::Count() == 0)
@@ -666,7 +739,7 @@ void StagesPanel::DrawPorted()
 
 	const bool advanced = g_modVals.advancedStages != 0;
 
-	if (!ImGui::BeginTable("##stageports", advanced ? 9 : 7,
+	if (!ImGui::BeginTable("##stageports", advanced ? 9 : 4,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
 		ImGuiTableFlags_ScrollY, ImVec2(0.0f, Ui::Scaled(kPortedHeight))))
 	{
@@ -677,12 +750,13 @@ void StagesPanel::DrawPorted()
 	ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.0f);
 	ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed,
 		Ui::Scaled(kInGameColumn));
-	ImGui::TableSetupColumn("Colour", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kInGameColumn));
-	ImGui::TableSetupColumn("Lift", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kGradeColumn));
-	ImGui::TableSetupColumn("Contrast", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kGradeColumn));
-
 	if (advanced)
 	{
+		ImGui::TableSetupColumn("Colour", ImGuiTableColumnFlags_WidthFixed,
+			Ui::Scaled(kInGameColumn));
+		ImGui::TableSetupColumn("Lift", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kGradeColumn));
+		ImGui::TableSetupColumn("Contrast", ImGuiTableColumnFlags_WidthFixed,
+			Ui::Scaled(kGradeColumn));
 		ImGui::TableSetupColumn("Light", ImGuiTableColumnFlags_WidthFixed,
 			Ui::Scaled(kGradeColumn));
 		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,
@@ -733,85 +807,8 @@ void StagesPanel::DrawPorted()
 
 		ImGui::EndDisabled();
 
-		ImGui::TableNextColumn();
-
-		bool graded = !BgGrade::IsOff(row.key);
-
-		if (ImGui::Checkbox("##graded", &graded))
-			BgGrade::SetOff(row.key, !graded);
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("Untick to show this stage in the game's own colour, without Lift, "
-				"Contrast or Light. Your values are kept for when you tick it again.");
-		}
-
-		BgGrade::Grade grade = BgGrade::Of(row.key);
-		bool changed = false;
-
-		ImGui::BeginDisabled(!graded);
-
-		ImGui::TableNextColumn();
-		changed = Number("##lift", &grade.lift, 0.0f, 0.25f, "%.2f");
-
-		ImGui::TableNextColumn();
-		changed = Number("##contrast", &grade.contrast, 0.5f, 3.0f, "%.2f") || changed;
-
-		ImGui::EndDisabled();
-
-		if (changed)
-			BgGrade::Set(row.key, grade);
-
-		float glow = BgGrade::GlowOf(row.key);
-		StagePlacement::Place place = {};
-		const bool placed = row.slot >= 0 && StagePlacement::Of(row.slot, place);
-
 		if (advanced)
-		{
-			ImGui::TableNextColumn();
-
-			ImGui::BeginDisabled(!graded);
-
-			if (Number("##glow", &glow, 0.0f, kMostGlow, "%.2f"))
-				BgGrade::SetGlow(row.key, glow);
-
-			ImGui::EndDisabled();
-
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::SetTooltip("Changes only the glowing parts of this stage, like lamps, glows "
-					"and flares. The rest keeps its brightness. UNI2's own stages have none, so this "
-					"does nothing on them.");
-			}
-
-			ImGui::TableNextColumn();
-
-			if (!placed)
-			{
-				ImGui::TextDisabled("-");
-			}
-			else
-			{
-				float size = place.scale[0];
-				float low = kLeastScale;
-				float high = kMostScale;
-
-				ScaleRange(row.slot, low, high);
-
-				if (Number("##size", &size, low, high, "%.2f"))
-				{
-					Resize(place, size);
-					StagePlacement::Set(row.slot, place);
-				}
-
-				if (ImGui::IsItemHovered())
-				{
-					ImGui::SetTooltip("How big the stage is around the fight. A bigger stage "
-						"makes the fighters look smaller. The slider goes from %.2f to %.2f; "
-						"double click it to type any number.", low, high);
-				}
-			}
-		}
+			DrawTuning(row.key, row.slot);
 
 		ImGui::TableNextColumn();
 
@@ -841,12 +838,13 @@ void StagesPanel::DrawPorted()
 			ImGui::SameLine();
 		}
 
+		const BgGrade::Grade grade = BgGrade::Of(row.key);
 		const BgGrade::Grade untouched = BgGrade::DefaultOf(row.key);
-		const bool moved = placed && StagePlacement::Edited(row.slot);
+		const bool moved = row.slot >= 0 && StagePlacement::Edited(row.slot);
 
 		ImGui::BeginDisabled(grade.lift == untouched.lift
 			&& grade.contrast == untouched.contrast
-			&& glow == BgGrade::DefaultGlowOf(row.key) && !moved);
+			&& BgGrade::GlowOf(row.key) == BgGrade::DefaultGlowOf(row.key) && !moved);
 
 		if (ImGui::SmallButton("Default"))
 		{
@@ -946,21 +944,7 @@ void StagesPanel::DrawRestart()
 	if (!StageImport::NeedsRestart())
 		return;
 
-	ImGui::Separator();
-	UiText::Warn("The game reads its stage list only at startup. Restart to see your changes in "
-		"the picker.");
-
-	if (!GameRestart::CanSoftReset())
-	{
-		UiText::Muted("%s", GameRestart::StatusText());
-		return;
-	}
-
-	ImGui::BeginDisabled(GameRestart::IsPending());
-
-	if (ImGui::Button("Restart the game"))
-		GameRestart::SoftReset();
-
-	ImGui::EndDisabled();
+	RestartPrompt::Draw("The game reads its stage list only at startup. Restart to see your changes "
+		"in the picker.");
 }
 

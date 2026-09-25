@@ -37,6 +37,11 @@ namespace SaveData
 	bool Request();
 	bool MarkDirty();
 
+	bool IsPending();
+	bool IsBusy();
+	bool Start();
+	bool Pump();
+
 	// The game keeps one Save\<account>\SYS-DATA per account it has seen, and only one of them is
 	// the live one - so the newest is the only one worth reading, and the rest are worth showing
 	// so a stale file is never mistaken for a failed write.

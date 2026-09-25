@@ -197,6 +197,7 @@
     <ClCompile Include="src\Game\BgMipmaps.cpp" />
     <ClCompile Include="src\Game\DxtMips.cpp" />
     <ClCompile Include="src\Game\StagePlacement.cpp" />
+    <ClCompile Include="src\Game\StageSettingKey.cpp" />
     <ClCompile Include="src\Game\BgVertexProbe.cpp" />
     <ClCompile Include="src\Game\BgGrade.cpp" />
     <ClCompile Include="src\Game\BgShaderText.cpp" />
@@ -220,6 +221,7 @@
     <ClCompile Include="src\Game\CharaTint.cpp" />
     <ClCompile Include="src\Game\BattleCockpit.cpp" />
     <ClCompile Include="src\Overlay\HealthReadout.cpp" />
+    <ClCompile Include="src\Overlay\Window\RestartPrompt.cpp" />
     <ClCompile Include="src\Overlay\Window\StagesPanel.cpp" />
     <ClCompile Include="src\Overlay\Window\StagesWindow.cpp" />
     <ClCompile Include="src\Game\OstPac.cpp" />
@@ -355,6 +357,7 @@
     <ClCompile Include="src\Training\DummyRecorder.cpp" />
     <ClCompile Include="src\Training\FrameMeter.cpp" />
     <ClCompile Include="src\Training\SuperFlash.cpp" />
+    <ClCompile Include="src\Training\TrainingSave.cpp" />
     <ClCompile Include="src\Overlay\FrameMeterHud.cpp" />
     <ClCompile Include="src\Overlay\GrdPopupHud.cpp" />
     <ClCompile Include="src\Training\GrdWatch.cpp" />
@@ -488,6 +491,7 @@
     <ClInclude Include="src\Game\BgMipmaps.h" />
     <ClInclude Include="src\Game\DxtMips.h" />
     <ClInclude Include="src\Game\StagePlacement.h" />
+    <ClInclude Include="src\Game\StageSettingKey.h" />
     <ClInclude Include="src\Game\BgVertexProbe.h" />
     <ClInclude Include="src\Game\BgGrade.h" />
     <ClInclude Include="src\Game\BgShaderText.h" />
@@ -511,6 +515,7 @@
     <ClInclude Include="src\Game\CharaTint.h" />
     <ClInclude Include="src\Game\BattleCockpit.h" />
     <ClInclude Include="src\Overlay\HealthReadout.h" />
+    <ClInclude Include="src\Overlay\Window\RestartPrompt.h" />
     <ClInclude Include="src\Overlay\Window\StagesPanel.h" />
     <ClInclude Include="src\Overlay\Window\StagesWindow.h" />
     <ClInclude Include="src\Game\OstPac.h" />
@@ -647,6 +652,7 @@
     <ClInclude Include="src\Training\DummyRecorder.h" />
     <ClInclude Include="src\Training\FrameMeter.h" />
     <ClInclude Include="src\Training\SuperFlash.h" />
+    <ClInclude Include="src\Training\TrainingSave.h" />
     <ClInclude Include="src\Overlay\FrameMeterHud.h" />
     <ClInclude Include="src\Overlay\GrdPopupHud.h" />
     <ClInclude Include="src\Training\GrdWatch.h" />

@@ -217,6 +217,7 @@ FbGameFolder::Game g_scanKind = FbGameFolder::Game_None;
 char g_status[224] = "no game looked at yet";
 volatile long g_busy = 0;
 volatile long g_finished = 0;
+long g_seenFiles = -1;
 bool g_dropped[StageLibrary::kIdLast + 1] = {};
 volatile long g_progress = 0;
 
@@ -1346,6 +1347,8 @@ void StageImport::Initialize()
 	StageReplacements::Load();
 	SyncList();
 	StartBackfill();
+
+	g_seenFiles = ModFiles::Revision();
 }
 
 bool StageImport::Scan(const char* folder)
@@ -1648,13 +1651,28 @@ bool StageImport::Dropped(int id)
 
 void StageImport::Update()
 {
-	if (InterlockedCompareExchange(&g_finished, 0, 1) != 1)
+	if (InterlockedCompareExchange(&g_finished, 0, 1) == 1)
+	{
+		StageLibrary::Load();
+		StageReplacements::Load();
+		ModFiles::Rescan();
+		Apply();
+		g_seenFiles = ModFiles::Revision();
 		return;
+	}
+
+	const long files = ModFiles::Revision();
+
+	if (files == g_seenFiles || IsBusy())
+		return;
+
+	g_seenFiles = files;
 
 	StageLibrary::Load();
 	StageReplacements::Load();
-	ModFiles::Rescan();
 	Apply();
+
+	LOG("StageImport: the Mods folder changed, the stages were read again");
 }
 
 bool StageImport::IsBusy()

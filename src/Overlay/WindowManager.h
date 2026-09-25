@@ -76,6 +76,8 @@ private:
 	bool m_windowProcWarned = false;
 	bool m_windowProcMine = true;
 	bool m_focusFromSystem = false;
+	bool m_togglePolled = false;
+	bool m_toggleMessaged = false;
 	bool m_softwareCursor = false;
 	bool m_swappedButtons = false;
 	std::atomic<DWORD> m_focusEvidenceAt{ 0 };

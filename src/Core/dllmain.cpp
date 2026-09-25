@@ -299,12 +299,20 @@ void Stage_InputHooks()
 
 DWORD WINAPI InitThread(LPVOID)
 {
-	CreateModDirectories();
+	const bool folders = CreateModDirectories();
+	const DWORD folderError = GetLastError();
+
 	OpenLogger();
 	InstallCrashHandler();
 
-	LOG("%s %s starting, loaded as %s, built %s %s", UNI2_IM_NAME, UNI2_IM_VERSION,
-		D3D9Proxy::LoadedAs(), __DATE__, __TIME__);
+	BootTrace("%s %s starting, loaded as %s from %s, built %s %s", UNI2_IM_NAME, UNI2_IM_VERSION,
+		D3D9Proxy::LoadedAs(), GetModDirectory().c_str(), __DATE__, __TIME__);
+
+	if (!folders)
+	{
+		BootTrace("the mod folders under %s could not be created (error %lu), so nothing will be "
+			"written this run, this log included", GetModDirectory().c_str(), folderError);
+	}
 
 	Compat::Detect();
 
@@ -384,6 +392,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 		SetModModuleHandle(hModule);
 		DisableThreadLibraryCalls(hModule);
 
+		BootTrace("%s %s attached to process %lu", UNI2_IM_NAME, UNI2_IM_VERSION,
+			GetCurrentProcessId());
+
 		char mutexName[64] = {};
 		sprintf_s(mutexName, "UNI2_IM_instance_%lu", GetCurrentProcessId());
 
@@ -402,9 +413,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 		}
 
 		HANDLE thread = CreateThread(nullptr, 0, InitThread, nullptr, 0, nullptr);
-		if (thread != nullptr)
-			CloseHandle(thread);
+		if (thread == nullptr)
+		{
+			BootTrace("the init thread could not be started (error %lu), so the mod is attached but "
+				"will do nothing this run", GetLastError());
+			break;
+		}
 
+		CloseHandle(thread);
 		break;
 	}
 	case DLL_PROCESS_DETACH:

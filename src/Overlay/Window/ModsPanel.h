@@ -20,4 +20,5 @@ private:
 	int m_moved = -1;
 	int m_delta = 0;
 	bool m_dirty = false;
+	bool m_changed = false;
 };

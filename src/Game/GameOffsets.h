@@ -489,6 +489,7 @@ namespace GameOffsets
 	constexpr uintptr_t kSceneResultA = 0x5a5900;
 	constexpr uintptr_t kSceneResultB = 0x5a5904;
 
+	constexpr uint32_t kSceneBattle = 1;
 	constexpr uint32_t kSceneMenu = 3;
 	constexpr uint32_t kSceneCharaSelect = 24;
 	constexpr uint32_t kSceneReplayList = 46;
@@ -637,6 +638,7 @@ namespace GameOffsets
 	constexpr uintptr_t kSaveNeededFlag = 0x5a85b4;
 	constexpr uintptr_t kSaveRequest = 0x5a85b8;
 	constexpr uintptr_t kSaveBuffer = 0x5a85bc;
+	constexpr uintptr_t kSaveBusy = 0x5a85c8;
 	constexpr uintptr_t kSaveState = 0x5a85d0;
 	constexpr uintptr_t kSaveTask = 0x5a85d4;
 	constexpr uintptr_t kSaveTaskMode = 0xbc;
@@ -645,6 +647,9 @@ namespace GameOffsets
 	constexpr uintptr_t kSaveTotalSize = 0x5a860c;
 
 	constexpr uint32_t kSaveFileSize = 0x7d805;
+
+	constexpr uintptr_t kFnSaveNow = 0x228840;
+	constexpr uintptr_t kFnSavePump = 0x228900;
 
 	constexpr uintptr_t kFnBgmPlay = 0xd6f50;
 	constexpr uintptr_t kFnBgmStop = 0xd6d40;

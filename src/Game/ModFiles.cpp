@@ -64,6 +64,7 @@ HANDLE g_watch[2] = { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE };
 DWORD g_stirredAt = 0;
 bool g_stirred = false;
 bool g_packsStirred = false;
+volatile long g_revision = 0;
 bool g_slotsLogged = false;
 
 constexpr const char* kLanguageRoots[] = {
@@ -564,7 +565,13 @@ void ModFiles::Rescan()
 	}
 
 	Rebuild();
+	InterlockedIncrement(&g_revision);
 	LOG("ModFiles: %s", g_status);
+}
+
+long ModFiles::Revision()
+{
+	return InterlockedCompareExchange(&g_revision, 0, 0);
 }
 
 void ModFiles::OnFrame()

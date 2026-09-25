@@ -53,6 +53,7 @@
 #include "Game/SoundPacks.h"
 #include "Game/ModFiles.h"
 #include "Training/StageColor.h"
+#include "Training/TrainingSave.h"
 #include "D3D9/FrozenFrame.h"
 #include "D3D9/QuadRenderer.h"
 #include "Network/ModChannel.h"
@@ -492,6 +493,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			CharaSounds::Update();
 			SubtitleWatch::Update();
 			BgmControl::OnFrame();
+			TrainingSave::OnFrame();
 
 			if (SoundPacks::ConsumeScanRequest())
 				SoundPacks::Scan();

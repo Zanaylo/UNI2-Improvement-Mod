@@ -10,6 +10,7 @@
 #include "Game/GameOffsets.h"
 #include "Game/ModFiles.h"
 #include "Game/StageLibrary.h"
+#include "Game/StageSettingKey.h"
 #include "Hooks/HookManager.h"
 #include "Training/FrameStepper.h"
 
@@ -316,7 +317,7 @@ std::string Key(int stage)
 	char key[16] = {};
 	sprintf_s(key, "Stage%d", stage);
 
-	return key;
+	return StageSettingKey::For(kSection, stage, key, { "", "Glow", "Off" });
 }
 
 bool Same(float one, float other)

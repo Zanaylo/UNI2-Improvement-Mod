@@ -23,6 +23,7 @@ struct ModValues
 	int nextPaletteKey;
 	int prevPaletteKey;
 	int hideHudKey;
+	int restartGameKey;
 	int functionKey;
 
 	bool checkForUpdates;

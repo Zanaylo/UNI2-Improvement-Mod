@@ -5,6 +5,7 @@ namespace ModFiles
 	bool Initialize();
 
 	void Rescan();
+	long Revision();
 
 	void OnFrame();
 

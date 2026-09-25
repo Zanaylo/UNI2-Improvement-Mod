@@ -60,6 +60,8 @@ int g_shuffleAsked = -1;
 int g_shufflePick = -1;
 int g_takenOver = -1;
 bool g_inChooser = false;
+bool g_inBattle = false;
+uint32_t g_startedStream = 0;
 
 uint64_t g_positionBase = 0;
 float g_positionSeconds = 0.0f;
@@ -318,6 +320,7 @@ bool StartTrack(int id, void* edx)
 		BgmVolume::SetCurrent(slot, id);
 	}
 
+	g_startedStream = 0;
 	g_parkedPause = false;
 	WriteGlobal(GameOffsets::kBgmState, State_Stopped);
 
@@ -365,6 +368,44 @@ int Shuffled(int asked)
 	LOG("BgmControl: the randomizer drew %d for scene %d", picked, asked);
 
 	return picked;
+}
+
+void ForgetDrawAfterBattle()
+{
+	const uint32_t scene = SceneWatch::Current();
+
+	if (scene == SceneWatch::kNone)
+		return;
+
+	const bool inBattle = scene == GameOffsets::kSceneBattle;
+	const bool left = g_inBattle && !inBattle;
+
+	g_inBattle = inBattle;
+
+	if (!left || g_shufflePick < 0)
+		return;
+
+	LOG("BgmControl: the battle is over, so the next match draws a new track instead of %d",
+		g_shufflePick);
+
+	g_shuffleAsked = -1;
+	g_shufflePick = -1;
+}
+
+void CarryOnThroughRound(int asked, int chosen, uint32_t state)
+{
+	if (chosen == asked || state != State_Stopped || !GameState::IsInMatch())
+		return;
+
+	const uint32_t stream = ReadGlobal(GameOffsets::kBgmPlayer);
+
+	if (stream == 0 || stream != g_startedStream)
+		return;
+
+	ParkPaused("the round change");
+
+	LOG("BgmControl: the game asked for its own %d again mid-match, so %d carries on instead of "
+		"starting over", asked, chosen);
 }
 
 void __cdecl HookedBgmStart();
@@ -468,7 +509,10 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 		static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)), current.file, state);
 
 	if (loaded)
+	{
+		CarryOnThroughRound(id, chosen, state);
 		return true;
+	}
 
 	if (!StartTrack(chosen, edx))
 		return false;
@@ -580,6 +624,7 @@ void __cdecl HookedBgmStart()
 	else if (!restored)
 		MarkPlayingFrom(g_positionSeconds);
 
+	g_startedStream = ReadGlobal(GameOffsets::kBgmPlayer);
 	oBgmStart();
 }
 
@@ -824,6 +869,7 @@ int BgmControl::PinnedId()
 void BgmControl::OnFrame()
 {
 	ClearOrphanPause();
+	ForgetDrawAfterBattle();
 
 	if (g_pinned < 0)
 		return;

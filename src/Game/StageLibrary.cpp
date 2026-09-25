@@ -21,6 +21,9 @@ namespace {
 constexpr const char* kSection = "StageLibrary";
 constexpr const char* kLegacySection = "Stages";
 constexpr const char* kNote = "stage.txt";
+constexpr const char* kModel = "bg.fbx.bin";
+constexpr uint64_t kFnvOffset = 0xcbf29ce484222325ull;
+constexpr uint64_t kFnvPrime = 0x100000001b3ull;
 constexpr int kOwnEntries = 30;
 constexpr size_t kFirstSectionBytes = 8192;
 constexpr size_t kLastSectionBytes = 512 * 1024;
@@ -29,6 +32,7 @@ std::vector<StageLibrary::Entry> g_entries;
 std::vector<int> g_slots;
 int g_bySlot[StageLibrary::kSlotLast + 1] = {};
 SRWLOCK g_lock = SRWLOCK_INIT;
+volatile long g_revision = 0;
 
 bool g_ownedKnown = false;
 bool g_slotsFromOwned = false;
@@ -94,14 +98,19 @@ void Assign()
 			? slots[entry.position] : -1;
 	}
 
-	for (int& held : g_bySlot)
-		held = 0;
+	int bySlot[StageLibrary::kSlotLast + 1] = {};
 
 	for (const StageLibrary::Entry& entry : g_entries)
 	{
 		if (StageLibrary::Bindable(entry.slot))
-			g_bySlot[entry.slot] = entry.id + 1;
+			bySlot[entry.slot] = entry.id + 1;
 	}
+
+	if (memcmp(bySlot, g_bySlot, sizeof(bySlot)) == 0)
+		return;
+
+	memcpy(g_bySlot, bySlot, sizeof(bySlot));
+	InterlockedIncrement(&g_revision);
 }
 
 std::string Key(int id)
@@ -173,6 +182,55 @@ void Field(const std::string& text, size_t& at, std::string& out)
 
 	out = bar == std::string::npos ? text.substr(at) : text.substr(at, bar - at);
 	at = bar == std::string::npos ? text.size() : bar + 1;
+}
+
+std::string Lowered(const std::string& text)
+{
+	std::string out = text;
+
+	for (char& character : out)
+		character = static_cast<char>(tolower(static_cast<unsigned char>(character)));
+
+	return out;
+}
+
+std::string Hashed(const std::string& text)
+{
+	uint64_t hash = kFnvOffset;
+
+	for (const char character : text)
+	{
+		hash ^= static_cast<uint8_t>(character);
+		hash *= kFnvPrime;
+	}
+
+	char out[20] = {};
+	sprintf_s(out, "%016llx", static_cast<unsigned long long>(hash));
+
+	return out;
+}
+
+std::string Identity(const StageLibrary::Entry& entry)
+{
+	if (entry.game.empty() && entry.folder.empty())
+		return Lowered(entry.name);
+
+	return Lowered(entry.game) + "|" + Lowered(entry.folder);
+}
+
+void AssignKeys()
+{
+	std::vector<std::string> taken;
+
+	for (StageLibrary::Entry& entry : g_entries)
+	{
+		entry.key = Hashed(Identity(entry));
+
+		if (std::find(taken.begin(), taken.end(), entry.key) != taken.end())
+			entry.key = Hashed(Identity(entry) + "#" + std::to_string(entry.id));
+
+		taken.push_back(entry.key);
+	}
 }
 
 bool Insert(const StageLibrary::Entry& entry)
@@ -371,20 +429,105 @@ void Prune()
 	g_entries.swap(kept);
 }
 
+int FirstFree(const std::vector<int>& reserved)
+{
+	for (int id = StageLibrary::kSlotFirst; id <= StageLibrary::kIdLast; ++id)
+	{
+		if (StageLibrary::GameOwns(id) || Known(id))
+			continue;
+
+		if (std::find(reserved.begin(), reserved.end(), id) != reserved.end())
+			continue;
+
+		if (GetFileAttributesA(StageLibrary::FolderOf(id).c_str()) != INVALID_FILE_ATTRIBUTES)
+			continue;
+
+		return id;
+	}
+
+	return -1;
+}
+
+bool IsStageFolder(const std::string& folder)
+{
+	return GetFileAttributesA((folder + "\\" + kModel).c_str()) != INVALID_FILE_ATTRIBUTES;
+}
+
+void NameInNote(const std::string& folder, const std::string& name)
+{
+	const std::string path = folder + "\\" + kNote;
+
+	if (GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES)
+		return;
+
+	FILE* file = nullptr;
+
+	if (fopen_s(&file, path.c_str(), "wb") != 0 || file == nullptr)
+		return;
+
+	fprintf(file, "// UNI2 Improvement Mod\r\nName = \"%s\"\r\nSource = \"%s\"\r\n", name.c_str(),
+		name.c_str());
+	fclose(file);
+}
+
+void AdoptLoose(const std::string& leaf)
+{
+	const std::string from = StageLibrary::Root() + "\\" + leaf;
+
+	if (!IsStageFolder(from))
+		return;
+
+	const int id = FirstFree(std::vector<int>());
+
+	if (id < 0)
+	{
+		LOG("StageLibrary: '%s' is a stage but every folder number is taken", leaf.c_str());
+		return;
+	}
+
+	if (!MoveFileA(from.c_str(), StageLibrary::FolderOf(id).c_str()))
+	{
+		LOG("StageLibrary: '%s' could not become bg%03d (error %lu)", leaf.c_str(), id,
+			GetLastError());
+		return;
+	}
+
+	NameInNote(StageLibrary::FolderOf(id), leaf);
+
+	StageLibrary::Entry entry = {};
+	entry.id = id;
+	entry.slot = -1;
+	entry.shown = true;
+	entry.name = leaf;
+
+	ReadNote(entry);
+	Insert(entry);
+	Save(entry);
+
+	LOG("StageLibrary: the folder '%s' was dropped in with no number, it is bg%03d now", leaf.c_str(),
+		id);
+}
+
 void Adopt()
 {
 	WIN32_FIND_DATAA found = {};
-	const HANDLE search = FindFirstFileA((StageLibrary::Root() + "\\bg*").c_str(), &found);
+	const HANDLE search = FindFirstFileA((StageLibrary::Root() + "\\*").c_str(), &found);
 
 	if (search == INVALID_HANDLE_VALUE)
 		return;
 
 	do
 	{
-		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 || found.cFileName[0] == '.')
 			continue;
 
 		const int id = NumberAfter(found.cFileName, "bg");
+
+		if (id < 0)
+		{
+			AdoptLoose(found.cFileName);
+			continue;
+		}
 
 		if (id < StageLibrary::kSlotFirst || id > StageLibrary::kIdLast
 			|| StageLibrary::GameOwns(id) || Known(id))
@@ -451,6 +594,7 @@ void StageLibrary::Load()
 	std::sort(g_entries.begin(), g_entries.end(),
 		[](const Entry& a, const Entry& b) { return a.id < b.id; });
 
+	AssignKeys();
 	Assign();
 
 	ReleaseSRWLockExclusive(&g_lock);
@@ -583,26 +727,22 @@ int StageLibrary::SlotOf(int id)
 int StageLibrary::FreeId(const std::vector<int>& reserved)
 {
 	AcquireSRWLockShared(&g_lock);
-
-	int free = -1;
-
-	for (int id = kSlotFirst; id <= kIdLast && free < 0; ++id)
-	{
-		if (GameOwns(id) || Known(id))
-			continue;
-
-		if (std::find(reserved.begin(), reserved.end(), id) != reserved.end())
-			continue;
-
-		if (GetFileAttributesA(FolderOf(id).c_str()) != INVALID_FILE_ATTRIBUTES)
-			continue;
-
-		free = id;
-	}
-
+	const int free = FirstFree(reserved);
 	ReleaseSRWLockShared(&g_lock);
 
 	return free;
+}
+
+long StageLibrary::Revision()
+{
+	return InterlockedCompareExchange(&g_revision, 0, 0);
+}
+
+std::string StageLibrary::KeyOf(int id)
+{
+	Entry entry = {};
+
+	return Of(id, entry) ? entry.key : std::string();
 }
 
 void StageLibrary::Put(const Entry& entry)
@@ -615,6 +755,7 @@ void StageLibrary::Put(const Entry& entry)
 	std::sort(g_entries.begin(), g_entries.end(),
 		[](const Entry& a, const Entry& b) { return a.id < b.id; });
 
+	AssignKeys();
 	Assign();
 
 	ReleaseSRWLockExclusive(&g_lock);

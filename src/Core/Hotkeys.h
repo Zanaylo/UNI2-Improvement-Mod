@@ -16,6 +16,7 @@ namespace Hotkeys
 		Action_NextPalette,
 		Action_PreviousPalette,
 		Action_HideHud,
+		Action_RestartGame,
 		Action_Count,
 	};
 

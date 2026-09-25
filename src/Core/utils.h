@@ -49,6 +49,8 @@ bool TryWriteUnaligned(void* address, uint32_t value);
 std::string GetSystemDirectoryPath();
 bool IsUnderSystemDirectory(const char* path);
 
+DWORD NonZeroTick();
+
 void NoteHotkeyMessage(int virtualKey);
 
 void SetHotkeyFocus(bool focused);

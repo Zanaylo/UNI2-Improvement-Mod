@@ -21,7 +21,9 @@ constexpr float kFlowMark = 128.0f;
 constexpr float kLampMark = 128.0f;
 constexpr int kBlendOpaque = 0;
 constexpr int kBlendAdd = 2;
+constexpr int kBlendSubtract = 4;
 constexpr int kBlendUnset = 0x7fffffff;
+constexpr double kCardBlack = 8.0 / 255.0;
 
 constexpr float kWindowCover = 0.9f;
 constexpr float kWindowBand = 0.6f;
@@ -486,6 +488,37 @@ int Shelf(const std::vector<FbxExWriter::Material>& materials,
 	return 0;
 }
 
+bool Carded(const std::vector<int>& used, const std::vector<BbtagArt::Sheet>& sheets,
+	const std::vector<float>& vertices, bool flip)
+{
+	if (used.empty())
+		return false;
+
+	const size_t rows = vertices.size() / kFloats;
+
+	for (int index : used)
+	{
+		if (index < 0 || index >= static_cast<int>(sheets.size()) || !sheets[index].Lit())
+			return false;
+
+		const BbtagArt::Sheet& sheet = sheets[index];
+
+		for (size_t i = 0; i < rows; ++i)
+		{
+			const float* const one = &vertices[i * kFloats];
+			const double w = flip ? 1.0 - one[11] : one[11];
+			double shade = one[6];
+			shade = one[7] > shade ? one[7] : shade;
+			shade = one[8] > shade ? one[8] : shade;
+
+			if (sheet.Peak(one[10], w) * shade > kCardBlack)
+				return false;
+		}
+	}
+
+	return true;
+}
+
 void Strips(const BbtagMua::Model& model, double scale, bool mirror, Siblings& out)
 {
 	out.clear();
@@ -926,6 +959,7 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 
 	std::vector<bool> cutout;
 	std::vector<const std::vector<uint8_t>*> pixels;
+	std::vector<BbtagArt::Sheet> sheets;
 
 	for (const std::string& name : model.Textures())
 	{
@@ -937,6 +971,7 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 		built.textures.push_back(image == out.images.end() ? Lowered(name) : leaf);
 		pixels.push_back(image == out.images.end() ? nullptr : &image->second);
 		cutout.push_back(BbtagArt::Transparent(blob));
+		sheets.emplace_back(blob);
 	}
 
 	for (const std::vector<int>& assigned : model.Materials())
@@ -1083,6 +1118,7 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 
 		bool clear = faded;
 		std::vector<FbxExWriter::Submesh> submeshes;
+		std::vector<int> used;
 
 		for (int p = 0; p < mesh.parts; ++p)
 		{
@@ -1116,7 +1152,12 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 			if (submesh.indices.empty())
 				continue;
 
-			clear = clear || cutout[built.materials[submesh.material].textureIndex];
+			const int sheet = built.materials[submesh.material].textureIndex;
+			clear = clear || cutout[sheet];
+
+			if (std::find(used.begin(), used.end(), sheet) == used.end())
+				used.push_back(sheet);
+
 			submeshes.push_back(submesh);
 		}
 
@@ -1125,7 +1166,9 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 
 		const int plate = Shelf(built.materials, submeshes);
 		const int mode = BlendOf(model, mesh);
-		const bool adds = mode == kBlendAdd;
+		const bool written = mode == kBlendOpaque || mode == kBlendAdd || mode == kBlendSubtract;
+		const bool adds = mode == kBlendAdd
+			|| (!written && !clear && Carded(used, sheets, vertices, flip));
 
 		clear = clear || mode != kBlendOpaque;
 		out.fading = out.fading || faded;

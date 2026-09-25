@@ -26,6 +26,7 @@ private:
 	void DrawRoom();
 	void DrawPlacement();
 	void DrawPorted();
+	void DrawTuning(int key, int slot);
 	void DrawHelp();
 	void DrawRestart();
 

@@ -15,6 +15,19 @@ constexpr const char* kSteamMagic = "UNIst-SaveData ";
 
 constexpr size_t kMagicBytes = 15;
 
+using SaveNow_t = void(__stdcall*)(char);
+using SavePump_t = void(__cdecl*)();
+
+void* GameFunction(uintptr_t rva)
+{
+	const uintptr_t address = RvaToAddress(rva);
+
+	if (!IsAddressInGameModule(address))
+		return nullptr;
+
+	return reinterpret_cast<void*>(address);
+}
+
 void* Address(uintptr_t rva)
 {
 	const uintptr_t address = RvaToAddress(rva);
@@ -150,6 +163,44 @@ bool SaveData::Request()
 bool SaveData::MarkDirty()
 {
 	return WriteByte(GameOffsets::kSaveNeededFlag, 1);
+}
+
+bool SaveData::IsPending()
+{
+	uint8_t dirty = 0;
+	uint8_t enabled = 0;
+
+	return ReadByte(GameOffsets::kSaveNeededFlag, dirty) && dirty != 0
+		&& ReadByte(GameOffsets::kSaveEnabled, enabled) && enabled != 0;
+}
+
+bool SaveData::IsBusy()
+{
+	uint32_t busy = 0;
+
+	return ReadDword(GameOffsets::kSaveBusy, busy) && busy != 0;
+}
+
+bool SaveData::Start()
+{
+	const auto saveNow = reinterpret_cast<SaveNow_t>(GameFunction(GameOffsets::kFnSaveNow));
+
+	if (saveNow == nullptr || IsBusy())
+		return false;
+
+	saveNow(0);
+	return true;
+}
+
+bool SaveData::Pump()
+{
+	const auto pump = reinterpret_cast<SavePump_t>(GameFunction(GameOffsets::kFnSavePump));
+
+	if (pump == nullptr)
+		return false;
+
+	pump();
+	return true;
 }
 
 bool SaveData::ListFiles(std::vector<File>& out)

@@ -402,6 +402,7 @@ void Settings::ApplySettings()
 	g_modVals.toggleHitboxKey = GetVirtualKeyFromName(g_settings.toggleHitboxKey);
 	g_modVals.toggleFrameMeterKey = GetVirtualKeyFromName(g_settings.toggleFrameMeterKey);
 	g_modVals.hideHudKey = GetVirtualKeyFromName(g_settings.hideHudKey);
+	g_modVals.restartGameKey = GetVirtualKeyFromName(g_settings.restartGameKey);
 	g_modVals.freezeFrameKey = GetVirtualKeyFromName(g_settings.freezeFrameKey);
 	g_modVals.stepForwardKey = GetVirtualKeyFromName(g_settings.stepForwardKey);
 	g_modVals.nextPaletteKey = GetVirtualKeyFromName(g_settings.nextPaletteKey);

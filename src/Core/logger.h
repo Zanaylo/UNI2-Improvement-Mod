@@ -14,6 +14,8 @@ void WriteLog(const char* format, ...);
 
 void WriteLogRaw(const char* format, ...);
 
+void BootTrace(const char* format, ...);
+
 void LogSection(const char* name);
 
 const std::string& GetLogSessionStamp();

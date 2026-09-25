@@ -86,6 +86,8 @@ void Hotkeys::Load()
 		&g_modVals.prevPaletteKey, &g_settings.prevPaletteKey, &g_settings.padPrevPalette };
 	g_entries[Action_HideHud] = { "Hide the HUD", "HideHud",
 		&g_modVals.hideHudKey, &g_settings.hideHudKey, &g_settings.padHideHud };
+	g_entries[Action_RestartGame] = { "Restart the game", "RestartGame",
+		&g_modVals.restartGameKey, &g_settings.restartGameKey, &g_settings.padRestartGame };
 
 	for (int i = 0; i < Action_Count; ++i)
 	{

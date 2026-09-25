@@ -20,6 +20,7 @@ namespace StageLibrary
 		std::string game;
 		std::string folder;
 		std::string name;
+		std::string key;
 	};
 
 	void Load();
@@ -39,6 +40,8 @@ namespace StageLibrary
 	bool Of(int id, Entry& out);
 	int IdForSlot(int slot);
 	int SlotOf(int id);
+	std::string KeyOf(int id);
+	long Revision();
 
 	int FreeId(const std::vector<int>& reserved);
 

@@ -396,11 +396,24 @@ constexpr DWORD kKeyMessageFreshMs = 250;
 volatile LONG g_keyMessageTick[256] = {};
 volatile LONG g_hotkeyFocus = 1;
 
-bool TakeKeyMessage(int virtualKey)
+DWORD TakeKeyMessage(int virtualKey)
 {
 	const DWORD at = static_cast<DWORD>(InterlockedExchange(&g_keyMessageTick[virtualKey], 0));
 
-	return at != 0 && GetTickCount() - at < kKeyMessageFreshMs;
+	if (at == 0 || GetTickCount() - at >= kKeyMessageFreshMs)
+		return 0;
+
+	return at;
+}
+
+bool EchoesAsyncEdge(DWORD messageAt, DWORD asyncEdgeAt)
+{
+	if (asyncEdgeAt == 0)
+		return false;
+
+	const DWORD gap = messageAt > asyncEdgeAt ? messageAt - asyncEdgeAt : asyncEdgeAt - messageAt;
+
+	return gap < kKeyMessageFreshMs;
 }
 
 bool AsyncKeyDown(int virtualKey)
@@ -410,14 +423,19 @@ bool AsyncKeyDown(int virtualKey)
 
 }
 
+DWORD NonZeroTick()
+{
+	const DWORD now = GetTickCount();
+
+	return now != 0 ? now : 1;
+}
+
 void NoteHotkeyMessage(int virtualKey)
 {
 	if (virtualKey <= 0 || virtualKey > 255)
 		return;
 
-	const DWORD now = GetTickCount();
-
-	InterlockedExchange(&g_keyMessageTick[virtualKey], static_cast<LONG>(now != 0 ? now : 1));
+	InterlockedExchange(&g_keyMessageTick[virtualKey], static_cast<LONG>(NonZeroTick()));
 }
 
 void SetHotkeyFocus(bool focused)
@@ -436,17 +454,23 @@ bool IsHotkeyPressed(int virtualKey)
 		return false;
 
 	static bool previousState[256] = {};
+	static DWORD asyncEdgeAt[256] = {};
 
 	const bool isDown = AsyncKeyDown(virtualKey);
-	const bool wasDown = previousState[virtualKey];
-	const bool messageEdge = TakeKeyMessage(virtualKey);
+	const bool asyncEdge = isDown && !previousState[virtualKey];
+	const DWORD messageAt = TakeKeyMessage(virtualKey);
 
-	previousState[virtualKey] = isDown || messageEdge;
+	if (asyncEdge)
+		asyncEdgeAt[virtualKey] = NonZeroTick();
+
+	const bool messageEdge = messageAt != 0 && !EchoesAsyncEdge(messageAt, asyncEdgeAt[virtualKey]);
+
+	previousState[virtualKey] = isDown || messageAt != 0;
 
 	if (KeyboardCapture::OwnsKeyboard())
 		return false;
 
-	return messageEdge || (isDown && !wasDown);
+	return asyncEdge || messageEdge;
 }
 
 bool IsHotkeyHeld(int virtualKey)

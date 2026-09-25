@@ -5,6 +5,8 @@
 #include "Core/utils.h"
 #include "Game/ExtraStages.h"
 #include "Game/GameOffsets.h"
+#include "Game/StageLibrary.h"
+#include "Game/StageSettingKey.h"
 
 #include <Windows.h>
 
@@ -27,6 +29,7 @@ std::map<int, StagePlacement::Place> g_edited;
 std::set<int> g_unknown;
 
 int g_stage = -1;
+long g_revision = -1;
 char g_status[160] = "no stage is loaded";
 
 std::string Key(int stage)
@@ -34,7 +37,7 @@ std::string Key(int stage)
 	char text[32] = {};
 	sprintf_s(text, "Stage%03d", stage);
 
-	return text;
+	return StageSettingKey::For(kSection, StageLibrary::IdForSlot(stage), text, { "" });
 }
 
 void Describe(int stage)
@@ -123,6 +126,20 @@ bool Learn(int stage)
 	return true;
 }
 
+void ForgetMovedSlots()
+{
+	const long revision = StageLibrary::Revision();
+
+	if (revision == g_revision)
+		return;
+
+	g_revision = revision;
+	g_shipped.clear();
+	g_edited.clear();
+	g_unknown.clear();
+	g_stage = -1;
+}
+
 bool Recall(int stage, StagePlacement::Place& out)
 {
 	char stored[128] = {};
@@ -143,6 +160,8 @@ bool Recall(int stage, StagePlacement::Place& out)
 
 void StagePlacement::Update()
 {
+	ForgetMovedSlots();
+
 	const uintptr_t pending = RvaToAddress(GameOffsets::kBgPendingNumber);
 
 	if (!IsAddressInGameModule(pending))
@@ -190,6 +209,8 @@ int StagePlacement::Current()
 
 bool StagePlacement::Of(int stage, Place& out)
 {
+	ForgetMovedSlots();
+
 	const std::map<int, Place>::const_iterator edit = g_edited.find(stage);
 
 	if (edit != g_edited.end())
@@ -255,6 +276,8 @@ void StagePlacement::Forget(int stage)
 
 bool StagePlacement::Edited(int stage)
 {
+	ForgetMovedSlots();
+
 	return g_edited.find(stage) != g_edited.end();
 }
 

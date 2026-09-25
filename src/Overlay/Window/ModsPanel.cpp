@@ -5,6 +5,7 @@
 #include "Game/StageImport.h"
 #include "Overlay/UiScale.h"
 #include "Overlay/UiText.h"
+#include "Overlay/Window/RestartPrompt.h"
 
 #include <imgui.h>
 
@@ -37,7 +38,10 @@ void ModsPanel::Draw()
 	if (m_install.TakeResult(picked) && !picked.empty())
 	{
 		if (ModPacks::Install(picked, m_status, sizeof(m_status)))
+		{
 			ModFiles::Rescan();
+			m_changed = true;
+		}
 	}
 
 	if (!ImGui::BeginTabBar("##modstabs"))
@@ -115,6 +119,7 @@ void ModsPanel::DrawList()
 		return;
 
 	m_dirty = false;
+	m_changed = true;
 	ModFiles::Rescan();
 }
 
@@ -260,6 +265,12 @@ void ModsPanel::DrawFooter()
 
 	UiText::Good("%d file(s) from %d mod(s) are in use.", ModPacks::FileCount(),
 		ModPacks::EnabledCount());
+
+	if (!m_changed)
+		return;
+
+	RestartPrompt::Draw("The music, the stage list and some sound effects are only read when the "
+		"game starts. Restart to use every file of the mods you changed.");
 }
 
 void ModsPanel::DrawHelp()

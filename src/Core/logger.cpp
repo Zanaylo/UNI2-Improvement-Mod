@@ -160,6 +160,22 @@ void WriteLog(const char* format, ...)
 	fflush(g_logFile);
 }
 
+void BootTrace(const char* format, ...)
+{
+	char line[kLineBytes] = {};
+
+	va_list args;
+	va_start(args, format);
+	vsnprintf(line, sizeof(line), format, args);
+	va_end(args);
+
+	char tagged[kLineBytes + 32] = {};
+	sprintf_s(tagged, "[UNI2-IM boot] %s\n", line);
+	OutputDebugStringA(tagged);
+
+	WriteLog("%s", line);
+}
+
 void WriteLogRaw(const char* format, ...)
 {
 	std::lock_guard<std::mutex> lock(g_logMutex);

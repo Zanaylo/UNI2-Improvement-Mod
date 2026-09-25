@@ -13,6 +13,7 @@
 #include "Core/utils.h"
 #include "D3D9/DeviceHooks.h"
 #include "Game/GamePatches.h"
+#include "Game/GameRestart.h"
 #include "Game/OnlineState.h"
 #include "Hooks/InputProbe.h"
 #include "Overlay/FrameMeterHud.h"
@@ -44,10 +45,18 @@ constexpr DWORD kRestoreRetryMs = 2000;
 
 WNDPROC g_originalWndProc = nullptr;
 
-DWORD NonZeroTick()
+void RestartFromHotkey()
 {
-	const DWORD now = GetTickCount();
-	return now != 0 ? now : 1;
+	if (GameRestart::IsPending())
+		return;
+
+	if (!GameRestart::SoftReset())
+	{
+		NotificationBar::Add("The game can't restart right now: %s.", GameRestart::StatusText());
+		return;
+	}
+
+	NotificationBar::Add("Restarting the game.");
 }
 
 bool IsFocusEvidence(UINT message)
@@ -287,6 +296,10 @@ LRESULT WindowManager::HandleWindowMessage(HWND window, UINT message, WPARAM wPa
 	ObserveFocus(message, wParam);
 	NoteKeyDown(message, wParam, lParam);
 
+	if ((message == WM_KEYDOWN || message == WM_SYSKEYDOWN) &&
+		static_cast<int>(wParam) == g_modVals.toggleOverlayKey)
+		m_toggleMessaged = true;
+
 	if (!m_initialized)
 		return 0;
 
@@ -416,8 +429,8 @@ bool WindowManager::LooksFocused(DWORD now) const
 	if (FocusEvidenceIsFresh(now))
 		return true;
 
-	if (m_focusFromSystem)
-		return m_hasFocus;
+	if (m_focusFromSystem && m_hasFocus)
+		return true;
 
 	return ForegroundIsThisProcess();
 }
@@ -431,12 +444,18 @@ void WindowManager::ReportHotkeyGate(DWORD now)
 
 	const int key = g_modVals.toggleOverlayKey;
 
-	LOG("[Hotkeys] focus=%d from=%s foreground=0x%p(%s) keyEvidence=%d capture=%d %s=%s wndproc=%s",
-		m_hasFocus ? 1 : 0, m_focusFromSystem ? "activation" : "poll",
+	LOG("[Hotkeys] focus=%d poll=%d activation=%s keyEvidence=%d foreground=0x%p(%s) capture=%d "
+		"%s seenByPoll=%d seenByMessage=%d wndproc=%s",
+		m_hasFocus ? 1 : 0, ForegroundIsThisProcess() ? 1 : 0,
+		m_focusFromSystem ? (m_hasFocus ? "active" : "inactive") : "never seen",
+		FocusEvidenceIsFresh(now) ? 1 : 0,
 		static_cast<void*>(GetForegroundWindow()), ForegroundIsThisProcess() ? "ours" : "other",
-		FocusEvidenceIsFresh(now) ? 1 : 0, KeyboardCapture::OwnsKeyboard() ? 1 : 0,
-		GetNameFromVirtualKey(key), (GetAsyncKeyState(key) & 0x8000) != 0 ? "down" : "up",
+		KeyboardCapture::OwnsKeyboard() ? 1 : 0,
+		GetNameFromVirtualKey(key), m_togglePolled ? 1 : 0, m_toggleMessaged ? 1 : 0,
 		m_windowProcMine ? "the mod's" : "taken");
+
+	m_togglePolled = false;
+	m_toggleMessaged = false;
 }
 
 void WindowManager::RefreshFocus()
@@ -515,6 +534,9 @@ void WindowManager::HandleHotkeys()
 
 	RefreshFocus();
 
+	if (ButtonIsDown(g_modVals.toggleOverlayKey))
+		m_togglePolled = true;
+
 	if (IsHotkeyHeld(VK_CONTROL) && IsHotkeyPressed(VK_F1))
 	{
 		IWindow* debug = m_container->GetWindow(WindowType_Debug);
@@ -526,7 +548,12 @@ void WindowManager::HandleHotkeys()
 	{
 		IWindow* main = m_container->GetWindow(WindowType_Main);
 		if (main != nullptr)
+		{
 			main->Toggle();
+			LOG("[Hotkeys] %s toggled the main window %s",
+				GetNameFromVirtualKey(g_modVals.toggleOverlayKey),
+				main->IsOpen() ? "open" : "closed");
+		}
 	}
 
 	if (Hotkeys::Pressed(Hotkeys::Action_FreezeFrame))
@@ -555,6 +582,9 @@ void WindowManager::HandleHotkeys()
 
 	if (Hotkeys::Pressed(Hotkeys::Action_HideHud))
 		BattleCockpit::SetHidden(!BattleCockpit::IsHidden());
+
+	if (Hotkeys::Pressed(Hotkeys::Action_RestartGame))
+		RestartFromHotkey();
 }
 
 

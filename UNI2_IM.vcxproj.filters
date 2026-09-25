@@ -321,6 +321,9 @@
     <ClCompile Include="src\Game\StagePlacement.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\StageSettingKey.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\BgVertexProbe.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -389,6 +392,9 @@
     </ClCompile>
     <ClCompile Include="src\Overlay\HealthReadout.cpp">
       <Filter>Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Window\RestartPrompt.cpp">
+      <Filter>Overlay\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Window\StagesPanel.cpp">
       <Filter>Overlay\Window</Filter>
@@ -793,6 +799,9 @@
       <Filter>Training</Filter>
     </ClCompile>
     <ClCompile Include="src\Training\SuperFlash.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\TrainingSave.cpp">
       <Filter>Training</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\FrameMeterHud.cpp">
@@ -1289,6 +1298,9 @@
     <ClInclude Include="src\Game\StagePlacement.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\StageSettingKey.h">
+      <Filter>Game</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\BgVertexProbe.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -1357,6 +1369,9 @@
     </ClInclude>
     <ClInclude Include="src\Overlay\HealthReadout.h">
       <Filter>Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Window\RestartPrompt.h">
+      <Filter>Overlay\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Window\StagesPanel.h">
       <Filter>Overlay\Window</Filter>
@@ -1764,6 +1779,9 @@
       <Filter>Training</Filter>
     </ClInclude>
     <ClInclude Include="src\Training\SuperFlash.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\TrainingSave.h">
       <Filter>Training</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\FrameMeterHud.h">

@@ -12,6 +12,7 @@ SETTING_STRING(stepForwardKey,      "Keybinds", "StepForward",          "F6")
 SETTING_STRING(nextPaletteKey,      "Keybinds", "NextPalette",          "F8")
 SETTING_STRING(prevPaletteKey,      "Keybinds", "PreviousPalette",      "F7")
 SETTING_STRING(hideHudKey,          "Keybinds", "HideHud",              "")
+SETTING_STRING(restartGameKey,      "Keybinds", "RestartGame",          "")
 
 SETTING_STRING(functionKey,         "Keybinds", "FunctionKey",          "")
 
@@ -24,6 +25,7 @@ SETTING_STRING(padStepForward,      "PadKeybinds", "StepForward",       "Y")
 SETTING_STRING(padNextPalette,      "PadKeybinds", "NextPalette",       "DPad Right")
 SETTING_STRING(padPrevPalette,      "PadKeybinds", "PreviousPalette",   "DPad Left")
 SETTING_STRING(padHideHud,          "PadKeybinds", "HideHud",           "")
+SETTING_STRING(padRestartGame,      "PadKeybinds", "RestartGame",       "")
 
 SETTING_INT(freezeMode,             "Training", "FreezeMode",           0)
 
