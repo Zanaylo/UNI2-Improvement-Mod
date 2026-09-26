@@ -195,6 +195,8 @@ namespace GameOffsets
 	constexpr uintptr_t kBgLoadedIndex = 0x5a3e60;
 
 	constexpr uintptr_t kBgTrainingNumber = 0x87accc;
+	constexpr uintptr_t kTrainingStageSaved = 0x5a8370;
+	constexpr uintptr_t kTrainingStageLive = 0x444888c;
 
 	constexpr uintptr_t kBgStageDrawn = 0x657e34;
 

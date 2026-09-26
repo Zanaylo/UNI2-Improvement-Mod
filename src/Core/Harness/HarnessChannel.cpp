@@ -5,6 +5,7 @@
 #include "Core/Harness/Harness.h"
 #include "Core/Harness/InjectedKeys.h"
 #include "Core/Harness/QuietWindow.h"
+#include "Core/Harness/StageCommands.h"
 #include "Core/logger.h"
 #include "Game/Display/MovieWindow.h"
 #include "Game/Engine/SceneWatch.h"
@@ -174,6 +175,11 @@ std::string Execute(const std::string& line)
 
 	if (verb == "window")
 		return std::string("ok ") + QuietWindow::StatusText() + "; " + MovieWindow::StatusText();
+
+	std::string reply;
+
+	if (StageCommands::Execute(words, line, reply))
+		return reply;
 
 	return "error unknown command " + verb;
 }

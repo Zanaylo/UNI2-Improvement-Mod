@@ -16,6 +16,7 @@
 #include "Game/Stages/Bbtag/BbtagScript.h"
 #include "Game/Stages/StageArchive.h"
 #include "Game/Stages/StageCards.h"
+#include "Game/Stages/StageIcons.h"
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StageNote.h"
 #include "Game/Stages/StageReplacements.h"
@@ -340,6 +341,53 @@ const char* Tag(FbGameFolder::Game game)
 		return " (BBCF)";
 
 	return "";
+}
+
+std::string IconOf(FbGameFolder::Game game, const std::string& folder, const std::string& name)
+{
+	const std::string tag = Tag(game);
+	const bool tagged = !tag.empty() && name.size() > tag.size() &&
+		name.compare(name.size() - tag.size(), tag.size(), tag) == 0;
+
+	const std::string shown = StageIcons::FolderFor(game,
+		tagged ? name.substr(0, name.size() - tag.size()) : name, folder);
+
+	return shown.empty() ? StageIcons::FolderFor(game, English(game, folder), folder) : shown;
+}
+
+bool TakeBundled(FbGameFolder::Game game, const std::string& folder, int id)
+{
+	const uint8_t* data = nullptr;
+	size_t size = 0;
+
+	return StageIcons::Bundled(game, folder, data, size) && StageThumb::TakeImage(data, size, id);
+}
+
+bool TakeIcon(FbGameFolder::Game game, const std::string& folder, const std::string& name, int id)
+{
+	const std::string icon = IconOf(game, folder, name);
+
+	if (!icon.empty() && StageThumb::TakeFolder(icon, id))
+		return true;
+
+	return TakeBundled(game, folder, id);
+}
+
+void RefreshCard(const StageLibrary::Entry& entry, bool bundleChanged)
+{
+	const FbGameFolder::Game game = GameNamed(entry.game);
+	const std::string icon = IconOf(game, entry.folder, entry.name);
+
+	if (!icon.empty())
+	{
+		if (StageIcons::Newer(icon, StageThumb::CardPath(entry.id)))
+			StageThumb::TakeFolder(icon, entry.id);
+
+		return;
+	}
+
+	if (bundleChanged || !StageThumb::HasCard(entry.id))
+		TakeBundled(game, entry.folder, entry.id);
 }
 
 std::string ShiftJis(const std::string& utf8)
@@ -870,6 +918,10 @@ void MakeCard(const Job& job, const std::string& block)
 	}
 
 	const FbGameFolder::Game game = FbGameFolder::Detect(job.folder.c_str());
+
+	if (TakeIcon(game, job.stage, job.name, job.id))
+		return;
+
 	int cell = -1;
 
 	if (game == FbGameFolder::Game_DFCI)
@@ -1328,12 +1380,16 @@ void StageImport::Initialize()
 	std::vector<StageLibrary::Entry> entries;
 	StageLibrary::Snapshot(entries);
 
+	const bool bundleChanged = StageIcons::BundleChanged();
+
 	for (StageLibrary::Entry& entry : entries)
 	{
 		KeepNote(entry);
 		Relocalise(entry);
 		LiftImages(StageLibrary::FolderOf(entry.id),
 			ImageDonor(GameNamed(entry.game), entry.folder));
+
+		RefreshCard(entry, bundleChanged);
 
 		const std::string english = English(GameNamed(entry.game), entry.folder);
 
@@ -1343,6 +1399,9 @@ void StageImport::Initialize()
 		entry.name = english;
 		StageLibrary::Put(entry);
 	}
+
+	if (bundleChanged)
+		StageIcons::RememberBundle();
 
 	StageReplacements::Load();
 	SyncList();

@@ -974,12 +974,18 @@ bool BbtagStage::Convert(const Source& source, Result& out)
 		sheets.emplace_back(blob);
 	}
 
-	for (const std::vector<int>& assigned : model.Materials())
+	for (size_t m = 0; m < model.Materials().size(); ++m)
 	{
+		const std::vector<int>& assigned = model.Materials()[m];
 		int index = assigned.empty() ? 0 : assigned[0];
 
 		if (index < 0 || index >= static_cast<int>(built.textures.size()))
 			index = 0;
+
+		const int shine = m < model.Reflections().size() ? model.Reflections()[m] : -1;
+
+		if (shine >= 0 && shine < static_cast<int>(built.textures.size()) && sheets[index].Dark())
+			index = shine;
 
 		FbxExWriter::Material material = {};
 		material.filename = built.textures.empty() ? std::string() : built.textures[index];

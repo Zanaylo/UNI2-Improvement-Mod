@@ -1,5 +1,6 @@
 #include "Game/Menus/TrainingHud.h"
 
+#include "Core/Harness/CleanFrame.h"
 #include "Core/logger.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Hooks/GameHook.h"
@@ -18,6 +19,10 @@ char g_status[128] = "the training HUD is not where this game version expects it
 void __fastcall HookedDraw(void* self, void* unused)
 {
 	g_drawHook.Original()(self, unused);
+
+	if (CleanFrame::IsOn())
+		return;
+
 	g_drawer->Draw(GameOffsets::kTrainingInfoLayer);
 }
 

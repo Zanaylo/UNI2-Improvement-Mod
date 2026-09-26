@@ -5,6 +5,7 @@
 #include "Core/utils.h"
 #include "Game/Files/DataArchive.h"
 #include "Game/Files/MbtlCipher.h"
+#include "Game/Stages/BgListOverride.h"
 #include "Game/Stages/StageArchive.h"
 #include "Game/Stages/StageLibrary.h"
 
@@ -28,6 +29,7 @@ constexpr int kOurFirstY = 2;
 constexpr int kOurPitchX = 128;
 constexpr int kOurPitchY = 336;
 constexpr int kOurSecondSheet = 24;
+constexpr int kFallbackFreeCell = 29;
 
 constexpr int kMbtlColumns = 7;
 constexpr int kMbtlCellWidth = 104;
@@ -813,12 +815,29 @@ bool StageThumb::ServeSheet()
 	return EnsureSheet();
 }
 
+int StageThumb::FirstFreeCell()
+{
+	static const int first = [] {
+		const int highest = BgListOverride::HighestOwnCard();
+		const int open = highest < kFirstCell ? kFallbackFreeCell : highest + 1;
+
+		LOG("StageThumb: the game's own stages use picker cards up to %d, ports take %d to %d", highest,
+			open, kLastCell);
+
+		return open > kLastCell ? kLastCell : open;
+	}();
+
+	return first;
+}
+
 int StageThumb::CellFor(int slot)
 {
 	if (!StageLibrary::Bindable(slot))
 		return -1;
 
-	return kFirstCell + (slot - kFirstCell) % kCells;
+	const int first = FirstFreeCell();
+
+	return first + (slot - StageLibrary::kSlotFirst) % (kLastCell - first + 1);
 }
 
 std::string StageThumb::CardPath(int id)
@@ -848,6 +867,24 @@ bool StageThumb::TakeFolder(const std::string& folder, int id)
 		return false;
 
 	LOG("StageThumb: stage %d takes the Thumbnail in its own folder", id);
+	return true;
+}
+
+bool StageThumb::TakeImage(const uint8_t* data, size_t size, int id)
+{
+	if (data == nullptr || size == 0 || !Carded(id))
+		return false;
+
+	const std::vector<uint8_t> blob(data, data + size);
+	Image card;
+
+	if (!DecodeDxt(blob, card) || card.width <= 0 || card.height <= 0)
+		return false;
+
+	if (!Paint(card, 0, 0, card.width, card.height, id, true))
+		return false;
+
+	LOG("StageThumb: stage %d takes its bundled card", id);
 	return true;
 }
 

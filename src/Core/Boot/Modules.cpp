@@ -1,6 +1,7 @@
 #include "Core/Boot/Modules.h"
 
 #include "Core/Config/interfaces.h"
+#include "Core/Harness/CleanFrame.h"
 #include "Core/Harness/FrameGrab.h"
 #include "Core/Harness/InjectedKeys.h"
 #include "Core/Input/BackgroundKeyboard.h"
@@ -328,6 +329,9 @@ bool Modules::InstallGameHooks()
 
 void Modules::Run(Group group, IDirect3DDevice9* device)
 {
+	if (group == Group_Hud && CleanFrame::IsOn())
+		return;
+
 	const GroupTable& table = kGroups[group];
 
 	if (table.section == kUntimed)

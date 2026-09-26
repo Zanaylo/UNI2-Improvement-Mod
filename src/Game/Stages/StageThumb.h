@@ -1,16 +1,19 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
 
 #include "Game/Files/FbGameFolder.h"
 
 namespace StageThumb
 {
-	constexpr int kFirstCell = 28;
+	constexpr int kFirstCell = 24;
 	constexpr int kLastCell = 47;
 
 	constexpr int kCells = kLastCell - kFirstCell + 1;
 
+	int FirstFreeCell();
 	int CellFor(int slot);
 
 	bool ServeSheet();
@@ -19,6 +22,8 @@ namespace StageThumb
 	bool HasCard(int id);
 
 	bool TakeFolder(const std::string& folder, int id);
+
+	bool TakeImage(const uint8_t* data, size_t size, int id);
 
 	bool Take(FbGameFolder::Game game, const std::string& gameFolder, int sourceCell, int id);
 

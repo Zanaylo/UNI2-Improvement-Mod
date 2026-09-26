@@ -14,7 +14,7 @@ namespace BgGrade
 	constexpr float kGameContrast = 1.00f;
 
 	constexpr float kDfciLift = 0.00f;
-	constexpr float kDfciContrast = 1.50f;
+	constexpr float kDfciContrast = 1.37f;
 
 	constexpr float kUnielLift = 0.00f;
 	constexpr float kUnielContrast = 1.00f;

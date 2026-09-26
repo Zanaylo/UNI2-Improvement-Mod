@@ -24,6 +24,7 @@ constexpr int kStringInfo = 15;
 constexpr int kString = 16;
 
 constexpr int kBaseLayer = 1;
+constexpr int kReflectionLayer = 3;
 constexpr size_t kVertexBytes = 0x50;
 constexpr size_t kHeader = 0x20;
 
@@ -144,6 +145,7 @@ void BbtagMua::Model::ReadMaterials()
 	}
 
 	m_material.clear();
+	m_reflection.clear();
 	m_flow.clear();
 
 	for (int i = 0; i < Count(kMaterial); ++i)
@@ -167,16 +169,21 @@ void BbtagMua::Model::ReadMaterials()
 
 		std::vector<int> textures;
 		Flow flow = {};
+		int reflection = -1;
 
 		for (int index : taken)
 		{
 			textures.push_back(assigned[index]);
+
+			if (reflection < 0 && layers[index] == kReflectionLayer)
+				reflection = assigned[index];
 
 			if (!flow.known && flows[index].known)
 				flow = flows[index];
 		}
 
 		m_material.push_back(textures);
+		m_reflection.push_back(reflection);
 		m_flow.push_back(flow);
 	}
 }

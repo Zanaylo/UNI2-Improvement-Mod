@@ -5,6 +5,7 @@
 #include "Core/Profiler.h"
 #include "Core/Boot/crashdump.h"
 #include "Core/Config/interfaces.h"
+#include "Core/Harness/CleanFrame.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/GraphicsWrapper.h"
@@ -267,6 +268,7 @@ HRESULT STDMETHODCALLTYPE HookedSetTexture(IDirect3DDevice9* device, DWORD stage
 {
 	const bool paletteShaped = PaletteTexture::OnSetTexture(device, stage, texture);
 	PaletteDrawProbe::OnSetTexture(stage, texture, paletteShaped);
+	CleanFrame::OnSetTexture(stage, paletteShaped);
 	return g_setTextureHook.Original()(device, stage, SceneUpscale::OnSetTexture(device, stage, texture));
 }
 
@@ -275,6 +277,9 @@ HRESULT STDMETHODCALLTYPE HookedDrawPrimitive(IDirect3DDevice9* device, D3DPRIMI
 {
 	PaletteDrawProbe::OnDraw();
 	DrawTrace::OnDraw(device, "dp", type, primitiveCount);
+	if (CleanFrame::SkipsDraw(device))
+		return D3D_OK;
+
 	return g_drawPrimitiveHook.Original()(device, type, startVertex, primitiveCount);
 }
 
@@ -286,6 +291,9 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
 	BgVertexProbe::OnDraw(device);
 	DrawTrace::OnIndexedDraw(device, type, primitiveCount, baseVertexIndex, minVertexIndex,
 		numVertices);
+	if (CleanFrame::SkipsDraw(device))
+		return D3D_OK;
+
 	return g_drawIndexedPrimitiveHook.Original()(device, type, baseVertexIndex, minVertexIndex, numVertices,
 		startIndex, primitiveCount);
 }
@@ -295,6 +303,9 @@ HRESULT STDMETHODCALLTYPE HookedDrawPrimitiveUP(IDirect3DDevice9* device, D3DPRI
 {
 	PaletteDrawProbe::OnDraw();
 	DrawTrace::OnDraw(device, "dpup", type, primitiveCount, vertexData, stride);
+	if (CleanFrame::SkipsDraw(device))
+		return D3D_OK;
+
 	return g_drawPrimitiveUPHook.Original()(device, type, primitiveCount, vertexData, stride);
 }
 
@@ -304,6 +315,9 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitiveUP(IDirect3DDevice9* device,
 {
 	PaletteDrawProbe::OnDraw();
 	DrawTrace::OnDraw(device, "dipup", type, primitiveCount, vertexData, stride, numVertices);
+	if (CleanFrame::SkipsDraw(device))
+		return D3D_OK;
+
 	return g_drawIndexedPrimitiveUPHook.Original()(device, type, minVertexIndex, numVertices, primitiveCount,
 		indexData, indexFormat, vertexData, stride);
 }
@@ -457,6 +471,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 		ReportModWork(modStart);
 
 	DrawTrace::OnPresentEnd();
+	CleanFrame::OnPresent();
 
 	{
 		Profiler::Scope scope(Profiler::Section_PresentDevice);

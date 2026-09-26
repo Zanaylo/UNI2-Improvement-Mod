@@ -21,6 +21,7 @@ namespace BbtagArt
 		explicit Sheet(const std::vector<uint8_t>& blob);
 
 		bool Lit() const { return m_lit; }
+		bool Dark() const { return m_dark; }
 
 		double Peak(double u, double w) const;
 
@@ -33,5 +34,6 @@ namespace BbtagArt
 		int m_wide;
 		int m_high;
 		bool m_lit;
+		bool m_dark;
 	};
 }

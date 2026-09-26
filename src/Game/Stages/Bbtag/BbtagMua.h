@@ -80,6 +80,7 @@ namespace BbtagMua
 
 		const std::vector<std::string>& Textures() const { return m_texture; }
 		const std::vector<std::vector<int> >& Materials() const { return m_material; }
+		const std::vector<int>& Reflections() const { return m_reflection; }
 		const std::vector<Mesh>& Meshes() const { return m_mesh; }
 		const std::vector<Part>& Parts() const { return m_part; }
 		const std::vector<Bone>& Bones() const { return m_bone; }
@@ -111,6 +112,7 @@ namespace BbtagMua
 		std::vector<std::string> m_string;
 		std::vector<std::string> m_texture;
 		std::vector<std::vector<int> > m_material;
+		std::vector<int> m_reflection;
 		std::vector<Flow> m_flow;
 		std::vector<Bone> m_bone;
 		std::vector<Skeleton> m_skeleton;

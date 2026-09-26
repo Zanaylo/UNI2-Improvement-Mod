@@ -477,6 +477,9 @@
     <ClCompile Include="src\Game\Stages\StageThumb.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Stages\StageIcons.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Stages\StageObjects.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
@@ -634,6 +637,12 @@
       <Filter>Core\Harness</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Harness\HarnessChannel.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\CleanFrame.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\StageCommands.cpp">
       <Filter>Core\Harness</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Input\BackgroundKeyboard.cpp">
@@ -1280,6 +1289,12 @@
     <ClInclude Include="src\Core\Harness\HarnessChannel.h">
       <Filter>Core\Harness</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Harness\CleanFrame.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Harness\StageCommands.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Input\BackgroundKeyboard.h">
       <Filter>Core\Input</Filter>
     </ClInclude>
@@ -1599,6 +1614,9 @@
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\StageThumb.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageIcons.h">
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\StageObjects.h">

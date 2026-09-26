@@ -216,6 +216,7 @@
     <ClCompile Include="src\Game\Stages\StageNote.cpp" />
     <ClCompile Include="src\Game\Stages\StageReplacements.cpp" />
     <ClCompile Include="src\Game\Stages\StageThumb.cpp" />
+    <ClCompile Include="src\Game\Stages\StageIcons.cpp" />
     <ClCompile Include="src\Game\Stages\StageObjects.cpp" />
     <ClCompile Include="src\Game\Stages\StageCards.cpp" />
     <ClCompile Include="src\Game\Engine\PlayerHealth.cpp" />
@@ -269,6 +270,8 @@
     <ClCompile Include="src\Core\Harness\InjectedKeys.cpp" />
     <ClCompile Include="src\Core\Harness\FrameGrab.cpp" />
     <ClCompile Include="src\Core\Harness\HarnessChannel.cpp" />
+    <ClCompile Include="src\Core\Harness\CleanFrame.cpp" />
+    <ClCompile Include="src\Core\Harness\StageCommands.cpp" />
     <ClCompile Include="src\Core\Input\BackgroundKeyboard.cpp" />
     <ClCompile Include="src\Hooks\ImportPatch.cpp" />
     <ClCompile Include="src\Game\Display\MovieWindow.cpp" />
@@ -452,6 +455,8 @@
     <ClInclude Include="src\Core\Harness\InjectedKeys.h" />
     <ClInclude Include="src\Core\Harness\FrameGrab.h" />
     <ClInclude Include="src\Core\Harness\HarnessChannel.h" />
+    <ClInclude Include="src\Core\Harness\CleanFrame.h" />
+    <ClInclude Include="src\Core\Harness\StageCommands.h" />
     <ClInclude Include="src\Core\Input\BackgroundKeyboard.h" />
     <ClInclude Include="src\Hooks\ImportPatch.h" />
     <ClInclude Include="src\Game\Display\MovieWindow.h" />
@@ -559,6 +564,7 @@
     <ClInclude Include="src\Game\Stages\StageNote.h" />
     <ClInclude Include="src\Game\Stages\StageReplacements.h" />
     <ClInclude Include="src\Game\Stages\StageThumb.h" />
+    <ClInclude Include="src\Game\Stages\StageIcons.h" />
     <ClInclude Include="src\Game\Stages\StageObjects.h" />
     <ClInclude Include="src\Game\Stages\StageCards.h" />
     <ClInclude Include="src\Game\Engine\PlayerHealth.h" />
@@ -964,6 +970,16 @@
     <WriteLinesToFile File="$(ProjectDir)resource\packs.rc" Overwrite="true"
                       WriteOnlyWhenDifferent="true"
                       Lines="@(PatchPackFile-&gt;'&quot;%(Filename)&quot; PATCHPACK &quot;patches\\%(Filename)%(Extension)&quot;')" />
+  </Target>
+
+  <Target Name="SyncStageIcons" BeforeTargets="PrepareForBuild"
+          Condition="'$(DesignTimeBuild)'!='true'">
+    <ItemGroup>
+      <StageIconPack Include="$(ProjectDir)resource\stageicons\*.pack" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(ProjectDir)resource\stageicons.rc" Overwrite="true"
+                      WriteOnlyWhenDifferent="true"
+                      Lines="@(StageIconPack-&gt;'&quot;%(Filename)&quot; STAGEICONS &quot;stageicons\\%(Filename)%(Extension)&quot;')" />
   </Target>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

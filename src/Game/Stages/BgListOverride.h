@@ -41,6 +41,8 @@ namespace BgListOverride
 
 	bool OwnNumbers(std::vector<int>& out);
 
+	int HighestOwnCard();
+
 	bool SetNames(const std::vector<std::pair<int, std::string> >& named);
 
 	bool NeedsRestart();

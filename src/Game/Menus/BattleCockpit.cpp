@@ -65,10 +65,12 @@ bool BattleCockpit::IsHidden()
 	return g_modVals.hideBattleHud != 0;
 }
 
-void BattleCockpit::SetHidden(bool hidden)
+void BattleCockpit::SetHidden(bool hidden, bool persist)
 {
 	g_modVals.hideBattleHud = hidden ? 1 : 0;
-	Settings::SaveInt("Training", "HideHud", g_modVals.hideBattleHud);
+
+	if (persist)
+		Settings::SaveInt("Training", "HideHud", g_modVals.hideBattleHud);
 
 	Write(hidden ? GameOffsets::kCockpitViewHidden : GameOffsets::kCockpitViewShown);
 }

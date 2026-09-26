@@ -241,6 +241,7 @@ bool Refresh(int cursor)
 
 	const int count = static_cast<int>(g_order.size());
 	int painted = 0;
+	bool claimed[StageThumb::kCells] = {};
 
 	if (count <= 0)
 		return true;
@@ -262,7 +263,12 @@ bool Refresh(int cursor)
 		const int id = StageLibrary::IdForSlot(g_order[at]);
 		const int hold = cell - StageThumb::kFirstCell;
 
-		if (id < 0 || g_holds[hold] == id)
+		if (id < 0 || claimed[hold])
+			continue;
+
+		claimed[hold] = true;
+
+		if (g_holds[hold] == id)
 			continue;
 
 		if (!StageThumb::HasCard(id) || !PaintCell(cell, id))

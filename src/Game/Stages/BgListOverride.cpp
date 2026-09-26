@@ -452,6 +452,36 @@ bool Commit(const std::string& list, const std::string& names)
 
 }
 
+int BgListOverride::HighestOwnCard()
+{
+	std::string original;
+
+	if (!Original(kList, original))
+		return -1;
+
+	const char* const key = "StageSelTex";
+	int highest = -1;
+
+	for (size_t at = original.find(key); at != std::string::npos; at = original.find(key, at + 1))
+	{
+		const size_t line = original.rfind('\n', at);
+		const size_t start = line == std::string::npos ? 0 : line + 1;
+
+		if (original.find("//", start) < at)
+			continue;
+
+		const size_t equals = original.find('=', at);
+
+		if (equals == std::string::npos)
+			break;
+
+		const int card = atoi(original.c_str() + equals + 1);
+		highest = card > highest ? card : highest;
+	}
+
+	return highest;
+}
+
 bool BgListOverride::OwnNumbers(std::vector<int>& out)
 {
 	out.clear();

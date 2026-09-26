@@ -34,4 +34,6 @@ END
 
 #include "packs.rc"
 
+#include "stageicons.rc"
+
 #include "shaderexamples.rc"

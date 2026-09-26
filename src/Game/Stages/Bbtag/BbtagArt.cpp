@@ -225,6 +225,7 @@ BbtagArt::Sheet::Sheet(const std::vector<uint8_t>& blob)
 	, m_wide(1)
 	, m_high(1)
 	, m_lit(false)
+	, m_dark(false)
 {
 	Layout layout = {};
 
@@ -245,22 +246,21 @@ BbtagArt::Sheet::Sheet(const std::vector<uint8_t>& blob)
 	const size_t count = m_bytes / m_step;
 	const size_t stride = count < kSampled ? 1 : count / kSampled;
 	double peak = 0.0;
+	bool clear = false;
 
 	for (size_t block = 0; block < count; block += stride)
 	{
 		const uint8_t* const at = m_body + block * m_step;
 
-		if (m_step == 8 && Punched(at))
-			return;
-
-		if (m_step == 16 && LeastAlpha(at, m_explicit) < 255)
-			return;
+		clear = clear || (m_step == 8 && Punched(at))
+			|| (m_step == 16 && LeastAlpha(at, m_explicit) < 255);
 
 		const double reading = TexelPeak(at + m_colour, m_step == 8);
 		peak = reading > peak ? reading : peak;
 	}
 
-	m_lit = peak > kCardBlack;
+	m_lit = !clear && peak > kCardBlack;
+	m_dark = !clear && peak <= kCardBlack;
 }
 
 double BbtagArt::Sheet::Peak(double u, double w) const
