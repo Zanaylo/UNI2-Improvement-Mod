@@ -73,6 +73,12 @@ struct ExtraPage
 	RowList mod;
 };
 
+struct PageMemory
+{
+	bool wasOnExtra;
+	bool restorePending;
+};
+
 struct WindowState
 {
 	int active;
@@ -99,6 +105,8 @@ std::atomic<TrainingMenu::IModal*> g_modal{ nullptr };
 std::atomic<DWORD> g_lastUpdate{ 0 };
 void* g_menu = nullptr;
 ExtraPage g_extra = {};
+std::atomic<void*> g_owner{ nullptr };
+PageMemory g_memory = {};
 WindowState g_heldWindow = {};
 
 std::atomic<long> g_builds{ 0 };
@@ -120,9 +128,42 @@ GameVector* SelectableRows(void* menu)
 	return &Field<GameVector>(menu, GameOffsets::kTrainingMenuSelectable);
 }
 
+GameVector& Titles(void* menu)
+{
+	return Field<GameVector>(menu, GameOffsets::kTrainingMenuTitles);
+}
+
 int& SlotTitle(void* menu)
 {
-	return reinterpret_cast<int*>(Field<GameVector>(menu, GameOffsets::kTrainingMenuTitles).begin)[kLastSlot];
+	return reinterpret_cast<int*>(Titles(menu).begin)[kLastSlot];
+}
+
+bool Intact(void* menu)
+{
+	if (Field<int>(menu, GameOffsets::kTrainingMenuBuilt) != 1)
+		return false;
+
+	const GameVector& titles = Titles(menu);
+	const GameVector& rows = SelectableRows(menu)[kLastSlot];
+
+	return titles.begin != nullptr && titles.Count() >= GameOffsets::kTrainingMenuPageCount &&
+		rows.begin != nullptr && rows.end >= rows.begin;
+}
+
+bool Owns(void* menu)
+{
+	return menu != nullptr && g_extra.ready && g_owner.load() == menu && Intact(menu);
+}
+
+bool OwnsLiveMenu()
+{
+	void* live = nullptr;
+
+	if (!TryReadMemory(&live, reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kTrainingMenuInstance)),
+		sizeof(live)))
+		return false;
+
+	return live != nullptr && g_owner.load() == live && g_extra.ready;
 }
 
 int ChoiceCount(const MenuItem& item)
@@ -243,15 +284,40 @@ void ClampCursor(void* menu)
 	Field<int>(menu, GameOffsets::kTrainingMenuCursorShown) = 0;
 }
 
+bool SwapRows(void* menu, const RowList& list)
+{
+	__try
+	{
+		AssignRows(SelectableRows(menu)[kLastSlot], list);
+		SlotTitle(menu) = list.title;
+		return true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return false;
+	}
+}
+
+void Disown(const char* why)
+{
+	g_owner.store(nullptr);
+	g_extra.ready = false;
+
+	sprintf_s(g_status, "the mod's page was withdrawn: %s", why);
+	LOG("TrainingMenu: %s", g_status);
+}
+
 void ShowExtra(void* menu, bool wanted)
 {
-	if (!g_extra.ready || g_extra.shown == wanted)
+	if (!Owns(menu) || g_extra.shown == wanted)
 		return;
 
-	const RowList& list = wanted ? g_extra.mod : g_extra.game;
+	if (!SwapRows(menu, wanted ? g_extra.mod : g_extra.game))
+	{
+		Disown("swapping its rows faulted");
+		return;
+	}
 
-	AssignRows(SelectableRows(menu)[kLastSlot], list);
-	SlotTitle(menu) = list.title;
 	g_extra.shown = wanted;
 	ClampCursor(menu);
 }
@@ -260,7 +326,23 @@ int LogicalPage(void* menu)
 {
 	const int page = Field<int>(menu, GameOffsets::kTrainingMenuPage);
 
-	return page == kLastSlot && g_extra.shown ? kExtraPage : page;
+	return page == kLastSlot && Owns(menu) && g_extra.shown ? kExtraPage : page;
+}
+
+void RememberPage(void* menu)
+{
+	if (!Owns(menu) || Field<int>(menu, GameOffsets::kTrainingMenuWindowActive) == 0)
+		return;
+
+	if (g_memory.restorePending)
+	{
+		g_memory.restorePending = false;
+
+		if (g_memory.wasOnExtra && Field<int>(menu, GameOffsets::kTrainingMenuPage) == kLastSlot)
+			ShowExtra(menu, true);
+	}
+
+	g_memory.wasOnExtra = LogicalPage(menu) == kExtraPage;
 }
 
 int Wrap(int value, int count)
@@ -432,6 +514,8 @@ void ReportBuild(int added)
 
 int __fastcall HookedBuild(void* menu, void* unused)
 {
+	g_owner.store(nullptr);
+
 	const int built = g_buildHook.Original()(menu, unused);
 
 	g_builds.fetch_add(1);
@@ -442,6 +526,12 @@ int __fastcall HookedBuild(void* menu, void* unused)
 		return built;
 
 	ReportBuild(AppendPageGuarded(menu));
+
+	if (!g_extra.ready)
+		return built;
+
+	g_memory.restorePending = true;
+	g_owner.store(menu);
 	return built;
 }
 
@@ -465,6 +555,8 @@ void __fastcall HookedUpdate(void* menu, void* unused)
 
 		if (Field<int>(menu, GameOffsets::kTrainingMenuPage) != kLastSlot)
 			ShowExtra(menu, false);
+
+		RememberPage(menu);
 	}
 
 	g_menu = nullptr;
@@ -480,7 +572,7 @@ int __fastcall HookedOpenPicker(void* menu, void* unused, int id, int flag)
 
 int __fastcall HookedTurnPage(void* menu, void* unused, int delta)
 {
-	if (!g_extra.ready || delta == 0)
+	if (!Owns(menu) || delta == 0)
 		return g_turnHook.Original()(menu, unused, delta);
 
 	const int from = LogicalPage(menu);
@@ -501,7 +593,7 @@ int __fastcall HookedResetPage(void* menu, void* unused, int page)
 {
 	const uintptr_t caller = reinterpret_cast<uintptr_t>(_ReturnAddress()) - GetGameBaseAddress();
 
-	if (!g_extra.ready || page != kLastSlot || caller != GameOffsets::kTrainingMenuResetAllReturn)
+	if (!Owns(menu) || page != kLastSlot || caller != GameOffsets::kTrainingMenuResetAllReturn)
 		return g_resetHook.Original()(menu, unused, page);
 
 	const bool shown = g_extra.shown;
@@ -515,7 +607,7 @@ int __fastcall HookedResetPage(void* menu, void* unused, int page)
 
 void __cdecl AdjustDots(uintptr_t caller, int* arguments)
 {
-	if (!g_extra.ready || caller - GetGameBaseAddress() != GameOffsets::kMenuPageDotsTrainingReturn)
+	if (caller - GetGameBaseAddress() != GameOffsets::kMenuPageDotsTrainingReturn || !OwnsLiveMenu())
 		return;
 
 	arguments[1] += 1;

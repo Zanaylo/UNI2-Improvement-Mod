@@ -11,6 +11,7 @@
 #include "D3D9/Post/Shaders/FxaaShader.h"
 #include "D3D9/Post/Shaders/LookShader.h"
 #include "D3D9/Post/PostOptions.h"
+#include "D3D9/Post/PostStages.h"
 #include "D3D9/Post/ScratchTarget.h"
 #include "D3D9/Post/ShaderPack.h"
 
@@ -347,17 +348,13 @@ void PostChain::ResetLook()
 
 void PostChain::TurnOff()
 {
-	g_modVals.antiAliasing = AntiAlias::Level_Off;
-	g_modVals.sharpenMode = SharpenMode::Kind_Off;
-	g_modVals.sharpenStrength = 0;
-	g_modVals.bloomEnabled = false;
-	g_modVals.lookEnabled = false;
+	PostStages::SetAntiAliasing(AntiAlias::Level_Off);
+	PostStages::SetSharpening(SharpenMode::Kind_Off);
+	PostStages::SetBloom(false);
+	PostStages::SetLook(false);
 
-	Settings::SaveInt("Graphics", "AntiAliasing", 0);
-	Settings::SaveInt("Graphics", "SharpenMode", 0);
+	g_modVals.sharpenStrength = 0;
 	Settings::SaveInt("Graphics", "Sharpen", 0);
-	Settings::SaveInt("Graphics", "Bloom", 0);
-	Settings::SaveInt("Graphics", "Look", 0);
 
 	ShaderPack::Select(-1);
 	ResetLook();

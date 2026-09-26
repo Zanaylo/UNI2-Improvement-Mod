@@ -13,6 +13,9 @@
     <Filter Include="Core\Formats">
       <UniqueIdentifier>{12aaddff-a3ab-c972-feac-dd0a0f4e7198}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Harness">
+      <UniqueIdentifier>{c3241884-1a89-de7e-f033-a7746dddf964}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core\Input">
       <UniqueIdentifier>{3370b467-1f15-127a-d992-4e1fe1113ea4}</UniqueIdentifier>
     </Filter>
@@ -306,6 +309,12 @@
     <ClCompile Include="src\Game\Menus\TrainingMenu.cpp">
       <Filter>Game\Menus</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Menus\OptionMenu.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\TrainingHud.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Files\DataSearchPath.cpp">
       <Filter>Game\Files</Filter>
     </ClCompile>
@@ -477,6 +486,15 @@
     <ClCompile Include="src\Game\Engine\PlayerHealth.cpp">
       <Filter>Game\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Engine\ComboProration.cpp">
+      <Filter>Game\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Engine\ComboLedger.cpp">
+      <Filter>Game\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Engine\GameDraw.cpp">
+      <Filter>Game\Engine</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Battle\CharaTint.cpp">
       <Filter>Game\Battle</Filter>
     </ClCompile>
@@ -484,6 +502,9 @@
       <Filter>Game\Menus</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Hud\HealthReadout.cpp">
+      <Filter>Overlay\Hud</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Hud\ProrationHud.cpp">
       <Filter>Overlay\Hud</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Panels\RestartPrompt.cpp">
@@ -599,6 +620,30 @@
     </ClCompile>
     <ClCompile Include="src\Core\Input\KeyboardCapture.cpp">
       <Filter>Core\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\Harness.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\QuietWindow.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\InjectedKeys.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\FrameGrab.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\HarnessChannel.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Input\BackgroundKeyboard.cpp">
+      <Filter>Core\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hooks\ImportPatch.cpp">
+      <Filter>Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\MovieWindow.cpp">
+      <Filter>Game\Display</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Config\keycodes.cpp">
       <Filter>Core\Config</Filter>
@@ -927,6 +972,9 @@
     <ClCompile Include="src\Overlay\Native\TrainingMenuItems.cpp">
       <Filter>Overlay\Native</Filter>
     </ClCompile>
+    <ClCompile Include="src\Overlay\Native\DisplaySettingsItems.cpp">
+      <Filter>Overlay\Native</Filter>
+    </ClCompile>
     <ClCompile Include="src\Overlay\Windows\DummyScriptGuideWindow.cpp">
       <Filter>Overlay\Windows</Filter>
     </ClCompile>
@@ -994,6 +1042,9 @@
       <Filter>D3D9\Post</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Post\PostOptions.cpp">
+      <Filter>D3D9\Post</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Post\PostStages.cpp">
       <Filter>D3D9\Post</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Post\PostChain.cpp">
@@ -1214,6 +1265,33 @@
     <ClInclude Include="src\Core\Config\Settings.h">
       <Filter>Core\Config</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Harness\Harness.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Harness\QuietWindow.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Harness\InjectedKeys.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Harness\FrameGrab.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Harness\HarnessChannel.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Input\BackgroundKeyboard.h">
+      <Filter>Core\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks\ImportPatch.h">
+      <Filter>Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\MovieWindow.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ComRef.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\D3D9\Device\GraphicsWrapper.h">
       <Filter>D3D9\Device</Filter>
     </ClInclude>
@@ -1356,6 +1434,12 @@
       <Filter>Game\Menus</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Menus\TrainingMenu.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Menus\OptionMenu.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Menus\TrainingHud.h">
       <Filter>Game\Menus</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Files\DataSearchPath.h">
@@ -1526,6 +1610,15 @@
     <ClInclude Include="src\Game\Engine\PlayerHealth.h">
       <Filter>Game\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Engine\ComboProration.h">
+      <Filter>Game\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Engine\ComboLedger.h">
+      <Filter>Game\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Engine\GameDraw.h">
+      <Filter>Game\Engine</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Battle\CharaTint.h">
       <Filter>Game\Battle</Filter>
     </ClInclude>
@@ -1533,6 +1626,9 @@
       <Filter>Game\Menus</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Hud\HealthReadout.h">
+      <Filter>Overlay\Hud</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Hud\ProrationHud.h">
       <Filter>Overlay\Hud</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Panels\RestartPrompt.h">
@@ -1982,6 +2078,9 @@
     <ClInclude Include="src\Overlay\Native\TrainingMenuItems.h">
       <Filter>Overlay\Native</Filter>
     </ClInclude>
+    <ClInclude Include="src\Overlay\Native\DisplaySettingsItems.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
     <ClInclude Include="src\Overlay\Windows\DummyScriptGuideWindow.h">
       <Filter>Overlay\Windows</Filter>
     </ClInclude>
@@ -2058,6 +2157,9 @@
       <Filter>D3D9\Post</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Post\PostOptions.h">
+      <Filter>D3D9\Post</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\PostStages.h">
       <Filter>D3D9\Post</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Post\PostChain.h">

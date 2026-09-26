@@ -49,6 +49,7 @@ XInput's names: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`,
 |---|---|---|
 | `KeyboardSeat` | `0` | Which player the keyboard controls. 0 leaves the game alone, 1 puts your keys on 1P, 2 on 2P. |
 | `KeyboardSeatRouteSides` | `1` | Also writes both sides' controller slots every frame of a local match. |
+| `BackgroundKeyboard` | `0` | 1 keeps the keyboard reaching the game while another window is active. Controllers always do. |
 
 ## `[Training]`
 
@@ -62,6 +63,7 @@ XInput's names: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`,
 | `StepRepeatDelayMs` | `250` | How long you hold the next-frame key before it starts repeating. |
 | `StepRepeatIntervalMs` | `90` | Time between repeated steps. |
 | `RecordFrameCounterRva` | `0` | Advanced. Memory address of the recorder's frame counter. 0 turns it off. |
+| `ShowProration` | `1` | Shows the combo timer and move count proration under Damage info, offline training only. |
 
 ## `[FrameMeter]`
 

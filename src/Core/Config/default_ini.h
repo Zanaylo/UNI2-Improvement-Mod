@@ -32,6 +32,7 @@ const char* const kDefaultIniLines[] = {
 	"[Input]",
 	"KeyboardSeat = 0",
 	"KeyboardSeatRouteSides = 1",
+	"BackgroundKeyboard = 0",
 	"",
 	"[Replays]",
 	"AutoExport = 1",

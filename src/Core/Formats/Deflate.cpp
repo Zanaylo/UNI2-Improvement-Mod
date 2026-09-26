@@ -570,7 +570,25 @@ bool Deflate::Compress(const uint8_t* source, size_t size, std::vector<uint8_t>&
 
 namespace {
 
-uint32_t Crc32(const uint8_t* source, size_t size)
+void AppendLittle(std::vector<uint8_t>& out, uint32_t value)
+{
+	out.push_back(static_cast<uint8_t>(value & 0xff));
+	out.push_back(static_cast<uint8_t>((value >> 8) & 0xff));
+	out.push_back(static_cast<uint8_t>((value >> 16) & 0xff));
+	out.push_back(static_cast<uint8_t>((value >> 24) & 0xff));
+}
+
+void AppendBig(std::vector<uint8_t>& out, uint32_t value)
+{
+	out.push_back(static_cast<uint8_t>((value >> 24) & 0xff));
+	out.push_back(static_cast<uint8_t>((value >> 16) & 0xff));
+	out.push_back(static_cast<uint8_t>((value >> 8) & 0xff));
+	out.push_back(static_cast<uint8_t>(value & 0xff));
+}
+
+}
+
+uint32_t Deflate::Crc32(const uint8_t* source, size_t size)
 {
 	static uint32_t table[256];
 	static bool built = false;
@@ -598,14 +616,18 @@ uint32_t Crc32(const uint8_t* source, size_t size)
 	return crc ^ 0xffffffffu;
 }
 
-void AppendLittle(std::vector<uint8_t>& out, uint32_t value)
+uint32_t Deflate::Adler32(const uint8_t* source, size_t size)
 {
-	out.push_back(static_cast<uint8_t>(value & 0xff));
-	out.push_back(static_cast<uint8_t>((value >> 8) & 0xff));
-	out.push_back(static_cast<uint8_t>((value >> 16) & 0xff));
-	out.push_back(static_cast<uint8_t>((value >> 24) & 0xff));
-}
+	uint32_t low = 1;
+	uint32_t high = 0;
 
+	for (size_t i = 0; i < size; ++i)
+	{
+		low = (low + source[i]) % 65521u;
+		high = (high + low) % 65521u;
+	}
+
+	return (high << 16) | low;
 }
 
 bool Deflate::Gzip(const uint8_t* source, size_t size, std::vector<uint8_t>& out)
@@ -623,6 +645,24 @@ bool Deflate::Gzip(const uint8_t* source, size_t size, std::vector<uint8_t>& out
 
 	AppendLittle(out, Crc32(source, size));
 	AppendLittle(out, static_cast<uint32_t>(size));
+
+	return true;
+}
+
+bool Deflate::Zlib(const uint8_t* source, size_t size, std::vector<uint8_t>& out)
+{
+	std::vector<uint8_t> body;
+	if (!Compress(source, size, body))
+		return false;
+
+	out.clear();
+	out.reserve(body.size() + 6);
+
+	out.push_back(0x78);
+	out.push_back(0x01);
+	out.insert(out.end(), body.begin(), body.end());
+
+	AppendBig(out, Adler32(source, size));
 
 	return true;
 }

@@ -368,10 +368,16 @@ namespace GameOffsets
 
 	constexpr uintptr_t kComboHitCount = 0x28;
 	constexpr uintptr_t kComboDamageTotal = 0x4c;
-	constexpr uintptr_t kComboCandidateC = 0x78;
 	constexpr uintptr_t kComboViewValue = 0x2c;
 	constexpr uintptr_t kComboCandidateE = 0x3c;
+	constexpr uintptr_t kComboTimer = 0x78;
+	constexpr uintptr_t kComboMoveCount = 0x88;
 	constexpr uintptr_t kCharaSideIndex = 0x434;
+
+	constexpr uintptr_t kCharaStatusTable = 0x868;
+	constexpr uintptr_t kStatusAttackRateTime = 0xe4;
+	constexpr uintptr_t kStatusAttackRateMoveCount = 0xfc;
+	constexpr uintptr_t kRateTableEntrySize = 8;
 
 	constexpr uintptr_t kGrdGaugeBase = 0x874ce0;
 	constexpr uintptr_t kGrdGaugeStride = 0x14c;
@@ -437,6 +443,7 @@ namespace GameOffsets
 	constexpr size_t kPadInputSize = 0x3c;
 
 	constexpr uintptr_t kFnFetchMenuInput = 0x203420;
+	constexpr uintptr_t kFnFetchSharedMenuInput = 0x203080;
 	constexpr uintptr_t kFnMenuInputConfirm = 0x204660;
 	constexpr uintptr_t kFnMenuInputCancel = 0x2046e0;
 	constexpr uintptr_t kMenuInputLever = 0x5;
@@ -457,6 +464,8 @@ namespace GameOffsets
 	constexpr uintptr_t kMenuPageDotsTrainingReturn = 0x191b52;
 	constexpr uintptr_t kFnMenuItemPush = 0x47b720;
 	constexpr uintptr_t kFnVectorReallocate = 0xf100;
+	constexpr uintptr_t kTrainingMenuInstance = 0x757fe4;
+	constexpr uintptr_t kTrainingMenuBuilt = 0x04;
 	constexpr uintptr_t kTrainingMenuPlayer = 0x10;
 	constexpr uintptr_t kTrainingMenuPageBase = 0x1c;
 	constexpr uintptr_t kTrainingMenuWindowActive = 0x34;
@@ -473,6 +482,57 @@ namespace GameOffsets
 	constexpr int kMenuItemTypeTitle = -1;
 	constexpr int kMenuItemTypeList = 1;
 	constexpr uint32_t kMenuItemDefaultColour = 0xffffffffu;
+
+	constexpr uintptr_t kFnOptionRowsAllocate = 0x3f5510;
+	constexpr uintptr_t kFnOptionRowAdd = 0x3f5430;
+	constexpr uintptr_t kFnOptionChoiceAdd = 0x3f5350;
+	constexpr uintptr_t kFnOptionBaseUpdate = 0x3f5be0;
+	constexpr uintptr_t kFnOptionDisplayBuild = 0x3f8eb0;
+	constexpr uintptr_t kFnOptionDisplayUpdate = 0x3f8da0;
+	constexpr uintptr_t kFnOptionDisplayDefaults = 0x3f9410;
+	constexpr uintptr_t kFnOptionDisplayColour = 0x3f8d10;
+	constexpr uintptr_t kFnOptionDisplayDraw = 0x3f8d60;
+	constexpr uintptr_t kOptionLayer = 0x14c;
+	constexpr uintptr_t kOptionOpenScale = 0xc4;
+	constexpr uintptr_t kOptionPanelCentreY = 0xe0;
+	constexpr uintptr_t kOptionPanelHeight = 0xe8;
+	constexpr uintptr_t kOptionTitle = 0x04;
+	constexpr size_t kOptionTitleSize = 0x40;
+	constexpr uintptr_t kOptionSubtitle = 0x44;
+	constexpr uintptr_t kOptionRowCount = 0x8c;
+	constexpr uintptr_t kOptionRows = 0x90;
+	constexpr uintptr_t kOptionCursor = 0x94;
+	constexpr size_t kOptionRowSize = 0x2a8;
+	constexpr uintptr_t kOptionRowX = 0x00;
+	constexpr uintptr_t kOptionRowY = 0x04;
+	constexpr uintptr_t kOptionRowWord = 0x08;
+	constexpr size_t kOptionRowWordSize = 0x40;
+	constexpr uintptr_t kOptionRowInfo = 0x88;
+	constexpr size_t kOptionRowInfoSize = 0x200;
+	constexpr uintptr_t kOptionRowValue = 0x288;
+	constexpr uintptr_t kOptionRowChoices = 0x28c;
+	constexpr uintptr_t kOptionRowColours = 0x298;
+	constexpr uintptr_t kOptionRowLocked = 0x2a4;
+	constexpr int kOptionRowSpacing = 0x20;
+	constexpr int kOptionActionGap = 8;
+	constexpr int kOptionDisplayRows = 9;
+	constexpr int kOptionDisplayResetRow = 7;
+	constexpr int kOptionDisplayReturnRow = 8;
+	constexpr uint32_t kOptionChangedColour = 0xff64ffffu;
+
+	constexpr uintptr_t kFnQueueFill = 0xbbd10;
+	constexpr uintptr_t kFnTextLeft = 0xcc3f0;
+	constexpr uintptr_t kFnTextCentre = 0xcc3b0;
+	constexpr uintptr_t kFnTextRight = 0xcc370;
+	constexpr uintptr_t kFontTable = 0x654d50;
+	constexpr uintptr_t kFontIndex = 0x654d4c;
+	constexpr uint32_t kFontCount = 8;
+	constexpr uintptr_t kFontLineHeight = 0x44;
+	constexpr uintptr_t kFontScaleX = 0x20124;
+	constexpr uintptr_t kFontScaleY = 0x20128;
+	constexpr int kFontFullScale = 100;
+	constexpr uintptr_t kFnTrainingDamageInfoDraw = 0x1a50e0;
+	constexpr int kTrainingInfoLayer = 0x11f;
 
 	constexpr uintptr_t kMenuWords = 0x843cb0;
 	constexpr int kMenuWordSelect = 94;

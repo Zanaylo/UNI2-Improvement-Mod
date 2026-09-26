@@ -2,6 +2,7 @@
 #include "Core/Boot/Modules.h"
 #include "Game/Engine/CodeSignatures.h"
 #include "Core/DpiScaling.h"
+#include "Core/Harness/Harness.h"
 #include "Core/Boot/ProcessTuning.h"
 #include "Core/Config/Hotkeys.h"
 #include "Core/Config/Settings.h"
@@ -25,6 +26,7 @@
 #include "Screens/ScreenTheme.h"
 #include "Game/Display/EngineQuality.h"
 #include "Game/Menus/UiAssets.h"
+#include "Game/Display/MovieWindow.h"
 #include "Game/Display/PotatoMode.h"
 #include "Hooks/GameHook.h"
 #include "Hooks/HookManager.h"
@@ -274,6 +276,8 @@ DWORD WINAPI InitThread(LPVOID)
 	Modules::RunGuarded("palette share", Stage_PaletteShare);
 	Modules::RunGuarded("netplay", Stage_Netplay);
 	Modules::RunGuarded("input hooks", Stage_InputHooks);
+	Modules::RunGuarded("movie window", [] { MovieWindow::Install(); });
+	Modules::RunGuarded("test harness", [] { Harness::Start(); });
 
 	const DWORD enableHooksStarted = GetTickCount();
 	HookManager::EnableAllHooks();
@@ -335,6 +339,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 				"and will only pass calls through.");
 			break;
 		}
+
+		Harness::InstallEarly();
 
 		HANDLE thread = CreateThread(nullptr, 0, InitThread, nullptr, 0, nullptr);
 		if (thread == nullptr)

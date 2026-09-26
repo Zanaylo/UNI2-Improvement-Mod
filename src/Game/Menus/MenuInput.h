@@ -19,4 +19,5 @@ namespace MenuInput
 	};
 
 	bool Read(int player, State& out);
+	bool ReadShared(State& out);
 }

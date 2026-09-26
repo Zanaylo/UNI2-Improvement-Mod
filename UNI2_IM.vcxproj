@@ -160,6 +160,8 @@
     <ClCompile Include="src\Game\Battle\ScreenShake.cpp" />
     <ClCompile Include="src\Game\Menus\MenuInput.cpp" />
     <ClCompile Include="src\Game\Menus\TrainingMenu.cpp" />
+    <ClCompile Include="src\Game\Menus\OptionMenu.cpp" />
+    <ClCompile Include="src\Game\Menus\TrainingHud.cpp" />
     <ClCompile Include="src\Game\Files\DataSearchPath.cpp" />
     <ClCompile Include="src\Game\Patches\GamePatches.cpp" />
     <ClCompile Include="src\Game\Patches\PatchLibrary.cpp" />
@@ -217,9 +219,13 @@
     <ClCompile Include="src\Game\Stages\StageObjects.cpp" />
     <ClCompile Include="src\Game\Stages\StageCards.cpp" />
     <ClCompile Include="src\Game\Engine\PlayerHealth.cpp" />
+    <ClCompile Include="src\Game\Engine\ComboProration.cpp" />
+    <ClCompile Include="src\Game\Engine\ComboLedger.cpp" />
+    <ClCompile Include="src\Game\Engine\GameDraw.cpp" />
     <ClCompile Include="src\Game\Battle\CharaTint.cpp" />
     <ClCompile Include="src\Game\Menus\BattleCockpit.cpp" />
     <ClCompile Include="src\Overlay\Hud\HealthReadout.cpp" />
+    <ClCompile Include="src\Overlay\Hud\ProrationHud.cpp" />
     <ClCompile Include="src\Overlay\Panels\RestartPrompt.cpp" />
     <ClCompile Include="src\Overlay\Panels\StagesPanel.cpp" />
     <ClCompile Include="src\Overlay\Windows\StagesWindow.cpp" />
@@ -258,6 +264,14 @@
     <ClCompile Include="src\Core\AsyncFileDialog.cpp" />
     <ClCompile Include="src\Core\Formats\TextEncoding.cpp" />
     <ClCompile Include="src\Core\Input\KeyboardCapture.cpp" />
+    <ClCompile Include="src\Core\Harness\Harness.cpp" />
+    <ClCompile Include="src\Core\Harness\QuietWindow.cpp" />
+    <ClCompile Include="src\Core\Harness\InjectedKeys.cpp" />
+    <ClCompile Include="src\Core\Harness\FrameGrab.cpp" />
+    <ClCompile Include="src\Core\Harness\HarnessChannel.cpp" />
+    <ClCompile Include="src\Core\Input\BackgroundKeyboard.cpp" />
+    <ClCompile Include="src\Hooks\ImportPatch.cpp" />
+    <ClCompile Include="src\Game\Display\MovieWindow.cpp" />
     <ClCompile Include="src\Core\Config\keycodes.cpp" />
     <ClCompile Include="src\Core\Config\Hotkeys.cpp" />
     <ClCompile Include="src\Core\Input\PadInput.cpp" />
@@ -367,6 +381,7 @@
     <ClCompile Include="src\Overlay\Guides\FrameMeterLegend.cpp" />
     <ClCompile Include="src\Overlay\Native\GuideScreen.cpp" />
     <ClCompile Include="src\Overlay\Native\TrainingMenuItems.cpp" />
+    <ClCompile Include="src\Overlay\Native\DisplaySettingsItems.cpp" />
     <ClCompile Include="src\Overlay\Windows\DummyScriptGuideWindow.cpp" />
     <ClCompile Include="src\Overlay\Windows\HitboxLegendWindow.cpp" />
     <ClCompile Include="src\Overlay\Windows\PlayerControlWindow.cpp" />
@@ -390,6 +405,7 @@
     <ClCompile Include="src\D3D9\Post\FullScreenPass.cpp" />
     <ClCompile Include="src\D3D9\Post\UpscaleFilter.cpp" />
     <ClCompile Include="src\D3D9\Post\PostOptions.cpp" />
+    <ClCompile Include="src\D3D9\Post\PostStages.cpp" />
     <ClCompile Include="src\D3D9\Post\PostChain.cpp" />
     <ClCompile Include="src\D3D9\Post\BundledShaders.cpp" />
     <ClCompile Include="src\D3D9\Post\ShaderPack.cpp" />
@@ -431,6 +447,15 @@
 
   <ItemGroup>
     <ClInclude Include="src\Core\Config\Settings.h" />
+    <ClInclude Include="src\Core\Harness\Harness.h" />
+    <ClInclude Include="src\Core\Harness\QuietWindow.h" />
+    <ClInclude Include="src\Core\Harness\InjectedKeys.h" />
+    <ClInclude Include="src\Core\Harness\FrameGrab.h" />
+    <ClInclude Include="src\Core\Harness\HarnessChannel.h" />
+    <ClInclude Include="src\Core\Input\BackgroundKeyboard.h" />
+    <ClInclude Include="src\Hooks\ImportPatch.h" />
+    <ClInclude Include="src\Game\Display\MovieWindow.h" />
+    <ClInclude Include="src\Core\ComRef.h" />
     <ClInclude Include="src\D3D9\Device\GraphicsWrapper.h" />
     <ClInclude Include="src\D3D9\Device\DgVoodoo.h" />
     <ClInclude Include="src\D3D9\Device\Dxvk.h" />
@@ -479,6 +504,8 @@
     <ClInclude Include="src\Game\Battle\ScreenShake.h" />
     <ClInclude Include="src\Game\Menus\MenuInput.h" />
     <ClInclude Include="src\Game\Menus\TrainingMenu.h" />
+    <ClInclude Include="src\Game\Menus\OptionMenu.h" />
+    <ClInclude Include="src\Game\Menus\TrainingHud.h" />
     <ClInclude Include="src\Game\Files\DataSearchPath.h" />
     <ClInclude Include="src\Game\Patches\GamePatches.h" />
     <ClInclude Include="src\Game\Patches\PatchLibrary.h" />
@@ -535,9 +562,13 @@
     <ClInclude Include="src\Game\Stages\StageObjects.h" />
     <ClInclude Include="src\Game\Stages\StageCards.h" />
     <ClInclude Include="src\Game\Engine\PlayerHealth.h" />
+    <ClInclude Include="src\Game\Engine\ComboProration.h" />
+    <ClInclude Include="src\Game\Engine\ComboLedger.h" />
+    <ClInclude Include="src\Game\Engine\GameDraw.h" />
     <ClInclude Include="src\Game\Battle\CharaTint.h" />
     <ClInclude Include="src\Game\Menus\BattleCockpit.h" />
     <ClInclude Include="src\Overlay\Hud\HealthReadout.h" />
+    <ClInclude Include="src\Overlay\Hud\ProrationHud.h" />
     <ClInclude Include="src\Overlay\Panels\RestartPrompt.h" />
     <ClInclude Include="src\Overlay\Panels\StagesPanel.h" />
     <ClInclude Include="src\Overlay\Windows\StagesWindow.h" />
@@ -687,6 +718,7 @@
     <ClInclude Include="src\Overlay\Guides\GuideContent.h" />
     <ClInclude Include="src\Overlay\Native\GuideScreen.h" />
     <ClInclude Include="src\Overlay\Native\TrainingMenuItems.h" />
+    <ClInclude Include="src\Overlay\Native\DisplaySettingsItems.h" />
     <ClInclude Include="src\Overlay\Windows\DummyScriptGuideWindow.h" />
     <ClInclude Include="src\Overlay\Windows\HitboxLegendWindow.h" />
     <ClInclude Include="src\Overlay\Windows\PlayerControlWindow.h" />
@@ -713,6 +745,7 @@
     <ClInclude Include="src\D3D9\Post\FullScreenPass.h" />
     <ClInclude Include="src\D3D9\Post\UpscaleFilter.h" />
     <ClInclude Include="src\D3D9\Post\PostOptions.h" />
+    <ClInclude Include="src\D3D9\Post\PostStages.h" />
     <ClInclude Include="src\D3D9\Post\PostChain.h" />
     <ClInclude Include="src\D3D9\Post\BundledShaders.h" />
     <ClInclude Include="src\D3D9\Post\ShaderPack.h" />

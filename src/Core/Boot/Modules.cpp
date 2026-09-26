@@ -1,6 +1,9 @@
 #include "Core/Boot/Modules.h"
 
 #include "Core/Config/interfaces.h"
+#include "Core/Harness/FrameGrab.h"
+#include "Core/Harness/InjectedKeys.h"
+#include "Core/Input/BackgroundKeyboard.h"
 #include "Core/Profiler.h"
 #include "Core/logger.h"
 #include "D3D9/Device/SceneScale.h"
@@ -54,6 +57,8 @@
 #include "Overlay/Hud/FrameMeterHud.h"
 #include "Overlay/Hud/GrdPopupHud.h"
 #include "Overlay/Hud/HealthReadout.h"
+#include "Overlay/Hud/ProrationHud.h"
+#include "Overlay/Native/DisplaySettingsItems.h"
 #include "Overlay/Native/TrainingMenuItems.h"
 #include "Palette/EffectOwner.h"
 #include "Palette/EffectPaint.h"
@@ -134,6 +139,8 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: balance rules", [] { BalanceRules::Install(); } },
 	{ "game hooks: screen shake", [] { ScreenShake::Install(); } },
 	{ "game hooks: training menu", [] { TrainingMenuItems::Install(); } },
+	{ "game hooks: option menu", [] { DisplaySettingsItems::Install(); } },
+	{ "game hooks: training hud", [] { ProrationHud::Install(); } },
 	{ "game hooks: name censor", [] { NameCensor::Install(); } },
 	{ "game hooks: room name censor", [] { RoomNameCensor::Install(); } },
 	{ "game hooks: random stage", [] { RandomStage::Install(); } },
@@ -179,6 +186,7 @@ const Task kFrame[] = {
 	[] { BgmControl::OnFrame(); },
 	[] { TrainingSave::OnFrame(); },
 	[] { TrainingMenuItems::OnFrame(); },
+	[] { DisplaySettingsItems::OnFrame(); },
 	[] { if (SoundPacks::ConsumeScanRequest()) SoundPacks::Scan(); },
 	[] { if (SoundPacks::ConsumeChanged()) ModFiles::Rescan(); },
 };
@@ -195,6 +203,8 @@ const Task kHud[] = {
 };
 
 const Task kInput[] = {
+	[] { BackgroundKeyboard::OnFrame(); },
+	[] { InjectedKeys::OnFrame(); },
 	[] { PlayerControl::Update(); },
 	[] { KeyboardSeat::Update(); },
 	[] { ReplayFiles::Update(); },
@@ -235,6 +245,7 @@ const Task kTail[] = {
 	[] { ExtraStages::OnFrame(); },
 	[] { OnlineStage::OnFrame(); },
 	[] { PotatoMode::OnFrame(); },
+	[](IDirect3DDevice9* device) { FrameGrab::OnPresent(device); },
 };
 
 struct GroupTable

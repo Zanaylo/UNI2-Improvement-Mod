@@ -5,6 +5,7 @@
 #include "D3D9/Device/DeviceHooks.h"
 #include "D3D9/Draw/GameFont.h"
 #include "D3D9/Draw/QuadRenderer.h"
+#include "Game/Menus/TrainingMenu.h"
 #include "Training/Meter/GrdWatch.h"
 
 #include <cstdint>
@@ -138,7 +139,7 @@ void GrdPopupHud::SetTimerVisible(bool visible)
 
 void GrdPopupHud::Render(IDirect3DDevice9* device)
 {
-	if (device == nullptr || !GrdWatch::IsAllowedHere())
+	if (device == nullptr || !GrdWatch::IsAllowedHere() || TrainingMenu::IsActive())
 		return;
 
 	GrdWatch::Popup popups[GrdWatch::kMaxPopups] = {};

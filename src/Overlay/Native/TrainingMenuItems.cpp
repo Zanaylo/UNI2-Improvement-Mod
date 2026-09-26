@@ -7,6 +7,9 @@
 #include "Overlay/Guides/FrameMeterLegend.h"
 #include "Overlay/Guides/HitboxLegend.h"
 #include "Overlay/Hud/FrameMeterHud.h"
+#include "Overlay/Hud/GrdPopupHud.h"
+#include "Overlay/Hud/HealthReadout.h"
+#include "Overlay/Hud/ProrationHud.h"
 #include "Overlay/Native/GuideScreen.h"
 #include "Overlay/Windows/HitboxOverlay.h"
 
@@ -41,6 +44,18 @@ const Binding kBindings[] = {
 	{ 0x1002, "Hitbox Display",
 		"Toggle the mod's hitbox viewer. Open menu shows what every box means.",
 		&HitboxOverlay::IsShown, &HitboxOverlay::SetShown, &g_hitboxGuide },
+	{ 0x1003, "GRD Popups",
+		"Show each GRD gain or loss, in blocks, above the GRD gauge.",
+		&GrdPopupHud::IsVisible, &GrdPopupHud::SetVisible, nullptr },
+	{ 0x1004, "GRD Timer",
+		"Show the seconds left before the GRD circle closes, in the middle of the gauge.",
+		&GrdPopupHud::IsTimerVisible, &GrdPopupHud::SetTimerVisible, nullptr },
+	{ 0x1005, "Health Values",
+		"Show the exact health under each health bar.",
+		&HealthReadout::IsVisible, &HealthReadout::SetVisible, nullptr },
+	{ 0x1006, "Proration Display",
+		"Show the proration the combo timer and the move count put on the next hit, under Damage info.",
+		&ProrationHud::IsVisible, &ProrationHud::SetVisible, nullptr },
 };
 
 constexpr int kBindingCount = static_cast<int>(sizeof(kBindings) / sizeof(kBindings[0]));
@@ -99,6 +114,9 @@ public:
 			if (binding.id != id)
 				continue;
 
+			if (binding.guide == nullptr)
+				return true;
+
 			binding.guide->Open();
 			TrainingMenu::OpenModal(binding.guide);
 			return true;
@@ -141,5 +159,8 @@ void TrainingMenuItems::OnFrame()
 void TrainingMenuItems::Render(IDirect3DDevice9* device)
 {
 	for (const Binding& binding : kBindings)
-		binding.guide->Render(device);
+	{
+		if (binding.guide != nullptr)
+			binding.guide->Render(device);
+	}
 }

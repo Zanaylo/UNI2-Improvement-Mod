@@ -6,6 +6,7 @@
 #include "Core/Config/Settings.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Config/keycodes.h"
+#include "Core/Input/BackgroundKeyboard.h"
 #include "Core/Input/KeyboardCapture.h"
 #include "Core/Input/PadInput.h"
 #include "Core/info.h"
@@ -45,6 +46,26 @@ void CaptureBind();
 void DrawFunctionBinds();
 void DrawBindRow(Hotkeys::Action action);
 void DrawBindConflicts();
+
+void DrawBackgroundKeyboard()
+{
+	ImGui::Spacing();
+
+	ImGui::BeginDisabled(!BackgroundKeyboard::IsAvailable());
+
+	bool background = BackgroundKeyboard::IsEnabled();
+	if (ImGui::Checkbox("Keep the keyboard working when the game is in the background", &background))
+		BackgroundKeyboard::SetEnabled(background);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("The game stops reading the keyboard when you click another window. Turn this "
+			"on and your keys keep reaching it, even while you type somewhere else.\n"
+			"Controllers always work in the background.");
+	}
+
+	ImGui::EndDisabled();
+}
 
 void DrawKeyboardTab()
 {
@@ -95,6 +116,8 @@ void DrawKeyboardTab()
 	ImGui::Spacing();
 	ImGui::TextWrapped("If a second keyboard player is set up in the game's options, those keys "
 		"will work on the controller's side. Set Keyboard Player Number to 1 there to turn them off.");
+
+	DrawBackgroundKeyboard();
 
 	ImGui::Spacing();
 	ImGui::TextDisabled("%s", KeyboardSeat::GetStatus());

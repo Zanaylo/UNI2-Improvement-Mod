@@ -18,6 +18,7 @@
 #include "Overlay/Hud/FrameMeterHud.h"
 #include "Overlay/Hud/GrdPopupHud.h"
 #include "Overlay/Hud/HealthReadout.h"
+#include "Overlay/Hud/ProrationHud.h"
 #include "Overlay/Windows/HitboxOverlay.h"
 #include "Palette/PaletteManager.h"
 #include "Training/Dummy/DummyScript.h"
@@ -121,6 +122,16 @@ void DrawHitboxControls()
 	{
 		ImGui::SetTooltip("Shows the exact health under each health bar, and how much the trailing "
 			"bar still has to drop. Offline only.");
+	}
+
+	bool prorationVisible = ProrationHud::IsVisible();
+	if (ImGui::Checkbox("Proration info", &prorationVisible))
+		ProrationHud::SetVisible(prorationVisible);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Shows the proration the combo timer and the move count put on the next "
+			"hit, under the game's Damage info.\nOffline training only.");
 	}
 
 	bool hudHidden = BattleCockpit::IsHidden();

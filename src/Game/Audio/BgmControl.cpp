@@ -48,6 +48,7 @@ GameHook<MenuBgm_t> g_menuBgmHook("MenuBgmChoose");
 constexpr int kIdleStartGrace = 4;
 constexpr int kIdleStartPeriod = 30;
 constexpr uint64_t kSelfStartGraceMs = 250;
+constexpr int kHeldPauseFrames = 8;
 
 bool g_hooked = false;
 bool g_reported = false;
@@ -64,6 +65,8 @@ int g_takenOver = -1;
 bool g_inChooser = false;
 bool g_inBattle = false;
 uint32_t g_startedStream = 0;
+int g_heldPauseFrames = 0;
+bool g_carryStart = false;
 
 uint64_t g_positionBase = 0;
 float g_positionSeconds = 0.0f;
@@ -324,6 +327,7 @@ bool StartTrack(int id, void* edx)
 
 	g_startedStream = 0;
 	g_parkedPause = false;
+	g_carryStart = false;
 	WriteGlobal(GameOffsets::kBgmState, State_Stopped);
 
 	return result;
@@ -410,6 +414,68 @@ void CarryOnThroughRound(int asked, int chosen, uint32_t state)
 		"starting over", asked, chosen);
 }
 
+bool SwappedTrackInMatch()
+{
+	if (!GameState::IsInMatch() || g_playing < 0 || g_lastPlayed == g_lastRequested)
+		return false;
+
+	if (ReadGlobal(GameOffsets::kBgmState) != State_Playing)
+		return false;
+
+	const uint32_t stream = ReadGlobal(GameOffsets::kBgmPlayer);
+
+	return stream != 0 && stream == g_startedStream;
+}
+
+void RunHeldPause(const char* why)
+{
+	g_heldPauseFrames = 0;
+
+	if (ReadGlobal(GameOffsets::kBgmPlayer) == 0)
+	{
+		WriteGlobal(GameOffsets::kBgmState, State_Stopped);
+		LOG("BgmControl: the held pause found its stream gone, the state is cleared");
+		return;
+	}
+
+	g_bgmPauseHook.Original()();
+
+	LOG("BgmControl: the held pause went through, %s", why);
+}
+
+void ReleaseHeldPause(const char* why)
+{
+	if (g_heldPauseFrames == 0)
+		return;
+
+	RunHeldPause(why);
+}
+
+void ExpireHeldPause()
+{
+	if (g_heldPauseFrames == 0)
+		return;
+
+	if (--g_heldPauseFrames > 0 && ReadGlobal(GameOffsets::kBgmPlayer) != 0)
+		return;
+
+	RunHeldPause("nothing asked for the track again");
+}
+
+bool AbsorbHeldPause(int asked)
+{
+	if (g_heldPauseFrames == 0)
+		return false;
+
+	g_heldPauseFrames = 0;
+	g_carryStart = true;
+
+	LOG("BgmControl: the game asked for its own %d again mid-match, so %d plays on through the "
+		"round change without a pause", asked, g_playing);
+
+	return true;
+}
+
 void __cdecl HookedBgmStart();
 
 void SelfStart()
@@ -445,6 +511,7 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 
 	if (g_pinned >= 0 && !BgmCatalog::ShuffleEnabled())
 	{
+		AbsorbHeldPause(id);
 		Explain("your pick, held over the %s the game asked for", SlotName(id));
 		LOG("BgmControl: game asked for %d, held back by your pick", id);
 		return true;
@@ -512,9 +579,13 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 
 	if (loaded)
 	{
-		CarryOnThroughRound(id, chosen, state);
+		if (!AbsorbHeldPause(id))
+			CarryOnThroughRound(id, chosen, state);
+
 		return true;
 	}
+
+	ReleaseHeldPause("a different track was asked for");
 
 	if (!StartTrack(chosen, edx))
 		return false;
@@ -589,8 +660,25 @@ bool SkipIdleStart(int slot)
 	return g_idleStarts % kIdleStartPeriod != 0;
 }
 
+bool CarriedStart()
+{
+	if (!g_carryStart)
+		return false;
+
+	g_carryStart = false;
+
+	return ReadGlobal(GameOffsets::kBgmState) == State_Playing && StillLoaded(g_playing);
+}
+
 void __cdecl HookedBgmStart()
 {
+	if (CarriedStart())
+	{
+		LOG("BgmControl: start ignored, %d kept playing through the round change", g_playing);
+		BgmVolume::ApplyNow();
+		return;
+	}
+
 	if (GameStartIsRedundant())
 	{
 		g_selfStartedAt = 0;
@@ -638,8 +726,27 @@ bool MayHoldPaused()
 	return !GameState::IsInMatch();
 }
 
+bool HoldRoundPause()
+{
+	if (g_heldPauseFrames > 0)
+		return true;
+
+	if (!SwappedTrackInMatch())
+		return false;
+
+	g_heldPauseFrames = kHeldPauseFrames;
+
+	LOG("BgmControl: pause held, %d is the mod's own track mid-match and the game is about to "
+		"ask for its %d again", g_playing, static_cast<int>(g_lastRequested));
+
+	return true;
+}
+
 void __cdecl HookedBgmPause()
 {
+	if (HoldRoundPause())
+		return;
+
 	const uint32_t before = ReadGlobal(GameOffsets::kBgmState);
 
 	g_bgmPauseHook.Original()();
@@ -862,6 +969,7 @@ int BgmControl::PinnedId()
 
 void BgmControl::OnFrame()
 {
+	ExpireHeldPause();
 	ClearOrphanPause();
 	ForgetDrawAfterBattle();
 

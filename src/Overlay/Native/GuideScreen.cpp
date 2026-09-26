@@ -20,7 +20,8 @@ constexpr float kCentre = kReferenceWidth * 0.5f;
 
 constexpr float kHeaderY = 9.0f;
 constexpr float kTitleY = 29.0f;
-constexpr float kTitlePixels = 24.0f;
+constexpr float kTitlePixels = 22.0f;
+constexpr float kTitleTracking = 1.0f;
 constexpr float kTitleIconGap = 4.0f;
 
 constexpr float kBandX = 424.0f;
@@ -100,7 +101,6 @@ constexpr uint32_t kText = 0xFFFFFFFF;
 constexpr uint32_t kMuted = 0xFFB4B8BE;
 constexpr uint32_t kHeading = 0xFFFFE800;
 constexpr uint32_t kTitleInk = 0xFF141414;
-constexpr uint32_t kTitleGlow = 0x70FFFFFF;
 constexpr uint32_t kSeparator = 0x2CFFFFFF;
 constexpr uint32_t kSelectLeft = 0xF0D40000;
 constexpr uint32_t kSelectRight = 0xE0880000;
@@ -147,22 +147,32 @@ int Clamp(int value, int count)
 	return value < count ? value : count - 1;
 }
 
-float FontScale(const Frame& frame, float pixels)
+struct Face
 {
-	const float line = GameArt::Font().GetLineHeight();
+	BitmapFont& (*font)();
+	float tracking;
+};
+
+const Face kBodyFace = { &GameArt::Font, kTracking };
+const Face kTitleFace = { &GameFont::Face, kTitleTracking };
+
+float FontScale(const Frame& frame, const Face& face, float pixels)
+{
+	const float line = face.font().GetLineHeight();
 
 	return line > 0.0f ? frame.S(pixels) / line : 1.0f;
 }
 
-float Width(const Frame& frame, const char* text, float pixels)
+float Width(const Frame& frame, const char* text, float pixels, const Face& face = kBodyFace)
 {
-	return GameArt::Font().MeasureWidth(text, FontScale(frame, pixels), kTracking) / frame.scale;
+	return face.font().MeasureWidth(text, FontScale(frame, face, pixels), face.tracking) / frame.scale;
 }
 
-void Text(const Frame& frame, const char* text, float x, float centreY, float pixels, uint32_t colour)
+void Text(const Frame& frame, const char* text, float x, float centreY, float pixels, uint32_t colour,
+	const Face& face = kBodyFace)
 {
-	GameArt::Font().Draw(text, frame.X(x), frame.Y(centreY - pixels * 0.5f), FontScale(frame, pixels), colour,
-		kTracking);
+	face.font().Draw(text, frame.X(x), frame.Y(centreY - pixels * 0.5f), FontScale(frame, face, pixels), colour,
+		face.tracking);
 }
 
 const char* Fit(const Frame& frame, const char* text, float pixels, float width, char* out, size_t size)
@@ -213,22 +223,12 @@ void DrawTitle(const Frame& frame, const char* title)
 {
 	const float iconWidth = static_cast<float>(GameArt::kTitleIcon.width);
 	const float iconHeight = static_cast<float>(GameArt::kTitleIcon.height);
-	const float textWidth = Width(frame, title, kTitlePixels);
+	const float textWidth = Width(frame, title, kTitlePixels, kTitleFace);
 	const float left = kCentre - (iconWidth + kTitleIconGap + textWidth) * 0.5f;
 	const float textX = left + iconWidth + kTitleIconGap;
 
 	Sprite(frame, GameArt::kTitleIcon, left, kTitleY - iconHeight * 0.5f, iconWidth, iconHeight);
-
-	for (int dx = -1; dx <= 1; ++dx)
-	{
-		for (int dy = -1; dy <= 1; ++dy)
-		{
-			if (dx != 0 || dy != 0)
-				Text(frame, title, textX + dx, kTitleY + dy, kTitlePixels, kTitleGlow);
-		}
-	}
-
-	Text(frame, title, textX, kTitleY, kTitlePixels, kTitleInk);
+	Text(frame, title, textX, kTitleY, kTitlePixels, kTitleInk, kTitleFace);
 }
 
 void DrawPageBar(const Frame& frame, const GuideContent& content, int current)

@@ -148,6 +148,52 @@ bool Expand(const std::vector<uint8_t>& lines, int width, int height, int channe
 	return true;
 }
 
+void PutBig32(std::vector<uint8_t>& out, uint32_t value)
+{
+	out.push_back(static_cast<uint8_t>(value >> 24));
+	out.push_back(static_cast<uint8_t>(value >> 16));
+	out.push_back(static_cast<uint8_t>(value >> 8));
+	out.push_back(static_cast<uint8_t>(value));
+}
+
+void PutChunk(std::vector<uint8_t>& out, const char* tag, const std::vector<uint8_t>& body)
+{
+	PutBig32(out, static_cast<uint32_t>(body.size()));
+
+	const size_t tagAt = out.size();
+	out.insert(out.end(), tag, tag + 4);
+	out.insert(out.end(), body.begin(), body.end());
+
+	PutBig32(out, Deflate::Crc32(&out[tagAt], out.size() - tagAt));
+}
+
+std::vector<uint8_t> SubFilteredRgb(int width, int height, const std::vector<uint8_t>& bgra)
+{
+	const size_t stride = static_cast<size_t>(width) * 3;
+	std::vector<uint8_t> raw((stride + 1) * height);
+
+	for (int row = 0; row < height; ++row)
+	{
+		uint8_t* const line = &raw[row * (stride + 1)];
+		const uint8_t* const pixels = &bgra[static_cast<size_t>(row) * width * 4];
+
+		line[0] = 1;
+
+		for (int x = 0; x < width; ++x)
+		{
+			for (int channel = 0; channel < 3; ++channel)
+			{
+				const uint8_t value = pixels[x * 4 + 2 - channel];
+				const uint8_t left = x == 0 ? 0 : pixels[(x - 1) * 4 + 2 - channel];
+
+				line[1 + x * 3 + channel] = static_cast<uint8_t>(value - left);
+			}
+		}
+	}
+
+	return raw;
+}
+
 }
 
 bool PngImage::Decode(const std::vector<uint8_t>& blob, int& outWidth, int& outHeight,
@@ -226,6 +272,30 @@ bool PngImage::Decode(const std::vector<uint8_t>& blob, int& outWidth, int& outH
 
 	outWidth = width;
 	outHeight = height;
+
+	return true;
+}
+
+bool PngImage::Encode(int width, int height, const std::vector<uint8_t>& bgra, std::vector<uint8_t>& outPng)
+{
+	if (width <= 0 || height <= 0 || bgra.size() < static_cast<size_t>(width) * height * 4)
+		return false;
+
+	const std::vector<uint8_t> raw = SubFilteredRgb(width, height, bgra);
+
+	std::vector<uint8_t> stream;
+	if (!Deflate::Zlib(raw.data(), raw.size(), stream))
+		return false;
+
+	std::vector<uint8_t> header;
+	PutBig32(header, static_cast<uint32_t>(width));
+	PutBig32(header, static_cast<uint32_t>(height));
+	header.insert(header.end(), { 8, 2, 0, 0, 0 });
+
+	outPng.assign(kMagic, kMagic + kSignature);
+	PutChunk(outPng, "IHDR", header);
+	PutChunk(outPng, "IDAT", stream);
+	PutChunk(outPng, "IEND", {});
 
 	return true;
 }

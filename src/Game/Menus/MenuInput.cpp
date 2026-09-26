@@ -37,6 +37,17 @@ bool Fetch(int player, RawInput& raw)
 	return true;
 }
 
+bool FetchShared(RawInput& raw)
+{
+	const uintptr_t fetch = CodeSignatures::Address(GameOffsets::kFnFetchSharedMenuInput);
+
+	if (!IsAddressInGameModule(fetch))
+		return false;
+
+	reinterpret_cast<void(__fastcall*)(void*)>(fetch)(raw.bytes);
+	return true;
+}
+
 bool Asks(uintptr_t rva, RawInput& raw)
 {
 	const ButtonFn check = reinterpret_cast<ButtonFn>(CodeSignatures::Address(rva));
@@ -63,6 +74,16 @@ int Lever(const RawInput& raw)
 	return MenuInput::kLeverNone;
 }
 
+void Decode(RawInput& raw, MenuInput::State& out)
+{
+	out.lever = Lever(raw);
+	out.confirm = Asks(GameOffsets::kFnMenuInputConfirm, raw);
+	out.cancel = Asks(GameOffsets::kFnMenuInputCancel, raw);
+	out.openMenu = Triggered(raw, GameOffsets::kMenuButtonOpenMenu);
+	out.nextPage = Triggered(raw, GameOffsets::kMenuButtonNextPage);
+	out.previousPage = Triggered(raw, GameOffsets::kMenuButtonPreviousPage);
+}
+
 }
 
 bool MenuInput::Read(int player, State& out)
@@ -74,12 +95,19 @@ bool MenuInput::Read(int player, State& out)
 	if (!Fetch(player, raw))
 		return false;
 
-	out.lever = Lever(raw);
-	out.confirm = Asks(GameOffsets::kFnMenuInputConfirm, raw);
-	out.cancel = Asks(GameOffsets::kFnMenuInputCancel, raw);
-	out.openMenu = Triggered(raw, GameOffsets::kMenuButtonOpenMenu);
-	out.nextPage = Triggered(raw, GameOffsets::kMenuButtonNextPage);
-	out.previousPage = Triggered(raw, GameOffsets::kMenuButtonPreviousPage);
+	Decode(raw, out);
+	return true;
+}
 
+bool MenuInput::ReadShared(State& out)
+{
+	out = State();
+
+	RawInput raw = {};
+
+	if (!FetchShared(raw))
+		return false;
+
+	Decode(raw, out);
 	return true;
 }

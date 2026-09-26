@@ -10,6 +10,7 @@
 #include "D3D9/Device/GraphicsWrapper.h"
 #include "D3D9/Post/PostChain.h"
 #include "D3D9/Post/PostOptions.h"
+#include "D3D9/Post/PostStages.h"
 #include "D3D9/Post/SceneUpscale.h"
 #include "D3D9/Post/ShaderPack.h"
 #include "D3D9/Post/UpscaleFilter.h"
@@ -79,14 +80,11 @@ void DrawUpscaleFilter()
 {
 	ImGui::SeparatorText("Upscale filter");
 
-	const int current = UpscaleFilter::Clamp(g_modVals.upscaleFilter);
+	const int current = PostStages::GetUpscaleFilter();
 	int chosen = current;
 
 	if (RadioRow("filter", UpscaleFilter::Kind_COUNT, &UpscaleFilter::GetName, current, chosen))
-	{
-		g_modVals.upscaleFilter = chosen;
-		Settings::SaveInt("Graphics", "UpscaleFilter", chosen);
-	}
+		PostStages::SetUpscaleFilter(chosen);
 
 	Help("The game draws the scene at 1280x720 and stretches it to your window. This picks a "
 		"better filter for that stretch.\n\n"
@@ -100,14 +98,11 @@ void DrawAntiAliasing()
 {
 	ImGui::SeparatorText("Anti-aliasing");
 
-	const int current = AntiAlias::Clamp(g_modVals.antiAliasing);
+	const int current = PostStages::GetAntiAliasing();
 	int chosen = current;
 
 	if (RadioRow("aa", AntiAlias::Level_COUNT, &AntiAlias::GetName, current, chosen))
-	{
-		g_modVals.antiAliasing = chosen;
-		Settings::SaveInt("Graphics", "AntiAliasing", chosen);
-	}
+		PostStages::SetAntiAliasing(chosen);
 
 	Help("FXAA over the finished frame.\n\n"
 		"Multisampling cannot work here, because the game draws its scene into textures. For "
@@ -120,15 +115,17 @@ void DrawBloom()
 {
 	ImGui::SeparatorText("Bloom");
 
-	if (ImGui::Checkbox("Bloom", &g_modVals.bloomEnabled))
-		Settings::SaveInt("Graphics", "Bloom", g_modVals.bloomEnabled ? 1 : 0);
+	bool bloom = PostStages::IsBloomOn();
+
+	if (ImGui::Checkbox("Bloom", &bloom))
+		PostStages::SetBloom(bloom);
 
 	Help("Makes the bright parts of the picture glow: stage neon, the moon, EXS and super "
 		"effects.\n\n"
 		"Threshold is how bright a pixel must be to glow. Lower it and the whole picture gets "
 		"hazy. Raise it and only the real highlights glow.");
 
-	if (!g_modVals.bloomEnabled)
+	if (!bloom)
 		return;
 
 	ImGui::Indent();
@@ -141,14 +138,11 @@ void DrawSharpening()
 {
 	ImGui::SeparatorText("Sharpening");
 
-	const int mode = SharpenMode::Clamp(g_modVals.sharpenMode);
+	const int mode = PostStages::GetSharpening();
 	int chosen = mode;
 
 	if (RadioRow("sharpen", SharpenMode::Kind_COUNT, &SharpenMode::GetName, mode, chosen))
-	{
-		g_modVals.sharpenMode = chosen;
-		Settings::SaveInt("Graphics", "SharpenMode", chosen);
-	}
+		PostStages::SetSharpening(chosen);
 
 	Help("Most of the game's softness comes from stretching it to your window. Sharpening brings "
 		"the edges back. 40-60% works best.");
@@ -168,13 +162,15 @@ void DrawLook()
 {
 	ImGui::SeparatorText("Colour and display");
 
-	if (ImGui::Checkbox("Colour and display", &g_modVals.lookEnabled))
-		Settings::SaveInt("Graphics", "Look", g_modVals.lookEnabled ? 1 : 0);
+	bool look = PostStages::IsLookOn();
+
+	if (ImGui::Checkbox("Colour and display", &look))
+		PostStages::SetLook(look);
 
 	Help("Adjusts the colours of the finished frame. When it is off, the sliders below do "
 		"nothing.");
 
-	if (!g_modVals.lookEnabled)
+	if (!look)
 		return;
 
 	ImGui::SameLine();
@@ -316,13 +312,12 @@ bool GraphicsPanel::DrawEverythingOff()
 	}
 
 	PostChain::TurnOff();
+	PostStages::SetUpscaleFilter(UpscaleFilter::Kind_Off);
 
-	g_modVals.upscaleFilter = UpscaleFilter::Kind_Off;
 	g_modVals.disableBackBufferAa = false;
 	g_modVals.disableCharacterFilter = false;
 	g_modVals.simpleStage = false;
 
-	Settings::SaveInt("Graphics", "UpscaleFilter", 0);
 	Settings::SaveInt("Graphics", "DisableBackBufferAA", 0);
 	Settings::SaveInt("Graphics", "DisableCharacterFilter", 0);
 	Settings::SaveInt("Graphics", "SimpleStage", 0);

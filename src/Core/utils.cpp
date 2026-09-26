@@ -1,5 +1,6 @@
 ﻿#include "Core/utils.h"
 
+#include "Core/Harness/InjectedKeys.h"
 #include "Core/Input/KeyboardCapture.h"
 #include "Core/info.h"
 
@@ -418,6 +419,9 @@ bool EchoesAsyncEdge(DWORD messageAt, DWORD asyncEdgeAt)
 
 bool AsyncKeyDown(int virtualKey)
 {
+	if (InjectedKeys::IsDown(virtualKey))
+		return true;
+
 	return HotkeyFocus() && (GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 }
 

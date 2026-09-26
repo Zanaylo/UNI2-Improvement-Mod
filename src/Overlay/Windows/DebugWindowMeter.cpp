@@ -288,7 +288,7 @@ void DebugWindow::DrawMeterComparisonSection()
 			MemoryMap::ReadDwordAt(record + GameOffsets::kComboRecordValid, valid);
 			MemoryMap::ReadDwordAt(record + GameOffsets::kComboHitCount, a);
 			MemoryMap::ReadDwordAt(record + GameOffsets::kComboDamageTotal, b);
-			MemoryMap::ReadDwordAt(record + GameOffsets::kComboCandidateC, c);
+			MemoryMap::ReadDwordAt(record + GameOffsets::kComboTimer, c);
 			MemoryMap::ReadDwordAt(record + GameOffsets::kComboViewValue, d);
 			MemoryMap::ReadDwordAt(record + GameOffsets::kComboCandidateE, e);
 

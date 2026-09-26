@@ -1,5 +1,7 @@
 #include "Hooks/hooks_input.h"
 
+#include "Core/Harness/InjectedKeys.h"
+#include "Core/Input/BackgroundKeyboard.h"
 #include "Core/Input/KeyboardCapture.h"
 #include "Core/logger.h"
 #include "Hooks/GameHook.h"
@@ -71,6 +73,9 @@ BOOL WINAPI HookedGetKeyboardState(PBYTE keyState)
 	if (!result || keyState == nullptr)
 		return result;
 
+	BackgroundKeyboard::Fill(keyState);
+	InjectedKeys::Merge(keyState);
+
 	if (KeyboardCapture::OwnsKeyboard())
 	{
 		HoldDownKeys(keyState);
@@ -86,7 +91,9 @@ SHORT WINAPI HookedGetKeyState(int virtualKey)
 {
 	InputProbe::CountKeyState();
 
-	const SHORT state = g_getKeyStateHook.Original()(virtualKey);
+	const SHORT original = g_getKeyStateHook.Original()(virtualKey);
+	const SHORT state = InjectedKeys::IsDown(virtualKey) ? static_cast<SHORT>(0x8000)
+		: BackgroundKeyboard::KeyState(virtualKey, original);
 
 	if (IsModifierKey(virtualKey) || virtualKey < 0 || virtualKey >= kKeyCount)
 		return state;
