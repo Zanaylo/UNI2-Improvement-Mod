@@ -213,6 +213,8 @@ The objects use the **same attribute names** as the FbxExp add-on (`Shade`, `fbx
   fountain water gets eight of them, Central Station's escalator gets one.
 - **Scripts:** every `scr/*.evb` as a Text datablock. The commands the add-on understands are
   applied, see below.
+- **Particles:** the snow, sparks and other effects the stage's scripts spawn, as billboards in a
+  `<stage> particles` collection. See below.
 - **Frame rate:** the scene is set to 60 fps from frame 0, the same clock BBTAG counts in.
 
 ## What the scripts do
@@ -263,6 +265,25 @@ Scripts are tied to meshes by the **model's own skeleton record**, not by name. 
 got in `mua_script` under `Object Properties` > `Custom Properties`, next to `mua_mesh`,
 `mua_skeleton` and `mua_sheet`. The material has `mua_material` (the record's eighteen floats) and
 `mua_texture`.
+
+## Particles
+
+A script's `0x07` spawns a named effect of `data/particle/particle_dat_bg.pac` at one of its bones,
+the way BBTAG does it. Snowtown gets its snow, Town its welding sparks. The add-on finds the
+`particle` folder next to the stage's `data` folder, so open the stage from the game folder.
+
+- **Each particle is one object**, a card that faces BBTAG's camera, cut from `particle.dds` at the
+  effect's own rectangle. It is drawn additive, like in the game.
+- **Its lives are keyed:** where it is born, how it falls or flies, its colour and alpha over its
+  life, its size and its spin. A spark's streak turns to follow its motion. The keys loop, so the
+  effect never runs out.
+- **They are the same particles the mod puts in UNI2.** The same seed, the same lives and the same
+  paths, so a flake in Blender is the flake the port draws.
+- **Blender keeps the depth UNI2 can't.** The cards stand in the 3D scene, so a house hides a flake
+  behind it. In UNI2 the effect is drawn on the stage's 2D layer, over the model.
+
+Colour and alpha live on the object as `mua_tint` and `mua_ramp`. Turn **Particles** off in the
+import options to leave them out.
 
 ## Save a model back
 

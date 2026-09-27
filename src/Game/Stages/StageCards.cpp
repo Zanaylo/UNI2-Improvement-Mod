@@ -1,7 +1,5 @@
 #include "Game/Stages/StageCards.h"
 
-#include "Game/Stages/BgMipmaps.h"
-
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Stages/BgListOverride.h"
@@ -37,11 +35,7 @@ constexpr const char* kSheetFile = "Mods\\grpdat\\CSel\\stage_thumb01.dds";
 
 using Setup_t = int(__fastcall*)(void*, void*);
 
-using CreateTexture_t = HRESULT(WINAPI*)(void*, const void*, UINT, UINT, UINT, UINT, DWORD, DWORD,
-	DWORD, DWORD, DWORD, DWORD, void*, void*, IDirect3DTexture9**);
-
 GameHook<Setup_t> g_setupHook("StageSelectSetup");
-GameHook<CreateTexture_t> g_d3DXCreateTextureFromFileInMemoryExHook("D3DXCreateTextureFromFileInMemoryEx");
 
 void* volatile g_picker = nullptr;
 IDirect3DTexture9* volatile g_sheet = nullptr;
@@ -100,72 +94,6 @@ int __fastcall HookedSetup(void* self, void* unused)
 
 	for (int& holds : g_holds)
 		holds = 0;
-
-	return result;
-}
-
-HRESULT WINAPI HookedCreateTexture(void* device, const void* source, UINT bytes, UINT width,
-	UINT height, UINT levels, DWORD usage, DWORD format, DWORD pool, DWORD filter,
-	DWORD mipFilter, DWORD colourKey, void* info, void* palette, IDirect3DTexture9** texture)
-{
-	UINT wantedLevels = levels;
-	const bool baked = BgMipmaps::FromFile(source, bytes, wantedLevels);
-
-	const DWORD began = GetTickCount();
-
-	HRESULT result = g_d3DXCreateTextureFromFileInMemoryExHook.Original()(device, source, bytes, width, height, wantedLevels, usage,
-		format, pool, filter, mipFilter, colourKey, info, palette, texture);
-
-	BgMipmaps::Note(GetTickCount() - began, baked);
-
-	if (FAILED(result) && baked)
-	{
-		result = g_d3DXCreateTextureFromFileInMemoryExHook.Original()(device, source, bytes, width, height, levels, usage, format, pool,
-			filter, mipFilter, colourKey, info, palette, texture);
-	}
-
-	if (FAILED(result) || texture == nullptr || *texture == nullptr)
-		return result;
-
-	if (g_wanted.empty() || bytes != g_wanted.size()
-		|| memcmp(source, g_wanted.data(), g_wanted.size()) != 0)
-	{
-		return result;
-	}
-
-	D3DSURFACE_DESC desc = {};
-
-	if (FAILED((*texture)->GetLevelDesc(0, &desc)))
-		return result;
-
-	if (desc.Pool == D3DPOOL_DEFAULT)
-	{
-		sprintf_s(g_status, "the picker's sheet is in video memory, so the mod cannot paint it");
-		LOG("StageCards: %s", g_status);
-		return result;
-	}
-
-	if (desc.Format != D3DFMT_A8R8G8B8 && desc.Format != D3DFMT_X8R8G8B8)
-	{
-		sprintf_s(g_status, "the picker's sheet came out as format %u, which the mod cannot paint",
-			static_cast<unsigned>(desc.Format));
-		LOG("StageCards: %s", g_status);
-		return result;
-	}
-
-	IDirect3DTexture9* const was = g_sheet;
-
-	(*texture)->AddRef();
-	g_sheet = *texture;
-
-	if (was != nullptr)
-		was->Release();
-
-	for (int& holds : g_holds)
-		holds = 0;
-
-	sprintf_s(g_status, "painting the picker's cards, sheet %ux%u", desc.Width, desc.Height);
-	LOG("StageCards: %s", g_status);
 
 	return result;
 }
@@ -285,6 +213,49 @@ bool Refresh(int cursor)
 
 }
 
+void StageCards::OnTexture(const void* source, unsigned int bytes, IDirect3DTexture9* texture)
+{
+	if (g_wanted.empty() || bytes != g_wanted.size()
+		|| memcmp(source, g_wanted.data(), g_wanted.size()) != 0)
+	{
+		return;
+	}
+
+	D3DSURFACE_DESC desc = {};
+
+	if (FAILED(texture->GetLevelDesc(0, &desc)))
+		return;
+
+	if (desc.Pool == D3DPOOL_DEFAULT)
+	{
+		sprintf_s(g_status, "the picker's sheet is in video memory, so the mod cannot paint it");
+		LOG("StageCards: %s", g_status);
+		return;
+	}
+
+	if (desc.Format != D3DFMT_A8R8G8B8 && desc.Format != D3DFMT_X8R8G8B8)
+	{
+		sprintf_s(g_status, "the picker's sheet came out as format %u, which the mod cannot paint",
+			static_cast<unsigned>(desc.Format));
+		LOG("StageCards: %s", g_status);
+		return;
+	}
+
+	IDirect3DTexture9* const was = g_sheet;
+
+	texture->AddRef();
+	g_sheet = texture;
+
+	if (was != nullptr)
+		was->Release();
+
+	for (int& holds : g_holds)
+		holds = 0;
+
+	sprintf_s(g_status, "painting the picker's cards, sheet %ux%u", desc.Width, desc.Height);
+	LOG("StageCards: %s", g_status);
+}
+
 bool StageCards::Initialize()
 {
 	StageThumb::ServeSheet();
@@ -302,13 +273,6 @@ bool StageCards::Initialize()
 	if (!g_setupHook.Install(reinterpret_cast<void*>(address), &HookedSetup))
 	{
 		strncpy_s(g_status, "the stage picker's setup could not be hooked", _TRUNCATE);
-		return false;
-	}
-
-	if (!g_d3DXCreateTextureFromFileInMemoryExHook.InstallApi("d3dx9_42.dll", "D3DXCreateTextureFromFileInMemoryEx", &HookedCreateTexture))
-	{
-		strncpy_s(g_status, "the texture loader could not be hooked", _TRUNCATE);
-		LOG("StageCards: %s", g_status);
 		return false;
 	}
 

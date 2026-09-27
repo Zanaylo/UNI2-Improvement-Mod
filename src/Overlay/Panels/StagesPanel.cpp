@@ -18,9 +18,9 @@
 #include "Overlay/Panels/RestartPrompt.h"
 
 #include <imgui.h>
-#include <imgui_internal.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -34,16 +34,19 @@ constexpr float kSizeColumn = 80.0f;
 constexpr float kActionColumn = 150.0f;
 constexpr float kCheckboxGap = 24.0f;
 constexpr float kPortedHeight = 330.0f;
-constexpr float kGradeColumn = 78.0f;
+constexpr float kStepperColumn = 118.0f;
 constexpr float kInGameColumn = 70.0f;
 constexpr float kPlacementWidth = 260.0f;
-constexpr float kLeastScale = 0.05f;
-constexpr float kMostScale = 400.0f;
-constexpr float kScaleFloor = 0.1f;
-constexpr float kScaleCeiling = 4.0f;
 constexpr float kMostMove = 40.0f;
+constexpr float kMoveSpeed = 0.05f;
 
-constexpr float kMostGlow = 2.0f;
+constexpr float kStepPercent = 5.0f;
+constexpr float kDragSpeed = 0.5f;
+constexpr float kLeastBrightness = 25.0f;
+constexpr float kMostBrightness = 300.0f;
+constexpr float kMostGlow = 400.0f;
+constexpr float kLeastSize = 10.0f;
+constexpr float kMostSize = 400.0f;
 
 const ImVec4 kPlayingText(0.45f, 0.90f, 0.50f, 1.0f);
 
@@ -65,19 +68,11 @@ void Resize(StagePlacement::Place& place, float size)
 		place.scale[i] *= by;
 }
 
-void ScaleRange(int stage, float& low, float& high)
+float Snapped(float percent, float step)
 {
-	StagePlacement::Place shipped = {};
+	const float moved = floorf((percent + step) / kStepPercent + 0.5f) * kStepPercent;
 
-	if (!StagePlacement::Shipped(stage, shipped) || shipped.scale[0] <= 0.0f)
-	{
-		low = kLeastScale;
-		high = kMostScale;
-		return;
-	}
-
-	low = shipped.scale[0] * kScaleFloor;
-	high = shipped.scale[0] * kScaleCeiling;
+	return moved < 0.0f ? 0.0f : moved;
 }
 
 void Megabytes(uint32_t bytes, char* out, size_t size)
@@ -166,36 +161,52 @@ void Gather(std::vector<Listed>& out)
 		[](const Listed& a, const Listed& b) { return Order(a) < Order(b); });
 }
 
+bool Percent(const char* id, float* value, float base, float low, float high, const char* tip)
+{
+	if (base <= 0.0f)
+	{
+		ImGui::TextDisabled("-");
+		return false;
+	}
+
+	ImGui::PushID(id);
+
+	const float button = ImGui::GetFrameHeight();
+	const float gap = ImGui::GetStyle().ItemInnerSpacing.x;
+	float percent = *value / base * 100.0f;
+	bool changed = false;
+
+	if (ImGui::Button("-", ImVec2(button, 0.0f)))
+	{
+		percent = Snapped(percent, -kStepPercent);
+		changed = true;
+	}
+
+	ImGui::SameLine(0.0f, gap);
+	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - button - gap);
+	changed = ImGui::DragFloat("##value", &percent, kDragSpeed, low, high, "%.0f%%") || changed;
+
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("%s\n\n100%% is this stage's default. Drag, use - and +, or double click "
+			"to type any value.", tip);
+
+	ImGui::SameLine(0.0f, gap);
+
+	if (ImGui::Button("+", ImVec2(button, 0.0f)))
+	{
+		percent = Snapped(percent, kStepPercent);
+		changed = true;
+	}
+
+	ImGui::PopID();
+
+	if (!changed)
+		return false;
+
+	*value = base * (percent < 0.0f ? 0.0f : percent) / 100.0f;
+	return true;
 }
 
-bool StagesPanel::Number(const char* id, float* value, float low, float high,
-	const char* format)
-{
-	ImGui::SetNextItemWidth(-1.0f);
-
-	const float was = *value;
-	const bool dragged = ImGui::SliderFloat(id, value, low, high, format);
-	const ImGuiID key = ImGui::GetItemID();
-
-	if (ImGui::IsItemActivated() && ImGui::GetIO().MouseClickedCount[ImGuiMouseButton_Left] < 2)
-	{
-		m_pressed = key;
-		m_pressedValue = was;
-	}
-
-	if (!ImGui::IsItemHovered() || !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) ||
-		ImGui::TempInputIsActive(key))
-	{
-		return dragged;
-	}
-
-	*value = m_pressed == key ? m_pressedValue : was;
-
-	ImGui::ClearActiveID();
-	ImGui::ActivateItemByID(key);
-	GImGui->NavNextActivateFlags = ImGuiActivateFlags_PreferInput;
-
-	return true;
 }
 
 void StagesPanel::SyncRows()
@@ -397,16 +408,15 @@ void StagesPanel::DrawArcsys()
 	if (game != FbGameFolder::Game_BBTAG && game != FbGameFolder::Game_BBCF)
 		return;
 
-	UiText::Muted("These stages convert here, but the Mua add-on for Blender does a better job. It "
-		"reads the skeleton, the motions, the scripts and every sprite sheet. Here only one sheet is "
-		"used, so animated sprites stand still. Import what you make in Blender with the button "
-		"below.");
+	UiText::Muted("These stages convert with their motions, sprite animations, lights and the "
+		"BLAZBLUE camera. To edit one, open it with the Mua add-on for Blender and import the result "
+		"with the button below.");
 
 	if (game != FbGameFolder::Game_BBCF)
 		return;
 
-	UiText::Warn("CENTRALFICTION stages can come out at the wrong size. If one does, set Size by "
-		"eye.");
+	UiText::Warn("CENTRALFICTION stages use the CROSS TAG BATTLE camera, which was not checked "
+		"against CENTRALFICTION. If one looks too big or too small, change its Size.");
 }
 
 void StagesPanel::DrawCustom()
@@ -618,23 +628,16 @@ void StagesPanel::DrawPlacement()
 	if (stage < 0 || !StagePlacement::Of(stage, place))
 		return;
 
-	if (!ImGui::CollapsingHeader("Stage scale and position"))
+	if (!ImGui::CollapsingHeader("Stage position"))
 		return;
 
-	UiText::Muted("Scale makes the stage bigger around the fight. Position moves it. The fighters "
-		"stay where they are, so a bigger scale makes them look smaller.");
-
-	bool changed = false;
-
-	float low = kLeastScale;
-	float high = kMostScale;
-	ScaleRange(stage, low, high);
+	UiText::Muted("Moves the scenery around the fight. The fighters stay where they are. Size is "
+		"in the list below.");
 
 	ImGui::PushItemWidth(Ui::Scaled(kPlacementWidth));
 
-	changed |= ImGui::SliderFloat3("Scale##placescale", place.scale, low, high, "%.2f");
-	changed |= ImGui::SliderFloat3("Position##placemove", place.position, -kMostMove, kMostMove,
-		"%.2f");
+	const bool changed = ImGui::DragFloat3("Position##placemove", place.position, kMoveSpeed,
+		-kMostMove, kMostMove, "%.2f");
 
 	ImGui::PopItemWidth();
 
@@ -663,8 +666,8 @@ void StagesPanel::DrawTuning(int key, int slot)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Untick to show this stage in the game's own colour, without Lift, "
-			"Contrast or Light. Your values are kept for when you tick it again.");
+		ImGui::SetTooltip("Untick to show this stage in the game's own colour, without the mod's "
+			"Brightness or Glow. Your values are kept for when you tick it again.");
 	}
 
 	BgGrade::Grade grade = BgGrade::Of(key);
@@ -673,55 +676,42 @@ void StagesPanel::DrawTuning(int key, int slot)
 	ImGui::BeginDisabled(!graded);
 
 	ImGui::TableNextColumn();
-	bool changed = Number("##lift", &grade.lift, 0.0f, 0.25f, "%.2f");
 
-	ImGui::TableNextColumn();
-	changed = Number("##contrast", &grade.contrast, 0.5f, 3.0f, "%.2f") || changed;
-
-	if (changed)
-		BgGrade::Set(key, grade);
-
-	ImGui::TableNextColumn();
-
-	if (Number("##glow", &glow, 0.0f, kMostGlow, "%.2f"))
-		BgGrade::SetGlow(key, glow);
-
-	ImGui::EndDisabled();
-
-	if (ImGui::IsItemHovered())
+	if (Percent("##brightness", &grade.contrast, BgGrade::DefaultOf(key).contrast,
+		kLeastBrightness, kMostBrightness, "How bright the whole stage is."))
 	{
-		ImGui::SetTooltip("Changes only the glowing parts of this stage, like lamps, glows "
-			"and flares. The rest keeps its brightness. UNI2's own stages have none, so this "
-			"does nothing on them.");
+		BgGrade::Set(key, grade);
 	}
 
 	ImGui::TableNextColumn();
 
-	StagePlacement::Place place = {};
+	if (Percent("##glow", &glow, BgGrade::DefaultGlowOf(key), 0.0f, kMostGlow,
+		"How strong the glowing parts are: lamps, glows, flares and light beams. The rest of the "
+		"stage keeps its brightness."))
+	{
+		BgGrade::SetGlow(key, glow);
+	}
 
-	if (slot < 0 || !StagePlacement::Of(slot, place))
+	ImGui::EndDisabled();
+
+	ImGui::TableNextColumn();
+
+	StagePlacement::Place place = {};
+	StagePlacement::Place shipped = {};
+
+	if (slot < 0 || !StagePlacement::Of(slot, place) || !StagePlacement::Shipped(slot, shipped))
 	{
 		ImGui::TextDisabled("-");
 		return;
 	}
 
 	float size = place.scale[0];
-	float low = kLeastScale;
-	float high = kMostScale;
 
-	ScaleRange(slot, low, high);
-
-	if (Number("##size", &size, low, high, "%.2f"))
+	if (Percent("##size", &size, shipped.scale[0], kLeastSize, kMostSize,
+		"How big the scenery is around the fight. A bigger stage makes the fighters look smaller."))
 	{
 		Resize(place, size);
 		StagePlacement::Set(slot, place);
-	}
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("How big the stage is around the fight. A bigger stage "
-			"makes the fighters look smaller. The slider goes from %.2f to %.2f; "
-			"double click it to type any number.", low, high);
 	}
 }
 
@@ -739,7 +729,7 @@ void StagesPanel::DrawPorted()
 
 	const bool advanced = g_modVals.advancedStages != 0;
 
-	if (!ImGui::BeginTable("##stageports", advanced ? 9 : 4,
+	if (!ImGui::BeginTable("##stageports", advanced ? 8 : 4,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
 		ImGuiTableFlags_ScrollY, ImVec2(0.0f, Ui::Scaled(kPortedHeight))))
 	{
@@ -754,13 +744,12 @@ void StagesPanel::DrawPorted()
 	{
 		ImGui::TableSetupColumn("Colour", ImGuiTableColumnFlags_WidthFixed,
 			Ui::Scaled(kInGameColumn));
-		ImGui::TableSetupColumn("Lift", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kGradeColumn));
-		ImGui::TableSetupColumn("Contrast", ImGuiTableColumnFlags_WidthFixed,
-			Ui::Scaled(kGradeColumn));
-		ImGui::TableSetupColumn("Light", ImGuiTableColumnFlags_WidthFixed,
-			Ui::Scaled(kGradeColumn));
+		ImGui::TableSetupColumn("Brightness", ImGuiTableColumnFlags_WidthFixed,
+			Ui::Scaled(kStepperColumn));
+		ImGui::TableSetupColumn("Glow", ImGuiTableColumnFlags_WidthFixed,
+			Ui::Scaled(kStepperColumn));
 		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,
-			Ui::Scaled(kGradeColumn));
+			Ui::Scaled(kStepperColumn));
 	}
 
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kActionColumn));
@@ -842,8 +831,7 @@ void StagesPanel::DrawPorted()
 		const BgGrade::Grade untouched = BgGrade::DefaultOf(row.key);
 		const bool moved = row.slot >= 0 && StagePlacement::Edited(row.slot);
 
-		ImGui::BeginDisabled(grade.lift == untouched.lift
-			&& grade.contrast == untouched.contrast
+		ImGui::BeginDisabled(grade.contrast == untouched.contrast
 			&& BgGrade::GlowOf(row.key) == BgGrade::DefaultGlowOf(row.key) && !moved);
 
 		if (ImGui::SmallButton("Default"))
@@ -894,24 +882,13 @@ void StagesPanel::DrawHelp()
 	UiText::Muted("The game reads its stage list only at startup. After adding or removing a "
 		"stage, use the restart button at the bottom. Colour changes apply right away.");
 
-	ImGui::SeparatorText("Typing a number");
+	ImGui::SeparatorText("Brightness, Glow and Size");
 
-	UiText::Muted("Double click any slider in the list to type a value. A typed value can go past "
-		"the slider's range.");
-
-	ImGui::SeparatorText("Lift and Contrast");
-
-	UiText::Muted("Lift adds flat light to the whole stage: raise it to wash the stage out, lower "
-		"it for deeper blacks. Contrast scales the colour on top, which brightens a dark stage "
-		"without washing out its blacks. Both apply during a match, and Default resets one stage. "
-		"DFCI ports start with different values on purpose, to match DFCI's colours.");
-
-	ImGui::SeparatorText("Light and Size");
-
-	UiText::Muted("These columns only show when Advanced stage options is ticked, in the mod window "
-		"under Config. Light changes only the glowing parts of a stage, and UNI2's own stages have "
-		"none, so it does nothing on them. Size is how big the scenery is around the fight. Each "
-		"stage has its own default size, so the slider range is based on it.");
+	UiText::Muted("These columns show when Advanced stage options is ticked, in the mod window under "
+		"Config. Each one is a percentage of that stage's own default, so 100%% is always the stage "
+		"as it comes. Brightness lights the whole stage. Glow changes only the glowing parts: lamps, "
+		"flares and light beams. Size is how big the scenery is around the fight. Drag a value, use "
+		"- and +, or double click it to type any number. Default puts one stage back.");
 
 	ImGui::SeparatorText("The list");
 

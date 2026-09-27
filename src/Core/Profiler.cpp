@@ -35,6 +35,8 @@ const char* const kSectionNames[Profiler::Section_COUNT] = {
 	"Tick/FrameMeter",
 	"Tick/StateRecorder",
 	"Tick/oFrameUpdate",
+	"Draw/mod hooks",
+	"Draw/oSetTexture+oDIP",
 };
 
 bool g_enabled = false;
@@ -169,6 +171,11 @@ int64_t Profiler::Now()
 	LARGE_INTEGER counter = {};
 	QueryPerformanceCounter(&counter);
 	return counter.QuadPart;
+}
+
+double Profiler::ToMs(int64_t ticks)
+{
+	return static_cast<double>(ticks) * TicksToMs();
 }
 
 void Profiler::Add(Section section, int64_t elapsedTicks)

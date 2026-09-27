@@ -30,8 +30,6 @@ private:
 	void DrawHelp();
 	void DrawRestart();
 
-	bool Number(const char* id, float* value, float low, float high, const char* format);
-
 	void SyncRows();
 	void PumpQueue();
 	void Queue(int index);
@@ -44,6 +42,4 @@ private:
 	std::vector<int> m_queue;
 	std::string m_rowsFor;
 	int m_rowCount = 0;
-	unsigned int m_pressed = 0;
-	float m_pressedValue = 0.0f;
 };

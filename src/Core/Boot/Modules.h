@@ -2,6 +2,8 @@
 
 #include <d3d9.h>
 
+#include <string>
+
 namespace Modules
 {
 	enum Group
@@ -24,4 +26,8 @@ namespace Modules
 	bool InstallGameHooks();
 
 	void Run(Group group, IDirect3DDevice9* device);
+
+	void ResetTaskTimes();
+
+	std::string SlowestTasks(int count);
 }

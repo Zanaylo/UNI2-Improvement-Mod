@@ -15,13 +15,14 @@ namespace BgGrade
 
 	constexpr float kDfciLift = 0.00f;
 	constexpr float kDfciContrast = 1.37f;
+	constexpr float kDfciGlow = 1.0f / kDfciContrast;
 
 	constexpr float kUnielLift = 0.00f;
 	constexpr float kUnielContrast = 1.00f;
 
 	constexpr float kBbtagLift = 0.00f;
 	constexpr float kBbtagContrast = 1.00f;
-	constexpr float kBbtagGlow = 0.50f;
+	constexpr float kBbtagGlow = 1.00f;
 	constexpr float kGameGlow = 1.00f;
 
 	bool Initialize();

@@ -408,6 +408,12 @@
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagStage.cpp">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagParticle.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagParticleBake.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Stages\FbxExWriter.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
@@ -481,6 +487,12 @@
       <Filter>Game\Stages</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\StageObjects.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\StageCapture.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\TextureLoad.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\StageCards.cpp">
@@ -600,6 +612,9 @@
     <ClCompile Include="src\Core\Formats\Deflate.cpp">
       <Filter>Core\Formats</Filter>
     </ClCompile>
+    <ClCompile Include="src\Screens\PatWriter.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Formats\PngImage.cpp">
       <Filter>Core\Formats</Filter>
     </ClCompile>
@@ -643,6 +658,9 @@
       <Filter>Core\Harness</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Harness\StageCommands.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\PerfCommands.cpp">
       <Filter>Core\Harness</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Input\BackgroundKeyboard.cpp">
@@ -1295,6 +1313,9 @@
     <ClInclude Include="src\Core\Harness\StageCommands.h">
       <Filter>Core\Harness</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Harness\PerfCommands.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Input\BackgroundKeyboard.h">
       <Filter>Core\Input</Filter>
     </ClInclude>
@@ -1526,6 +1547,9 @@
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagArt.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagCamera.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagCrypt.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
@@ -1542,6 +1566,12 @@
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagStage.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagParticle.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagParticleBake.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\FbxExWriter.h">
@@ -1620,6 +1650,12 @@
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\StageObjects.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageCapture.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\TextureLoad.h">
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\StageCards.h">
@@ -1738,6 +1774,9 @@
     </ClInclude>
     <ClInclude Include="src\Core\Formats\Deflate.h">
       <Filter>Core\Formats</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\PatWriter.h">
+      <Filter>Screens</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Formats\PngImage.h">
       <Filter>Core\Formats</Filter>

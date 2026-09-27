@@ -47,8 +47,10 @@
 #include "Game/Stages/RandomStage.h"
 #include "Game/Stages/StageCards.h"
 #include "Game/Stages/StageImport.h"
+#include "Game/Stages/StageCapture.h"
 #include "Game/Stages/StageObjects.h"
 #include "Game/Stages/StagePlacement.h"
+#include "Game/Stages/TextureLoad.h"
 #include "Game/Subtitles/SubtitleText.h"
 #include "Game/Subtitles/SubtitleWatch.h"
 #include "Hooks/InputProbe.h"
@@ -83,7 +85,10 @@
 
 #include <Windows.h>
 
+#include <algorithm>
+#include <cstdio>
 #include <type_traits>
+#include <vector>
 
 namespace {
 
@@ -148,6 +153,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: subtitle watch", [] { SubtitleWatch::Install(); } },
 	{ "game hooks: subtitle text", [] { SubtitleText::Install(); } },
 	{ "game hooks: stage objects", [] { StageObjects::Initialize(); } },
+	{ "game hooks: texture load", [] { TextureLoad::Install(); } },
 	{ "game hooks: stage cards", [] { StageCards::Initialize(); } },
 	{ "game hooks: bgm control", [] { BgmControl::Initialize(); } },
 	{ "game hooks: pump wait", [] { PumpWait::Apply(); } },
@@ -159,6 +165,7 @@ const Task kPresentBegin[] = {
 	[] { if (!ScreenDirector::kOnHold) CharaSelectProbe::OnFrame(); },
 	[] { MemoryMap::InvalidateEffectSlotCache(); },
 	[] { HitboxData::InvalidateFrameCache(); },
+	[](IDirect3DDevice9* device) { StageCapture::OnPresent(device); },
 };
 
 const Task kFrame[] = {
@@ -273,10 +280,49 @@ const GroupTable kGroups[Modules::Group_COUNT] = {
 	Table(kUntimed, kTail),
 };
 
-void RunTasks(const GroupTable& group, IDirect3DDevice9* device)
+constexpr int kMostTasks = 40;
+constexpr const char* kGroupNames[Modules::Group_COUNT] = {
+	"begin", "frame", "replay", "hud", "input", "palette", "share", "tail",
+};
+
+struct TaskTime
 {
-	for (int i = 0; i < group.count; ++i)
-		group.tasks[i].Run(device);
+	int64_t total;
+	int64_t most;
+	int calls;
+};
+
+TaskTime g_taskTimes[Modules::Group_COUNT][kMostTasks] = {};
+
+void RunTimed(Modules::Group group, IDirect3DDevice9* device)
+{
+	const GroupTable& table = kGroups[group];
+
+	for (int i = 0; i < table.count && i < kMostTasks; ++i)
+	{
+		const int64_t began = Profiler::Now();
+		table.tasks[i].Run(device);
+		const int64_t spent = Profiler::Now() - began;
+
+		TaskTime& time = g_taskTimes[group][i];
+		time.total += spent;
+		time.most = spent > time.most ? spent : time.most;
+		++time.calls;
+	}
+}
+
+void RunTasks(Modules::Group group, IDirect3DDevice9* device)
+{
+	if (Profiler::IsEnabled())
+	{
+		RunTimed(group, device);
+		return;
+	}
+
+	const GroupTable& table = kGroups[group];
+
+	for (int i = 0; i < table.count; ++i)
+		table.tasks[i].Run(device);
 }
 
 int LogStageFault(const char* name, DWORD code)
@@ -332,14 +378,55 @@ void Modules::Run(Group group, IDirect3DDevice9* device)
 	if (group == Group_Hud && CleanFrame::IsOn())
 		return;
 
-	const GroupTable& table = kGroups[group];
-
-	if (table.section == kUntimed)
+	if (kGroups[group].section == kUntimed)
 	{
-		RunTasks(table, device);
+		RunTasks(group, device);
 		return;
 	}
 
-	Profiler::Scope scope(table.section);
-	RunTasks(table, device);
+	Profiler::Scope scope(kGroups[group].section);
+	RunTasks(group, device);
+}
+
+void Modules::ResetTaskTimes()
+{
+	for (TaskTime (&group)[kMostTasks] : g_taskTimes)
+	{
+		for (TaskTime& time : group)
+			time = {};
+	}
+}
+
+std::string Modules::SlowestTasks(int count)
+{
+	std::vector<std::pair<int64_t, std::string> > rows;
+
+	for (int g = 0; g < Group_COUNT; ++g)
+	{
+		for (int i = 0; i < kMostTasks; ++i)
+		{
+			const TaskTime& time = g_taskTimes[g][i];
+
+			if (time.calls == 0)
+				continue;
+
+			char row[96] = {};
+			sprintf_s(row, "%s#%d max %.2fms avg %.3fms", kGroupNames[g], i, Profiler::ToMs(time.most),
+				Profiler::ToMs(time.total) / time.calls);
+			rows.push_back(std::make_pair(time.most, row));
+		}
+	}
+
+	std::sort(rows.begin(), rows.end(),
+		[](const std::pair<int64_t, std::string>& one, const std::pair<int64_t, std::string>& other)
+	{
+		return one.first > other.first;
+	});
+
+	std::string out;
+
+	for (int i = 0; i < count && i < static_cast<int>(rows.size()); ++i)
+		out += "|" + rows[i].second;
+
+	return out;
 }

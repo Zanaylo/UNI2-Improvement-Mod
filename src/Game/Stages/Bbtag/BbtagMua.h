@@ -27,6 +27,7 @@ namespace BbtagMua
 		std::string name;
 		int bone;
 		int skeleton;
+		int partner;
 		int firstVertex;
 		int vertices;
 		int firstPart;
@@ -51,6 +52,7 @@ namespace BbtagMua
 		int bones;
 		int script;
 		int blend;
+		uint32_t flags;
 	};
 
 	struct Flow

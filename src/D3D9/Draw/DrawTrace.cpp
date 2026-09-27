@@ -7,6 +7,10 @@
 
 #include <cstdio>
 #include <cstring>
+#include <string>
+#include <vector>
+
+#include "Core/utils.h"
 
 namespace {
 
@@ -34,6 +38,15 @@ int g_lines = 0;
 const void* g_dumpedShaders[kMaxShadersDumped] = {};
 int g_dumpedCount = 0;
 
+struct KeptShaders
+{
+	IDirect3DVertexShader9* vertex;
+	IDirect3DPixelShader9* pixel;
+};
+
+KeptShaders g_kept[kMaxShadersDumped] = {};
+int g_keptCount = 0;
+
 struct Surface
 {
 	const void* identity;
@@ -48,6 +61,8 @@ struct Position
 	bool pretransformed;
 	bool known;
 	int texcoordOffset;
+	int colourOffset;
+	int colourFloats;
 };
 
 struct Range
@@ -150,18 +165,29 @@ int FvfTexcoordOffset(DWORD fvf, int positionBytes)
 	return offset;
 }
 
+int FvfColourOffset(DWORD fvf, int positionBytes)
+{
+	if ((fvf & D3DFVF_DIFFUSE) == 0)
+		return -1;
+
+	int offset = positionBytes;
+	offset += (fvf & D3DFVF_NORMAL) != 0 ? 12 : 0;
+	offset += (fvf & D3DFVF_PSIZE) != 0 ? 4 : 0;
+	return offset;
+}
+
 Position FromFvf(DWORD fvf)
 {
 	const DWORD kind = fvf & D3DFVF_POSITION_MASK;
 
 	if (kind == D3DFVF_XYZRHW)
-		return { 0, 4, true, true, FvfTexcoordOffset(fvf, 16) };
+		return { 0, 4, true, true, FvfTexcoordOffset(fvf, 16), FvfColourOffset(fvf, 16), 0 };
 
 	if (kind == D3DFVF_XYZW)
-		return { 0, 4, false, true, FvfTexcoordOffset(fvf, 16) };
+		return { 0, 4, false, true, FvfTexcoordOffset(fvf, 16), FvfColourOffset(fvf, 16), 0 };
 
 	if (kind == D3DFVF_XYZ)
-		return { 0, 3, false, true, FvfTexcoordOffset(fvf, 12) };
+		return { 0, 3, false, true, FvfTexcoordOffset(fvf, 12), FvfColourOffset(fvf, 12), 0 };
 
 	return {};
 }
@@ -181,7 +207,11 @@ Position ReadPosition(IDirect3DDevice9* device)
 	UINT count = 0;
 	Position out = {};
 	out.texcoordOffset = -1;
+	out.colourOffset = -1;
+	out.colourFloats = 0;
 	int texcoordOffset = -1;
+	int colourOffset = -1;
+	int colourFloats = 0;
 
 	if (SUCCEEDED(declaration->GetDeclaration(elements, &count)))
 	{
@@ -193,6 +223,14 @@ Position ReadPosition(IDirect3DDevice9* device)
 				element.Usage == D3DDECLUSAGE_TEXCOORD && ComponentsOf(element.Type) >= 2)
 			{
 				texcoordOffset = element.Offset;
+			}
+
+			if (element.Stream == 0 && element.UsageIndex == 0 &&
+				element.Usage == D3DDECLUSAGE_COLOR
+				&& (element.Type == D3DDECLTYPE_D3DCOLOR || ComponentsOf(element.Type) >= 3))
+			{
+				colourOffset = element.Offset;
+				colourFloats = element.Type == D3DDECLTYPE_D3DCOLOR ? 0 : ComponentsOf(element.Type);
 			}
 
 			if (element.Stream != 0 || element.UsageIndex != 0 ||
@@ -207,6 +245,8 @@ Position ReadPosition(IDirect3DDevice9* device)
 	}
 
 	out.texcoordOffset = texcoordOffset;
+	out.colourOffset = colourOffset;
+	out.colourFloats = colourFloats;
 
 	declaration->Release();
 	return out;
@@ -298,6 +338,86 @@ bool Emit()
 	return true;
 }
 
+DWORD StateOf(IDirect3DDevice9* device, D3DRENDERSTATETYPE state)
+{
+	DWORD value = 0;
+	device->GetRenderState(state, &value);
+	return value;
+}
+
+void DescribeStates(IDirect3DDevice9* device, char* out, size_t outSize)
+{
+	sprintf_s(out, outSize, "  blend %lu src %lu dst %lu z %lu zw %lu zf %lu atest %lu aref %lu cull %lu",
+		StateOf(device, D3DRS_ALPHABLENDENABLE), StateOf(device, D3DRS_SRCBLEND),
+		StateOf(device, D3DRS_DESTBLEND), StateOf(device, D3DRS_ZENABLE),
+		StateOf(device, D3DRS_ZWRITEENABLE), StateOf(device, D3DRS_ZFUNC),
+		StateOf(device, D3DRS_ALPHATESTENABLE), StateOf(device, D3DRS_ALPHAREF),
+		StateOf(device, D3DRS_CULLMODE));
+}
+
+template <typename Shader>
+void SaveFunction(Shader* shader, const char* kind)
+{
+	if (shader == nullptr)
+		return;
+
+	UINT bytes = 0;
+
+	if (FAILED(shader->GetFunction(nullptr, &bytes)) || bytes == 0)
+		return;
+
+	std::vector<unsigned char> function(bytes);
+
+	if (FAILED(shader->GetFunction(function.data(), &bytes)))
+		return;
+
+	char leaf[96] = {};
+	sprintf_s(leaf, "logs\\shader_%s_%p.bin", kind, static_cast<const void*>(shader));
+
+	const std::string path = GetModRootPath(leaf);
+	FILE* handle = nullptr;
+
+	if (fopen_s(&handle, path.c_str(), "wb") != 0 || handle == nullptr)
+		return;
+
+	fwrite(function.data(), 1, bytes, handle);
+	fclose(handle);
+	LOG_RAW("  %s %p saved as %s (%u bytes)", kind, static_cast<const void*>(shader), leaf, bytes);
+}
+
+template <typename Shader>
+void Drop(Shader*& shader)
+{
+	if (shader == nullptr)
+		return;
+
+	shader->Release();
+	shader = nullptr;
+}
+
+void KeepShaders(IDirect3DDevice9* device)
+{
+	if (g_keptCount >= kMaxShadersDumped)
+		return;
+
+	KeptShaders& kept = g_kept[g_keptCount++];
+	device->GetVertexShader(&kept.vertex);
+	device->GetPixelShader(&kept.pixel);
+}
+
+void SaveKeptShaders()
+{
+	for (int i = 0; i < g_keptCount; ++i)
+	{
+		SaveFunction(g_kept[i].vertex, "vs");
+		SaveFunction(g_kept[i].pixel, "ps");
+		Drop(g_kept[i].vertex);
+		Drop(g_kept[i].pixel);
+	}
+
+	g_keptCount = 0;
+}
+
 void DumpShaderOnce(IDirect3DDevice9* device, const void* shader)
 {
 	for (int i = 0; i < g_dumpedCount; ++i)
@@ -315,6 +435,7 @@ void DumpShaderOnce(IDirect3DDevice9* device, const void* shader)
 
 	g_dumpedShaders[g_dumpedCount++] = shader;
 	LOG_RAW("vs %p c0..c15 at its first draw:", shader);
+	KeepShaders(device);
 
 	for (int i = 0; i < kDumpedRegisters && Emit(); ++i)
 	{
@@ -371,6 +492,27 @@ void DescribeVertices(IDirect3DDevice9* device, const void* shader, const void* 
 	int written = sprintf_s(out, outSize, "  %s x %.3f..%.3f y %.3f..%.3f",
 		position.pretransformed ? "xyzrhw" : "pos", raw.minX, raw.maxX, raw.minY, raw.maxY);
 
+	if (written > 0 && position.colourOffset >= 0 && position.colourFloats == 0
+		&& static_cast<unsigned>(position.colourOffset) + 4 <= stride)
+	{
+		DWORD colour = 0;
+		memcpy(&colour, static_cast<const unsigned char*>(vertexData) + position.colourOffset,
+			sizeof(colour));
+		const int more = sprintf_s(out + written, outSize - written, "  argb %08lx", colour);
+		written = more > 0 ? written + more : written;
+	}
+
+	if (written > 0 && position.colourOffset >= 0 && position.colourFloats >= 3
+		&& static_cast<unsigned>(position.colourOffset) + 4 * position.colourFloats <= stride)
+	{
+		float colour[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		memcpy(colour, static_cast<const unsigned char*>(vertexData) + position.colourOffset,
+			sizeof(float) * position.colourFloats);
+		const int more = sprintf_s(out + written, outSize - written, "  colour %.3f %.3f %.3f %.3f stride %u",
+			colour[0], colour[1], colour[2], colour[3], stride);
+		written = more > 0 ? written + more : written;
+	}
+
 	if (written > 0 && uv.count > 0)
 	{
 		const int more = sprintf_s(out + written, outSize - written, "  uv %.4f..%.4f %.4f..%.4f",
@@ -399,6 +541,7 @@ void DrawTrace::OnPresentBegin(const RECT* sourceRect, const RECT* destRect)
 		return;
 
 	g_state = State::Idle;
+	SaveKeptShaders();
 
 	if (sourceRect != nullptr)
 	{
@@ -522,9 +665,12 @@ void DrawTrace::OnDraw(IDirect3DDevice9* device, const char* kind, int primitive
 			scissor.bottom);
 	}
 
+	char states[96] = {};
+	DescribeStates(device, states, sizeof(states));
+
 	LOG_RAW("#%03d %-5s t%d n%-4u rt %p %ux%u%s vp %lu,%lu %lux%lu tex0 %p %ux%u tex1 %ux%u "
-		"vs %p%s%s", index, kind, primitiveType, primitiveCount, target.identity, target.width,
+		"vs %p%s%s%s", index, kind, primitiveType, primitiveCount, target.identity, target.width,
 		target.height, backBuffer ? " (bb)" : "", viewport.X, viewport.Y, viewport.Width,
 		viewport.Height, texture0.identity, texture0.width, texture0.height, texture1.width,
-		texture1.height, static_cast<const void*>(shader), clip, vertices);
+		texture1.height, static_cast<const void*>(shader), clip, states, vertices);
 }

@@ -18,6 +18,7 @@
 #include "Game/Stages/BgGrade.h"
 #include "Game/Stages/BgClear.h"
 #include "Game/Stages/BgVertexProbe.h"
+#include "Game/Stages/StageCapture.h"
 #include "Network/NetLink.h"
 #include "Hooks/GameHook.h"
 #include "Training/StageColor.h"
@@ -121,6 +122,7 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 		PaletteTexture::OnDeviceLost();
 		PostChain::OnDeviceLost();
 		SceneUpscale::OnDeviceLost();
+		StageCapture::OnDeviceLost();
 	}
 
 	HRESULT result = g_resetHook.Original()(device, presentParameters);
@@ -266,10 +268,18 @@ HRESULT STDMETHODCALLTYPE HookedClear(IDirect3DDevice9* device, DWORD count, con
 HRESULT STDMETHODCALLTYPE HookedSetTexture(IDirect3DDevice9* device, DWORD stage,
 	IDirect3DBaseTexture9* texture)
 {
-	const bool paletteShaped = PaletteTexture::OnSetTexture(device, stage, texture);
-	PaletteDrawProbe::OnSetTexture(stage, texture, paletteShaped);
-	CleanFrame::OnSetTexture(stage, paletteShaped);
-	return g_setTextureHook.Original()(device, stage, SceneUpscale::OnSetTexture(device, stage, texture));
+	IDirect3DBaseTexture9* bound = texture;
+
+	{
+		Profiler::Scope scope(Profiler::Section_DrawModHooks);
+		const bool paletteShaped = PaletteTexture::OnSetTexture(device, stage, texture);
+		PaletteDrawProbe::OnSetTexture(stage, texture, paletteShaped);
+		CleanFrame::OnSetTexture(stage, paletteShaped);
+		bound = SceneUpscale::OnSetTexture(device, stage, StageCapture::OnSetTexture(texture));
+	}
+
+	Profiler::Scope scope(Profiler::Section_DrawDevice);
+	return g_setTextureHook.Original()(device, stage, bound);
 }
 
 HRESULT STDMETHODCALLTYPE HookedDrawPrimitive(IDirect3DDevice9* device, D3DPRIMITIVETYPE type,
@@ -287,13 +297,18 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
 	D3DPRIMITIVETYPE type, INT baseVertexIndex, UINT minVertexIndex, UINT numVertices,
 	UINT startIndex, UINT primitiveCount)
 {
-	PaletteDrawProbe::OnDraw();
-	BgVertexProbe::OnDraw(device);
-	DrawTrace::OnIndexedDraw(device, type, primitiveCount, baseVertexIndex, minVertexIndex,
-		numVertices);
-	if (CleanFrame::SkipsDraw(device))
-		return D3D_OK;
+	{
+		Profiler::Scope scope(Profiler::Section_DrawModHooks);
+		PaletteDrawProbe::OnDraw();
+		BgVertexProbe::OnDraw(device);
+		DrawTrace::OnIndexedDraw(device, type, primitiveCount, baseVertexIndex, minVertexIndex,
+			numVertices);
 
+		if (CleanFrame::SkipsDraw(device))
+			return D3D_OK;
+	}
+
+	Profiler::Scope scope(Profiler::Section_DrawDevice);
 	return g_drawIndexedPrimitiveHook.Original()(device, type, baseVertexIndex, minVertexIndex, numVertices,
 		startIndex, primitiveCount);
 }

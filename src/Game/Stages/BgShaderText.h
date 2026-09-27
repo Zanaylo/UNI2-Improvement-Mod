@@ -10,6 +10,7 @@ namespace BgShaderText
 		int contrast;
 		int flow;
 		int fade;
+		int flip;
 	};
 
 	bool IsBackground(const std::string& source);

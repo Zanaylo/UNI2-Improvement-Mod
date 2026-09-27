@@ -3,6 +3,7 @@
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Stages/BgCeiling.h"
 #include "Game/Stages/ExtraStages.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Stages/StageLibrary.h"
@@ -107,7 +108,7 @@ bool Learn(int stage)
 	if (g_shipped.find(stage) != g_shipped.end())
 		return true;
 
-	if (stage < 0 || stage >= GameOffsets::kBgRecordCount
+	if (stage < 0 || stage >= BgCeiling::Numbers()
 		|| g_unknown.find(stage) != g_unknown.end())
 	{
 		return false;
@@ -169,7 +170,7 @@ void StagePlacement::Update()
 
 	const int stage = *reinterpret_cast<const int*>(pending);
 
-	if (stage < 0 || stage >= GameOffsets::kBgRecordCount)
+	if (stage < 0 || stage >= BgCeiling::Numbers())
 		return;
 
 	const uintptr_t record = ExtraStages::RecordAt(stage);

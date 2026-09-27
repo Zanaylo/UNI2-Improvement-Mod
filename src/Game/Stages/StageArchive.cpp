@@ -31,6 +31,8 @@ struct StageMbtlEntry
 constexpr const char* kMbtlArchive = "data006.bin";
 constexpr const char* kBgList = "BgList.txt";
 constexpr const char* kModel = "bg.fbx.bin";
+constexpr const char* kBbtagParticles = "data/particle/particle_dat_bg.pac";
+constexpr const char* kBbtagParticleArt = "data/particle/particle_img_bg.pac";
 constexpr size_t kTextSlack = 8192;
 constexpr size_t kScoreSpan = 2048;
 constexpr uint32_t kPhaseCount = 0x400;
@@ -1140,6 +1142,7 @@ public:
 
 	bool Flow(const std::string& stage, std::vector<float>& out);
 	bool Lamps(const std::string& stage, std::vector<BbtagScript::Lamp>& out) override;
+	bool Flips(const std::string& stage, std::vector<BbtagScript::Flip>& out) override;
 	bool Fading(const std::string& stage) override;
 
 	bool IsOpen() const { return !m_stage.empty(); }
@@ -1384,6 +1387,7 @@ bool BbtagSource::Built(const std::string& stage)
 	m_ready.clear();
 	m_result.model.clear();
 	m_result.images.clear();
+	m_result.layer.clear();
 
 	const std::map<std::string, Held>::const_iterator held = m_stage.find(Lowered(stage));
 
@@ -1397,6 +1401,9 @@ bool BbtagSource::Built(const std::string& stage)
 
 	Whole(held->second.relative + ".pac", source.scene);
 	Whole(held->second.relative + "_img.pac", source.art);
+	Whole(kBbtagParticles, source.particles);
+	Whole(kBbtagParticleArt, source.particleArt);
+	source.stage = stage;
 
 	if (!BbtagStage::Convert(source, m_result))
 	{
@@ -1434,6 +1441,9 @@ void BbtagSource::Files(const std::string& stage, std::vector<std::string>& out)
 
 	for (const std::pair<const std::string, std::vector<uint8_t> >& image : m_result.images)
 		out.push_back(image.first);
+
+	for (const std::pair<const std::string, std::vector<uint8_t> >& file : m_result.layer)
+		out.push_back(file.first);
 }
 
 bool BbtagSource::Read(const std::string& stage, const std::string& file,
@@ -1447,6 +1457,14 @@ bool BbtagSource::Read(const std::string& stage, const std::string& file,
 	if (_stricmp(file.c_str(), kModel) == 0)
 	{
 		out = m_result.model;
+		return true;
+	}
+
+	const BbtagStage::Images::const_iterator layer = m_result.layer.find(file);
+
+	if (layer != m_result.layer.end())
+	{
+		out = layer->second;
 		return true;
 	}
 
@@ -1481,6 +1499,17 @@ bool BbtagSource::Lamps(const std::string& stage, std::vector<BbtagScript::Lamp>
 	return !out.empty();
 }
 
+bool BbtagSource::Flips(const std::string& stage, std::vector<BbtagScript::Flip>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	out = m_result.flips;
+	return !out.empty();
+}
+
 bool BbtagSource::Fading(const std::string& stage)
 {
 	return Built(stage) && m_result.fading;
@@ -1500,7 +1529,7 @@ bool BbtagSource::BgList(std::string& out)
 		out += header;
 		out += Readable(held.first);
 		out += "\",\r\n\t\tDataFile = \"" + held.first + "\",\r\n\r\n";
-		out += BbtagStage::Block();
+		out += held.first == Lowered(m_ready) ? BbtagStage::Block(m_result.tilt) : BbtagStage::Block();
 		out += "\t}\r\n";
 	}
 

@@ -193,6 +193,8 @@
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagPac.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagScript.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagStage.cpp" />
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagParticle.cpp" />
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagParticleBake.cpp" />
     <ClCompile Include="src\Game\Stages\FbxExWriter.cpp" />
     <ClCompile Include="src\Game\Stages\BgClear.cpp" />
     <ClCompile Include="src\Game\Stages\BgMipmaps.cpp" />
@@ -218,6 +220,8 @@
     <ClCompile Include="src\Game\Stages\StageThumb.cpp" />
     <ClCompile Include="src\Game\Stages\StageIcons.cpp" />
     <ClCompile Include="src\Game\Stages\StageObjects.cpp" />
+    <ClCompile Include="src\Game\Stages\StageCapture.cpp" />
+    <ClCompile Include="src\Game\Stages\TextureLoad.cpp" />
     <ClCompile Include="src\Game\Stages\StageCards.cpp" />
     <ClCompile Include="src\Game\Engine\PlayerHealth.cpp" />
     <ClCompile Include="src\Game\Engine\ComboProration.cpp" />
@@ -257,6 +261,7 @@
     <ClCompile Include="src\Core\logger.cpp" />
     <ClCompile Include="src\Core\Boot\Compat.cpp" />
     <ClCompile Include="src\Core\Formats\Deflate.cpp" />
+    <ClCompile Include="src\Screens\PatWriter.cpp" />
     <ClCompile Include="src\Core\Formats\PngImage.cpp" />
     <ClCompile Include="src\Core\DpiScaling.cpp" />
     <ClCompile Include="src\Core\Boot\crashdump.cpp" />
@@ -272,6 +277,7 @@
     <ClCompile Include="src\Core\Harness\HarnessChannel.cpp" />
     <ClCompile Include="src\Core\Harness\CleanFrame.cpp" />
     <ClCompile Include="src\Core\Harness\StageCommands.cpp" />
+    <ClCompile Include="src\Core\Harness\PerfCommands.cpp" />
     <ClCompile Include="src\Core\Input\BackgroundKeyboard.cpp" />
     <ClCompile Include="src\Hooks\ImportPatch.cpp" />
     <ClCompile Include="src\Game\Display\MovieWindow.cpp" />
@@ -457,6 +463,7 @@
     <ClInclude Include="src\Core\Harness\HarnessChannel.h" />
     <ClInclude Include="src\Core\Harness\CleanFrame.h" />
     <ClInclude Include="src\Core\Harness\StageCommands.h" />
+    <ClInclude Include="src\Core\Harness\PerfCommands.h" />
     <ClInclude Include="src\Core\Input\BackgroundKeyboard.h" />
     <ClInclude Include="src\Hooks\ImportPatch.h" />
     <ClInclude Include="src\Game\Display\MovieWindow.h" />
@@ -534,12 +541,15 @@
     <ClInclude Include="src\Game\Stages\BgListOverride.h" />
     <ClInclude Include="src\Game\Stages\BgObjectFix.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagArt.h" />
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagCamera.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagCrypt.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagMmot.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagMua.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagPac.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagScript.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagStage.h" />
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagParticle.h" />
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagParticleBake.h" />
     <ClInclude Include="src\Game\Stages\FbxExWriter.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagPaths.inc" />
     <ClInclude Include="src\Game\Stages\BgClear.h" />
@@ -566,6 +576,8 @@
     <ClInclude Include="src\Game\Stages\StageThumb.h" />
     <ClInclude Include="src\Game\Stages\StageIcons.h" />
     <ClInclude Include="src\Game\Stages\StageObjects.h" />
+    <ClInclude Include="src\Game\Stages\StageCapture.h" />
+    <ClInclude Include="src\Game\Stages\TextureLoad.h" />
     <ClInclude Include="src\Game\Stages\StageCards.h" />
     <ClInclude Include="src\Game\Engine\PlayerHealth.h" />
     <ClInclude Include="src\Game\Engine\ComboProration.h" />
@@ -605,6 +617,7 @@
     <ClInclude Include="src\Core\logger.h" />
     <ClInclude Include="src\Core\Boot\Compat.h" />
     <ClInclude Include="src\Core\Formats\Deflate.h" />
+    <ClInclude Include="src\Screens\PatWriter.h" />
     <ClInclude Include="src\Core\Formats\PngImage.h" />
     <ClInclude Include="src\Core\DpiScaling.h" />
     <ClInclude Include="src\Core\Boot\crashdump.h" />

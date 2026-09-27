@@ -92,8 +92,8 @@ against 0.5 for red and blue) that no lift or contrast setting can fix.
 
 A BBTAG port draws its lamps, glows, flares and water sheets **added** instead of blended, the same
 way BBTAG does. Added surfaces are bright, so every stage has its own **Light** setting next to Lift
-and Contrast. A BBTAG port starts at `0.50` and every other stage at `1.00`. `0.00` turns the added
-surfaces off and `2.00` doubles them.
+and Contrast. Every stage starts at `1.00`, which is how strong BBTAG itself adds them. `0.00` turns
+the added surfaces off and `2.00` doubles them.
 
 It changes **only** the surfaces that add. The rest of the stage keeps the brightness from Lift and
 Contrast. Use Light when a stage looks right but its lights are too bright or too dim. It is saved

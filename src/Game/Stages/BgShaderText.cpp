@@ -1,5 +1,7 @@
 #include "Game/Stages/BgShaderText.h"
 
+#include "Game/Stages/Bbtag/BbtagStage.h"
+
 #include <cstdio>
 #include <cstring>
 
@@ -19,12 +21,53 @@ constexpr const char* kFlowed = "tex2D( TexSample_Base, BgFlow(In.texuv) )";
 constexpr float kFlowMark = 64.0f;
 constexpr float kFlowStride = 128.0f;
 constexpr float kFlowSlots = 8.0f;
+constexpr int kLampRegisters = 8;
 constexpr const char* kFbxMarker = "Diffuse_PS_Easy";
 constexpr const char* kFbxFetch = "tex2D( diffuseSampler, input.UV )";
 constexpr const char* kFbxFlowed = "tex2D( diffuseSampler, BgFlow(input.UV.xy) )";
 constexpr const char* kFbxModulate = "OutColor *= input.Color;";
 constexpr const char* kFbxGraded =
-	"OutColor *= input.Color; OutColor.rgb *= g_BgContrast.rgb * g_BgContrast.w * BgLamp(input.UV.xy);";
+	"OutColor *= input.Color; OutColor.rgb *= g_BgContrast.rgb * g_BgContrast.w; "
+	"OutColor.a *= BgLamp(input.UV.xy);";
+constexpr const char* kFbxUv = "output.UV = input.Texcoord;";
+constexpr const char* kFbxFlipped = "output.UV = input.Texcoord; BgFlip(output.UV, output.Position);";
+
+std::string FlipDeclaration()
+{
+	char declared[1024] = {};
+
+	sprintf_s(declared, "float4 g_BgFlip[%d] : register(c%d);\n"
+		"void BgFlip(inout float4 uv, inout float4 position)\n"
+		"{\n"
+		"\tif (uv.x > %.1ff) return;\n"
+		"\tfloat lane = floor(uv.x / %.1ff);\n"
+		"\tfloat row = floor(uv.y);\n"
+		"\tfloat4 rect = g_BgFlip[(int)min(-lane - 1.0f, %d.0f)];\n"
+		"\tfloat2 local = (float2(uv.x - lane * %.1ff, uv.y - row) - %.3ff) / %.3ff;\n"
+		"\tuv.x = rect.x + local.x * rect.y;\n"
+		"\tuv.y = row + rect.z + local.y * rect.w;\n"
+		"\tposition *= step(0.000001f, rect.y + rect.w);\n"
+		"}\n",
+		BbtagStage::kFlipSlots, BbtagStage::kFlipRegister, -BbtagStage::kFlipMark / 2.0f,
+		BbtagStage::kFlipMark, BbtagStage::kFlipSlots - 1, BbtagStage::kFlipMark,
+		BbtagStage::kFlipInset, BbtagStage::kFlipSpan);
+
+	return declared;
+}
+
+int Flips(std::string& head)
+{
+	int changed = 0;
+
+	for (size_t at = head.find(kFbxUv); at != std::string::npos; at = head.find(kFbxUv, at))
+	{
+		head.replace(at, strlen(kFbxUv), kFbxFlipped);
+		at += strlen(kFbxFlipped);
+		++changed;
+	}
+
+	return changed;
+}
 
 size_t SkipSpace(const std::string& text, size_t at)
 {
@@ -104,6 +147,7 @@ bool BgShaderText::Rewrite(const std::string& source, int blackRegister, int con
 	result.contrast = 0;
 	result.flow = 0;
 	result.fade = 0;
+	result.flip = 0;
 	out = source;
 
 	if (!IsBackground(source))
@@ -115,6 +159,7 @@ bool BgShaderText::Rewrite(const std::string& source, int blackRegister, int con
 
 	std::string head = out.substr(0, limit);
 	result.black = fbx ? 0 : Lifts(head);
+	result.flip = fbx ? Flips(head) : 0;
 
 	const char* const product = fbx ? kFbxModulate : kProduct;
 	const char* const graded = fbx ? kFbxGraded : kGraded;
@@ -147,22 +192,19 @@ bool BgShaderText::Rewrite(const std::string& source, int blackRegister, int con
 
 	out = head + out.substr(limit);
 
-	char declared[2560] = {};
+	char declared[4096] = {};
 
-	sprintf_s(declared, "float4 g_BgLamp0 : register(c%d) = float4(1, 1, 1, 1);\n"
-		"float4 g_BgLamp1 : register(c%d) = float4(1, 1, 1, 1);\n"
+	sprintf_s(declared, "float4 g_BgLamp[%d] : register(c%d);\n"
 		"float BgLamp(float2 uv)\n"
 		"{\n"
 		"\tif (uv.y < %.1ff) return 1.0f;\n"
 		"\tfloat slot = floor((uv.y - %.1ff) / %.1ff);\n"
-		"\tfloat level = g_BgLamp0.x;\n"
-		"\tlevel = slot > 0.5f ? g_BgLamp0.y : level;\n"
-		"\tlevel = slot > 1.5f ? g_BgLamp0.z : level;\n"
-		"\tlevel = slot > 2.5f ? g_BgLamp0.w : level;\n"
-		"\tlevel = slot > 3.5f ? g_BgLamp1.x : level;\n"
-		"\tlevel = slot > 4.5f ? g_BgLamp1.y : level;\n"
-		"\tlevel = slot > 5.5f ? g_BgLamp1.z : level;\n"
-		"\tlevel = slot > 6.5f ? g_BgLamp1.w : level;\n"
+		"\tfloat level = 1.0f;\n"
+		"\t[unroll] for (int i = 0; i < %d; i++)\n"
+		"\t{\n"
+		"\t\tfloat4 hit = step(abs(slot - (4.0f * i + float4(0.0f, 1.0f, 2.0f, 3.0f))), 0.5f);\n"
+		"\t\tlevel = lerp(level, dot(g_BgLamp[i], hit), saturate(dot(hit, 1.0f)));\n"
+		"\t}\n"
 		"\treturn level;\n"
 		"}\n"
 		"float4 g_BgBlack : register(c%d) = float4(%.2ff, %.2ff, %.2ff, 0);\n"
@@ -189,11 +231,15 @@ bool BgShaderText::Rewrite(const std::string& source, int blackRegister, int con
 		"\tspeed = which > 6.5f ? g_BgFlow1.w : speed;\n"
 		"\treturn float2(uv.x + across * speed, uv.y + (1.0f - across) * speed);\n"
 		"}\n",
-		lampRegister, lampRegister + 1, kFlowMark, kFlowMark, kFlowStride,
+		kLampRegisters, lampRegister, kFlowMark, kFlowMark, kFlowStride, kLampRegisters,
 		blackRegister, gameBlack, gameBlack, gameBlack, contrastRegister,
 		flowRegister, flowRegister + 1,
 		kFlowMark, kFlowMark, kFlowStride, kFlowSlots, kFlowSlots);
 
 	out.insert(0, declared);
+
+	if (result.flip > 0)
+		out.insert(0, FlipDeclaration());
+
 	return true;
 }

@@ -98,6 +98,7 @@ struct Defaulted
 const Defaulted kDefaults[] = {
 	{ "ShadowScale", "0.6" },
 	{ "ShadowAlpha", "0.7" },
+	{ "MSAA", "4" },
 	{ "BGBloomEnable", "1" },
 	{ "BGBloomBlightness", "0.8" },
 	{ "BGBloomPower", "2.00" },
@@ -118,6 +119,7 @@ const Defaulted kCapped[] = {
 
 const Defaulted kFloored[] = {
 	{ "StageW", "4096" },
+	{ "MSAA", "4" },
 };
 
 bool Floored(const char* key, std::string& value)
@@ -202,6 +204,7 @@ struct Job
 	std::string list;
 	std::vector<float> flow;
 	std::vector<BbtagScript::Lamp> lamps;
+	std::vector<BbtagScript::Flip> flips;
 	int id;
 	bool fading;
 	bool removing;
@@ -431,8 +434,8 @@ void Carry(int id, const char* key, std::string value, std::string& out)
 		LOG("StageImport: stage %d asked for a bigger %s than the game's own stages use", id, key);
 
 	if (Floored(key, value))
-		LOG("StageImport: stage %d asked for a smaller %s than the game's own stages use, "
-			"which moves the walls", id, key);
+		LOG("StageImport: stage %d asked for a smaller %s than the game's own stages use", id,
+			key);
 
 	out += std::string("\t\t") + key + " = " + value + ",\r\n";
 }
@@ -707,6 +710,48 @@ void LiftImages(const std::string& target, const std::string& donor)
 	}
 }
 
+std::string FlipLines(const std::vector<BbtagScript::Flip>& flips)
+{
+	std::string out;
+
+	for (size_t i = 0; i < flips.size(); ++i)
+	{
+		const BbtagScript::Flip& flip = flips[i];
+
+		if (flip.rects.empty() || flip.frame.empty())
+			continue;
+
+		char text[64] = {};
+		sprintf_s(text, "Flip%dRects = [ ", static_cast<int>(i));
+		out += text;
+
+		for (size_t k = 0; k < flip.rects.size(); ++k)
+		{
+			sprintf_s(text, "%s%.6f", k == 0 ? "" : ", ", flip.rects[k]);
+			out += text;
+		}
+
+		sprintf_s(text, " ]\r\nFlip%d = [ ", static_cast<int>(i));
+		out += text;
+
+		for (size_t at = 0; at < flip.frame.size();)
+		{
+			size_t run = 1;
+
+			while (at + run < flip.frame.size() && flip.frame[at + run] == flip.frame[at])
+				++run;
+
+			sprintf_s(text, "%s%d, %d", at == 0 ? "" : ", ", flip.frame[at], static_cast<int>(run));
+			out += text;
+			at += run;
+		}
+
+		out += " ]\r\n";
+	}
+
+	return out;
+}
+
 void WriteNote(const std::string& target, const Job& job, const std::string& block)
 {
 	const std::string from = job.custom ? std::string(kCustomGame) : job.folder;
@@ -749,7 +794,16 @@ void WriteNote(const std::string& target, const Job& job, const std::string& blo
 		}
 
 		note += " ]\r\n";
+
+		if (lamp.from < 1)
+			continue;
+
+		char from[48] = {};
+		sprintf_s(from, "Lamp%dFrom = %d\r\n", static_cast<int>(i), lamp.from);
+		note += from;
 	}
+
+	note += FlipLines(job.flips);
 
 	if (job.fading)
 		note += "VertexAlpha = 1\r\n";
@@ -887,6 +941,7 @@ bool Fetch(Job& job)
 		source->BgList(job.list);
 		source->Flow(job.stage, job.flow);
 		source->Lamps(job.stage, job.lamps);
+		source->Flips(job.stage, job.flips);
 		job.fading = source->Fading(job.stage);
 		LiftImages(StageLibrary::FolderOf(job.id),
 			ImageDonor(FbGameFolder::Detect(job.folder.c_str()), job.stage));

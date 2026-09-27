@@ -225,7 +225,7 @@ void BbtagMua::Model::ReadBones()
 	{
 		const size_t at = Where(kSkeleton, i, 0x20);
 		const Skeleton skeleton = { static_cast<int>(Dword(at)), static_cast<int>(Dword(at + 4)),
-			static_cast<int>(Dword(at + 8)), static_cast<int>(Dword(at + 0xc)) };
+			static_cast<int>(Dword(at + 8)), static_cast<int>(Dword(at + 0xc)), Dword(at + 0x10) };
 
 		m_skeleton.push_back(skeleton);
 	}
@@ -260,6 +260,7 @@ void BbtagMua::Model::ReadMeshes()
 		mesh.firstVertex = static_cast<int>(Dword(at + 20));
 		mesh.name = Named(static_cast<int>(Dword(at + 0xb4)));
 		mesh.skeleton = skeleton;
+		mesh.partner = static_cast<int>(Dword(at + 0xb8));
 		mesh.bone = skeleton >= 0 && skeleton < static_cast<int>(m_skeleton.size())
 			? m_skeleton[skeleton].firstBone : -1;
 

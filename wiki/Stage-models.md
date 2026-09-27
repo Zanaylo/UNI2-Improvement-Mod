@@ -164,7 +164,11 @@ To play one of those stages in UNI2, use **Get stages from another fighting game
 panel. Point it at the game folder and it converts the stages for you. It plays each stage's scripts
 the way BBTAG does and rolls the same random picks as the Mua add-on, so lights fade, TVs change
 channel and lightning flashes in the port like they do in Blender. A sprite only uses the frames drawn
-on its own sheet, and it can't be half faded: it's shown or it isn't. To fix a port by hand:
+on its own sheet, and it can't be half faded: it's shown or it isn't.
+
+Snowtown's snow and Town's welding sparks come over too. They are the same particles the Mua add-on
+shows, drawn on the stage's 2D layer, so they fall and fly with BBTAG's own paths and colours. The 2D
+layer has no depth, so a flake behind a house still draws over it. To fix a port by hand:
 
 1. Open the port, `UNI2-IM\Mods\bg\bgNNN\bg.fbx.bin`, with the FbxExp add-on.
 2. Open the original `<stage>_vtx.pac` with the Mua add-on next to it, to see how it should look and

@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Mua model (.mua)",
     "author": "PrimoZanaylo",
-    "version": (0, 9, 0),
+    "version": (0, 11, 0),
     "blender": (4, 2, 0),
     "location": "File > Import > Mua model",
     "description": "Import a Mua model with its animation and scripts",
@@ -62,7 +62,6 @@ SOFT_SHARE = 0.5
 GLOW_SOLID = 0.01
 GLOW_SOFT = 0.05
 SOFT_SAMPLES = 4096
-CARD_BLACK = 8.0 / 255.0
 RIM_TAIL = 48.0 / 255.0
 RIM_STEPS = 16
 BLENDED_KINDS = ("add", "sub", "blend", "sheer")
@@ -470,6 +469,7 @@ class Model(object):
             self.mesh.append({
                 "name": self._name(struct.unpack_from("<i", self.blob, at + 0xb4)[0]),
                 "skeleton": index,
+                "partner": struct.unpack_from("<i", self.blob, at + 0xb8)[0],
                 "bone": self.skeleton[index][0] if 0 <= index < len(self.skeleton) else -1,
                 "bones": self.skeleton[index][1] if 0 <= index < len(self.skeleton) else 0,
                 "parts": parts, "firstPart": first_part,
@@ -567,12 +567,13 @@ class Model(object):
         return named.rsplit(".", 1)[0]
 
     def blendOf(self, mesh):
-        which = mesh["skeleton"]
+        mode = BLEND_UNSET
 
-        if not 0 <= which < len(self.skeletonBlend):
-            return BLEND_UNSET
+        for which in (mesh["skeleton"], mesh.get("partner", -1)):
+            if 0 <= which < len(self.skeletonBlend) and 0 <= self.skeletonBlend[which] <= 4:
+                mode = self.skeletonBlend[which]
 
-        return self.skeletonBlend[which]
+        return mode
 
     def flagsOf(self, mesh):
         which = mesh["skeleton"]
@@ -1399,10 +1400,6 @@ def clear_texel(body, at, k):
     return first <= second and (bits >> (k * 2)) & 3 == 3
 
 
-def punched(body, at):
-    return any(clear_texel(body, at, k) for k in range(16))
-
-
 def block_palette(first, second, punchable):
     ends = [[(value >> 11 & 31) / 31.0, (value >> 5 & 63) / 63.0, (value & 31) / 31.0]
             for value in (first, second)]
@@ -1412,55 +1409,6 @@ def block_palette(first, second, punchable):
                        [(ends[0][k] + 2 * ends[1][k]) / 3.0 for k in range(3)]]
 
     return ends + [[(ends[0][k] + ends[1][k]) / 2.0 for k in range(3)], [0.0, 0.0, 0.0]]
-
-
-def texel_peak(body, at, punchable):
-    first, second, bits = struct.unpack_from("<2HI", body, at)
-    palette = block_palette(first, second, punchable)
-
-    return max(max(palette[(bits >> (k * 2)) & 3]) for k in range(16))
-
-
-def dds_glowing(blob):
-    body, step, colour, _alpha = dds_blocks(blob)
-
-    if body is None:
-        return False
-
-    explicit = blob[84:88] == b"DXT3"
-    count = len(body) // step
-    stride = max(1, count // SOFT_SAMPLES)
-    peak = 0.0
-
-    for block in range(0, count, stride):
-        at = block * step
-
-        if step == 8 and punched(body, at):
-            return False
-
-        if step == 16 and min(alpha_texels(body, at, explicit)) < 255:
-            return False
-
-        peak = max(peak, texel_peak(body, at + colour, step == 8))
-
-    return peak > CARD_BLACK
-
-
-def dds_sampler(blob):
-    body, step, colour, _alpha = dds_blocks(blob)
-
-    if body is None:
-        return None
-
-    height, width = struct.unpack_from("<2I", blob, 12)
-    wide, high = max((width + 3) // 4, 1), max((height + 3) // 4, 1)
-
-    def peak(u, v):
-        at = ((math.floor(v * high) % high) * wide + math.floor(u * wide) % wide) * step + colour
-
-        return texel_peak(body, at, step == 8) if at + 8 <= len(body) else 1.0
-
-    return peak
 
 
 class AlphaSheet(object):
@@ -1858,7 +1806,7 @@ def scroll_material(material, keys, flip):
     return written
 
 
-def drawn_as(model, mesh, sheer, dark):
+def drawn_as(model, mesh, sheer):
     mode = model.blendOf(mesh)
 
     if mode == BLEND_OPAQUE:
@@ -1876,7 +1824,7 @@ def drawn_as(model, mesh, sheer, dark):
     if sheer:
         return "blend"
 
-    return "add" if dark() else "alpha"
+    return "alpha"
 
 
 def see_through(model, slots, kept, run, art):
@@ -1889,24 +1837,6 @@ def see_through(model, slots, kept, run, art):
         return True
 
     return any(art.feathered(sheet_of(model, slot)) for slot in slots)
-
-
-def black_card(model, slots, kept, art):
-    if not slots:
-        return False
-
-    for slot in slots:
-        leaf = sheet_of(model, slot)
-
-        if not art.glows(leaf):
-            return False
-
-        peak = art.sampler(leaf)
-
-        if any(peak(*one["texel"]) * max(one["colour"][:3]) > CARD_BLACK for one in kept):
-            return False
-
-    return True
 
 
 def border(verts, faces, slots):
@@ -1942,8 +1872,6 @@ class SheetArt(object):
     def __init__(self, index):
         self.index = index
         self.soft = {}
-        self.lit = {}
-        self.samplers = {}
         self.alphas = {}
         self.clear = {}
         self.peaks = {}
@@ -1962,18 +1890,6 @@ class SheetArt(object):
             self.soft[leaf] = dds_feathered(self.read(leaf))
 
         return self.soft[leaf]
-
-    def glows(self, leaf):
-        if leaf not in self.lit:
-            self.lit[leaf] = dds_glowing(self.read(leaf))
-
-        return self.lit[leaf]
-
-    def sampler(self, leaf):
-        if leaf not in self.samplers:
-            self.samplers[leaf] = dds_sampler(self.read(leaf))
-
-        return self.samplers[leaf]
 
     def alpha(self, leaf):
         if leaf not in self.alphas:
@@ -2053,7 +1969,7 @@ def build_object(index, model, mesh, options, sheets, collection, prefix, runs, 
         return None, None
 
     sheer = see_through(model, order, kept, runs.get(mesh["skeleton"]), art)
-    blend = drawn_as(model, mesh, sheer, lambda: black_card(model, order, kept, art))
+    blend = drawn_as(model, mesh, sheer)
     rim = rim_of(model, order, kept, border(verts, faces, slots), art) if blend in SOFT_KINDS else 0.0
 
     for material in order:
@@ -2665,7 +2581,7 @@ def do_import(context, path, options):
 
     found = scripts(files) if options["scripts"] else {}
     report = {"mesh": 0, "of": 0, "take": 0, "flow": 0, "rect": 0, "ramp": 0, "skin": 0,
-              "frames": 0, "wanted": 0, "texture": 0, "model": len(models),
+              "frames": 0, "wanted": 0, "texture": 0, "model": len(models), "particle": 0,
               "script": build_texts(found, stage) + build_bins(files, stage)}
 
     for entry, model in models:
@@ -2676,6 +2592,11 @@ def do_import(context, path, options):
 
         for key, value in one.items():
             report[key] = max(report[key], value) if key == "frames" else report[key] + value
+
+    folder = particle_folder(path)
+
+    if options["particles"] and folder:
+        report["particle"] = build_particles(context, models[0][1], files, folder, options, stage)
 
     return report
 
@@ -2737,6 +2658,808 @@ def placement(scale, mirror):
     return mathutils.Matrix.Diagonal((scale, scale, z, 1.0))
 
 
+PARTICLE_SET = "bg"
+PARTICLE_SPAWN = 0x07
+PARTICLE_NAMES = 2
+PARTICLE_END = 0xffffffff
+PARTICLE_MAGIC = b"LTP "
+PARTICLE_VERSION = 0x102
+PARTICLE_HEADER = 16
+PARTICLE_NAME = 32
+PARTICLE_ENTRY = 0x48
+PARTICLE_SEED = 1
+PARTICLE_LIVES = 8
+PARTICLE_STEP = 3
+PARTICLE_PER_BAND = 2
+PARTICLE_ENTRIES = 99
+PARTICLE_EYE_DISTANCE = 320.0
+PARTICLE_EYE_HEIGHT = 100.0
+PARTICLE_FOV = 45.0
+PARTICLE_FRAME = 720.0
+PARTICLE_NEAREST = 1.0
+PARTICLE_UNBOUNDED = 1 << 30
+PARTICLE_COUNT_DRAW = 0xc0
+PARTICLE_LANE_DRAW = 0x100
+DICE_MASK = 0xffffffff
+DICE_BASIS = 0x811c9dc5
+DICE_PRIME = 0x01000193
+DICE_FALLBACK = 0x9e3779b9
+DICE_SPAN = 4294967296.0
+TAU = 2.0 * math.pi
+
+GROUP_RESPAWNS, GROUP_STAGGERED = 0x10, 0x60
+SPRITE_DEPTH_TEST, SPRITE_ROTATES, SPRITE_HAS_MID = 0x4, 0x40, 0x800
+SPRITE_FACES_MOTION, SPRITE_START_ASPECT, SPRITE_MID_ASPECT = 0x20000, 0x40000, 0x80000
+SPRITE_MID_RELATIVE, SPRITE_HAS_END, SPRITE_END_RELATIVE = 0x4000000, 0x20000000, 0x80000000
+SPRITE2_END_ASPECT, SPRITE2_MID_OF_END = 0x1, 0x2
+SHAPE_ROUND, SHAPE_BOX, SHAPE_EXACT_RADIUS, SHAPE_CIRCLE = 0x2, 0x4, 0x8, 0x40
+SHAPE_PLANE_XY, SHAPE_PLANE_YZ, SHAPE_EVEN = 0x80, 0x200, 0x40000000
+MOVE_VELOCITY = 0x2
+MOVE_FLIPS = (0x8, 0x10, 0x20)
+AXES = "xyz"
+
+PARTICLE_GROUP = ((0x00, "flags", "I"), (0x08, "count_max", "i"), (0x0c, "count_min", "i"),
+                  (0x10, "life_max", "i"), (0x14, "life_min", "i"), (0x18, "delay_max", "i"),
+                  (0x1c, "delay_min", "i"), (0x2c, "sprite", "I"), (0x30, "shape", "I"),
+                  (0x34, "move", "I"))
+PARTICLE_SPRITE = ((0x00, "flags", "I"), (0x04, "flags2", "I"),
+                   (0x10, "rotation_start_max", "f"), (0x14, "rotation_start_min", "f"),
+                   (0x18, "rotation_speed_max", "f"), (0x1c, "rotation_speed_min", "f"),
+                   (0x20, "rotation_accel_max", "f"), (0x24, "rotation_accel_min", "f"),
+                   (0x28, "rotation_damping", "f"), (0x3c, "colour_period_max", "i"),
+                   (0x40, "colour_period_min", "i"), (0x44, "colour_start", "I"),
+                   (0x48, "colour_end", "I"), (0x4c, "colour_mid", "I"), (0x50, "colour_mid_at", "f"),
+                   (0x54, "scale_period_max", "i"), (0x58, "scale_period_min", "i"),
+                   (0x5c, "scale_start_w_max", "f"), (0x60, "scale_start_h_max", "f"),
+                   (0x64, "scale_start_w_min", "f"), (0x68, "scale_start_h_min", "f"),
+                   (0x6c, "scale_mid_w_max", "f"), (0x70, "scale_mid_h_max", "f"),
+                   (0x74, "scale_mid_w_min", "f"), (0x78, "scale_mid_h_min", "f"),
+                   (0x7c, "scale_end_w_max", "f"), (0x80, "scale_end_h_max", "f"),
+                   (0x84, "scale_end_w_min", "f"), (0x88, "scale_end_h_min", "f"),
+                   (0x8c, "scale_mid_at", "f"), (0x98, "uv_x", "f"), (0x9c, "uv_y", "f"),
+                   (0xa0, "uv_right", "f"), (0xa4, "uv_bottom", "f"), (0xac, "shared_atlas", "i"))
+PARTICLE_SHAPE = ((0x00, "flags", "I"), (0x08, "radius", "f"), (0x0c, "angle_range", "f"),
+                  (0x10, "angle_offset", "f"), (0x14, "box_min_x", "f"), (0x18, "box_min_y", "f"),
+                  (0x1c, "box_min_z", "f"), (0x20, "box_max_x", "f"), (0x24, "box_max_y", "f"),
+                  (0x28, "box_max_z", "f"), (0x30, "size_scale", "f"))
+PARTICLE_MOVE = ((0x00, "flags", "I"), (0x08, "velocity_max_x", "f"), (0x0c, "velocity_max_y", "f"),
+                 (0x10, "velocity_max_z", "f"), (0x14, "velocity_min_x", "f"),
+                 (0x18, "velocity_min_y", "f"), (0x1c, "velocity_min_z", "f"),
+                 (0x40, "accel_max_x", "f"), (0x44, "accel_max_y", "f"), (0x48, "accel_max_z", "f"),
+                 (0x4c, "accel_min_x", "f"), (0x50, "accel_min_y", "f"), (0x54, "accel_min_z", "f"),
+                 (0x58, "damping", "f"))
+
+
+class ParticleDice(object):
+    def __init__(self, *keys):
+        state = DICE_BASIS
+
+        for key in keys:
+            state = ((state ^ (key & DICE_MASK)) * DICE_PRIME) & DICE_MASK
+
+        self.state = state or DICE_FALLBACK
+
+    def next(self):
+        x = self.state
+        x ^= (x << 13) & DICE_MASK
+        x ^= x >> 17
+        x ^= (x << 5) & DICE_MASK
+        self.state = x
+
+        return x
+
+    def unit(self):
+        return self.next() / DICE_SPAN
+
+    def between(self, low, high):
+        if low == high:
+            return low
+
+        return low + self.unit() * (high - low)
+
+    def count(self, low, high):
+        low, high = int(min(low, high)), int(max(low, high))
+
+        return low + min(int(self.unit() * (high - low + 1)), high - low)
+
+
+def rounded(value):
+    return int(math.floor(value + 0.5))
+
+
+def particle_folder(path):
+    here = os.path.dirname(os.path.abspath(path))
+
+    while here and os.path.dirname(here) != here:
+        if os.path.basename(here).lower() == "data" and os.path.isdir(os.path.join(here, "particle")):
+            return os.path.join(here, "particle")
+
+        here = os.path.dirname(here)
+
+    return ""
+
+
+def particle_record(blob, at, fields):
+    return {name: struct.unpack_from("<" + kind, blob, at + offset)[0] for offset, name, kind in fields}
+
+
+def particle_header(blob):
+    if len(blob) < PARTICLE_HEADER or blob[:4] != PARTICLE_MAGIC or dword(blob, 4) != PARTICLE_VERSION:
+        return None
+
+    return dword(blob, 8)
+
+
+def by_leaf(files, wanted):
+    return next((body for name, body in files.items() if name.rsplit("/", 1)[-1].lower() == wanted), None)
+
+
+def particle_effects(folder):
+    path = os.path.join(folder, "particle_dat_%s.pac" % PARTICLE_SET)
+
+    if not os.path.isfile(path):
+        return []
+
+    files = opened(path)
+    table, named = by_leaf(files, "particle.bin"), by_leaf(files, "ptlname.bin")
+
+    if table is None or named is None:
+        return []
+
+    count, names = particle_header(table), particle_header(named)
+
+    if count is None or names != count:
+        return []
+
+    out = []
+
+    for i in range(count):
+        name = named[PARTICLE_HEADER + i * PARTICLE_NAME:PARTICLE_HEADER + (i + 1) * PARTICLE_NAME]
+        group = particle_record(table, PARTICLE_HEADER + i * PARTICLE_ENTRY, PARTICLE_GROUP)
+        out.append({"name": name.split(b"\x00")[0].decode("ascii", "replace"), "group": group,
+                    "sprite": particle_record(table, group["sprite"], PARTICLE_SPRITE),
+                    "shape": particle_record(table, group["shape"], PARTICLE_SHAPE),
+                    "move": particle_record(table, group["move"], PARTICLE_MOVE)})
+
+    return out
+
+
+def particle_surface(folder):
+    path = os.path.join(folder, "particle_img_%s.pac" % PARTICLE_SET)
+
+    if not os.path.isfile(path):
+        return None
+
+    dds = by_leaf(opened(path), "particle.dds")
+
+    if dds is None or dds[:4] != b"DDS " or struct.unpack_from("<5I", dds, 88) != (
+            32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000):
+        return None
+
+    height, width = struct.unpack_from("<2I", dds, 12)
+
+    return width, height, dds[128:]
+
+
+def particle_spawns(files):
+    stems = {}
+
+    for name, body in files.items():
+        if name.lower().startswith("scr/") and name.lower().endswith(".evb") and body[:4] == b"EVT0":
+            stems[name.rsplit("/", 1)[-1][:-4]] = body
+
+    out = []
+
+    for stem in sorted(stems):
+        blob = stems[stem]
+        stride, first = dword(blob, 0x14), dword(blob, 0x10)
+        counts = struct.unpack_from("<7H", blob, 0x20)
+        names = evb_names(blob, EVB_BLOCKS + sum(counts[:PARTICLE_NAMES]) * stride,
+                          counts[PARTICLE_NAMES], stride)
+
+        for at in range(first, len(blob) - EVB_RECORD + 1, EVB_RECORD):
+            code, which, bone = struct.unpack_from("<3I", blob, at)
+
+            if code == PARTICLE_END:
+                break
+
+            if code == PARTICLE_SPAWN and which < len(names):
+                out.append((stem, names[which], signed(bone)))
+
+    return out
+
+
+def spawn_points(model, stem, bone):
+    wanted = stem.lower() + ".evb"
+    out = []
+
+    for index, (first, count) in enumerate(model.skeleton):
+        which = model.skeletonScript[index]
+
+        if not 0 <= which < len(model.script) or model.script[which].lower() != wanted:
+            continue
+
+        out.append(tuple(model.world(first + (bone if 0 <= bone < count else 0))[12:15]))
+
+    return out or [(0.0, 0.0, 0.0)]
+
+
+def channels(colour):
+    return ((colour >> 24) & 0xff, (colour >> 16) & 0xff, (colour >> 8) & 0xff, colour & 0xff)
+
+
+def blended(a, b, t):
+    return tuple(x + (y - x) * t for x, y in zip(a, b))
+
+
+def key_at(start, mid, end, mid_at, t):
+    if t < mid_at:
+        return blended(start, mid, t / mid_at)
+
+    span = 1.0 - mid_at
+
+    if span <= 0.0:
+        return end
+
+    return blended(mid, end, (t - mid_at) / span)
+
+
+def cycle_span(dice, low, high, life):
+    value = dice.count(low, high)
+
+    return life if value <= 0 else value
+
+
+def sphere_point(dice, radius):
+    while True:
+        point = tuple(dice.between(-1.0, 1.0) for _ in AXES)
+        length = math.sqrt(sum(c * c for c in point))
+
+        if 0.0 < length <= 1.0:
+            return tuple(c / length * radius for c in point)
+
+
+def circle_point(shape, dice, index, count, radius):
+    angle = shape["angle_offset"] + dice.unit() * shape["angle_range"]
+
+    if shape["flags"] & SHAPE_EVEN and count:
+        angle += TAU * index / count
+
+    a, b = math.cos(angle) * radius, math.sin(angle) * radius
+
+    if shape["flags"] & SHAPE_PLANE_XY:
+        return (a, b, 0.0)
+
+    if shape["flags"] & SHAPE_PLANE_YZ:
+        return (0.0, a, b)
+
+    return (a, 0.0, b)
+
+
+def birth_offset(shape, dice, band, index, count):
+    flags = shape["flags"]
+
+    if flags & SHAPE_BOX:
+        x = dice.between(shape["box_min_x"], shape["box_max_x"])
+        y = dice.between(shape["box_min_y"], shape["box_max_y"])
+
+        return (x, y, dice.between(band[0], band[1]))
+
+    if not flags & SHAPE_ROUND:
+        return (0.0, 0.0, 0.0)
+
+    radius = shape["radius"] if flags & SHAPE_EXACT_RADIUS else dice.unit() * shape["radius"]
+
+    if flags & SHAPE_CIRCLE:
+        return circle_point(shape, dice, index, count, radius)
+
+    return sphere_point(dice, radius)
+
+
+def birth_motion(move, dice):
+    if not move["flags"] & MOVE_VELOCITY:
+        return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 1.0
+
+    velocity = [dice.between(move["velocity_min_" + axis], move["velocity_max_" + axis]) for axis in AXES]
+
+    for i, flip in enumerate(MOVE_FLIPS):
+        if move["flags"] & flip and dice.unit() < 0.5:
+            velocity[i] = -velocity[i]
+
+    acceleration = tuple(dice.between(move["accel_min_" + axis], move["accel_max_" + axis]) for axis in AXES)
+
+    return tuple(velocity), acceleration, move["damping"]
+
+
+def keyed_size(sprite, dice, key, aspect):
+    w_max = sprite["scale_%s_w_max" % key]
+    width = dice.between(sprite["scale_%s_w_min" % key], w_max)
+
+    if aspect and w_max:
+        return (width, width * sprite["scale_%s_h_max" % key] / w_max)
+
+    return (width, dice.between(sprite["scale_%s_h_min" % key], sprite["scale_%s_h_max" % key]))
+
+
+def scaled_pair(a, b):
+    return (a[0] * b[0], a[1] * b[1])
+
+
+def size_keys(sprite, dice):
+    flags, flags2 = sprite["flags"], sprite["flags2"]
+    start = keyed_size(sprite, dice, "start", flags & SPRITE_START_ASPECT)
+    end = start
+    mid = start
+
+    if flags & SPRITE_HAS_END:
+        end = keyed_size(sprite, dice, "end", flags2 & SPRITE2_END_ASPECT)
+
+        if flags & SPRITE_END_RELATIVE:
+            end = scaled_pair(end, start)
+
+    if not flags & SPRITE_HAS_MID:
+        return start, mid, end
+
+    mid = keyed_size(sprite, dice, "mid", flags & SPRITE_MID_ASPECT)
+
+    if flags & SPRITE_MID_RELATIVE:
+        mid = scaled_pair(mid, start)
+
+    if flags & SPRITE_HAS_END and flags2 & SPRITE2_MID_OF_END:
+        mid = scaled_pair(mid, end)
+
+    return start, mid, end
+
+
+def spin_keys(sprite, dice):
+    if not sprite["flags"] & SPRITE_ROTATES:
+        return 0.0, 0.0, 0.0, 1.0
+
+    return (dice.between(sprite["rotation_start_min"], sprite["rotation_start_max"]),
+            dice.between(sprite["rotation_speed_min"], sprite["rotation_speed_max"]),
+            dice.between(sprite["rotation_accel_min"], sprite["rotation_accel_max"]),
+            sprite["rotation_damping"])
+
+
+def knots(length, span, mid_at):
+    out = set()
+    start = 0
+
+    while start < length:
+        out.add(start)
+
+        if start > 0:
+            out.add(start - 1)
+
+        mid = start + rounded(mid_at * span)
+
+        if mid < length:
+            out.add(mid)
+
+        start += span
+
+    return out
+
+
+def curved(effect):
+    sprite, move = effect["sprite"], effect["move"]
+    accelerates = any(move["accel_min_" + axis] or move["accel_max_" + axis] for axis in AXES)
+    spins_unevenly = sprite["flags"] & SPRITE_ROTATES and (
+        sprite["rotation_accel_min"] or sprite["rotation_accel_max"] or sprite["rotation_damping"] != 1.0)
+
+    return bool(accelerates or move["damping"] != 1.0 or spins_unevenly or sprite["flags"] & SPRITE_FACES_MOTION)
+
+
+class Life(object):
+    def __init__(self, effect, origin, dice, length, band, index, count, grid):
+        sprite, shape = effect["sprite"], effect["shape"]
+        scale = shape["size_scale"] or 1.0
+        offset = birth_offset(shape, dice, band, index, count)
+        position = tuple(o + d * scale for o, d in zip(origin, offset))
+        velocity, acceleration, damping = birth_motion(effect["move"], dice)
+        colours = tuple(channels(sprite[key]) for key in ("colour_start", "colour_mid", "colour_end"))
+        colour_span = cycle_span(dice, sprite["colour_period_min"], sprite["colour_period_max"], length)
+        sizes = size_keys(sprite, dice)
+        size_span = cycle_span(dice, sprite["scale_period_min"], sprite["scale_period_max"], length)
+        angle, spin, spin_accel, spin_damping = spin_keys(sprite, dice)
+        self.length = length
+        self.states = []
+
+        for age in range(length):
+            colour = key_at(colours[0], colours[1], colours[2], sprite["colour_mid_at"],
+                            (age % colour_span) / float(colour_span))
+            size = key_at(sizes[0], sizes[1], sizes[2], sprite["scale_mid_at"],
+                          (age % size_span) / float(size_span))
+            self.states.append((position, (size[0] * scale, size[1] * scale), colour, angle))
+            velocity = tuple(damping * (v + a) for v, a in zip(velocity, acceleration))
+            position = tuple(p + v * scale for p, v in zip(position, velocity))
+            spin = (spin + spin_accel) * spin_damping
+            angle += spin
+
+        self.sunk = length
+
+        if sprite["flags"] & SPRITE_DEPTH_TEST:
+            self.sunk = next((age for age, s in enumerate(self.states) if s[0][1] < 0.0), length)
+
+        if grid > 1:
+            self.keys = list(range(0, length, grid))
+            return
+
+        keys = {0, length - 1}
+        keys |= knots(length, colour_span, sprite["colour_mid_at"])
+
+        if len(set(sizes)) > 1:
+            keys |= knots(length, size_span, sprite["scale_mid_at"])
+
+        if self.sunk < length:
+            keys |= {self.sunk, max(self.sunk - 1, 0)}
+
+        self.keys = sorted(k for k in keys if 0 <= k < length)
+
+
+def life_range(group):
+    low, high = int(group["life_min"]), int(group["life_max"])
+
+    if high <= 0:
+        return 1, 1
+
+    return max(1, min(low, high)), max(low, high)
+
+
+def gap_range(group):
+    if group["flags"] & GROUP_STAGGERED == GROUP_STAGGERED:
+        return 0, 0
+
+    low, high = int(group["delay_min"]), int(group["delay_max"])
+
+    return max(0, min(low, high)), max(0, low, high)
+
+
+def on_grid(value, grid, low, high):
+    lowest = -(-low // grid) * grid
+    highest = max(lowest, high // grid * grid)
+
+    return max(lowest, min(highest, rounded(value / float(grid)) * grid))
+
+
+def loop_length(group, grid):
+    low, high = life_range(group)
+    gap_low, gap_high = gap_range(group)
+
+    return PARTICLE_LIVES * on_grid((low + high + gap_low + gap_high) / 2.0, grid, grid, PARTICLE_UNBOUNDED)
+
+
+def fitted(dice, group, loop, grid):
+    low, high = life_range(group)
+    gap_low, gap_high = gap_range(group)
+    lowest, highest = on_grid(low, grid, low, high), on_grid(high, grid, low, high)
+    lengths = [on_grid(dice.count(low, high), grid, low, high) for _ in range(PARTICLE_LIVES)]
+    gaps = [on_grid(dice.count(gap_low, gap_high), grid, 0, PARTICLE_UNBOUNDED) if gap_high else 0
+            for _ in range(PARTICLE_LIVES)]
+    left = loop - sum(lengths) - sum(gaps)
+
+    while left != 0:
+        moved = False
+
+        for i in range(PARTICLE_LIVES):
+            if left == 0:
+                break
+
+            step = grid if left > 0 else -grid
+
+            if lowest <= lengths[i] + step <= highest:
+                lengths[i] += step
+                left -= step
+                moved = True
+
+        if not moved:
+            break
+
+    if left != 0:
+        gaps[-1] = max(0, gaps[-1] + left)
+        left = loop - sum(lengths) - sum(gaps)
+
+    if left != 0:
+        lengths[-1] = max(grid, lengths[-1] + left)
+
+    return lengths, gaps
+
+
+def volume_born(effect):
+    return bool(effect["shape"]["flags"] & SHAPE_BOX)
+
+
+def particle_lanes(plans):
+    per_band = PARTICLE_PER_BAND
+
+    while sum(-(-lanes // per_band) if volume_born(effect) else 1
+              for effect, _, counts in plans for lanes in counts) > PARTICLE_ENTRIES:
+        per_band += 1
+
+    out = []
+
+    for effect_index, (effect, origins, counts) in enumerate(plans):
+        grid = PARTICLE_STEP if curved(effect) else 1
+        loop = loop_length(effect["group"], grid)
+        shape = effect["shape"]
+
+        for origin_index, (origin, lanes) in enumerate(zip(origins, counts)):
+            bands = -(-lanes // per_band) if volume_born(effect) else 1
+            low, high = (shape["box_min_z"], shape["box_max_z"]) if volume_born(effect) else (0.0, 0.0)
+            width = (high - low) / bands
+
+            for band in range(bands):
+                span = (low + band * width, low + (band + 1) * width)
+
+                for k in range(band * lanes // bands, (band + 1) * lanes // bands):
+                    dice = ParticleDice(PARTICLE_SEED, effect_index, origin_index, PARTICLE_LANE_DRAW + k)
+                    lengths, gaps = fitted(dice, effect["group"], loop, grid)
+                    birth = -dice.count(0, loop // grid - 1) * grid
+                    lives = []
+
+                    for length, gap in zip(lengths, gaps):
+                        lives.append((birth % loop, Life(effect, origin, dice, length, span, k, lanes, grid)))
+                        birth += length + gap
+
+                    out.append((effect_index, loop, lives))
+
+    return out
+
+
+def particle_plans(model, files, effects):
+    plans = []
+    gathered_effects = {}
+
+    for stem, name, bone in particle_spawns(files):
+        effect = next((one for one in effects if one["name"] == name), None)
+
+        if effect is None:
+            continue
+
+        gathered_effects.setdefault(name, [effect, []])[1].extend(spawn_points(model, stem, bone))
+
+    for name, (effect, origins) in gathered_effects.items():
+        if not effect["group"]["flags"] & GROUP_RESPAWNS or effect["sprite"]["shared_atlas"]:
+            continue
+
+        effect_index = len(plans)
+        counts = [max(1, ParticleDice(PARTICLE_SEED, effect_index, k, PARTICLE_COUNT_DRAW).count(
+            effect["group"]["count_min"], effect["group"]["count_max"])) for k in range(len(origins))]
+        plans.append((effect, origins, counts))
+
+    return plans
+
+
+class ParticleCamera(object):
+    def __init__(self):
+        pixels = PARTICLE_FRAME / (2.0 * PARTICLE_EYE_DISTANCE * math.tan(math.radians(PARTICLE_FOV) / 2.0))
+        self.focal = pixels * PARTICLE_EYE_DISTANCE
+
+    def project(self, position):
+        factor = self.focal / max(PARTICLE_EYE_DISTANCE + position[2], PARTICLE_NEAREST)
+
+        return position[0] * factor, (position[1] - PARTICLE_EYE_HEIGHT) * factor
+
+
+def life_turns(life, camera, faces_motion):
+    if not faces_motion:
+        return [state[3] / TAU for state in life.states]
+
+    points = [camera.project(state[0]) for state in life.states]
+    out = []
+    last = None
+
+    for age in range(life.length):
+        ahead = age + 1 if age + 1 < life.length else age
+        behind = ahead - 1
+        dx = points[ahead][0] - points[behind][0] if behind >= 0 else 0.0
+        dy = points[behind][1] - points[ahead][1] if behind >= 0 else 0.0
+        turn = math.atan2(dx, -dy) / TAU if dx or dy else (last or 0.0)
+
+        if last is not None:
+            turn -= math.floor(turn - last + 0.5)
+
+        out.append(turn)
+        last = turn
+
+    return out
+
+
+def particle_image(effect, surface):
+    width, height, body = surface
+    sprite = effect["sprite"]
+    x, y = int(sprite["uv_x"]), int(sprite["uv_y"])
+    w, h = int(sprite["uv_right"]) - x, int(sprite["uv_bottom"]) - y
+    image = bpy.data.images.new("%s particle" % effect["name"], w, h, alpha=True)
+    pixels = [0.0] * (w * h * 4)
+
+    for row in range(h):
+        for column in range(w):
+            at = ((y + row) * width + x + column) * 4
+            b, g, r, a = body[at:at + 4]
+            where = ((h - 1 - row) * w + column) * 4
+            pixels[where:where + 4] = (r / 255.0, g / 255.0, b / 255.0, a / 255.0)
+
+    image.pixels = pixels
+    image.pack()
+
+    return image
+
+
+def particle_material(effect, image):
+    material = bpy.data.materials.new("%s particle" % effect["name"])
+    material.use_nodes = True
+    tree = material.node_tree
+
+    for node in list(tree.nodes):
+        if node.type != "OUTPUT_MATERIAL":
+            tree.nodes.remove(node)
+
+    texture = tree.nodes.new("ShaderNodeTexImage")
+    texture.image = image
+    texture.extension = "CLIP"
+    tint = tree.nodes.new("ShaderNodeAttribute")
+    tint.attribute_type = "OBJECT"
+    tint.attribute_name = "mua_tint"
+    ramp = tree.nodes.new("ShaderNodeAttribute")
+    ramp.attribute_type = "OBJECT"
+    ramp.attribute_name = "mua_ramp"
+    colour = tree.nodes.new("ShaderNodeMix")
+    colour.data_type = "RGBA"
+    colour.blend_type = "MULTIPLY"
+    colour.inputs["Factor"].default_value = 1.0
+    tree.links.new(colour.inputs[6], texture.outputs["Color"])
+    tree.links.new(colour.inputs[7], tint.outputs["Color"])
+    strength = tree.nodes.new("ShaderNodeMath")
+    strength.operation = "MULTIPLY"
+    tree.links.new(strength.inputs[0], texture.outputs["Alpha"])
+    tree.links.new(strength.inputs[1], ramp.outputs["Fac"])
+    emission = tree.nodes.new("ShaderNodeEmission")
+    tree.links.new(emission.inputs["Color"], colour.outputs[2])
+    tree.links.new(emission.inputs["Strength"], strength.outputs["Value"])
+    clear = tree.nodes.new("ShaderNodeBsdfTransparent")
+    mixer = tree.nodes.new("ShaderNodeAddShader")
+    tree.links.new(mixer.inputs[0], emission.outputs["Emission"])
+    tree.links.new(mixer.inputs[1], clear.outputs["BSDF"])
+    tree.links.new(tree.nodes["Material Output"].inputs[0], mixer.outputs[0])
+
+    if hasattr(material, "surface_render_method"):
+        material.surface_render_method = "BLENDED"
+
+    material["mua_blendmode"] = 1
+
+    return material
+
+
+def particle_card(effect, material):
+    data = bpy.data.meshes.new("%s particle" % effect["name"])
+    data.from_pydata([(-0.5, -0.5, 0.0), (0.5, -0.5, 0.0), (0.5, 0.5, 0.0), (-0.5, 0.5, 0.0)], [],
+                     [(0, 1, 2, 3)])
+    data.update()
+    uvs = data.uv_layers.new(name="UVMap")
+
+    for loop, uv in zip(data.loops, ((0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0))):
+        uvs.data[loop.index].uv = uv
+
+    data.materials.append(material)
+
+    return data
+
+
+def lane_keys(loop, lives):
+    frames = {0, loop}
+
+    for birth, life in lives:
+        for age in set(life.keys) | {life.length - 1}:
+            frames.add((birth + age) % loop)
+
+        frames.add((birth + life.length) % loop)
+
+    return sorted(frames)
+
+
+def lane_state(lives, loop, frame):
+    for birth, life in lives:
+        age = (frame - birth) % loop
+
+        if age < life.length:
+            return life, age
+
+    return None, None
+
+
+def particle_lane(lane, effect, card, turns, options, collection, number):
+    _, loop, lives = lane
+    scale = options["scale"]
+    depth = -scale if options["mirror"] else scale
+    spin = 1.0 if options["mirror"] else -1.0
+    obj = bpy.data.objects.new("%s %03d" % (effect["name"], number), card)
+    collection.objects.link(obj)
+    obj["mua_tint"] = [1.0, 1.0, 1.0]
+    obj["mua_ramp"] = 0.0
+    obj["mua_particle"] = effect["name"]
+    frames = lane_keys(loop, lives)
+    channels_out = {key: [] for key in ("x", "y", "z", "turn", "w", "h", "r", "g", "b", "a")}
+    held = []
+    last = ((0.0, 0.0, 0.0), (0.0, 0.0), (0.0, 0.0, 0.0, 0.0), 0.0)
+
+    for frame in frames:
+        life, age = lane_state(lives, loop, frame % loop)
+
+        if life is None:
+            position, size, colour, _ = last
+            values = (position, size, (0.0,) + tuple(colour[1:]), 0.0)
+            held.append(True)
+        else:
+            position, size, colour, _ = life.states[age]
+            visible = age < life.sunk
+            values = (position, size, colour if visible else (0.0,) + tuple(colour[1:]),
+                      turns[id(life)][age])
+            last = life.states[age]
+            held.append(age == life.length - 1)
+
+        position, size, colour, turn = values
+        channels_out["x"].append(position[0] * scale)
+        channels_out["y"].append(position[1] * scale)
+        channels_out["z"].append(position[2] * depth)
+        channels_out["turn"].append(-turn * TAU * spin)
+        channels_out["w"].append(max(size[0], 0.0) * scale)
+        channels_out["h"].append(max(size[1], 0.0) * scale)
+        channels_out["r"].append(colour[1] / 255.0)
+        channels_out["g"].append(colour[2] / 255.0)
+        channels_out["b"].append(colour[3] / 255.0)
+        channels_out["a"].append(colour[0] / 255.0)
+
+    action = fresh_action(obj, "%s script" % obj.name)
+    paths = (("location", 0, "x"), ("location", 1, "y"), ("location", 2, "z"),
+             ("rotation_euler", 2, "turn"), ("scale", 0, "w"), ("scale", 1, "h"),
+             ('["mua_tint"]', 0, "r"), ('["mua_tint"]', 1, "g"), ('["mua_tint"]', 2, "b"),
+             ('["mua_ramp"]', 0, "a"))
+
+    for path, index, key in paths:
+        fcurve = write_curve(action, obj, path, index, frames, channels_out[key])
+
+        for point, constant in zip(fcurve.keyframe_points, held):
+            if constant:
+                point.interpolation = "CONSTANT"
+
+    cycled(action)
+
+    return obj
+
+
+def build_particles(context, model, files, folder, options, label):
+    effects = particle_effects(folder)
+    surface = particle_surface(folder)
+
+    if not effects or surface is None:
+        return 0
+
+    plans = particle_plans(model, files, effects)
+
+    if not plans:
+        return 0
+
+    collection = bpy.data.collections.new("%s particles" % label)
+    context.scene.collection.children.link(collection)
+    camera = ParticleCamera()
+    cards = {}
+    made = 0
+
+    for number, lane in enumerate(particle_lanes(plans)):
+        effect = plans[lane[0]][0]
+
+        if lane[0] not in cards:
+            cards[lane[0]] = particle_card(effect, particle_material(effect, particle_image(effect, surface)))
+
+        faces_motion = bool(effect["sprite"]["flags"] & SPRITE_FACES_MOTION)
+        turns = {id(life): life_turns(life, camera, faces_motion) for _, life in lane[2]}
+        particle_lane(lane, effect, cards[lane[0]], turns, options, collection, number)
+        made += 1
+
+    return made
+
+
 class ImportMua(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.mua"
     bl_label = "Import Mua model"
@@ -2791,6 +3514,11 @@ class ImportMua(bpy.types.Operator, ImportHelper):
         description="Import the scripts: motion timing, light ramps and sprite sequences",
         default=True)
 
+    particles: BoolProperty(
+        name="Particles",
+        description="Add the snow, sparks and other effects the stage's scripts spawn, the way BBTAG plays them",
+        default=True)
+
     def execute(self, context):
         options = {
             "scale": UNI2_CHARACTER / self.character,
@@ -2801,6 +3529,7 @@ class ImportMua(bpy.types.Operator, ImportHelper):
             "animation": self.animation,
             "flow": self.flow,
             "scripts": self.scripts,
+            "particles": self.particles,
             "from": self.textures_from,
         }
         options["place"] = placement(options["scale"], self.mirror)
@@ -2825,10 +3554,10 @@ class ImportMua(bpy.types.Operator, ImportHelper):
                                      "that has them" % (report["texture"], report["wanted"]))
 
         self.report({"INFO"}, "%d of %d mesh(es), %d skinned, %d texture(s), %d take(s), "
-                              "%d scroll(s), %d script(s), %d ramp(ed), %d sprite(s)"
+                              "%d scroll(s), %d script(s), %d ramp(ed), %d sprite(s), %d particle(s)"
                     % (report["mesh"], report["of"], report["skin"], report["texture"],
                        report["take"], report["flow"], report["script"], report["ramp"],
-                       report["rect"]))
+                       report["rect"], report["particle"]))
 
         return {"FINISHED"}
 

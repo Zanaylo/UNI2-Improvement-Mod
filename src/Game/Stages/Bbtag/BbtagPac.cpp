@@ -118,3 +118,31 @@ bool BbtagPac::Walk(const std::vector<uint8_t>& blob, Files& out)
 
 	return Gather(blob, std::string(), 0, out);
 }
+
+const std::vector<uint8_t>* BbtagPac::Ending(const Files& files, const std::string& tail)
+{
+	for (const std::pair<const std::string, std::vector<uint8_t> >& file : files)
+	{
+		if (file.first.size() < tail.size())
+			continue;
+
+		if (_stricmp(file.first.c_str() + file.first.size() - tail.size(), tail.c_str()) == 0)
+			return &file.second;
+	}
+
+	return nullptr;
+}
+
+const std::vector<uint8_t>* BbtagPac::Named(const Files& files, const std::string& leaf)
+{
+	for (const std::pair<const std::string, std::vector<uint8_t> >& file : files)
+	{
+		const size_t slash = file.first.find_last_of("/\\");
+		const size_t at = slash == std::string::npos ? 0 : slash + 1;
+
+		if (_stricmp(file.first.c_str() + at, leaf.c_str()) == 0)
+			return &file.second;
+	}
+
+	return nullptr;
+}

@@ -1,9 +1,10 @@
-﻿#include "Game/Stages/BgGrade.h"
+#include "Game/Stages/BgGrade.h"
 
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
+#include "Game/Stages/Bbtag/BbtagStage.h"
 #include "Game/Stages/BgShaderText.h"
 #include "Game/Stages/BgVertexProbe.h"
 #include "Game/Files/FbGameFolder.h"
@@ -28,10 +29,12 @@ namespace {
 
 constexpr const char* kSection = "StageColour";
 constexpr const char* kStale = "Mods\\Shader\\sh_bgspeculer.txt";
-constexpr int kLampRegister = 218;
-constexpr int kLampSlots = 8;
+constexpr int kLampRegister = 212;
+constexpr int kLampSlots = BbtagStage::kLampSlots;
 constexpr int kLampRamps = 512;
-constexpr size_t kNoteLine = 16384;
+constexpr int kFlipSlots = BbtagStage::kFlipSlots;
+constexpr int kFlipRegister = BbtagStage::kFlipRegister;
+constexpr size_t kFlipFrames = 1 << 20;
 constexpr float kLampFull = 1000.0f;
 constexpr int kBlackRegister = 220;
 constexpr int kContrastRegister = 221;
@@ -44,6 +47,7 @@ constexpr int kLiftFirst = 4 * (kBlackRegister - kFirstRegister);
 constexpr int kContrastFirst = 4 * (kContrastRegister - kFirstRegister);
 constexpr int kFlowFirst = 4 * (kFlowRegister - kFirstRegister);
 constexpr int kSetPixelShaderConstantF = 109;
+constexpr int kSetVertexShaderConstantF = 94;
 constexpr int kSetRenderState = 57;
 constexpr int kDestBlend = 20;
 constexpr int kBlendOne = 2;
@@ -57,10 +61,12 @@ using SetRenderState_t = HRESULT(STDMETHODCALLTYPE*)(IDirect3DDevice9*,
 	D3DRENDERSTATETYPE, DWORD);
 using SetPixelShaderConstantF_t = HRESULT(STDMETHODCALLTYPE*)(IDirect3DDevice9*, UINT,
 	const float*, UINT);
+using SetVertexShaderConstantF_t = SetPixelShaderConstantF_t;
 
 GameHook<CreateEffect_t> g_createEffectHook("D3DXCreateEffect");
 GameHook<SetPixelShaderConstantF_t> g_setPixelShaderConstantFHook("SetPixelShaderConstantF");
 GameHook<SetRenderState_t> g_setRenderStateHook("SetRenderState");
+GameHook<SetVertexShaderConstantF_t> g_setVertexShaderConstantFHook("SetVertexShaderConstantF");
 
 bool From(const std::string& game, FbGameFolder::Game source)
 {
@@ -88,34 +94,64 @@ volatile long g_touched = 0;
 volatile long g_reached = 0;
 volatile long g_dirty = 1;
 volatile long g_effects = 0;
+volatile long g_flipping = 0;
 int g_stage = -1;
 
 std::map<int, BgGrade::Grade> g_cache;
 std::map<int, float> g_glowCache;
 std::map<int, bool> g_offCache;
 
-float g_live[4 * kRegisters] = {
-	1.0f, 1.0f, 1.0f, 1.0f,
-	1.0f, 1.0f, 1.0f, 1.0f,
-	BgGrade::kGameLift, BgGrade::kGameLift, BgGrade::kGameLift, 0.0f,
-	BgGrade::kGameContrast, BgGrade::kGameContrast, BgGrade::kGameContrast, 1.0f,
+struct Registers
+{
+	float value[4 * kRegisters];
+
+	Registers()
+	{
+		for (int i = 0; i < 4 * kRegisters; ++i)
+			value[i] = 1.0f;
+
+		for (int i = 0; i < 3; ++i)
+		{
+			value[kLiftFirst + i] = BgGrade::kGameLift;
+			value[kContrastFirst + i] = BgGrade::kGameContrast;
+		}
+
+		value[kLiftFirst + 3] = 0.0f;
+
+		for (int i = 0; i < kFlowSlots; ++i)
+			value[kFlowFirst + i] = 0.0f;
+	}
 };
+
+Registers g_registers;
+float* const g_live = g_registers.value;
 
 struct Lamp
 {
 	int loop;
+	int from;
 	int ramps;
 	int at[kLampRamps];
 	int target[kLampRamps];
 	int frames[kLampRamps];
 };
 
+int LampFrame(const Lamp& lamp, int frame)
+{
+	if (frame < lamp.loop)
+		return frame;
+
+	const int from = lamp.from > 0 && lamp.from < lamp.loop ? lamp.from : 0;
+
+	return from + (frame - from) % (lamp.loop - from);
+}
+
 float LampAt(const Lamp& lamp, int frame)
 {
 	if (lamp.loop < 1 || lamp.ramps < 1)
 		return 1.0f;
 
-	const int at = ((frame % lamp.loop) + lamp.loop) % lamp.loop;
+	const int at = LampFrame(lamp, frame < 0 ? 0 : frame);
 
 	float held = static_cast<float>(lamp.target[lamp.ramps - 1]) / kLampFull;
 	float value = held;
@@ -127,7 +163,7 @@ float LampAt(const Lamp& lamp, int frame)
 
 		const float target = static_cast<float>(lamp.target[i]) / kLampFull;
 		const int step = at - lamp.at[i];
-		const int span = lamp.frames[i] < 1 ? 1 : lamp.frames[i];
+		const int span = lamp.frames[i];
 
 		value = step >= span ? target
 			: held + (target - held) * (static_cast<float>(step) / span);
@@ -141,6 +177,8 @@ float g_rate[kFlowSlots] = {};
 float g_glow = 1.0f;
 Lamp g_lamp[kLampSlots] = {};
 int g_frame = 0;
+std::vector<BbtagScript::Flip> g_flips;
+float g_flipLive[4 * kFlipSlots] = {};
 
 bool Owning()
 {
@@ -173,10 +211,47 @@ void Lamps()
 	if (InterlockedCompareExchange(&g_lighting, 0, 0) == 0)
 		return;
 
-	++g_frame;
-
 	for (int i = 0; i < kLampSlots; ++i)
 		g_live[kLampFirst + i] = LampAt(g_lamp[i], g_frame);
+}
+
+bool Flipping()
+{
+	return InterlockedCompareExchange(&g_flipping, 0, 0) != 0;
+}
+
+void UploadFlips()
+{
+	IDirect3DDevice9* const device = DeviceHooks::GetDevice();
+
+	if (device == nullptr || !g_setVertexShaderConstantFHook.IsLive())
+		return;
+
+	g_setVertexShaderConstantFHook.Original()(device, kFlipRegister, g_flipLive, kFlipSlots);
+}
+
+void Flips()
+{
+	if (!Flipping())
+		return;
+
+
+	for (size_t i = 0; i < g_flips.size(); ++i)
+	{
+		const BbtagScript::Flip& flip = g_flips[i];
+		float* const slot = g_flipLive + 4 * i;
+
+		if (flip.frame.empty())
+			continue;
+
+		const int shown = flip.frame[static_cast<size_t>(g_frame) % flip.frame.size()];
+		const bool known = shown >= 0 && static_cast<size_t>(4 * shown + 3) < flip.rects.size();
+
+		for (int k = 0; k < 4; ++k)
+			slot[k] = known ? flip.rects[4 * shown + k] : 0.0f;
+	}
+
+	UploadFlips();
 }
 
 void Flow()
@@ -209,6 +284,81 @@ struct Note
 	bool fading;
 };
 
+std::vector<double> Numbers(const char* line)
+{
+	std::vector<double> out;
+	const char* at = strchr(line, '[');
+
+	while (at != nullptr)
+	{
+		const char* const start = at + 1;
+		char* stop = nullptr;
+		const double value = strtod(start, &stop);
+
+		if (stop == start)
+			break;
+
+		out.push_back(value);
+		at = strchr(stop, ',');
+	}
+
+	return out;
+}
+
+void ReadFlip(const char* line, std::vector<BbtagScript::Flip>& flips)
+{
+	const int slot = atoi(strstr(line, "Flip") + 4);
+
+	if (slot < 0 || slot >= kFlipSlots)
+		return;
+
+	if (flips.size() <= static_cast<size_t>(slot))
+		flips.resize(static_cast<size_t>(slot) + 1);
+
+	BbtagScript::Flip& flip = flips[static_cast<size_t>(slot)];
+	const std::vector<double> values = Numbers(line);
+
+	if (strstr(line, "Rects") != nullptr)
+	{
+		flip.rects.clear();
+
+		for (const double value : values)
+			flip.rects.push_back(static_cast<float>(value));
+
+		return;
+	}
+
+	flip.frame.clear();
+
+	for (size_t i = 0; i + 1 < values.size() && flip.frame.size() < kFlipFrames; i += 2)
+	{
+		const double wanted = values[i + 1] < 0.0 ? 0.0 : values[i + 1];
+		const size_t room = kFlipFrames - flip.frame.size();
+		const size_t run = static_cast<size_t>(wanted) < room ? static_cast<size_t>(wanted) : room;
+
+		flip.frame.insert(flip.frame.end(), run, static_cast<int>(values[i]));
+	}
+}
+
+bool ReadWhole(const std::string& path, std::string& out)
+{
+	out.clear();
+
+	FILE* handle = nullptr;
+
+	if (fopen_s(&handle, path.c_str(), "rb") != 0 || handle == nullptr)
+		return false;
+
+	char chunk[4096] = {};
+	size_t read = 0;
+
+	while ((read = fread(chunk, 1, sizeof(chunk), handle)) > 0)
+		out.append(chunk, read);
+
+	fclose(handle);
+	return true;
+}
+
 
 void ReadLamp(const char* line, Note& note)
 {
@@ -218,9 +368,21 @@ void ReadLamp(const char* line, Note& note)
 		return;
 
 	const int slot = atoi(digits);
+
+	if (slot < 0 || slot >= kLampSlots)
+		return;
+
+	if (strstr(line, "From") != nullptr)
+	{
+		const char* const equals = strchr(line, '=');
+
+		note.lamp[slot].from = equals == nullptr ? 0 : atoi(equals + 1);
+		return;
+	}
+
 	const char* open = strchr(line, '[');
 
-	if (slot < 0 || slot >= kLampSlots || open == nullptr)
+	if (open == nullptr)
 		return;
 
 	Lamp& lamp = note.lamp[slot];
@@ -269,25 +431,33 @@ void ReadRates(const char* line, Note& note)
 	}
 }
 
-bool ReadNote(int stage, Note& note)
+bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips)
 {
 	memset(&note, 0, sizeof(note));
+	flips.clear();
 
 	const std::string folder = StageLibrary::FolderOf(stage);
+	std::string text;
 
-	if (folder.empty())
+	if (folder.empty() || !ReadWhole(folder + "\\stage.txt", text))
 		return false;
 
-	FILE* handle = nullptr;
-
-	if (fopen_s(&handle, (folder + "\\stage.txt").c_str(), "rb") != 0 || handle == nullptr)
-		return false;
-
-	std::vector<char> buffer(kNoteLine);
-
-	while (fgets(buffer.data(), static_cast<int>(buffer.size()), handle) != nullptr)
+	for (size_t at = 0; at < text.size();)
 	{
-		const char* const line = buffer.data();
+		size_t stop = text.find('\n', at);
+
+		if (stop == std::string::npos)
+			stop = text.size();
+
+		const std::string held = text.substr(at, stop - at);
+		const char* const line = held.c_str();
+		at = stop + 1;
+
+		if (strstr(line, "Flip") != nullptr)
+		{
+			ReadFlip(line, flips);
+			continue;
+		}
 
 		if (strstr(line, "VertexAlpha") != nullptr)
 		{
@@ -306,8 +476,6 @@ bool ReadNote(int stage, Note& note)
 		if (strstr(line, "Lamp") != nullptr)
 			ReadLamp(line, note);
 	}
-
-	fclose(handle);
 
 	return true;
 }
@@ -404,30 +572,56 @@ HRESULT STDMETHODCALLTYPE HookedSetRenderState(IDirect3DDevice9* device,
 	return result;
 }
 
+bool Overlaps(UINT start, UINT count, UINT ownStart, UINT ownCount)
+{
+	return start < ownStart + ownCount && start + count > ownStart;
+}
+
+HRESULT Overlaid(SetPixelShaderConstantF_t original, IDirect3DDevice9* device, UINT start,
+	const float* data, UINT count, UINT ownStart, UINT ownCount, const float* own)
+{
+	const UINT stop = start + count;
+	const UINT ownStop = ownStart + ownCount;
+	const UINT first = start > ownStart ? start : ownStart;
+	const UINT last = stop < ownStop ? stop : ownStop;
+	HRESULT result = D3D_OK;
+
+	if (start < first)
+		result = original(device, start, data, first - start);
+
+	const HRESULT mine = original(device, first, own + 4 * (first - ownStart), last - first);
+
+	if (last < stop)
+		result = original(device, last, data + 4 * (last - start), stop - last);
+
+	return FAILED(result) ? result : mine;
+}
+
 HRESULT STDMETHODCALLTYPE HookedSetPixelShaderConstantF(IDirect3DDevice9* device, UINT start,
 	const float* data, UINT count)
 {
-	const HRESULT result = g_setPixelShaderConstantFHook.Original()(device, start, data, count);
+	if (!Owning() || !Overlaps(start, count, kFirstRegister, kRegisters))
+		return g_setPixelShaderConstantFHook.Original()(device, start, data, count);
 
-	if (!Owning())
-		return result;
+	const long seen = InterlockedIncrement(&g_touched);
 
-	const UINT stop = start + count;
+	if (seen <= kReported)
+		LOG("BgGrade: the game wrote c%u..c%u, so the mod kept its own there", start, start + count - 1);
 
-	if (start < static_cast<UINT>(kFirstRegister + kRegisters)
-		&& stop > static_cast<UINT>(kFirstRegister))
-	{
-		const long seen = InterlockedIncrement(&g_touched);
+	BgVertexProbe::Arm();
 
-		if (seen <= kReported)
-			LOG("BgGrade: the game wrote c%u..c%u, so the mod put its own four back",
-				start, stop - 1);
+	return Overlaid(g_setPixelShaderConstantFHook.Original(), device, start, data, count,
+		kFirstRegister, kRegisters, g_live);
+}
 
-		BgVertexProbe::Arm();
-		g_setPixelShaderConstantFHook.Original()(device, kFirstRegister, g_live, kRegisters);
-	}
+HRESULT STDMETHODCALLTYPE HookedSetVertexShaderConstantF(IDirect3DDevice9* device, UINT start,
+	const float* data, UINT count)
+{
+	if (!Flipping() || !Overlaps(start, count, kFlipRegister, kFlipSlots))
+		return g_setVertexShaderConstantFHook.Original()(device, start, data, count);
 
-	return result;
+	return Overlaid(g_setVertexShaderConstantFHook.Original(), device, start, data, count,
+		kFlipRegister, kFlipSlots, g_flipLive);
 }
 
 }
@@ -470,6 +664,9 @@ void BgGrade::Attach(IDirect3DDevice9* device)
 	g_setPixelShaderConstantFHook.Install(vtable[kSetPixelShaderConstantF], &HookedSetPixelShaderConstantF);
 
 	g_setRenderStateHook.Install(vtable[kSetRenderState], &HookedSetRenderState);
+
+	g_setVertexShaderConstantFHook.Install(vtable[kSetVertexShaderConstantF],
+		&HookedSetVertexShaderConstantF);
 }
 
 BgGrade::Grade BgGrade::DefaultOf(int stage)
@@ -563,8 +760,10 @@ void BgGrade::Update()
 	if (InterlockedCompareExchange(&g_reached, 0, 0) == 0)
 		return;
 
+	++g_frame;
 	Flow();
 	Lamps();
+	Flips();
 	Assert();
 
 	const uintptr_t address = RvaToAddress(GameOffsets::kBgPendingNumber);
@@ -599,7 +798,8 @@ void BgGrade::Update()
 		g_live[kContrastFirst + i] = grade.contrast;
 	}
 
-	const bool own = grade.lift == kGameLift && grade.contrast == kGameContrast;
+	const bool own = grade.lift == kGameLift && grade.contrast == kGameContrast
+		&& g_glow == kGameGlow;
 
 	InterlockedExchange(&g_altered, own ? 0 : 1);
 
@@ -609,7 +809,8 @@ void BgGrade::Update()
 	if (stage != held)
 	{
 		static Note note;
-		const bool read = ReadNote(stage, note);
+		std::vector<BbtagScript::Flip> flips;
+		const bool read = ReadNote(stage, note, flips);
 		const bool flowing = read && note.flowing && Flows(stage);
 		const bool fading = read && note.fading;
 
@@ -630,6 +831,17 @@ void BgGrade::Update()
 		}
 
 		InterlockedExchange(&g_lighting, lighting ? 1 : 0);
+
+		const bool flipping = read && !flips.empty() && Flows(stage);
+
+		InterlockedExchange(&g_flipping, 0);
+		g_flips.swap(flips);
+		memset(g_flipLive, 0, sizeof(g_flipLive));
+		InterlockedExchange(&g_flipping, flipping ? 1 : 0);
+
+		if (flipping)
+			LOG("BgGrade: stage %d plays %d sprite(s) through the vertex shader", stage,
+				static_cast<int>(g_flips.size()));
 
 		g_live[kLiftFirst + 3] = fading ? 1.0f : 0.0f;
 
@@ -668,9 +880,14 @@ bool BgGrade::Reached()
 float BgGrade::DefaultGlowOf(int stage)
 {
 	StageLibrary::Entry entry = {};
-	const bool ported = StageLibrary::Of(stage, entry) && Arcsys(entry.game);
 
-	return ported ? kBbtagGlow : kGameGlow;
+	if (!StageLibrary::Of(stage, entry))
+		return kGameGlow;
+
+	if (From(entry.game, FbGameFolder::Game_DFCI))
+		return kDfciGlow;
+
+	return Arcsys(entry.game) ? kBbtagGlow : kGameGlow;
 }
 
 float BgGrade::GlowOf(int stage)

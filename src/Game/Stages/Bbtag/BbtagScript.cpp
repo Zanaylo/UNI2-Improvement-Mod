@@ -15,6 +15,7 @@ constexpr size_t kRecord = 0x20;
 constexpr size_t kBlocks = 0x30;
 constexpr int kSheetBlock = 0;
 constexpr int kNameBlock = 1;
+constexpr int kParticleBlock = 2;
 
 constexpr uint32_t kNone = 0xffffffffu;
 constexpr uint32_t kYield = 0x02;
@@ -22,6 +23,7 @@ constexpr uint32_t kTime = 0x03;
 constexpr uint32_t kClose = 0x04;
 constexpr uint32_t kGroup = 0x05;
 constexpr uint32_t kMotion = 0x06;
+constexpr uint32_t kSpawn = 0x07;
 constexpr uint32_t kBegin = 0x09;
 constexpr uint32_t kEnd = 0x0a;
 constexpr uint32_t kRect = 0x0b;
@@ -30,6 +32,9 @@ constexpr uint32_t kRamp = 0x12;
 constexpr uint32_t kRandom = 0x13;
 constexpr uint32_t kRandomEnd = 0x14;
 constexpr uint32_t kPause = 0x15;
+constexpr uint32_t kSceneOpen = 0x1a;
+constexpr uint32_t kSceneClose = 0x1b;
+constexpr uint32_t kSceneTilt = 0x28;
 
 constexpr int kFree = 0;
 constexpr int kSkipped = 1;
@@ -40,6 +45,8 @@ constexpr int kFrames = 12000;
 constexpr int kRolledFrames = 3600;
 constexpr int kRollTries = 16;
 constexpr size_t kPortRolledFrames = 600;
+constexpr size_t kLongRun = 600;
+constexpr size_t kSpriteBudget = 24000;
 constexpr double kFull = 1000.0;
 constexpr double kLampBend = 1e-3;
 constexpr size_t kLampRamps = 512;
@@ -117,6 +124,12 @@ uint32_t Crc32(const std::string& text)
 	return ~crc;
 }
 
+bool SameRect(const BbtagScript::Rect& one, const BbtagScript::Rect& other)
+{
+	return one.sheet == other.sheet && one.x == other.x && one.y == other.y && one.w == other.w
+		&& one.h == other.h;
+}
+
 bool Same(const BbtagScript::Sample& one, const BbtagScript::Sample& other)
 {
 	if (one.lit != other.lit || one.ramp != other.ramp || one.picked != other.picked)
@@ -128,8 +141,7 @@ bool Same(const BbtagScript::Sample& one, const BbtagScript::Sample& other)
 	if (!one.lit)
 		return true;
 
-	return one.rect.sheet == other.rect.sheet && one.rect.x == other.rect.x
-		&& one.rect.y == other.rect.y && one.rect.w == other.rect.w && one.rect.h == other.rect.h;
+	return SameRect(one.rect, other.rect);
 }
 
 typedef std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, bool,
@@ -153,7 +165,7 @@ public:
 		return m_rolled;
 	}
 
-	void Play(std::vector<BbtagScript::Sample>& samples, bool& cyclic)
+	void Play(std::vector<BbtagScript::Sample>& samples, bool& cyclic, int& from)
 	{
 		Interpret();
 		Walk();
@@ -161,6 +173,7 @@ public:
 		std::map<State, int> seen;
 		samples.clear();
 		cyclic = false;
+		from = 0;
 
 		for (int tick = 0; tick < kFrames; ++tick)
 		{
@@ -186,12 +199,14 @@ public:
 
 			if (known != seen.end())
 			{
-				Repeating(samples, known->second, tick, cyclic);
+				Repeating(samples, known->second, tick, cyclic, from);
 				return;
 			}
 
 			seen[state] = tick;
 		}
+
+		from = static_cast<int>(samples.size()) - 1;
 	}
 
 private:
@@ -416,13 +431,16 @@ private:
 		}
 	}
 
-	static void Repeating(std::vector<BbtagScript::Sample>& samples, int first, int now, bool& cyclic)
+	static void Repeating(std::vector<BbtagScript::Sample>& samples, int first, int now, bool& cyclic,
+		int& from)
 	{
 		const int period = now - first;
 		int start = first + 1;
 
 		while (start > 0 && Same(samples[start - 1], samples[start - 1 + period]))
 			--start;
+
+		from = 0;
 
 		if (start == 0)
 		{
@@ -435,6 +453,7 @@ private:
 		{
 			samples.resize(start + 1);
 			cyclic = false;
+			from = start;
 			return;
 		}
 
@@ -453,10 +472,9 @@ private:
 			return;
 		}
 
-		while (static_cast<int>(samples.size()) < kFrames)
-			samples.push_back(samples[samples.size() - period]);
-
+		samples.resize(start + period);
 		cyclic = false;
+		from = start;
 	}
 
 	std::vector<Record> m_record;
@@ -489,6 +507,99 @@ bool Shows(const std::vector<BbtagScript::Sample>& samples)
 	}
 
 	return false;
+}
+
+void Collect(const BbtagScript::Played& played, size_t count, BbtagScript::Sprite& out)
+{
+	out = BbtagScript::Sprite();
+	out.sheets = played.sheets;
+
+	for (size_t tick = 0; tick < count && tick < played.sample.size(); ++tick)
+	{
+		const BbtagScript::Sample& sample = played.sample[tick];
+
+		if (!sample.lit)
+		{
+			out.frame.push_back(-1);
+			continue;
+		}
+
+		int index = -1;
+
+		for (size_t i = 0; i < out.rect.size() && index < 0; ++i)
+		{
+			if (SameRect(out.rect[i], sample.rect))
+				index = static_cast<int>(i);
+		}
+
+		if (index < 0)
+		{
+			index = static_cast<int>(out.rect.size());
+			out.rect.push_back(sample.rect);
+		}
+
+		out.frame.push_back(index);
+	}
+
+	out.loop = static_cast<int>(out.frame.size());
+}
+
+bool Timeline(const std::vector<double>& level, int from, BbtagScript::Lamp& out)
+{
+	out = BbtagScript::Lamp();
+
+	if (level.size() < 2)
+		return false;
+
+	if (std::all_of(level.begin(), level.end(), [&](double one) { return one == level[0]; }))
+		return false;
+
+	const size_t wrap = from >= 0 && static_cast<size_t>(from) < level.size()
+		? static_cast<size_t>(from) : 0;
+
+	std::vector<int> frames(1, 0);
+	std::vector<double> kept(1, level[0]);
+
+	for (size_t tick = 1; tick + 1 < level.size(); ++tick)
+	{
+		const double bend = (level[tick] - level[tick - 1]) - (level[tick + 1] - level[tick]);
+
+		if (std::fabs(bend) > kLampBend)
+		{
+			frames.push_back(static_cast<int>(tick));
+			kept.push_back(level[tick]);
+		}
+	}
+
+	frames.push_back(static_cast<int>(level.size()) - 1);
+	kept.push_back(level.back());
+	frames.push_back(static_cast<int>(level.size()));
+	kept.push_back(level[wrap]);
+
+	const int first = static_cast<int>(std::floor(level[0] + 0.5));
+
+	if (first != static_cast<int>(std::floor(level[wrap] + 0.5)))
+		out.ramp.push_back({ 0, first, 0 });
+
+	for (size_t i = 0; i + 1 < frames.size(); ++i)
+	{
+		BbtagScript::Ramp ramp = {};
+		ramp.at = frames[i];
+		ramp.target = static_cast<int>(std::floor(kept[i + 1] + 0.5));
+		ramp.frames = frames[i + 1] - frames[i];
+		out.ramp.push_back(ramp);
+	}
+
+	if (out.ramp.size() > kLampRamps)
+	{
+		out = BbtagScript::Lamp();
+		return false;
+	}
+
+	out.loop = static_cast<int>(level.size());
+	out.from = static_cast<int>(wrap);
+
+	return true;
 }
 
 bool EndsWith(const std::string& text, const char* tail)
@@ -525,7 +636,7 @@ bool BbtagScript::Play(const std::vector<uint8_t>& blob, const std::string& labe
 	for (int attempt = 0; attempt < kRollTries; ++attempt)
 	{
 		Instance instance(record, attempt == 0 ? label : label + " " + std::to_string(attempt));
-		instance.Play(out.sample, out.cyclic);
+		instance.Play(out.sample, out.cyclic, out.from);
 		out.rolled = instance.Rolled();
 
 		if (Shows(out.sample) || !out.rolled)
@@ -537,47 +648,20 @@ bool BbtagScript::Play(const std::vector<uint8_t>& blob, const std::string& labe
 
 bool BbtagScript::Sprites(const Played& played, Sprite& out)
 {
-	out = Sprite();
-	out.sheets = played.sheets;
-
 	size_t count = played.sample.size();
 
 	if (played.rolled || !played.cyclic)
 		count = std::min(count, kPortRolledFrames);
 
-	for (size_t tick = 0; tick < count; ++tick)
+	Collect(played, count, out);
+
+	if (!out.rect.empty() && out.rect.size() * out.frame.size() > kSpriteBudget)
 	{
-		const Sample& sample = played.sample[tick];
+		const size_t kept = std::max(kPortRolledFrames, kSpriteBudget / out.rect.size());
 
-		if (!sample.lit)
-		{
-			out.frame.push_back(-1);
-			continue;
-		}
-
-		int index = -1;
-
-		for (size_t i = 0; i < out.rect.size() && index < 0; ++i)
-		{
-			const Rect& rect = out.rect[i];
-
-			if (rect.sheet == sample.rect.sheet && rect.x == sample.rect.x && rect.y == sample.rect.y
-				&& rect.w == sample.rect.w && rect.h == sample.rect.h)
-			{
-				index = static_cast<int>(i);
-			}
-		}
-
-		if (index < 0)
-		{
-			index = static_cast<int>(out.rect.size());
-			out.rect.push_back(sample.rect);
-		}
-
-		out.frame.push_back(index);
+		if (kept < count)
+			Collect(played, kept, out);
 	}
-
-	out.loop = static_cast<int>(out.frame.size());
 
 	return !out.rect.empty() && out.loop > 1;
 }
@@ -616,68 +700,102 @@ bool BbtagScript::Motions(const Played& played, Run& out)
 	}
 
 	out.loop = static_cast<int>(out.frame.size());
+	out.settled = !played.cyclic && played.from + 1 == static_cast<int>(played.sample.size());
 
 	return out.loop > 1;
 }
 
 bool BbtagScript::Lamps(const Played& played, Lamp& out)
 {
-	out = Lamp();
+	std::vector<double> level;
+	level.reserve(played.sample.size());
 
-	const std::vector<Sample>& sample = played.sample;
+	for (const Sample& one : played.sample)
+		level.push_back(one.ramp);
 
-	if (!played.cyclic || sample.size() < 2)
-		return false;
+	return Timeline(level, played.cyclic ? 0 : played.from, out);
+}
 
-	bool fades = false;
+bool BbtagScript::Showing(const Played& played, const Rect& rect, Lamp& out)
+{
+	std::vector<double> level;
+	level.reserve(played.sample.size());
 
-	for (const Sample& one : sample)
+	for (const Sample& one : played.sample)
 	{
-		if (one.lit)
-			return false;
+		const bool drawn = one.lit && SameRect(one.rect, rect);
 
-		fades = fades || one.ramp != sample[0].ramp;
+		level.push_back(drawn ? one.ramp : 0.0);
 	}
 
-	if (!fades)
+	return Timeline(level, played.cyclic ? 0 : played.from, out);
+}
+
+bool BbtagScript::Long(const Played& played)
+{
+	if (played.rolled)
 		return false;
 
-	std::vector<int> frames(1, 0);
-	std::vector<double> kept(1, sample[0].ramp);
+	return !played.cyclic || played.sample.size() > kLongRun;
+}
 
-	for (size_t tick = 1; tick + 1 < sample.size(); ++tick)
+bool BbtagScript::Tilt(const std::vector<uint8_t>& blob, float& degrees)
+{
+	if (blob.size() < kBlocks || memcmp(blob.data(), "EVT0", 4) != 0)
+		return false;
+
+	bool open = false;
+
+	for (size_t at = Dword(blob, 0x10); at + kRecord <= blob.size(); at += kRecord)
 	{
-		const double bend = (sample[tick].ramp - sample[tick - 1].ramp)
-			- (sample[tick + 1].ramp - sample[tick].ramp);
+		const uint32_t code = Dword(blob, at);
 
-		if (std::fabs(bend) > kLampBend)
+		if (code == kNone)
+			break;
+
+		if (code == kSceneOpen || code == kSceneClose)
 		{
-			frames.push_back(static_cast<int>(tick));
-			kept.push_back(sample[tick].ramp);
+			open = code == kSceneOpen;
+			continue;
 		}
+
+		if (!open || code != kSceneTilt)
+			continue;
+
+		degrees = static_cast<float>(static_cast<int32_t>(Dword(blob, at + 4)));
+		return true;
 	}
 
-	frames.push_back(static_cast<int>(sample.size()) - 1);
-	kept.push_back(sample.back().ramp);
-	frames.push_back(static_cast<int>(sample.size()));
-	kept.push_back(sample[0].ramp);
+	return false;
+}
 
-	for (size_t i = 0; i + 1 < frames.size(); ++i)
-	{
-		Ramp ramp = {};
-		ramp.at = frames[i];
-		ramp.target = static_cast<int>(std::floor(kept[i + 1] + 0.5));
-		ramp.frames = frames[i + 1] - frames[i];
-		out.ramp.push_back(ramp);
-	}
+bool BbtagScript::Spawns(const std::vector<uint8_t>& blob, std::vector<Spawn>& out)
+{
+	out.clear();
 
-	if (out.ramp.size() > kLampRamps)
-	{
-		out = Lamp();
+	if (blob.size() < kBlocks || memcmp(blob.data(), "EVT0", 4) != 0)
 		return false;
-	}
 
-	out.loop = static_cast<int>(sample.size());
+	std::vector<std::string> names;
+	Block(blob, kParticleBlock, names);
+
+	for (size_t at = Dword(blob, 0x10); at + kRecord <= blob.size(); at += kRecord)
+	{
+		const uint32_t code = Dword(blob, at);
+
+		if (code == kNone)
+			break;
+
+		if (code != kSpawn)
+			continue;
+
+		const int64_t index = Signed(Dword(blob, at + 4));
+
+		if (index < 0 || index >= static_cast<int64_t>(names.size()))
+			continue;
+
+		out.push_back({ names[static_cast<size_t>(index)], static_cast<int>(Signed(Dword(blob, at + 8))) });
+	}
 
 	return true;
 }

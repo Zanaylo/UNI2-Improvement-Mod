@@ -16,21 +16,32 @@ namespace BbtagStage
 		std::vector<uint8_t> geometry;
 		std::vector<uint8_t> scene;
 		std::vector<uint8_t> art;
+		std::vector<uint8_t> particles;
+		std::vector<uint8_t> particleArt;
+		std::string stage;
 	};
 
 	constexpr int kFlowSlots = 8;
-	constexpr int kLampSlots = 8;
+	constexpr int kLampSlots = 32;
+	constexpr int kFlipSlots = 240;
+	constexpr float kFlipMark = 128.0f;
+	constexpr float kFlipInset = 0.25f;
+	constexpr float kFlipSpan = 0.5f;
+	constexpr int kFlipRegister = 16;
 
 	struct Result
 	{
 		std::vector<uint8_t> model;
 		Images images;
+		Images layer;
 		std::vector<float> flow;
 		std::vector<BbtagScript::Lamp> lamps;
+		std::vector<BbtagScript::Flip> flips;
 		bool fading;
+		float tilt;
 	};
 
 	bool Convert(const Source& source, Result& out);
 
-	std::string Block();
+	std::string Block(float tilt = 0.0f);
 }

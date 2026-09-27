@@ -20,6 +20,8 @@ namespace Profiler
 		Section_TickMeter,
 		Section_TickRecorder,
 		Section_TickGame,
+		Section_DrawModHooks,
+		Section_DrawDevice,
 		Section_COUNT
 	};
 
@@ -46,6 +48,7 @@ namespace Profiler
 	bool IsEnabled();
 
 	int64_t Now();
+	double ToMs(int64_t ticks);
 	void Add(Section section, int64_t elapsedTicks);
 
 	void EndPresentFrame();
