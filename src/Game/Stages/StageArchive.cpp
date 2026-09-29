@@ -33,6 +33,7 @@ constexpr const char* kBgList = "BgList.txt";
 constexpr const char* kModel = "bg.fbx.bin";
 constexpr const char* kBbtagParticles = "data/particle/particle_dat_bg.pac";
 constexpr const char* kBbtagParticleArt = "data/particle/particle_img_bg.pac";
+constexpr const char* kBbtagHashedRoots[] = { "asset", "data" };
 constexpr size_t kTextSlack = 8192;
 constexpr size_t kScoreSpan = 2048;
 constexpr uint32_t kPhaseCount = 0x400;
@@ -1312,7 +1313,9 @@ void BbtagSource::Listed()
 void BbtagSource::Hashed()
 {
 	std::vector<std::string> pending;
-	pending.push_back(Combine(m_root, "data"));
+
+	for (const char* folder : kBbtagHashedRoots)
+		pending.push_back(Combine(m_root, folder));
 
 	while (!pending.empty() && m_hashed.size() < 200000)
 	{
