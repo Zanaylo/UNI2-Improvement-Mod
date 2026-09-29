@@ -49,6 +49,7 @@
 #include "Game/Stages/StageImport.h"
 #include "Game/Stages/StageCapture.h"
 #include "Game/Stages/StageObjects.h"
+#include "Game/Stages/StageOnce.h"
 #include "Game/Stages/StagePlacement.h"
 #include "Game/Stages/TextureLoad.h"
 #include "Game/Subtitles/SubtitleText.h"
@@ -153,6 +154,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: subtitle watch", [] { SubtitleWatch::Install(); } },
 	{ "game hooks: subtitle text", [] { SubtitleText::Install(); } },
 	{ "game hooks: stage objects", [] { StageObjects::Initialize(); } },
+	{ "game hooks: stage once", [] { StageOnce::Initialize(); } },
 	{ "game hooks: texture load", [] { TextureLoad::Install(); } },
 	{ "game hooks: stage cards", [] { StageCards::Initialize(); } },
 	{ "game hooks: bgm control", [] { BgmControl::Initialize(); } },
@@ -177,6 +179,7 @@ const Task kFrame[] = {
 	[] { UpdateInstall::OnFrame(); },
 	[] { BalanceRules::OnFrame(); },
 	[] { GameRestart::OnFrame(); },
+	[] { FrameStepper::Update(); },
 	[] { OstImport::Update(); },
 	[] { StageImport::Update(); },
 	[] { BgGrade::Update(); },

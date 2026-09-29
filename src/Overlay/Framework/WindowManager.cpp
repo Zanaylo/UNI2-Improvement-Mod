@@ -545,6 +545,8 @@ void WindowManager::HandleHotkeys()
 			debug->Toggle();
 	}
 
+	Hotkeys::Poll();
+
 	if (Hotkeys::Pressed(Hotkeys::Action_ToggleOverlay))
 	{
 		IWindow* main = m_container->GetWindow(WindowType_Main);

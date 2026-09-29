@@ -29,7 +29,7 @@ namespace {
 
 const char* const kIniFileName = "UNI2_IM.ini";
 
-constexpr int kSettingsRevision = 4;
+constexpr int kSettingsRevision = 5;
 
 void FlushIniCache(const std::string& path)
 {
@@ -261,6 +261,12 @@ void MigrateIni(int from, const std::string& path)
 		WritePrivateProfileStringA("Netplay", "NetLog", "0", path.c_str());
 		WritePrivateProfileStringA("Netplay", "CaptureGgpoLog", "0", path.c_str());
 		LOG("Settings: the network log is off unless you turn it on, it is for a report");
+	}
+
+	if (from < 5 && ReadIniString("Keybinds", "RestartGame", "", path).empty())
+	{
+		WritePrivateProfileStringA("Keybinds", "RestartGame", "Ctrl+F5", path.c_str());
+		LOG("Settings: Ctrl+F5 now restarts the game, as in MBTL IM");
 	}
 
 	char revision[16] = {};

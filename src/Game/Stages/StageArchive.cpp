@@ -1143,6 +1143,7 @@ public:
 	bool Flow(const std::string& stage, std::vector<float>& out);
 	bool Lamps(const std::string& stage, std::vector<BbtagScript::Lamp>& out) override;
 	bool Flips(const std::string& stage, std::vector<BbtagScript::Flip>& out) override;
+	bool Once(const std::string& stage, std::vector<int>& out) override;
 	bool Fading(const std::string& stage) override;
 
 	bool IsOpen() const { return !m_stage.empty(); }
@@ -1507,6 +1508,17 @@ bool BbtagSource::Flips(const std::string& stage, std::vector<BbtagScript::Flip>
 		return false;
 
 	out = m_result.flips;
+	return !out.empty();
+}
+
+bool BbtagSource::Once(const std::string& stage, std::vector<int>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	out = m_result.once;
 	return !out.empty();
 }
 

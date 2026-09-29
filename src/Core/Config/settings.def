@@ -36,7 +36,7 @@ SETTING_STRING(stepForwardKey,      "Keybinds", "StepForward",          "F6")
 SETTING_STRING(nextPaletteKey,      "Keybinds", "NextPalette",          "F8")
 SETTING_STRING(prevPaletteKey,      "Keybinds", "PreviousPalette",      "F7")
 SETTING_STRING(hideHudKey,          "Keybinds", "HideHud",              "")
-SETTING_STRING(restartGameKey,      "Keybinds", "RestartGame",          "")
+SETTING_STRING(restartGameKey,      "Keybinds", "RestartGame",          "Ctrl+F5")
 
 SETTING_STRING(functionKey,         "Keybinds", "FunctionKey",          "")
 

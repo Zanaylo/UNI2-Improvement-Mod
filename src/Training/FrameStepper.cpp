@@ -11,6 +11,7 @@
 #include "Game/Engine/HitboxData.h"
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Engine/OnlineState.h"
+#include "Game/Engine/SceneWatch.h"
 #include "Game/Replays/ReplayState.h"
 #include "Hooks/GameHook.h"
 #include "Training/Dummy/DummyRecorder.h"
@@ -61,6 +62,15 @@ void ReleaseStopTime()
 	g_stopTimeHeld = false;
 }
 
+void ForgetPause()
+{
+	g_paused = false;
+	g_pendingSteps = 0;
+	g_resumeCountdown = 0;
+	g_pendingResumeDelay = 0;
+	g_stopTimeHeld = false;
+}
+
 uint64_t g_callCount = 0;
 uint64_t g_suppressedFrames = 0;
 
@@ -84,12 +94,6 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 	MemoryMap::InvalidateEffectSlotCache();
 	HitboxData::InvalidateFrameCache();
 
-	if (OnlineState::IsOnline())
-	{
-		g_paused = false;
-		g_pendingSteps = 0;
-	}
-
 	{
 		Profiler::Scope scope(Profiler::Section_TickDummy);
 		DummyRecorder::Update();
@@ -99,6 +103,8 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 
 	if (allowed)
 		StopTime::ServiceRequest();
+	else
+		ForgetPause();
 
 	if (g_paused && g_resumeCountdown > 0 && allowed)
 	{
@@ -292,7 +298,7 @@ bool FrameStepper::ConsumeSteppedFlag()
 
 void FrameStepper::SetPaused(bool paused)
 {
-	if (paused && OnlineState::IsOnline())
+	if (paused && !GameState::AllowsTrainingTools())
 		return;
 
 	if (g_paused == paused)
@@ -468,4 +474,6 @@ uint64_t FrameStepper::GetCallCount()
 
 void FrameStepper::Update()
 {
+	if (SceneWatch::Raw() != GameOffsets::kSceneBattle)
+		ForgetPause();
 }

@@ -20,6 +20,9 @@
 namespace {
 
 constexpr int kCreateDeviceIndex = 16;
+constexpr int kPresentIndex = 17;
+constexpr DWORD kProbeBehavior = D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_DISABLE_DRIVER_MANAGEMENT;
+constexpr const char* kProbeWindowClass = "STATIC";
 
 using Direct3DCreate9_t = IDirect3D9*(WINAPI*)(UINT);
 using CreateDevice_t = HRESULT(STDMETHODCALLTYPE*)(IDirect3D9*, UINT, D3DDEVTYPE, HWND, DWORD,
@@ -228,6 +231,53 @@ void HookCreateDeviceThroughProbe()
 	probe->Release();
 }
 
+bool ProbeAllowed()
+{
+	char runtime[MAX_PATH] = {};
+
+	if (!RuntimeIsTheSystems(runtime, MAX_PATH))
+	{
+		BootTrace("d3d9.dll is %s, not the system's, so the mod builds no probe device on it", runtime);
+		return false;
+	}
+
+	if ((DgVoodoo::IsEnabled() && DgVoodoo::IsInstalled()) || (Dxvk::IsEnabled() && Dxvk::IsInstalled()))
+	{
+		BootTrace("a translation layer is on, so the mod builds no probe device");
+		return false;
+	}
+
+	return g_direct3DCreate9Hook.IsLive();
+}
+
+void* ProbePresent(IDirect3D9* d3d9, HWND window)
+{
+	void** const vtable = *reinterpret_cast<void***>(d3d9);
+	const CreateDevice_t create = g_createDeviceHook.IsLive() ? g_createDeviceHook.Original()
+		: reinterpret_cast<CreateDevice_t>(vtable[kCreateDeviceIndex]);
+
+	D3DPRESENT_PARAMETERS parameters = {};
+	parameters.Windowed = TRUE;
+	parameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	parameters.BackBufferFormat = D3DFMT_UNKNOWN;
+	parameters.hDeviceWindow = window;
+
+	IDirect3DDevice9* device = nullptr;
+	const HRESULT made = create(d3d9, D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, window, kProbeBehavior, &parameters,
+		&device);
+
+	if (FAILED(made) || device == nullptr)
+	{
+		BootTrace("the probe device could not be made (0x%08lx)", static_cast<unsigned long>(made));
+		return nullptr;
+	}
+
+	void* const present = (*reinterpret_cast<void***>(device))[kPresentIndex];
+	device->Release();
+
+	return present;
+}
+
 IDirect3D9* WINAPI HookedDirect3DCreate9(UINT sdkVersion)
 {
 	ReclaimCrashHandler();
@@ -260,9 +310,38 @@ void D3D9Wrapper::OnDirect3D9Created(IDirect3D9* d3d9)
 	HookCreateDeviceFrom(d3d9);
 }
 
-bool D3D9Wrapper::SawDirect3D9()
+bool D3D9Wrapper::RecoverMissedDevice()
 {
-	return g_seenD3D9 != nullptr;
+	if (D3D9Proxy::IsActive() || DeviceHooks::IsInstalled() || !ProbeAllowed())
+		return false;
+
+	IDirect3D9* const d3d9 = g_direct3DCreate9Hook.Original()(D3D_SDK_VERSION);
+
+	if (d3d9 == nullptr)
+	{
+		BootTrace("no probe Direct3D9 object, so the missed device stays missed");
+		return false;
+	}
+
+	const HWND window = CreateWindowExA(0, kProbeWindowClass, "", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr,
+		GetModuleHandleA(nullptr), nullptr);
+	void* const present = window != nullptr ? ProbePresent(d3d9, window) : nullptr;
+
+	d3d9->Release();
+
+	if (window != nullptr)
+		DestroyWindow(window);
+
+	if (present == nullptr || !DeviceHooks::WatchPresent(present))
+	{
+		BootTrace("the game built its Direct3D device before the mod hooked it and the fallback could not "
+			"watch Present, so the overlay will not appear this run");
+		return false;
+	}
+
+	BootTrace("the game built its Direct3D device before the mod hooked it; Present at 0x%p is watched "
+		"instead, so the overlay starts on the next frame", present);
+	return true;
 }
 
 void D3D9Wrapper::MarkInitializationFinished()

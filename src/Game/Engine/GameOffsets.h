@@ -201,6 +201,7 @@ namespace GameOffsets
 	constexpr uintptr_t kBgStageDrawn = 0x657e34;
 
 	constexpr uintptr_t kFnLoadStageObjectPat = 0x206260;
+	constexpr uintptr_t kFnFbxAnimeSample = 0x1bbcb0;
 
 	constexpr uintptr_t kFnStageSelectSetup = 0x468fa0;
 	constexpr uint32_t kSceneStageSelect = 24;

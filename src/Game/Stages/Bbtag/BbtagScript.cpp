@@ -130,12 +130,17 @@ bool SameRect(const BbtagScript::Rect& one, const BbtagScript::Rect& other)
 		&& one.h == other.h;
 }
 
-bool Same(const BbtagScript::Sample& one, const BbtagScript::Sample& other)
+bool SameLook(const BbtagScript::Sample& one, const BbtagScript::Sample& other)
 {
-	if (one.lit != other.lit || one.ramp != other.ramp || one.picked != other.picked)
+	if (one.lit != other.lit || one.ramp != other.ramp)
 		return false;
 
-	if (one.picked && one.pick != other.pick)
+	return !one.lit || SameRect(one.rect, other.rect);
+}
+
+bool Same(const BbtagScript::Sample& one, const BbtagScript::Sample& other)
+{
+	if (one.lit != other.lit || one.ramp != other.ramp || one.take != other.take)
 		return false;
 
 	if (!one.lit)
@@ -145,7 +150,7 @@ bool Same(const BbtagScript::Sample& one, const BbtagScript::Sample& other)
 }
 
 typedef std::tuple<int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, bool,
-	std::array<uint32_t, 5>, double, double, int64_t, double> State;
+	std::array<uint32_t, 5>, double, double, int64_t, double, int64_t> State;
 
 class Instance
 {
@@ -181,7 +186,6 @@ public:
 				Tick();
 
 			samples.push_back(Current());
-			m_picked = false;
 
 			if (m_rolled && !Ended())
 			{
@@ -213,8 +217,8 @@ private:
 	BbtagScript::Sample Current() const
 	{
 		BbtagScript::Sample sample = {};
-		sample.picked = m_picked;
-		sample.pick = m_pick;
+		sample.take = m_take;
+		sample.since = m_since;
 
 		if (m_ramp <= 0.0)
 			return sample;
@@ -245,7 +249,7 @@ private:
 	State Snapshot() const
 	{
 		return State(Ended() ? -1 : m_frame, m_jump, m_pause, m_resume, m_label, m_cursor, m_held,
-			m_lit, m_lit ? m_rect : std::array<uint32_t, 5>(), m_ramp, m_target, m_left, m_step);
+			m_lit, m_lit ? m_rect : std::array<uint32_t, 5>(), m_ramp, m_target, m_left, m_step, m_take);
 	}
 
 	void Tick()
@@ -267,6 +271,8 @@ private:
 
 		if (m_label >= 0)
 			++m_held;
+
+		++m_since;
 
 		if (m_left < 1)
 		{
@@ -365,8 +371,8 @@ private:
 
 		if (code == kMotion)
 		{
-			m_picked = true;
-			m_pick = Signed(fields[1]);
+			m_take = Signed(fields[1]);
+			m_since = 0;
 		}
 		else if (code == kJump)
 		{
@@ -493,8 +499,8 @@ private:
 	double m_target = kFull;
 	int64_t m_left = 0;
 	double m_step = 0.0;
-	bool m_picked = false;
-	int64_t m_pick = 0;
+	int64_t m_take = -1;
+	int64_t m_since = 0;
 	bool m_rolled = false;
 };
 
@@ -509,12 +515,12 @@ bool Shows(const std::vector<BbtagScript::Sample>& samples)
 	return false;
 }
 
-void Collect(const BbtagScript::Played& played, size_t count, BbtagScript::Sprite& out)
+void Collect(const BbtagScript::Played& played, size_t begin, size_t count, BbtagScript::Sprite& out)
 {
 	out = BbtagScript::Sprite();
 	out.sheets = played.sheets;
 
-	for (size_t tick = 0; tick < count && tick < played.sample.size(); ++tick)
+	for (size_t tick = begin; tick < begin + count && tick < played.sample.size(); ++tick)
 	{
 		const BbtagScript::Sample& sample = played.sample[tick];
 
@@ -646,6 +652,38 @@ bool BbtagScript::Play(const std::vector<uint8_t>& blob, const std::string& labe
 	return true;
 }
 
+size_t FirstLit(const BbtagScript::Played& played)
+{
+	for (size_t tick = 0; tick < played.sample.size(); ++tick)
+	{
+		if (played.sample[tick].lit && !BbtagScript::Speck(played.sample[tick].rect))
+			return tick;
+	}
+
+	return 0;
+}
+
+size_t Seam(const BbtagScript::Played& played, size_t begin, size_t count)
+{
+	if (played.sample.empty())
+		return count;
+
+	const size_t last = std::min(begin + count, played.sample.size() - 1);
+
+	for (size_t end = last; end > begin + count / 2; --end)
+	{
+		if (SameLook(played.sample[end], played.sample[begin]))
+			return end - begin;
+	}
+
+	return count;
+}
+
+bool BbtagScript::Speck(const Rect& rect)
+{
+	return rect.w <= kLeastRect || rect.h <= kLeastRect;
+}
+
 bool BbtagScript::Sprites(const Played& played, Sprite& out)
 {
 	size_t count = played.sample.size();
@@ -653,14 +691,19 @@ bool BbtagScript::Sprites(const Played& played, Sprite& out)
 	if (played.rolled || !played.cyclic)
 		count = std::min(count, kPortRolledFrames);
 
-	Collect(played, count, out);
+	Collect(played, 0, count, out);
 
 	if (!out.rect.empty() && out.rect.size() * out.frame.size() > kSpriteBudget)
-	{
-		const size_t kept = std::max(kPortRolledFrames, kSpriteBudget / out.rect.size());
+		count = std::min(count, std::max(kPortRolledFrames, kSpriteBudget / out.rect.size()));
 
-		if (kept < count)
-			Collect(played, kept, out);
+	if (played.rolled)
+	{
+		const size_t begin = FirstLit(played);
+		Collect(played, begin, Seam(played, begin, count), out);
+	}
+	else if (out.frame.size() != count)
+	{
+		Collect(played, 0, count, out);
 	}
 
 	return !out.rect.empty() && out.loop > 1;
@@ -674,35 +717,24 @@ bool BbtagScript::Motions(const Played& played, Run& out)
 		[](const std::string& one) { return EndsWith(one, ".mmot"); });
 
 	const bool picks = std::any_of(played.sample.begin(), played.sample.end(),
-		[](const Sample& one) { return one.picked; });
+		[](const Sample& one) { return one.take >= 0; });
 
 	if (!takes || !picks)
 		return false;
 
-	std::string take;
-	int began = 0;
-
-	for (size_t tick = 0; tick < played.sample.size(); ++tick)
+	for (const Sample& sample : played.sample)
 	{
-		const Sample& sample = played.sample[tick];
-
-		if (sample.picked)
-		{
-			began = static_cast<int>(tick);
-			take = sample.pick >= 0 && sample.pick < static_cast<int64_t>(played.named.size())
-				? played.named[static_cast<size_t>(sample.pick)] : std::string();
-		}
-
 		Step step;
-		step.take = take;
-		step.at = static_cast<int>(tick) - began;
+		step.take = sample.take >= 0 && sample.take < static_cast<int64_t>(played.named.size())
+			? played.named[static_cast<size_t>(sample.take)] : std::string();
+		step.at = static_cast<int>(sample.since);
 		out.frame.push_back(step);
 	}
 
 	out.loop = static_cast<int>(out.frame.size());
 	out.settled = !played.cyclic && played.from + 1 == static_cast<int>(played.sample.size());
 
-	return out.loop > 1;
+	return out.loop > 0;
 }
 
 bool BbtagScript::Lamps(const Played& played, Lamp& out)

@@ -1089,8 +1089,11 @@ bool BbtagParticleBake::Bake(const std::vector<BbtagParticle::Effect>& effects,
 	{
 		const Effect* const effect = BbtagParticle::Find(effects, one.effect);
 
-		if (effect == nullptr || !Respawns(effect->group) || effect->sprite.sharedAtlas != 0)
+		if (effect == nullptr || !Respawns(effect->group) || effect->sprite.sharedAtlas != 0
+			|| !VolumeBorn(*effect))
+		{
 			continue;
+		}
 
 		Plan plan;
 		plan.effect = effect;
@@ -1148,4 +1151,124 @@ bool BbtagParticleBake::Bake(const std::vector<BbtagParticle::Effect>& effects,
 	out.patterns = static_cast<int>(patterns.size());
 
 	return true;
+}
+
+bool BbtagParticleBake::Emitted(const std::vector<BbtagParticle::Effect>& effects,
+	const std::vector<Spawned>& spawned, const BbtagParticle::Surface& surface, Cards& out)
+{
+	out = Cards();
+
+	std::vector<Plan> plans;
+	std::vector<Cell> cells;
+
+	for (const Spawned& one : spawned)
+	{
+		const Effect* const effect = BbtagParticle::Find(effects, one.effect);
+
+		if (effect == nullptr || !Respawns(effect->group) || effect->sprite.sharedAtlas != 0
+			|| VolumeBorn(*effect))
+		{
+			continue;
+		}
+
+		Plan plan;
+		plan.effect = effect;
+		plan.origins.assign(one.origins.begin(), one.origins.end());
+		plan.cell = CellFor(*effect, cells);
+
+		const uint32_t effectIndex = static_cast<uint32_t>(plans.size());
+
+		for (size_t o = 0; o < plan.origins.size(); ++o)
+		{
+			Dice dice({ kSeed, effectIndex, static_cast<uint32_t>(o), kCountDraw });
+			plan.lanes.push_back(std::max(1, dice.Count(effect->group.countMin, effect->group.countMax)));
+		}
+
+		plans.push_back(plan);
+	}
+
+	int side = 0;
+
+	if (plans.empty() || surface.bgra.empty() || !PackCells(cells, side))
+		return false;
+
+	const PatWriter::Atlas atlas = AtlasFor(cells, side, surface, std::string());
+	out.side = side;
+	out.rgba = atlas.rgba;
+
+	for (const Cell& cell : cells)
+	{
+		out.cells.push_back({ static_cast<double>(cell.x) / side, static_cast<double>(cell.y) / side,
+			static_cast<double>(cell.x + cell.source[2]) / side, static_cast<double>(cell.y + cell.source[3]) / side });
+	}
+
+	const Camera camera;
+
+	for (size_t e = 0; e < plans.size(); ++e)
+	{
+		const Plan& plan = plans[e];
+		const Effect& effect = *plan.effect;
+		const int grid = Curved(effect) ? kStep : 1;
+		const int loop = LoopLength(effect.group, grid);
+		const bool facesMotion = (effect.sprite.flags & kSpriteFacesMotion) != 0;
+		const Cell& cell = cells[static_cast<size_t>(plan.cell)];
+		const Colour keys[3] = { Channels(effect.sprite.colourStart), Channels(effect.sprite.colourMid),
+			Channels(effect.sprite.colourEnd) };
+
+		for (size_t o = 0; o < plan.origins.size(); ++o)
+		{
+			for (int k = 0; k < plan.lanes[o]; ++k)
+			{
+				const Lane lane = MakeLane(plan, static_cast<int>(e), static_cast<int>(o), k, { 0.0, 0.0 },
+					plan.lanes[o], loop, grid);
+
+				Card card;
+				card.cell = plan.cell;
+
+				for (int channel = 0; channel < 3; ++channel)
+				{
+					const double mean = (keys[0][channel + 1] + keys[1][channel + 1] + keys[2][channel + 1]) / 3.0;
+					card.tint[channel] = std::min(1.0, mean / cell.pretint[channel]);
+				}
+
+				std::vector<std::vector<double> > turned;
+
+				for (const Lived& lived : lane)
+					turned.push_back(Turns(lived.life, camera, facesMotion));
+
+				for (int when = 0; when < loop; ++when)
+				{
+					Pose pose = {};
+
+					for (size_t which = 0; which < lane.size(); ++which)
+					{
+						const Life& life = lane[which].life;
+						const int age = Modulo(when - lane[which].birth, loop);
+
+						if (age >= life.Length() || age >= life.Sunk())
+							continue;
+
+						const State& state = life.At(age);
+						const double alpha = std::max(0.0, std::min(1.0, state.colour[0] / 255.0));
+
+						pose.shown = alpha > 0.0;
+						pose.turn = turned[which][static_cast<size_t>(age)] * kTau;
+
+						for (int axis = 0; axis < 3; ++axis)
+							pose.position[axis] = state.position[axis];
+
+						pose.size[0] = state.size[0] * alpha;
+						pose.size[1] = state.size[1] * alpha;
+						break;
+					}
+
+					card.frames.push_back(pose);
+				}
+
+				out.cards.push_back(std::move(card));
+			}
+		}
+	}
+
+	return !out.cards.empty();
 }

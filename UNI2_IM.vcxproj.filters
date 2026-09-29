@@ -489,6 +489,9 @@
     <ClCompile Include="src\Game\Stages\StageObjects.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Stages\StageOnce.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Stages\StageCapture.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
@@ -1650,6 +1653,9 @@
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\StageObjects.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageOnce.h">
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\StageCapture.h">

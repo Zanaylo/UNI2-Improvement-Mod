@@ -16,7 +16,8 @@ namespace BgShaderText
 	bool IsBackground(const std::string& source);
 
 	bool Rewrite(const std::string& source, int blackRegister, int contrastRegister,
-		int flowRegister, int lampRegister, float gameBlack, std::string& out, Result& result);
+		int flowRegister, int flowHighRegister, int lampRegister, float gameBlack, std::string& out,
+		Result& result);
 
 	std::string Assignment(const std::string& source);
 }

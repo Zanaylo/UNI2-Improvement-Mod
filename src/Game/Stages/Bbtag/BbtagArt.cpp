@@ -134,6 +134,41 @@ int LeastAlpha(const uint8_t* at, bool explicitAlpha)
 	return least;
 }
 
+bool Vanishes(const uint8_t* at, size_t step, bool explicitAlpha)
+{
+	if (step == 8)
+	{
+		const uint32_t indices = Bits(at + 4);
+
+		return Word(at) <= Word(at + 2) && indices == 0xffffffffu;
+	}
+
+	if (explicitAlpha)
+	{
+		for (int k = 0; k < 8; ++k)
+		{
+			if (at[k] != 0)
+				return false;
+		}
+
+		return true;
+	}
+
+	int levels[8] = {};
+	AlphaLevels(at[0], at[1], levels);
+
+	uint64_t bits = 0;
+	memcpy(&bits, at + 2, 6);
+
+	for (int k = 0; k < 16; ++k)
+	{
+		if (levels[(bits >> (k * 3)) & 7] != 0)
+			return false;
+	}
+
+	return true;
+}
+
 bool Punched(const uint8_t* at)
 {
 	if (Word(at) > Word(at + 2))
@@ -226,6 +261,7 @@ BbtagArt::Sheet::Sheet(const std::vector<uint8_t>& blob)
 	, m_high(1)
 	, m_lit(false)
 	, m_dark(false)
+	, m_hidden(false)
 {
 	Layout layout = {};
 
@@ -247,10 +283,13 @@ BbtagArt::Sheet::Sheet(const std::vector<uint8_t>& blob)
 	const size_t stride = count < kSampled ? 1 : count / kSampled;
 	double peak = 0.0;
 	bool clear = false;
+	bool hidden = count > 0;
 
 	for (size_t block = 0; block < count; block += stride)
 	{
 		const uint8_t* const at = m_body + block * m_step;
+
+		hidden = hidden && Vanishes(at, m_step, m_explicit);
 
 		clear = clear || (m_step == 8 && Punched(at))
 			|| (m_step == 16 && LeastAlpha(at, m_explicit) < 255);
@@ -261,6 +300,7 @@ BbtagArt::Sheet::Sheet(const std::vector<uint8_t>& blob)
 
 	m_lit = !clear && peak > kCardBlack;
 	m_dark = !clear && peak <= kCardBlack;
+	m_hidden = hidden;
 }
 
 double BbtagArt::Sheet::Peak(double u, double w) const

@@ -22,6 +22,7 @@ namespace BbtagArt
 
 		bool Lit() const { return m_lit; }
 		bool Dark() const { return m_dark; }
+		bool Hidden() const { return m_hidden; }
 
 		double Peak(double u, double w) const;
 
@@ -35,5 +36,6 @@ namespace BbtagArt
 		int m_high;
 		bool m_lit;
 		bool m_dark;
+		bool m_hidden;
 	};
 }

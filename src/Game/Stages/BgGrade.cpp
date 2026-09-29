@@ -11,6 +11,7 @@
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Stages/StageLibrary.h"
+#include "Game/Stages/StageOnce.h"
 #include "Game/Stages/StageSettingKey.h"
 #include "Hooks/GameHook.h"
 #include "Training/FrameStepper.h"
@@ -29,7 +30,7 @@ namespace {
 
 constexpr const char* kSection = "StageColour";
 constexpr const char* kStale = "Mods\\Shader\\sh_bgspeculer.txt";
-constexpr int kLampRegister = 212;
+constexpr int kLampRegister = 194;
 constexpr int kLampSlots = BbtagStage::kLampSlots;
 constexpr int kLampRamps = 512;
 constexpr int kFlipSlots = BbtagStage::kFlipSlots;
@@ -39,13 +40,21 @@ constexpr float kLampFull = 1000.0f;
 constexpr int kBlackRegister = 220;
 constexpr int kContrastRegister = 221;
 constexpr int kFlowRegister = 222;
-constexpr int kFlowSlots = 8;
+constexpr int kFlowHighRegister = 210;
+constexpr int kFlowSlots = BbtagStage::kFlowSlots;
+constexpr int kFlowBank = 8;
 constexpr int kFirstRegister = kLampRegister;
-constexpr int kRegisters = kFlowRegister - kFirstRegister + kFlowSlots / 4;
+constexpr int kRegisters = kFlowRegister - kFirstRegister + kFlowBank / 4;
 constexpr int kLampFirst = 4 * (kLampRegister - kFirstRegister);
 constexpr int kLiftFirst = 4 * (kBlackRegister - kFirstRegister);
 constexpr int kContrastFirst = 4 * (kContrastRegister - kFirstRegister);
 constexpr int kFlowFirst = 4 * (kFlowRegister - kFirstRegister);
+constexpr int kFlowHighFirst = 4 * (kFlowHighRegister - kFirstRegister);
+
+constexpr int FlowAt(int slot)
+{
+	return slot < kFlowBank ? kFlowFirst + slot : kFlowHighFirst + slot - kFlowBank;
+}
 constexpr int kSetPixelShaderConstantF = 109;
 constexpr int kSetVertexShaderConstantF = 94;
 constexpr int kSetRenderState = 57;
@@ -119,7 +128,7 @@ struct Registers
 		value[kLiftFirst + 3] = 0.0f;
 
 		for (int i = 0; i < kFlowSlots; ++i)
-			value[kFlowFirst + i] = 0.0f;
+			value[FlowAt(i)] = 0.0f;
 	}
 };
 
@@ -264,7 +273,7 @@ void Flow()
 		if (g_rate[i] == 0.0f)
 			continue;
 
-		float& offset = g_live[kFlowFirst + i];
+		float& offset = g_live[FlowAt(i)];
 		offset += g_rate[i];
 
 		while (offset >= 1.0f)
@@ -431,10 +440,11 @@ void ReadRates(const char* line, Note& note)
 	}
 }
 
-bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips)
+bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips, std::vector<int>& once)
 {
 	memset(&note, 0, sizeof(note));
 	flips.clear();
+	once.clear();
 
 	const std::string folder = StageLibrary::FolderOf(stage);
 	std::string text;
@@ -456,6 +466,14 @@ bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips)
 		if (strstr(line, "Flip") != nullptr)
 		{
 			ReadFlip(line, flips);
+			continue;
+		}
+
+		if (strncmp(line, "Once", 4) == 0)
+		{
+			for (double value : Numbers(line))
+				once.push_back(static_cast<int>(value));
+
 			continue;
 		}
 
@@ -505,7 +523,7 @@ bool Rewrite(const char* source, size_t bytes, std::string& out)
 	BgShaderText::Result result = {};
 
 	if (!BgShaderText::Rewrite(text, kBlackRegister, kContrastRegister, kFlowRegister,
-		kLampRegister, BgGrade::kGameLift, out, result))
+		kFlowHighRegister, kLampRegister, BgGrade::kGameLift, out, result))
 	{
 		const std::string assignment = BgShaderText::Assignment(text);
 
@@ -810,14 +828,17 @@ void BgGrade::Update()
 	{
 		static Note note;
 		std::vector<BbtagScript::Flip> flips;
-		const bool read = ReadNote(stage, note, flips);
+		std::vector<int> once;
+		const bool read = ReadNote(stage, note, flips, once);
+
+		StageOnce::Hold(once);
 		const bool flowing = read && note.flowing && Flows(stage);
 		const bool fading = read && note.fading;
 
 		for (int i = 0; i < kFlowSlots; ++i)
 		{
 			g_rate[i] = flowing ? note.rate[i] : 0.0f;
-			g_live[kFlowFirst + i] = 0.0f;
+			g_live[FlowAt(i)] = 0.0f;
 		}
 
 		const bool lighting = read && note.lighting;

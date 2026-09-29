@@ -32,6 +32,7 @@ namespace BbtagMua
 		int vertices;
 		int firstPart;
 		int parts;
+		float pivot[3];
 	};
 
 	struct Bone
@@ -57,8 +58,8 @@ namespace BbtagMua
 
 	struct Flow
 	{
-		float rate;
-		bool across;
+		float across;
+		float down;
 		bool known;
 	};
 

@@ -21,8 +21,10 @@ namespace BbtagStage
 		std::string stage;
 	};
 
-	constexpr int kFlowSlots = 8;
-	constexpr int kLampSlots = 32;
+	constexpr int kFlowSlots = 16;
+	constexpr int kFlowBank = 8;
+	constexpr int kFlowKinds = 3;
+	constexpr int kLampSlots = 64;
 	constexpr int kFlipSlots = 240;
 	constexpr float kFlipMark = 128.0f;
 	constexpr float kFlipInset = 0.25f;
@@ -37,6 +39,7 @@ namespace BbtagStage
 		std::vector<float> flow;
 		std::vector<BbtagScript::Lamp> lamps;
 		std::vector<BbtagScript::Flip> flips;
+		std::vector<int> once;
 		bool fading;
 		float tilt;
 	};

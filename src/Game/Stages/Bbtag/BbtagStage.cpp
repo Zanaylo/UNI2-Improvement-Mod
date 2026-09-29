@@ -24,6 +24,9 @@ constexpr double kCharacter = 213.0;
 constexpr double kUni2Character = 0.132;
 
 constexpr float kFlowMark = 128.0f;
+constexpr int kFlowDown = 0;
+constexpr int kFlowAcross = 1;
+constexpr int kFlowBoth = 2;
 constexpr float kLampMark = 128.0f;
 constexpr double kFullRamp = 1000.0;
 constexpr int kBlendOpaque = 0;
@@ -36,7 +39,6 @@ constexpr float kWindowBand = 0.6f;
 constexpr float kWindowMatch = 0.25f;
 constexpr int kWindowBands = 8;
 constexpr int kWindowHold = 180;
-constexpr int kLeastRect = 4;
 constexpr const char* kModelTake = "(the model's own)";
 constexpr const char* kObjectList = "object.txt";
 
@@ -44,10 +46,34 @@ constexpr double kUni2EyeHeight = 280.0 / 360.0;
 constexpr float kParked = -1000.0f;
 constexpr size_t kLampRects = 4;
 constexpr uint32_t kCullNone = 0x400;
-constexpr const char* kCaptureSheet = "capture";
-constexpr const char* kCaptureTexture = "uni2im_capture.dds";
-constexpr uint32_t kCaptureSide = 64;
-constexpr uint32_t kCaptureBytes = kCaptureSide * kCaptureSide / 2;
+constexpr uint32_t kNoDefaultTake = 0x10;
+constexpr uint32_t kPivotMoves = 0x200;
+constexpr uint32_t kShining = 0x100000;
+constexpr double kSkyDriftY = 0.0005;
+constexpr double kNearest = 1.0;
+constexpr int kShineSplits = 3;
+constexpr const char* kSparkSuffix = "_particles.dds";
+constexpr uint32_t kDdsRawFlags = 0x1 | 0x2 | 0x4 | 0x8 | 0x1000;
+constexpr uint32_t kDdsRgbAlpha = 0x41;
+constexpr uint32_t kDdsRawBits = 32;
+constexpr uint32_t kDdsMasks[4] = { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 };
+constexpr size_t kDdsMasksAt = 92;
+constexpr uint32_t kCardSide = 64;
+constexpr uint32_t kCardBytes = kCardSide * kCardSide / 2;
+
+struct CardKind
+{
+	const char* sheet;
+	const char* texture;
+	const char* stamp;
+};
+
+const CardKind kCards[] = {
+	{ "capture", "uni2im_capture.dds", StageCapture::kStamp },
+};
+
+constexpr const char* kBannerSheet = "stagefont";
+constexpr int kBannerLines = 2;
 const char* const kUnculled[] = { "bg_town", "bg_garden", "bg_monolis" };
 
 constexpr size_t kDdsSize = 128;
@@ -66,6 +92,8 @@ constexpr bool kFlip = true;
 
 constexpr int kFloats = FbxExWriter::kVertexFloats;
 constexpr size_t kMatrix = FbxExWriter::kMatrixFloats;
+constexpr int kNormalX = 3;
+constexpr int kNormalY = 4;
 constexpr int kU = 10;
 constexpr size_t kMergedVertices = 65535;
 constexpr int kV = 11;
@@ -102,9 +130,22 @@ struct Plate
 	float low;
 };
 
+struct Rank
+{
+	float first;
+	float second;
+};
+
+bool Before(const Rank& one, const Rank& other)
+{
+	return one.first < other.first || (one.first == other.first && one.second < other.second);
+}
+
 struct Piece
 {
 	bool clear = false;
+	bool solid = true;
+	Rank rank = {};
 	int bone = -1;
 	int root = -1;
 	FbxExWriter::Node node;
@@ -113,21 +154,6 @@ struct Piece
 	const std::vector<int>* frames = nullptr;
 	int rect = -1;
 };
-
-double Depth(const FbxExWriter::Node& node)
-{
-	const size_t count = node.vertices.size() / FbxExWriter::kVertexFloats;
-
-	if (count == 0)
-		return 0.0;
-
-	double total = 0.0;
-
-	for (size_t i = 0; i < count; ++i)
-		total += node.vertices[i * FbxExWriter::kVertexFloats + 2];
-
-	return total / static_cast<double>(count);
-}
 
 std::string ScriptOf(const BbtagMua::Model& model, const BbtagMua::Mesh& mesh)
 {
@@ -150,21 +176,9 @@ std::string ScriptOf(const BbtagMua::Model& model, const BbtagMua::Mesh& mesh)
 
 typedef std::map<std::pair<std::string, int>, BbtagScript::Played> PlayedScripts;
 
-std::string Stem(const BbtagScript::Scripts& scripts, const std::string& bound, const std::string& mesh)
+std::string Stem(const BbtagScript::Scripts& scripts, const std::string& bound)
 {
-	if (scripts.find(bound) != scripts.end())
-		return bound;
-
-	if (!bound.empty())
-		return std::string();
-
-	for (const BbtagScript::Scripts::value_type& one : scripts)
-	{
-		if (mesh.compare(0, one.first.size(), one.first) == 0)
-			return one.first;
-	}
-
-	return std::string();
+	return scripts.find(bound) != scripts.end() ? bound : std::string();
 }
 
 const BbtagScript::Played& PlayedFor(const BbtagScript::Scripts& scripts, PlayedScripts& played,
@@ -217,6 +231,11 @@ bool Unseen(const BbtagScript::Played& run)
 	}
 
 	return true;
+}
+
+bool Specks(const BbtagScript::Sprite& sprite)
+{
+	return !sprite.rect.empty() && std::all_of(sprite.rect.begin(), sprite.rect.end(), BbtagScript::Speck);
 }
 
 double ConstantRamp(const BbtagScript::Played& run)
@@ -470,21 +489,72 @@ std::vector<float> Shown(int index, int count, int phase)
 	return out;
 }
 
-void Flows(const BbtagMua::Model& model, bool flip, std::vector<float>& rates,
-	std::map<int, std::pair<int, bool> >& taken)
+typedef std::map<int, std::pair<int, int> > Flowing;
+
+int SingleKind(const BbtagMua::Flow& flow)
+{
+	return fabsf(flow.across) > fabsf(flow.down) ? kFlowAcross : kFlowDown;
+}
+
+std::vector<float> FlowRates(const BbtagMua::Flow& flow, int kind, bool flip)
+{
+	std::vector<float> out;
+
+	if (kind != kFlowDown)
+		out.push_back(-flow.across);
+
+	if (kind != kFlowAcross)
+		out.push_back(flip ? flow.down : -flow.down);
+
+	return out;
+}
+
+int SharedSlot(const std::vector<float>& rates, const std::vector<float>& wanted)
+{
+	for (size_t at = 0; at + wanted.size() <= rates.size(); ++at)
+	{
+		if (std::equal(wanted.begin(), wanted.end(), rates.begin() + at))
+			return static_cast<int>(at);
+	}
+
+	return -1;
+}
+
+void Flows(const BbtagMua::Model& model, bool flip, std::vector<float>& rates, Flowing& taken)
 {
 	rates.clear();
 	taken.clear();
+
+	const size_t slots = static_cast<size_t>(BbtagStage::kFlowSlots);
 
 	for (size_t m = 0; m < model.Flows().size(); ++m)
 	{
 		const BbtagMua::Flow& flow = model.Flows()[m];
 
-		if (!flow.known || static_cast<int>(rates.size()) >= BbtagStage::kFlowSlots)
+		if (!flow.known)
 			continue;
 
-		taken[static_cast<int>(m)] = std::make_pair(static_cast<int>(rates.size()), flow.across);
-		rates.push_back(flow.across || !flip ? -flow.rate : flow.rate);
+		int kind = flow.across != 0.0f && flow.down != 0.0f ? kFlowBoth : SingleKind(flow);
+		std::vector<float> wanted = FlowRates(flow, kind, flip);
+		int slot = SharedSlot(rates, wanted);
+
+		if (slot < 0 && kind == kFlowBoth && rates.size() + wanted.size() > slots)
+		{
+			kind = SingleKind(flow);
+			wanted = FlowRates(flow, kind, flip);
+			slot = SharedSlot(rates, wanted);
+		}
+
+		if (slot < 0 && rates.size() + wanted.size() > slots)
+			continue;
+
+		if (slot < 0)
+		{
+			slot = static_cast<int>(rates.size());
+			rates.insert(rates.end(), wanted.begin(), wanted.end());
+		}
+
+		taken[static_cast<int>(m)] = std::make_pair(slot, kind);
 	}
 }
 
@@ -654,12 +724,23 @@ void Chain(const BbtagMua::Model& model, int first, int local,
 	}
 }
 
+int BonesOf(const BbtagMua::Model& model, int first)
+{
+	for (const BbtagMua::Skeleton& skeleton : model.Skeletons())
+	{
+		if (skeleton.firstBone == first)
+			return skeleton.bones;
+	}
+
+	return 1;
+}
+
 void Deltas(const BbtagMua::Model& model, int first, const BbtagMmot::Motion& motion,
 	double scale, bool mirror, std::vector<std::vector<float> >& out)
 {
-	const int bones = motion.Bones();
+	const int bones = BonesOf(model, first);
 
-	if (first < 0 || first + bones > static_cast<int>(model.Bones().size()))
+	if (first < 0 || bones < 1 || first + bones > static_cast<int>(model.Bones().size()))
 		return;
 
 	std::vector<std::vector<float> > rest;
@@ -675,11 +756,14 @@ void Deltas(const BbtagMua::Model& model, int first, const BbtagMmot::Motion& mo
 
 	for (int i = 0; i < bones; ++i)
 	{
-		float composed[16] = {};
-		Chain(model, first, i, rest, composed);
-
 		float inverse[16] = {};
-		BbtagMua::Invert(composed, inverse);
+
+		if (i >= motion.Bones() || !motion.Unbind(i, inverse))
+		{
+			float composed[16] = {};
+			Chain(model, first, i, rest, composed);
+			BbtagMua::Invert(composed, inverse);
+		}
 
 		settled.push_back(std::vector<float>(inverse, inverse + 16));
 	}
@@ -701,17 +785,16 @@ void Deltas(const BbtagMua::Model& model, int first, const BbtagMmot::Motion& mo
 
 		for (int i = 0; i < bones; ++i)
 		{
+			if (i >= motion.Bones())
+			{
+				local.push_back(rest[i]);
+				continue;
+			}
+
 			const BbtagMua::Bone& held = model.Bones()[first + i];
 
-			float translate[3] = {};
-			float rotate[3] = {};
-			float size[3] = {};
-
-			motion.Sample(i, frame, held.translation, held.rotation, held.scale, translate, rotate,
-				size);
-
 			float composed[16] = {};
-			BbtagMmot::Compose(translate, rotate, size, composed);
+			motion.Pose(i, frame, held.translation, held.rotation, held.scale, composed);
 
 			local.push_back(std::vector<float>(composed, composed + 16));
 		}
@@ -739,15 +822,11 @@ void Deltas(const BbtagMua::Model& model, int first, const BbtagMmot::Motion& mo
 	}
 }
 
-void Motions(const BbtagMua::Model& model, const BbtagPac::Files& scene, double scale,
-	bool mirror, std::map<int, Takes>& out)
+typedef std::map<std::string, BbtagMmot::Motion> MotionFiles;
+
+void Motions(const BbtagPac::Files& scene, MotionFiles& out)
 {
 	out.clear();
-
-	std::map<std::string, int> named;
-
-	for (size_t i = 0; i < model.Bones().size(); ++i)
-		named.insert(std::make_pair(model.Bones()[i].name, static_cast<int>(i)));
 
 	for (const std::pair<const std::string, std::vector<uint8_t> >& file : scene)
 	{
@@ -758,40 +837,36 @@ void Motions(const BbtagMua::Model& model, const BbtagPac::Files& scene, double 
 
 		BbtagMmot::Motion motion;
 
-		if (!motion.Read(file.second) || motion.Frames() < 2)
-			continue;
-
-		const std::map<std::string, int>::const_iterator root = named.find(motion.Target());
-
-		if (root == named.end())
-			continue;
-
-		int first = root->second;
-		int count = 1;
-
-		for (const BbtagMua::Skeleton& skeleton : model.Skeletons())
-		{
-			if (skeleton.firstBone != first)
-				continue;
-
-			count = skeleton.bones;
-			break;
-		}
-
-		if (count != motion.Bones())
-			continue;
-
-		Track track;
-		track.motion = motion;
-
-		out[first][Leaf(file.first)] = track;
+		if (motion.Read(file.second) && motion.Frames() >= 2)
+			out[Leaf(leaf)] = motion;
 	}
+}
 
-	for (std::pair<const int, Takes>& root : out)
-	{
-		for (std::pair<const std::string, Track>& chosen : root.second)
-			Deltas(model, root.first, chosen.second.motion, scale, mirror, chosen.second.frames);
-	}
+std::string TakeName(const std::string& picked)
+{
+	return picked.empty() ? std::string(kModelTake) : Lowered(picked);
+}
+
+void Bind(const BbtagMua::Model& model, const MotionFiles& files, int first, const std::string& picked,
+	double scale, bool mirror, std::map<int, Takes>& out)
+{
+	const std::string name = TakeName(picked);
+	const std::map<int, Takes>::const_iterator known = out.find(first);
+
+	if (picked.empty() || (known != out.end() && known->second.count(name) != 0))
+		return;
+
+	const MotionFiles::const_iterator file = files.find(name);
+
+	if (file == files.end())
+		return;
+
+	Track track;
+	track.motion = file->second;
+	Deltas(model, first, track.motion, scale, mirror, track.frames);
+
+	if (!track.frames.empty())
+		out[first][name] = track;
 }
 
 bool Moves(const BbtagMua::Model& model, int first, int count)
@@ -840,7 +915,7 @@ void Adopt(const BbtagMua::Model& model, int first, int count, BbtagMmot::Motion
 	out.Reset(count, frames);
 
 	const BbtagMmot::Motion::Kind kinds[4] = { BbtagMmot::Motion::Kind::Translation,
-		BbtagMmot::Motion::Kind::Rotation, BbtagMmot::Motion::Kind::Translation,
+		BbtagMmot::Motion::Kind::Rotation, BbtagMmot::Motion::Kind::Turn,
 		BbtagMmot::Motion::Kind::Scale };
 
 	std::vector<BbtagMua::Key> keys;
@@ -854,9 +929,6 @@ void Adopt(const BbtagMua::Model& model, int first, int count, BbtagMmot::Motion
 
 		for (int k = 0; k < 4; ++k)
 		{
-			if (k == 2)
-				continue;
-
 			model.Keys(bone.track[k], keys);
 
 			for (const BbtagMua::Key& key : keys)
@@ -880,7 +952,7 @@ void Internal(const BbtagMua::Model& model, double scale, bool mirror, std::map<
 		const int first = skeleton.firstBone;
 		const int count = skeleton.bones;
 
-		if (wanted.count(first) == 0 || out.count(first) != 0)
+		if (wanted.count(first) == 0 || (skeleton.flags & kNoDefaultTake) != 0)
 			continue;
 
 		if (first < 0 || count < 1
@@ -926,6 +998,26 @@ uint32_t SkeletonFlags(const BbtagMua::Model& model, const BbtagMua::Mesh& mesh)
 	return skeletons[mesh.skeleton].flags;
 }
 
+Rank RankOf(const BbtagMua::Model& model, const BbtagMua::Mesh& mesh)
+{
+	const int lift = static_cast<int>(mesh.pivot[1]);
+	Rank rank = { -static_cast<float>(static_cast<int>(mesh.pivot[2])),
+		lift < 0 ? static_cast<float>(lift) : 0.0f };
+
+	if ((SkeletonFlags(model, mesh) & kPivotMoves) == 0)
+		return rank;
+
+	float world[16] = {};
+	model.World(mesh.bone, world);
+
+	const float depth = mesh.pivot[2] * world[10] + world[14];
+	const float w = mesh.pivot[2] * world[11] + world[15];
+
+	rank.first = -(w != 0.0f ? depth / w : depth);
+
+	return rank;
+}
+
 FbxExWriter::Material Painted(const std::vector<std::string>& textures, int index)
 {
 	FbxExWriter::Material material = {};
@@ -943,15 +1035,15 @@ FbxExWriter::Material Painted(const std::vector<std::string>& textures, int inde
 	return material;
 }
 
-std::vector<uint8_t> CaptureCard()
+std::vector<uint8_t> MadeCard(const CardKind& kind)
 {
-	std::vector<uint8_t> out(kDdsSize + kCaptureBytes, 0);
-	const uint32_t fields[] = { kDdsHeader, kDdsFlags, kCaptureSide, kCaptureSide, kCaptureBytes };
+	std::vector<uint8_t> out(kDdsSize + kCardBytes, 0);
+	const uint32_t fields[] = { kDdsHeader, kDdsFlags, kCardSide, kCardSide, kCardBytes };
 	const uint32_t format[] = { kDdsPixelFormat, kDdsFourCc };
 
 	memcpy(out.data(), "DDS ", 4);
 	memcpy(out.data() + 4, fields, sizeof(fields));
-	memcpy(out.data() + StageCapture::kStampAt, StageCapture::kStamp, strlen(StageCapture::kStamp));
+	memcpy(out.data() + StageCapture::kStampAt, kind.stamp, strlen(kind.stamp));
 	memcpy(out.data() + kDdsPixelFormatAt, format, sizeof(format));
 	memcpy(out.data() + kDdsFourCcAt, "DXT1", 4);
 	memcpy(out.data() + kDdsCapsAt, &kDdsTexture, sizeof(kDdsTexture));
@@ -1000,24 +1092,29 @@ public:
 		return Add(leaf);
 	}
 
-	int Capture()
+	int Card(const std::string& sheet)
 	{
-		if (m_capture >= 0)
-			return m_capture;
+		for (const CardKind& kind : kCards)
+		{
+			if (sheet != kind.sheet)
+				continue;
 
-		m_card = CaptureCard();
-		m_built.textures.push_back(kCaptureTexture);
-		m_pixels.push_back(&m_card);
-		m_cutout.push_back(false);
-		m_sheets.emplace_back(m_card);
-		m_capture = static_cast<int>(m_built.textures.size()) - 1;
+			const std::map<const CardKind*, int>::const_iterator known = m_cardAt.find(&kind);
 
-		return m_capture;
-	}
+			if (known != m_cardAt.end())
+				return known->second;
 
-	bool Captures(int index) const
-	{
-		return index >= 0 && index == m_capture;
+			m_cards.push_back(MadeCard(kind));
+			m_built.textures.push_back(kind.texture);
+			m_pixels.push_back(&m_cards.back());
+			m_cutout.push_back(false);
+			m_sheets.emplace_back(m_cards.back());
+			m_cardAt[&kind] = static_cast<int>(m_built.textures.size()) - 1;
+
+			return m_cardAt[&kind];
+		}
+
+		return -1;
 	}
 
 	int Material(int material, int sheet)
@@ -1043,8 +1140,8 @@ public:
 
 	void Emit(BbtagStage::Images& images) const
 	{
-		if (m_capture >= 0)
-			images[kCaptureTexture] = m_card;
+		for (const std::pair<const CardKind* const, int>& one : m_cardAt)
+			images[one.first->texture] = *m_pixels[one.second];
 	}
 
 	int Count() const { return static_cast<int>(m_built.textures.size()); }
@@ -1064,8 +1161,8 @@ private:
 	std::vector<bool> m_cutout;
 	std::deque<BbtagArt::Sheet> m_sheets;
 	std::map<std::pair<int, int>, int> m_retextured;
-	std::vector<uint8_t> m_card;
-	int m_capture = -1;
+	std::deque<std::vector<uint8_t> > m_cards;
+	std::map<const CardKind*, int> m_cardAt;
 };
 
 std::string SheetName(const BbtagScript::Sprite& sprite, const BbtagScript::Rect& rect)
@@ -1081,22 +1178,28 @@ struct Sheeted
 	int sheet;
 	BbtagArt::Size size;
 	bool sized;
+	BbtagScript::Rect rect;
 };
 
 Sheeted SheetFor(Atlas& atlas, const BbtagScript::Sprite& sprite, const BbtagScript::Rect& rect,
 	const Sheeted& plate)
 {
-	const std::string name = SheetName(sprite, rect);
+	const std::string name = Lowered(SheetName(sprite, rect));
+	const int card = atlas.Card(name);
 
-	if (Lowered(name) == kCaptureSheet)
-		return { atlas.Capture(), { rect.w, rect.h }, true };
+	if (card >= 0)
+		return { card, { rect.w, rect.h }, true, { rect.sheet, 0, 0, rect.w, rect.h } };
+
+	if (name == kBannerSheet)
+		return { plate.sheet, plate.size, plate.sized,
+			{ rect.sheet, 0, 0, plate.size.width, kBannerLines * rect.h } };
 
 	const int named = name.empty() ? -1 : atlas.Find(name);
 
 	if (named < 0)
-		return plate;
+		return { plate.sheet, plate.size, plate.sized, rect };
 
-	Sheeted out = { named, {}, false };
+	Sheeted out = { named, {}, false, rect };
 	out.sized = BbtagArt::Measure(atlas.PixelsAt(named), out.size);
 
 	return out;
@@ -1232,15 +1335,12 @@ std::vector<float> MotionOf(const Piece& piece, const std::map<int, Takes>& movi
 
 	if (piece.run == nullptr)
 	{
-		const Track* longest = nullptr;
+		const Takes::const_iterator own = track->second.find(kModelTake);
 
-		for (const std::pair<const std::string, Track>& take : track->second)
-		{
-			if (longest == nullptr || take.second.motion.Frames() > longest->motion.Frames())
-				longest = &take.second;
-		}
+		if (own == track->second.end())
+			return entry;
 
-		for (const std::vector<float>& step : longest->frames)
+		for (const std::vector<float>& step : own->second.frames)
 			Append(entry, step, at);
 
 		return entry;
@@ -1252,18 +1352,35 @@ std::vector<float> MotionOf(const Piece& piece, const std::map<int, Takes>& movi
 		return entry;
 
 	const BbtagScript::Step& last = steps.back();
+	const Takes::const_iterator held = track->second.find(TakeName(last.take));
+	const bool constant = std::all_of(steps.begin(), steps.end(),
+		[&last](const BbtagScript::Step& one) { return one.take == last.take; });
+
+	if (constant)
+	{
+		if (held == track->second.end() || held->second.frames.empty())
+			return entry;
+
+		const std::vector<std::vector<float> >& frames = held->second.frames;
+
+		for (size_t i = 0; i < frames.size(); ++i)
+			Append(entry, frames[(static_cast<size_t>(steps[0].at) + i) % frames.size()], at);
+
+		return entry;
+	}
+
 	const int began = static_cast<int>(steps.size()) - 1 - last.at;
-	const Takes::const_iterator held = track->second.find(last.take);
 	size_t length = steps.size();
 
 	if (piece.run->settled && held != track->second.end() && held->second.frames.size() > 1)
-		length = std::max(length, static_cast<size_t>(began) + held->second.frames.size());
+		length = std::max(length, static_cast<size_t>(std::max(0,
+			began + static_cast<int>(held->second.frames.size()))));
 
 	for (size_t i = 0; i < length; ++i)
 	{
 		const BbtagScript::Step step = i < steps.size() ? steps[i]
 			: BbtagScript::Step{ last.take, static_cast<int>(i) - began };
-		const Takes::const_iterator take = track->second.find(step.take);
+		const Takes::const_iterator take = track->second.find(TakeName(step.take));
 
 		if (take == track->second.end() || take->second.frames.empty())
 		{
@@ -1323,8 +1440,88 @@ void SpawnOrigins(const BbtagMua::Model& model, const std::string& stem, int bon
 		out.push_back({ 0.0, 0.0, 0.0 });
 }
 
+std::vector<uint8_t> RawDds(int side, const std::vector<uint8_t>& rgba)
+{
+	const uint32_t pitch = static_cast<uint32_t>(side) * 4;
+	std::vector<uint8_t> out(kDdsSize + rgba.size(), 0);
+	const uint32_t fields[] = { kDdsHeader, kDdsRawFlags, static_cast<uint32_t>(side), static_cast<uint32_t>(side), pitch };
+	const uint32_t format[] = { kDdsPixelFormat, kDdsRgbAlpha, 0, kDdsRawBits };
+
+	memcpy(out.data(), "DDS ", 4);
+	memcpy(out.data() + 4, fields, sizeof(fields));
+	memcpy(out.data() + kDdsPixelFormatAt, format, sizeof(format));
+	memcpy(out.data() + kDdsMasksAt, kDdsMasks, sizeof(kDdsMasks));
+	memcpy(out.data() + kDdsCapsAt, &kDdsTexture, sizeof(kDdsTexture));
+
+	for (size_t at = 0; at + 3 < rgba.size(); at += 4)
+	{
+		uint8_t* const texel = out.data() + kDdsSize + at;
+		texel[0] = rgba[at + 2];
+		texel[1] = rgba[at + 1];
+		texel[2] = rgba[at];
+		texel[3] = rgba[at + 3];
+	}
+
+	return out;
+}
+
+std::vector<float> PoseMatrix(const BbtagParticleBake::Pose& pose)
+{
+	std::vector<float> out = Rest();
+
+	if (!pose.shown)
+	{
+		out[0] = 0.0f;
+		out[5] = 0.0f;
+		out[13] = kParked;
+		return out;
+	}
+
+	float place[3] = {};
+	const float position[3] = { static_cast<float>(pose.position[0]), static_cast<float>(pose.position[1]),
+		static_cast<float>(pose.position[2]) };
+	Place(position, kScale, kMirror, place);
+
+	const double c = cos(-pose.turn);
+	const double s = sin(-pose.turn);
+	const double wide = pose.size[0] * kScale;
+	const double tall = pose.size[1] * kScale;
+
+	out[0] = static_cast<float>(wide * c);
+	out[1] = static_cast<float>(wide * s);
+	out[4] = static_cast<float>(-tall * s);
+	out[5] = static_cast<float>(tall * c);
+	out[12] = place[0];
+	out[13] = place[1];
+	out[14] = place[2];
+
+	return out;
+}
+
+FbxExWriter::Node CardQuad(const std::array<double, 4>& cell, const double tint[3], int material)
+{
+	const float corners[4][2] = { { -0.5f, -0.5f }, { 0.5f, -0.5f }, { 0.5f, 0.5f }, { -0.5f, 0.5f } };
+	FbxExWriter::Node node = FbxExWriter::Leaf();
+
+	for (const float* corner : corners)
+	{
+		const double u = corner[0] < 0.0f ? cell[0] : cell[2];
+		const double v = corner[1] > 0.0f ? cell[1] : cell[3];
+		const float row[kFloats] = { corner[0], corner[1], 0.0f, 0.0f, 0.0f, kMirror ? -1.0f : 1.0f,
+			static_cast<float>(tint[0]), static_cast<float>(tint[1]), static_cast<float>(tint[2]), 1.0f,
+			static_cast<float>(u), static_cast<float>(kFlip ? 1.0 - v : v) };
+
+		node.vertices.insert(node.vertices.end(), row, row + kFloats);
+	}
+
+	node.submeshes.push_back({ material, { 0, 1, 2, 0, 2, 3, 0, 2, 1, 0, 3, 2 } });
+	node.blendmode = 1;
+
+	return node;
+}
+
 void Particles(const BbtagStage::Source& source, const BbtagMua::Model& model, const EveryScript& every,
-	BbtagStage::Result& out)
+	BbtagStage::Result& out, BbtagParticleBake::Cards& cards)
 {
 	std::vector<BbtagParticle::Effect> effects;
 	BbtagParticle::Surface surface;
@@ -1354,9 +1551,14 @@ void Particles(const BbtagStage::Source& source, const BbtagMua::Model& model, c
 		}
 	}
 
+	if (spawned.empty())
+		return;
+
+	BbtagParticleBake::Emitted(effects, spawned, surface, cards);
+
 	BbtagParticleBake::Layer layer;
 
-	if (spawned.empty() || !BbtagParticleBake::Bake(effects, spawned, surface, source.stage, layer))
+	if (!BbtagParticleBake::Bake(effects, spawned, surface, source.stage, layer))
 		return;
 
 	out.layer[layer.patName] = layer.pat;
@@ -1466,12 +1668,16 @@ struct Look
 	bool adds;
 	bool animated;
 	const BbtagScript::Run* run;
+	bool solid;
+	Rank rank;
 };
 
 Piece Made(const Look& look, int bone, const FbxExWriter::Node& node)
 {
 	Piece piece;
 	piece.clear = look.clear;
+	piece.solid = look.solid;
+	piece.rank = look.rank;
 	piece.bone = bone;
 	piece.root = look.root;
 	piece.node = node;
@@ -1485,7 +1691,78 @@ struct Placed
 	FbxExWriter::Node node;
 	std::vector<float> anime;
 	bool clear;
+	bool once;
 };
+
+int Midpoint(std::vector<float>& vertices, std::vector<int>& rigged,
+	std::map<std::pair<int, int>, int>& made, int a, int b)
+{
+	const std::pair<int, int> key(std::min(a, b), std::max(a, b));
+	const std::map<std::pair<int, int>, int>::const_iterator known = made.find(key);
+
+	if (known != made.end())
+		return known->second;
+
+	const int index = static_cast<int>(vertices.size() / kFloats);
+
+	for (int k = 0; k < kFloats; ++k)
+		vertices.push_back(0.5f * (vertices[a * kFloats + k] + vertices[b * kFloats + k]));
+
+	rigged.push_back(rigged[a]);
+	made[key] = index;
+
+	return index;
+}
+
+void Subdivided(std::vector<float>& vertices, std::vector<int>& rigged,
+	std::vector<FbxExWriter::Submesh>& submeshes)
+{
+	for (int level = 0; level < kShineSplits; ++level)
+	{
+		std::map<std::pair<int, int>, int> made;
+
+		for (FbxExWriter::Submesh& submesh : submeshes)
+		{
+			std::vector<int> finer;
+
+			for (size_t i = 0; i + 2 < submesh.indices.size(); i += 3)
+			{
+				const int a = submesh.indices[i];
+				const int b = submesh.indices[i + 1];
+				const int c = submesh.indices[i + 2];
+				const int ab = Midpoint(vertices, rigged, made, a, b);
+				const int bc = Midpoint(vertices, rigged, made, b, c);
+				const int ca = Midpoint(vertices, rigged, made, c, a);
+
+				for (int one : { a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca })
+					finer.push_back(one);
+			}
+
+			submesh.indices.swap(finer);
+		}
+	}
+}
+
+void ScreenMapped(std::vector<float>& vertices)
+{
+	const double half = tan(BbtagCamera::kFov * BbtagCamera::kPi / 360.0);
+	const double drift = BbtagCamera::kEyeHeight * kSkyDriftY;
+	const size_t rows = vertices.size() / kFloats;
+
+	for (size_t v = 0; v < rows; ++v)
+	{
+		const float* const row = vertices.data() + v * kFloats;
+		const double x = row[0] / kScale;
+		const double y = row[1] / kScale;
+		const double z = (kMirror ? -row[2] : row[2]) / kScale;
+		const double depth = std::max(kNearest, z + BbtagCamera::kEyeDistance);
+		const double across = x / (depth * half * BbtagCamera::kAspect);
+		const double down = (y - BbtagCamera::kEyeHeight) / (depth * half) + drift;
+
+		vertices[v * kFloats + kU] = static_cast<float>(across);
+		vertices[v * kFloats + kV] = static_cast<float>(kFlip ? 1.0 - down : down);
+	}
+}
 
 bool Mergeable(const Placed& held, const FbxExWriter::Node& node, const std::vector<float>& anime,
 	bool clear)
@@ -1523,27 +1800,22 @@ void Merge(FbxExWriter::Node& into, const FbxExWriter::Node& node)
 std::vector<const Piece*> Ordered(const std::vector<Piece>& pieces)
 {
 	std::vector<const Piece*> out;
-	std::vector<std::pair<double, const Piece*> > clear;
+	std::vector<const Piece*> solid;
+	std::vector<const Piece*> blended;
 
 	for (const Piece& piece : pieces)
 	{
-		if (!piece.clear)
-		{
-			out.push_back(&piece);
-			continue;
-		}
-
-		clear.push_back(std::make_pair(Depth(piece.node), &piece));
+		std::vector<const Piece*>& into = !piece.clear ? out : piece.solid ? solid : blended;
+		into.push_back(&piece);
 	}
 
-	std::stable_sort(clear.begin(), clear.end(),
-		[](const std::pair<double, const Piece*>& one, const std::pair<double, const Piece*>& other)
-	{
-		return one.first < other.first;
-	});
+	const auto backToFront = [](const Piece* one, const Piece* other) { return Before(one->rank, other->rank); };
 
-	for (const std::pair<double, const Piece*>& one : clear)
-		out.push_back(one.second);
+	std::stable_sort(solid.begin(), solid.end(), backToFront);
+	std::stable_sort(blended.begin(), blended.end(), backToFront);
+
+	out.insert(out.end(), solid.begin(), solid.end());
+	out.insert(out.end(), blended.begin(), blended.end());
 
 	return out;
 }
@@ -1566,12 +1838,13 @@ public:
 		Flows(m_model, kFlip, m_out.flow, m_flowing);
 		Strips(m_model, kScale, kMirror, m_siblings);
 		ReadScene();
-		Particles(m_source, m_model, m_every, m_out);
+		Particles(m_source, m_model, m_every, m_out, m_cards);
 
 		for (const BbtagMua::Mesh& mesh : m_model.Meshes())
 			Classify(mesh);
 
 		Internal(m_model, kScale, kMirror, m_moving);
+		BindTakes();
 
 		for (const BbtagMua::Mesh& mesh : m_model.Meshes())
 			Build(mesh);
@@ -1599,8 +1872,12 @@ private:
 				index = 0;
 
 			const int shine = m < m_model.Reflections().size() ? m_model.Reflections()[m] : -1;
+			const bool reflects = shine >= 0 && shine < m_atlas.Count();
 
-			if (shine >= 0 && shine < m_atlas.Count() && m_atlas.SheetAt(index).Dark())
+			if (reflects && m_atlas.SheetAt(index).Hidden())
+				m_mirrored.insert(static_cast<int>(m));
+
+			if (reflects && (m_atlas.SheetAt(index).Dark() || m_atlas.SheetAt(index).Hidden()))
 				index = shine;
 
 			m_built.materials.push_back(Painted(m_built.textures, index));
@@ -1615,7 +1892,7 @@ private:
 		if (!BbtagPac::Walk(m_source.scene, m_scene))
 			return;
 
-		Motions(m_model, m_scene, kScale, kMirror, m_moving);
+		Motions(m_scene, m_files);
 
 		for (const std::pair<const std::string, std::vector<uint8_t> >& file : m_scene)
 		{
@@ -1638,10 +1915,29 @@ private:
 		}
 	}
 
+	void BindTakes()
+	{
+		for (const BbtagMua::Mesh& mesh : m_model.Meshes())
+		{
+			const BbtagScript::Run* const run = Named(m_runs, mesh.name);
+
+			if (run == nullptr)
+				continue;
+
+			std::set<std::string> picked;
+
+			for (const BbtagScript::Step& step : run->frame)
+				picked.insert(step.take);
+
+			for (const std::string& take : picked)
+				Bind(m_model, m_files, mesh.bone, take, kScale, kMirror, m_moving);
+		}
+	}
+
 	void Classify(const BbtagMua::Mesh& mesh)
 	{
 		const std::string bound = ScriptOf(m_model, mesh);
-		const std::string stem = Stem(m_scripts, bound, mesh.name);
+		const std::string stem = Stem(m_scripts, bound);
 
 		if (stem.empty())
 			return;
@@ -1662,6 +1958,12 @@ private:
 		BbtagScript::Sprite sprite;
 		const bool drawn = BbtagScript::Sprites(run, sprite);
 
+		if (drawn && Specks(sprite))
+		{
+			m_unseen.insert(mesh.name);
+			return;
+		}
+
 		if (drawn)
 			m_sprites[mesh.name] = sprite;
 
@@ -1680,13 +1982,21 @@ private:
 		BbtagScript::Lamp lamp;
 
 		if (bound != stem || m_slots.count(bound) != 0
-			|| static_cast<int>(m_slots.size()) >= BbtagStage::kLampSlots || !BbtagScript::Lamps(run, lamp))
+			|| static_cast<int>(m_out.lamps.size()) >= BbtagStage::kLampSlots || !BbtagScript::Lamps(run, lamp))
 		{
 			return;
 		}
 
 		m_slots[bound] = static_cast<int>(m_out.lamps.size());
 		m_out.lamps.push_back(lamp);
+	}
+
+	static void Opaque(std::vector<float>& vertices)
+	{
+		const size_t rows = vertices.size() / kFloats;
+
+		for (size_t i = 0; i < rows; ++i)
+			vertices[i * kFloats + 9] = 1.0f;
 	}
 
 	void Dim(const BbtagMua::Mesh& mesh, std::vector<float>& vertices) const
@@ -1702,7 +2012,7 @@ private:
 			vertices[i * kFloats + 9] *= dim->second;
 	}
 
-	bool Body(const BbtagMua::Mesh& mesh, MeshBody& out) const
+	bool Body(const BbtagMua::Mesh& mesh, int mode, MeshBody& out) const
 	{
 		Vertices(m_model, mesh, out.vertices, out.rigged);
 
@@ -1710,6 +2020,9 @@ private:
 			return false;
 
 		Dim(mesh, out.vertices);
+
+		if (mode == kBlendOpaque)
+			Opaque(out.vertices);
 
 		const size_t rows = out.vertices.size() / kFloats;
 
@@ -1720,10 +2033,31 @@ private:
 		out.submeshes = Submeshes(m_model, mesh, static_cast<int>(m_built.materials.size()), twoSided);
 		out.clear = out.faded;
 
+		if (Mirrored(out.submeshes))
+			Reflect(out.vertices);
+
 		for (const FbxExWriter::Submesh& submesh : out.submeshes)
 			out.clear = out.clear || m_atlas.Cutout(m_built.materials[submesh.material].textureIndex);
 
 		return !out.submeshes.empty();
+	}
+
+	bool Mirrored(const std::vector<FbxExWriter::Submesh>& submeshes) const
+	{
+		return !submeshes.empty() && std::all_of(submeshes.begin(), submeshes.end(),
+			[this](const FbxExWriter::Submesh& one) { return m_mirrored.count(one.material) != 0; });
+	}
+
+	static void Reflect(std::vector<float>& vertices)
+	{
+		const size_t rows = vertices.size() / kFloats;
+
+		for (size_t i = 0; i < rows; ++i)
+		{
+			float* const row = vertices.data() + i * kFloats;
+			row[kU] = 0.5f + 0.5f * row[kNormalX];
+			row[kV] = 0.5f + 0.5f * row[kNormalY];
+		}
 	}
 
 	int LampOfMesh(const BbtagMua::Mesh& mesh) const
@@ -1739,20 +2073,24 @@ private:
 			return;
 
 		MeshBody body;
+		const int mode = BlendOf(m_model, mesh);
 
-		if (!Body(mesh, body))
+		if (!Body(mesh, mode, body))
 			return;
 
 		const int plate = Shelf(m_built.materials, body.submeshes);
-		const int mode = BlendOf(m_model, mesh);
 
 		m_out.fading = m_out.fading || body.faded;
 
 		const Look look = { mesh.bone, body.clear || mode != kBlendOpaque, mode == kBlendAdd,
-			m_moving.find(mesh.bone) != m_moving.end(), Named(m_runs, mesh.name) };
+			m_moving.find(mesh.bone) != m_moving.end(), Named(m_runs, mesh.name),
+			mode == kBlendOpaque, RankOf(m_model, mesh) };
 
-		Sheeted plated = { plate, {}, false };
+		Sheeted plated = { plate, {}, false, {} };
 		plated.sized = BbtagArt::Measure(m_atlas.PixelsAt(plate), plated.size);
+
+		if (ShiningPieces(mesh, body, look))
+			return;
 
 		if (SpritePieces(mesh, body, look, plated))
 			return;
@@ -1761,6 +2099,66 @@ private:
 			return;
 
 		WholePieces(mesh, body, look);
+	}
+
+	int ShineOf(int material) const
+	{
+		const std::vector<int>& shines = m_model.Reflections();
+
+		if (material < 0 || material >= static_cast<int>(shines.size())
+			|| material >= static_cast<int>(m_model.Materials().size()) || m_mirrored.count(material) != 0)
+		{
+			return -1;
+		}
+
+		const std::vector<int>& assigned = m_model.Materials()[material];
+		const int shine = shines[material];
+
+		if (assigned.empty() || shine < 0 || shine >= m_atlas.Count()
+			|| m_built.materials[material].textureIndex != assigned[0])
+		{
+			return -1;
+		}
+
+		return shine;
+	}
+
+	bool ShiningPieces(const BbtagMua::Mesh& mesh, const MeshBody& body, const Look& look)
+	{
+		if ((SkeletonFlags(m_model, mesh) & kShining) == 0 || body.submeshes.empty())
+			return false;
+
+		std::vector<FbxExWriter::Submesh> glowing = body.submeshes;
+
+		for (FbxExWriter::Submesh& submesh : glowing)
+		{
+			const int shine = ShineOf(submesh.material);
+
+			if (shine < 0)
+				return false;
+
+			submesh.material = m_atlas.Material(submesh.material, shine);
+		}
+
+		const int lamp = LampOfMesh(mesh);
+
+		std::vector<float> mapped = body.vertices;
+		std::vector<int> rigged = body.rigged;
+		std::vector<FbxExWriter::Submesh> finer = body.submeshes;
+		Subdivided(mapped, rigged, finer);
+		ScreenMapped(mapped);
+		Mark(mapped, lamp);
+		Add(look, mapped, rigged, finer, nullptr, -1);
+
+		Look glow = look;
+		glow.clear = true;
+		glow.adds = true;
+
+		std::vector<float> lit = body.vertices;
+		Mark(lit, lamp);
+		Add(glow, lit, body.rigged, glowing, nullptr, -1);
+
+		return true;
 	}
 
 	bool SpritePieces(const BbtagMua::Mesh& mesh, const MeshBody& body, const Look& look,
@@ -1777,14 +2175,14 @@ private:
 			return true;
 
 		const size_t before = m_pieces.size();
-		const std::string stem = Stem(m_scripts, ScriptOf(m_model, mesh), mesh.name);
+		const std::string stem = Stem(m_scripts, ScriptOf(m_model, mesh));
 		const int lamp = LampOfMesh(mesh);
 
 		for (size_t r = 0; r < sprite->rect.size(); ++r)
 		{
 			const BbtagScript::Rect& rect = sprite->rect[r];
 
-			if (rect.w <= kLeastRect || rect.h <= kLeastRect)
+			if (BbtagScript::Speck(rect))
 				continue;
 
 			const Sheeted sheeted = SheetFor(m_atlas, *sprite, rect, plated);
@@ -1792,15 +2190,7 @@ private:
 			if (!sheeted.sized)
 				continue;
 
-			BbtagScript::Rect placed = rect;
-
-			if (m_atlas.Captures(sheeted.sheet))
-			{
-				placed.x = 0;
-				placed.y = 0;
-			}
-
-			std::vector<float> framed = Framed(body.vertices, placed, sheeted.size, kFlip);
+			std::vector<float> framed = Framed(body.vertices, sheeted.rect, sheeted.size, kFlip);
 			Mark(framed, lamped ? LampOf(m_slots, stem, r) : lamp);
 
 			Add(look, framed, body.rigged, Retextured(body.submeshes, sheeted.sheet),
@@ -1820,7 +2210,7 @@ private:
 		{
 			const BbtagScript::Rect& rect = sprite.rect[r];
 
-			if (rect.w <= kLeastRect || rect.h <= kLeastRect)
+			if (BbtagScript::Speck(rect))
 				continue;
 
 			placed[r] = SheetFor(m_atlas, sprite, rect, plated);
@@ -1887,14 +2277,13 @@ private:
 
 		for (size_t r : rects)
 		{
-			const BbtagScript::Rect& rect = sprite.rect[r];
+			const BbtagScript::Rect& rect = placed[r].rect;
 			const BbtagArt::Size& size = placed[r].size;
-			const bool captured = m_atlas.Captures(placed[r].sheet);
 
 			local[static_cast<int>(r)] = static_cast<int>(flip.rects.size() / 4);
-			flip.rects.push_back(captured ? 0.0f : static_cast<float>(rect.x) / size.width);
+			flip.rects.push_back(static_cast<float>(rect.x) / size.width);
 			flip.rects.push_back(static_cast<float>(rect.w) / size.width);
-			flip.rects.push_back(captured ? 0.0f : static_cast<float>(rect.y) / size.height);
+			flip.rects.push_back(static_cast<float>(rect.y) / size.height);
 			flip.rects.push_back(static_cast<float>(rect.h) / size.height);
 		}
 
@@ -1978,13 +2367,15 @@ private:
 	{
 		for (const FbxExWriter::Submesh& submesh : submeshes)
 		{
-			const std::map<int, std::pair<int, bool> >::const_iterator slot = m_flowing.find(submesh.material);
+			const Flowing::const_iterator slot = m_flowing.find(submesh.material);
 
 			if (slot == m_flowing.end())
 				continue;
 
-			Shift(vertices, kU, kFlowMark * (slot->second.first
-				+ (slot->second.second ? BbtagStage::kFlowSlots : 0) + 1));
+			const int which = slot->second.first;
+			const int group = slot->second.second + BbtagStage::kFlowKinds * (which / BbtagStage::kFlowBank);
+
+			Shift(vertices, kU, kFlowMark * (which % BbtagStage::kFlowBank + group * BbtagStage::kFlowBank + 1));
 
 			return;
 		}
@@ -2033,14 +2424,25 @@ private:
 				continue;
 			}
 
-			placed.push_back({ piece->node, anime, piece->clear });
+			const bool once = piece->run != nullptr && piece->run->settled && piece->frames == nullptr
+				&& anime.size() > kMatrix;
+
+			placed.push_back({ piece->node, anime, piece->clear, once });
 		}
 
 		for (const Placed& one : placed)
 		{
+			if (one.once)
+			{
+				m_out.once.push_back(static_cast<int>(m_built.nodes.size()));
+				m_out.once.push_back(static_cast<int>(one.anime.size() / kMatrix));
+			}
+
 			m_built.nodes.push_back(one.node);
 			m_built.animes.push_back(one.anime);
 		}
+
+		Sparks();
 
 		for (size_t i = 1; i < m_built.nodes.size(); ++i)
 			m_built.nodes[i].sibling = i + 1 < m_built.nodes.size() ? static_cast<int>(i) + 1 : -1;
@@ -2049,15 +2451,43 @@ private:
 		FbxExWriter::Build(m_built, m_out.model);
 	}
 
+	void Sparks()
+	{
+		if (m_cards.cards.empty())
+			return;
+
+		const std::string name = Lowered(m_source.stage) + kSparkSuffix;
+		m_out.images[name] = RawDds(m_cards.side, m_cards.rgba);
+
+		const int texture = m_atlas.Add(name);
+		const int material = static_cast<int>(m_built.materials.size());
+		m_built.materials.push_back(Painted(m_built.textures, texture));
+
+		for (const BbtagParticleBake::Card& card : m_cards.cards)
+		{
+			std::vector<float> anime;
+
+			for (const BbtagParticleBake::Pose& pose : card.frames)
+			{
+				const std::vector<float> step = PoseMatrix(pose);
+				anime.insert(anime.end(), step.begin(), step.end());
+			}
+
+			m_built.nodes.push_back(CardQuad(m_cards.cells[static_cast<size_t>(card.cell)], card.tint, material));
+			m_built.animes.push_back(anime);
+		}
+	}
+
 	const BbtagStage::Source& m_source;
 	const BbtagMua::Model& m_model;
 	BbtagStage::Result& m_out;
 	const bool m_unculled;
 	FbxExWriter::Model m_built;
 	Atlas m_atlas;
-	std::map<int, std::pair<int, bool> > m_flowing;
+	Flowing m_flowing;
 	Siblings m_siblings;
 	std::map<int, Takes> m_moving;
+	MotionFiles m_files;
 	BbtagPac::Files m_scene;
 	EveryScript m_every;
 	BbtagScript::Scripts m_scripts;
@@ -2068,7 +2498,9 @@ private:
 	std::set<std::string> m_lampedRects;
 	std::set<std::string> m_unseen;
 	std::map<std::string, float> m_dimmed;
+	std::set<int> m_mirrored;
 	std::vector<Piece> m_pieces;
+	BbtagParticleBake::Cards m_cards;
 };
 
 }

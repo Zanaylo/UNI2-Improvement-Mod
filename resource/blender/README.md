@@ -206,9 +206,11 @@ The objects use the **same attribute names** as the FbxExp add-on (`Shade`, `fbx
   named `mNNN <texture>`.
 - **Skeleton:** one armature with every bone, parented like the file has them, and every mesh skinned
   by its vertex weights. The rest pose is the model's own, so nothing moves until a take does.
-- **Takes:** one action per `mot/*.mmot` whose bone the model has, one per `cammot/*.mmot`, and one
-  for the model's own bone tracks in sections 8 and 9. Three of the four UNI stages keep all their
-  animation there.
+- **Takes:** one action per `mot/*.mmot` a script picks, bound to the skeleton whose script picks it
+  and applied bone by bone, one per `cammot/*.mmot` (the intro camera, on a muted NLA track), and one
+  for the model's own bone tracks in sections 8 and 9 unless the skeleton sets flag `0x10`. A take
+  turns by its quaternion track, slerped, and moves each bone relative to the take's own bind pose,
+  so a monkey that picks another monkey's idle take stays where it stands.
 - **UV scroll:** section 7, as keyframes on the material's mapping node with a cycle modifier. The
   fountain water gets eight of them, Central Station's escalator gets one.
 - **Scripts:** every `scr/*.evb` as a Text datablock. The commands the add-on understands are
@@ -233,8 +235,11 @@ counts them.
   half the time, it rolls again so you get to see it. The stage importer in the mod rolls the same
   way, so a port matches Blender.
 - **`0x06` picks a motion.** Each script that uses it gets an **NLA track** with the strips where the
-  script puts them. A pick naming a motion the stage doesn't ship (the parked trains) leaves a gap,
-  and that gap is the parked pose.
+  script puts them. A pick holds until the next one and the take loops on its own length. A script
+  that picks once and then stops plays the take once and holds the last frame: Crater's wreck rises,
+  sinks by frame 7000 and stays down. A script that never picks plays the model's own take. A pick
+  naming a motion the stage doesn't ship (the parked trains) leaves a gap, and that gap is the
+  parked pose.
 - **`0x12` is a ramp on the alpha.** It's keyed on `mua_ramp`, which the material multiplies in, so
   lamps, sea foam and the P4 crowd fade in and out. A ramp that never loops plays once: Lakeside
   starts in daylight and its day copies fade out around frame 2500. While a ramp sits at 0 the
@@ -246,6 +251,10 @@ counts them.
   `.evb` lists them in order (`usagi.evb` lists `usagi_00.dds` to `_07`, `saru_B.evb`
   `mob_saruB_0` and `_1`, `tv1.evb` `TV_suna`, `TV_base`, `TV_A_00`...). That is the texture the
   game binds, so nothing is looked up by name.
+- **A rectangle 4 pixels or less on a side hides the mesh.** BBTAG uses a 1 by 1 rectangle as "not
+  now"; Crater's can and Town's idle lightning frames are this.
+- **`stagefont` is the banner.** Duel Field's scoreboard names that sheet; the add-on shows the text
+  painted into the mesh's own texture, the two lines at its top.
 - **The rectangle is applied to the mesh's own UVs**, not stretched over them. The beach bunny's
   reflection samples the strip drawn under the bunny on the same sheet, so it comes out upside down
   like in the game.
@@ -259,6 +268,12 @@ counts them.
   1.23 across and 3.70 up on the snow floor), so they're listed and nothing gets placed from them.
 - **`base.evb` and `setting.evb`** are only listed. Their values aren't understood yet, and guessing
   would put wrong numbers in the file.
+
+**Materials read the skeleton too.** A mesh drawn opaque ignores its vertex alpha, as the game does.
+A mesh whose skeleton sets flag `0x100000` uses BBTAG's "shining" shader: the base texture is
+sampled at the pixel's place on screen and the third texture layer is added with the mesh's UVs,
+which is how School Gate's puddles reflect the sky. A base texture that is clear everywhere under a
+third layer shows that layer as a reflection instead.
 
 Scripts are tied to meshes by the **model's own skeleton record**, not by name. That's why
 `boardtext_1.evb` hits exactly the two scrolling quads and nothing else. Each object shows the one it

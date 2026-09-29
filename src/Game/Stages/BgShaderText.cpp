@@ -20,8 +20,9 @@ constexpr const char* kFaded = "out_color.a = tex_color.a * BgFade(In.color.a);"
 constexpr const char* kFlowed = "tex2D( TexSample_Base, BgFlow(In.texuv) )";
 constexpr float kFlowMark = 64.0f;
 constexpr float kFlowStride = 128.0f;
-constexpr float kFlowSlots = 8.0f;
-constexpr int kLampRegisters = 8;
+constexpr float kFlowBank = 8.0f;
+constexpr float kFlowKinds = 3.0f;
+constexpr int kLampRegisters = BbtagStage::kLampSlots / 4;
 constexpr const char* kFbxMarker = "Diffuse_PS_Easy";
 constexpr const char* kFbxFetch = "tex2D( diffuseSampler, input.UV )";
 constexpr const char* kFbxFlowed = "tex2D( diffuseSampler, BgFlow(input.UV.xy) )";
@@ -141,7 +142,8 @@ std::string BgShaderText::Assignment(const std::string& source)
 }
 
 bool BgShaderText::Rewrite(const std::string& source, int blackRegister, int contrastRegister,
-	int flowRegister, int lampRegister, float gameBlack, std::string& out, Result& result)
+	int flowRegister, int flowHighRegister, int lampRegister, float gameBlack, std::string& out,
+	Result& result)
 {
 	result.black = 0;
 	result.contrast = 0;
@@ -211,16 +213,14 @@ bool BgShaderText::Rewrite(const std::string& source, int blackRegister, int con
 		"float4 g_BgContrast : register(c%d) = float4(1.0f, 1.0f, 1.0f, 1.0f);\n"
 		"float4 g_BgFlow0 : register(c%d) = float4(0, 0, 0, 0);\n"
 		"float4 g_BgFlow1 : register(c%d) = float4(0, 0, 0, 0);\n"
+		"float4 g_BgFlow2 : register(c%d) = float4(0, 0, 0, 0);\n"
+		"float4 g_BgFlow3 : register(c%d) = float4(0, 0, 0, 0);\n"
 		"float BgFade(float alpha)\n"
 		"{\n"
 		"\treturn 1.0f - g_BgBlack.w + g_BgBlack.w * alpha;\n"
 		"}\n"
-		"float2 BgFlow(float2 uv)\n"
+		"float BgRate(float which)\n"
 		"{\n"
-		"\tif (uv.x < %.1ff) return uv;\n"
-		"\tfloat slot = floor((uv.x - %.1ff) / %.1ff);\n"
-		"\tfloat across = slot >= %.1ff ? 1.0f : 0.0f;\n"
-		"\tfloat which = slot - across * %.1ff;\n"
 		"\tfloat speed = g_BgFlow0.x;\n"
 		"\tspeed = which > 0.5f ? g_BgFlow0.y : speed;\n"
 		"\tspeed = which > 1.5f ? g_BgFlow0.z : speed;\n"
@@ -229,12 +229,33 @@ bool BgShaderText::Rewrite(const std::string& source, int blackRegister, int con
 		"\tspeed = which > 4.5f ? g_BgFlow1.y : speed;\n"
 		"\tspeed = which > 5.5f ? g_BgFlow1.z : speed;\n"
 		"\tspeed = which > 6.5f ? g_BgFlow1.w : speed;\n"
-		"\treturn float2(uv.x + across * speed, uv.y + (1.0f - across) * speed);\n"
+		"\tspeed = which > 7.5f ? g_BgFlow2.x : speed;\n"
+		"\tspeed = which > 8.5f ? g_BgFlow2.y : speed;\n"
+		"\tspeed = which > 9.5f ? g_BgFlow2.z : speed;\n"
+		"\tspeed = which > 10.5f ? g_BgFlow2.w : speed;\n"
+		"\tspeed = which > 11.5f ? g_BgFlow3.x : speed;\n"
+		"\tspeed = which > 12.5f ? g_BgFlow3.y : speed;\n"
+		"\tspeed = which > 13.5f ? g_BgFlow3.z : speed;\n"
+		"\tspeed = which > 14.5f ? g_BgFlow3.w : speed;\n"
+		"\treturn speed;\n"
+		"}\n"
+		"float2 BgFlow(float2 uv)\n"
+		"{\n"
+		"\tif (uv.x < %.1ff) return uv;\n"
+		"\tfloat code = floor((uv.x - %.1ff) / %.1ff);\n"
+		"\tfloat group = floor(code / %.1ff);\n"
+		"\tfloat bank = floor(group / %.1ff);\n"
+		"\tfloat kind = group - bank * %.1ff;\n"
+		"\tfloat which = code - (group - bank) * %.1ff;\n"
+		"\tfloat speed = BgRate(which);\n"
+		"\tfloat across = kind > 0.5f ? speed : 0.0f;\n"
+		"\tfloat down = kind > 1.5f ? BgRate(which + 1.0f) : speed - across;\n"
+		"\treturn float2(uv.x + across, uv.y + down);\n"
 		"}\n",
 		kLampRegisters, lampRegister, kFlowMark, kFlowMark, kFlowStride, kLampRegisters,
 		blackRegister, gameBlack, gameBlack, gameBlack, contrastRegister,
-		flowRegister, flowRegister + 1,
-		kFlowMark, kFlowMark, kFlowStride, kFlowSlots, kFlowSlots);
+		flowRegister, flowRegister + 1, flowHighRegister, flowHighRegister + 1,
+		kFlowMark, kFlowMark, kFlowStride, kFlowBank, kFlowKinds, kFlowKinds, kFlowBank);
 
 	out.insert(0, declared);
 

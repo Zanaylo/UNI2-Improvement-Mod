@@ -23,9 +23,10 @@ namespace Hotkeys
 
 	int GetKey(Action action);
 	bool GetKeyNeedsFunction(Action action);
+	bool GetKeyNeedsCtrl(Action action);
 	int GetPadButton(Action action);
 
-	void SetKey(Action action, int key, bool needsFunction);
+	void SetKey(Action action, int key, bool needsFunction, bool needsCtrl);
 	void SetPadButton(Action action, int button);
 
 	int GetFunctionKey();
@@ -34,6 +35,7 @@ namespace Hotkeys
 	int GetFunctionButton();
 	void SetFunctionButton(int button);
 
+	void Poll();
 	bool Pressed(Action action);
 	bool Repeating(Action action, unsigned delayMs, unsigned intervalMs);
 }

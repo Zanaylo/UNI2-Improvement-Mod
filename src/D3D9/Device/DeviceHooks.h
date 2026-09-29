@@ -5,6 +5,7 @@
 namespace DeviceHooks
 {
 	bool Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS& presentParameters, HWND focusWindow);
+	bool WatchPresent(void* present);
 	bool IsInstalled();
 
 	unsigned long PresentCount();

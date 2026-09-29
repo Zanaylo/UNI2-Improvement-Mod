@@ -70,6 +70,7 @@
 { GameOffsets::kFnMenuInputCancel, "kFnMenuInputCancel", "55 8B EC 56 8B F1 8B 0E 85 C9 75 07 33 C0 5E 5D C2 04 00 8B 01 53 57 FF 50 10" },
 { GameOffsets::kFnPadUpdate, "kFnPadUpdate", "53 8B D9 56 57 33 F6 8D 7B 68 66 ?? ?? ?? ?? 00" },
 { GameOffsets::kFnLoadStageObjectPat, "kFnLoadStageObjectPat", "55 8B EC 51 56 8B F1 57 8B 7E 08 85 FF" },
+{ GameOffsets::kFnFbxAnimeSample, "kFnFbxAnimeSample", "55 8B EC 81 EC A0 00 00 00 A1 ?? ?? ?? ?? 33 C5 89 45 F8 8B 45 10 53 56 8B 75 08 8B 10 89 8D 60 FF FF FF 8B 4D 0C 89 8D" },
 { GameOffsets::kFnResetInputLog, "kFnResetInputLog", "55 8B EC 83 E4 F8 83 EC 7C A1 ?? ?? ?? ?? 33 C4 89 44 24 78 80 3D ?? ?? ?? ?? 00" },
 { GameOffsets::kFnLoadReplayFile, "kFnLoadReplayFile", "55 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 ?? ?? ?? ?? 00 00 A1 ?? ?? ?? ?? 33 C5 89 45 F0 53 56 57 50 8D 45 F4 64 A3 00 00 00 00 89 8D 44 FF FF FF" },
 { GameOffsets::kFnStartReplayPlayback, "kFnStartReplayPlayback", "55 8B EC 83 E4 F8 ?? ?? ?? ?? 00 00 A1 ?? ?? ?? ?? 33 C4 89 ?? ?? ?? ?? 00 00 53 56 57 B9 ?? ?? ?? ??" },

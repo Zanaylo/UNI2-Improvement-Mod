@@ -7,6 +7,7 @@
 #include "Game/Engine/GameState.h"
 #include "Game/Engine/OnlineState.h"
 #include "Game/Engine/SceneWatch.h"
+#include "Network/NetLink.h"
 
 #include <Windows.h>
 
@@ -20,6 +21,11 @@ constexpr int kLeaveFrames = 900;
 char g_status[256] = "";
 bool g_pending = false;
 int g_waited = 0;
+
+bool InNetworkPlay()
+{
+	return OnlineState::IsNetplay() || NetLink::Lobby() != 0;
+}
 
 bool Poke(uintptr_t rva, uint32_t value)
 {
@@ -59,7 +65,7 @@ bool EnterStart()
 
 bool GameRestart::CanSoftReset()
 {
-	if (SceneWatch::First() == SceneWatch::kNone || g_pending)
+	if (SceneWatch::First() == SceneWatch::kNone || g_pending || InNetworkPlay())
 		return false;
 
 	return !GameState::IsInMatch() || GameState::IsTrainingBattle();
@@ -73,9 +79,9 @@ bool GameRestart::SoftReset()
 		return false;
 	}
 
-	if (OnlineState::IsOnline())
+	if (InNetworkPlay())
 	{
-		strncpy_s(g_status, "not during an online match", _TRUNCATE);
+		strncpy_s(g_status, "not during ranked or lobby play", _TRUNCATE);
 		return false;
 	}
 

@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Mua model (.mua)",
     "author": "PrimoZanaylo",
-    "version": (0, 11, 0),
+    "version": (0, 12, 0),
     "blender": (4, 2, 0),
     "location": "File > Import > Mua model",
     "description": "Import a Mua model with its animation and scripts",
@@ -32,9 +32,16 @@ SKELETON, BONE, MESH, PART, MATERIAL, ASSIGN, TEXTURE = 0, 1, 2, 3, 4, 5, 6
 UVANIM, TRACKLIST, TRACKKEY = 7, 8, 9
 SCRIPT, MESHPART, VERTEX_SECTION, INDEX, STRING_INFO, STRING = 11, 12, 13, 14, 15, 16
 
-TRANSLATION, ROTATION, SHEAR, SCALE = 0x04, 0x14, 0x24, 0x34
-KINDS = (TRANSLATION, ROTATION, SHEAR, SCALE)
-WIDTH = {TRANSLATION: 3, ROTATION: 3, SHEAR: 4, SCALE: 3}
+TRANSLATION, ROTATION, TURN, SCALE = 0x04, 0x14, 0x24, 0x34
+KINDS = (TRANSLATION, ROTATION, TURN, SCALE)
+WIDTH = {TRANSLATION: 3, ROTATION: 3, TURN: 4, SCALE: 3}
+MOVED = (TRANSLATION, ROTATION, TURN, SCALE)
+SLERP_FLAT = 0.001
+MOTION_BONE = 0xe0
+MOTION_UNBIND = 0x40
+MODEL_TAKE = "(the model's own)"
+MOTION_FOLDER = "mot"
+CAMERA_FOLDER = "cammot"
 
 MOTION_SECTIONS = 11
 
@@ -57,6 +64,12 @@ RAMP_EPSILON = 1e-6
 BLEND_OPAQUE, BLEND_ADD, BLEND_SUBTRACT, BLEND_UNSET = 0, 2, 4, 0x7fffffff
 BASE_LAYER, SHINE_LAYER = 1, 3
 HIDDEN_FLAG = 0x20
+NO_DEFAULT_TAKE = 0x10
+SHINING_FLAG = 0x100000
+LEAST_RECT = 4
+BANNER_SHEET = "stagefont"
+BANNER_LINES = 2
+SKY_DRIFT = 100.0 * 0.0005
 NO_DEPTH_WRITE_FLAG = 0x2000
 SOFT_SHARE = 0.5
 GLOW_SOLID = 0.01
@@ -228,6 +241,30 @@ def compose(translate, rotate, size):
     return out
 
 
+def slerp(low, high, t):
+    near, far = 1.0 - t, t
+    dot = sum(low[k] * high[k] for k in range(4))
+
+    if dot < 0.0:
+        far, dot = -far, -dot
+
+    if 1.0 - dot > SLERP_FLAT:
+        theta = math.acos(min(dot, 1.0))
+        near = math.sin(theta * near) / math.sin(theta)
+        far = math.sin(theta * far) / math.sin(theta)
+
+    return tuple(near * low[k] + far * high[k] for k in range(4))
+
+
+def quaternion(q):
+    x, y, z, w = q[:4]
+
+    return [1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y + z * w), 2.0 * (x * z - y * w), 0.0,
+            2.0 * (x * y - z * w), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z + x * w), 0.0,
+            2.0 * (x * z + y * w), 2.0 * (y * z - x * w), 1.0 - 2.0 * (x * x + y * y), 0.0,
+            0.0, 0.0, 0.0, 1.0]
+
+
 def as_matrix(row):
     return mathutils.Matrix((
         (row[0], row[4], row[8], row[12]),
@@ -241,29 +278,42 @@ class Track(object):
     def __init__(self):
         self.key = {}
 
-    def value(self, frame, fallback):
-        if not self.key:
-            return fallback
-
-        exact = self.key.get(frame)
-
-        if exact is not None:
-            return exact
+    def bracket(self, frame):
+        if frame in self.key:
+            return frame, frame
 
         below = [f for f in self.key if f <= frame]
         above = [f for f in self.key if f > frame]
 
         if not below:
-            return self.key[min(self.key)]
+            return min(self.key), min(self.key)
 
         if not above:
-            return self.key[max(below)]
+            return max(below), max(below)
 
-        low, high = max(below), min(above)
+        return max(below), min(above)
+
+    def value(self, frame, fallback):
+        if not self.key:
+            return fallback
+
+        low, high = self.bracket(frame)
+
+        if low == high:
+            return self.key[low]
+
         across = (frame - low) / float(high - low)
         a, b = self.key[low], self.key[high]
 
         return tuple(a[i] + (b[i] - a[i]) * across for i in range(len(a)))
+
+    def turned(self, frame):
+        low, high = self.bracket(frame)
+
+        if low == high:
+            return self.key[low]
+
+        return slerp(self.key[low], self.key[high], (frame - low) / float(high - low))
 
     def varies(self):
         return len(set(tuple(v) for v in self.key.values())) > 1
@@ -274,26 +324,35 @@ class Tracks(object):
     def __init__(self, bones):
         self.bones = bones
         self.frames = 0
+        self.unbind = None
         self.track = [dict((kind, Track()) for kind in KINDS) for _ in range(bones)]
 
     def add(self, bone, kind, value, frame):
         self.track[bone][kind].key[frame] = value
         self.frames = max(self.frames, frame + 1)
 
-    def sample(self, bone, frame, rest):
+    def pose(self, bone, frame, rest):
         own = self.track[bone]
+        translate = own[TRANSLATION].value(frame, rest[0])
+        size = own[SCALE].value(frame, rest[2])
 
-        return (own[TRANSLATION].value(frame, rest[0]),
-                own[ROTATION].value(frame, rest[1]),
-                own[SCALE].value(frame, rest[2]))
+        if not own[TURN].key:
+            return compose(translate, own[ROTATION].value(frame, rest[1]), size)
+
+        turn = quaternion(own[TURN].turned(frame))
+        out = [size[r] * turn[r * 4 + c] if r < 3 and c < 3 else (1.0 if r == c else 0.0)
+               for r in range(4) for c in range(4)]
+        out[12], out[13], out[14] = translate[0], translate[1], translate[2]
+
+        return out
 
     def moves(self, bone):
-        return any(self.track[bone][kind].varies() for kind in (TRANSLATION, ROTATION, SCALE))
+        return any(self.track[bone][kind].varies() for kind in MOVED)
 
     def keyframes(self, bone):
         out = set()
 
-        for kind in (TRANSLATION, ROTATION, SCALE):
+        for kind in MOVED:
             out.update(self.track[bone][kind].key)
 
         return out
@@ -317,6 +376,10 @@ class Motion(Tracks):
                     value = struct.unpack_from("<%df" % WIDTH[kind], blob, at)
                     self.add(bone, kind, value, dword(blob, at + 0x10))
                     at += 0x20
+
+        bones = section[MOTION_BONES][0]
+        self.unbind = [list(struct.unpack_from("<16f", blob, bones + i * MOTION_BONE + MOTION_UNBIND))
+                       for i in range(self.bones)]
 
     def name(self):
         return self.string[0] if self.string else ""
@@ -673,7 +736,8 @@ class Instance(object):
         self.target = RAMP_FULL
         self.left = 0
         self.step = 0.0
-        self.picked = None
+        self.take = -1
+        self.since = 0
         self.rolled = False
 
     def played(self):
@@ -687,7 +751,6 @@ class Instance(object):
                 self.tick()
 
             samples.append(self.sample())
-            self.picked = None
 
             if self.rolled and not self.ended():
                 if tick + 1 >= EVB_ROLLED_FRAMES:
@@ -702,13 +765,13 @@ class Instance(object):
 
             seen[state] = tick
 
-        return Run(samples, False, self.named)
+        return Run(samples, False, self.named, len(samples) - 1)
 
     def sample(self):
         if self.ramp <= 0.0:
-            return (None, 0.0, self.picked)
+            return (None, 0.0, self.take, self.since)
 
-        return (self.rect, self.ramp, self.picked)
+        return (self.rect, self.ramp, self.take, self.since)
 
     def ended(self):
         if self.jump >= 0:
@@ -720,7 +783,7 @@ class Instance(object):
     def state(self):
         return (None if self.ended() else self.frame, self.jump, self.pause, self.resume,
                 self.label, self.cursor, self.held, self.rect, self.ramp, self.target,
-                self.left, self.step)
+                self.left, self.step, self.take)
 
     def tick(self):
         if self.pause >= 1:
@@ -732,6 +795,8 @@ class Instance(object):
 
         if self.label >= 0:
             self.held += 1
+
+        self.since += 1
 
         if self.left < 1:
             self.ramp = self.target
@@ -800,7 +865,8 @@ class Instance(object):
             return fields[1]
 
         if code == EVB_MOTION:
-            self.picked = signed(fields[1])
+            self.take = signed(fields[1])
+            self.since = 0
         elif code == EVB_LOOP:
             self.jump = signed(fields[1])
         elif code == EVB_RAMP:
@@ -847,15 +913,26 @@ class Instance(object):
             at += 1
 
 
+def speck(rect):
+    return rect is not None and min(rect[3], rect[4]) <= LEAST_RECT
+
+
 class Run(object):
-    def __init__(self, samples, cyclic, named):
+    def __init__(self, samples, cyclic, named, start=0):
         self.length = len(samples)
         self.cyclic = cyclic
-        self.rects = [one[0] for one in samples]
+        self.start = start
+        drawn = [one[0] for one in samples if one[0] is not None]
+        self.drawn = bool(drawn)
+        self.specked = bool(drawn) and all(speck(one) for one in drawn)
+        self.rects = [None if speck(one[0]) else one[0] for one in samples]
         self.ramps = [one[1] / RAMP_FULL for one in samples]
-        self.picks = [(tick, named[one[2]] if 0 <= one[2] < len(named) else "")
-                      for tick, one in enumerate(samples) if one[2] is not None]
+        self.takes = [named[one[2]] if 0 <= one[2] < len(named) else "" for one in samples]
+        self.since = [one[3] for one in samples]
         self.rolled = False
+
+    def settled(self):
+        return not self.cyclic and self.start + 1 == self.length
 
     def shows(self):
         return max(self.ramps[1:] or self.ramps) > 0.0
@@ -872,14 +949,14 @@ def repeating(samples, first, now, named):
     period = now - first
     start = first + 1
 
-    while start > 0 and samples[start - 1] == samples[start - 1 + period]:
+    while start > 0 and samples[start - 1][:3] == samples[start - 1 + period][:3]:
         start -= 1
 
     if start == 0:
         return Run(samples[:period], True, named)
 
     if period == 1:
-        return Run(samples[:start + 1], False, named)
+        return Run(samples[:start + 1], False, named, start)
 
     if start <= period:
         steady = [samples[tick + period * -(-(start - tick) // period)] if tick < start
@@ -890,7 +967,7 @@ def repeating(samples, first, now, named):
     while len(samples) < EVB_FRAMES:
         samples.append(samples[len(samples) - period])
 
-    return Run(samples, False, named)
+    return Run(samples, False, named, start)
 
 
 def script_runs(model, found):
@@ -1018,21 +1095,13 @@ def build_bins(files, label):
     return made
 
 
-def named_bones(model):
+def motions(files, folder):
     out = {}
-
-    for index, bone in enumerate(model.bone):
-        out.setdefault(bone["name"], index)
-
-    return out
-
-
-def takes(model, files):
-    out = {}
-    named = named_bones(model)
 
     for leaf in sorted(files):
-        if not leaf.lower().endswith(".mmot"):
+        lowered = "/" + leaf.lower()
+
+        if not lowered.endswith(".mmot") or "/%s/" % folder not in lowered:
             continue
 
         try:
@@ -1040,23 +1109,52 @@ def takes(model, files):
         except (ValueError, struct.error):
             continue
 
+        if motion.frames >= 2:
+            out.setdefault(os.path.basename(lowered), motion)
+
+    return out
+
+
+def cameras(model, files):
+    out = {}
+    named = {}
+
+    for index, bone in enumerate(model.bone):
+        named.setdefault(bone["name"], index)
+
+    for name, motion in motions(files, CAMERA_FOLDER).items():
         root = named.get(motion.target())
 
-        if root is None or root not in model.owner or motion.frames < 2:
+        if root is not None and root in model.owner and model.owner[root][1] == root:
+            out.setdefault(root, {})[name] = motion
+
+    return out
+
+
+def takes(model, files, runs):
+    out = cameras(model, files)
+    known = motions(files, MOTION_FOLDER)
+
+    for which, run in runs.items():
+        if not 0 <= which < len(model.skeleton):
             continue
 
-        _which, first, _local = model.owner[root]
+        first = model.skeleton[which][0]
 
-        if first != root or model.skeleton[_which][1] != motion.bones:
+        for name in set(run.takes):
+            motion = known.get(name.lower())
+
+            if motion is not None:
+                out.setdefault(first, {})[name] = motion
+
+    for which, (first, count) in enumerate(model.skeleton):
+        if model.skeletonFlags[which] & NO_DEFAULT_TAKE:
             continue
 
-        out.setdefault(first, {})[os.path.basename(leaf)] = motion
-
-    for first, count in model.skeleton:
         take = Take(model, first, count)
 
         if take.frames > 1 and any(take.moves(i) for i in range(count)):
-            out.setdefault(first, {})["(the model's own)"] = take
+            out.setdefault(first, {})[MODEL_TAKE] = take
 
     return out
 
@@ -1449,6 +1547,24 @@ class AlphaSheet(object):
 
         return all(self.texel(x, y) == 0.0 for x, y in ring)
 
+    def vanishes(self):
+        if not self.body:
+            return False
+
+        count = len(self.body) // self.step
+        stride = max(1, count // SOFT_SAMPLES)
+
+        for block in range(0, count, stride):
+            at = block * self.step
+
+            if self.step == 8:
+                if not all(clear_texel(self.body, at, k) for k in range(16)):
+                    return False
+            elif max(alpha_texels(self.body, at, self.explicit)) > 0:
+                return False
+
+        return True
+
     def peak(self):
         if not self.body:
             return 0.0
@@ -1575,18 +1691,17 @@ def flattened_image(where, blob):
     return fresh
 
 
-def shined(tree, model, slot, index, colour):
+def shine_leaf(model, slot):
     layers = model.materialLayers[slot] if 0 <= slot < len(model.materialLayers) else {}
     texture = layers.get(SHINE_LAYER, -1)
 
     if not 0 <= texture < len(model.texture):
-        return colour
+        return ""
 
-    where = found_texture(index, os.path.basename(model.texture[texture]).lower())
+    return os.path.basename(model.texture[texture]).lower()
 
-    if not where:
-        return colour
 
+def sphere_vector(tree):
     geometry = tree.nodes.new("ShaderNodeNewGeometry")
     view = tree.nodes.new("ShaderNodeVectorTransform")
     view.vector_type = "NORMAL"
@@ -1600,6 +1715,26 @@ def shined(tree, model, slot, index, colour):
     sphere.inputs["Scale"].default_value = (0.5, 0.5, 1.0)
     tree.links.new(sphere.inputs["Vector"], view.outputs["Vector"])
 
+    return sphere.outputs["Vector"]
+
+
+def window_vector(tree, flip):
+    coord = tree.nodes.new("ShaderNodeTexCoord")
+    screen = tree.nodes.new("ShaderNodeMapping")
+    screen.name = "Screen"
+    screen.inputs["Scale"].default_value = (2.0, -2.0 if flip else 2.0, 1.0)
+    screen.inputs["Location"].default_value = (-1.0, 2.0 - SKY_DRIFT if flip else SKY_DRIFT - 1.0, 0.0)
+    tree.links.new(screen.inputs["Vector"], coord.outputs["Window"])
+
+    return screen.outputs["Vector"]
+
+
+def shined(tree, model, slot, index, colour, vector):
+    where = found_texture(index, shine_leaf(model, slot))
+
+    if not where:
+        return colour
+
     image = tree.nodes.new("ShaderNodeTexImage")
     image.extension = "EXTEND"
 
@@ -1608,7 +1743,7 @@ def shined(tree, model, slot, index, colour):
     except RuntimeError:
         return colour
 
-    tree.links.new(image.inputs["Vector"], sphere.outputs["Vector"])
+    tree.links.new(image.inputs["Vector"], vector)
 
     glow = tree.nodes.new("ShaderNodeMix")
     glow.data_type = "RGBA"
@@ -1644,9 +1779,10 @@ def trimmed(tree, alpha):
     return scaled.outputs["Value"]
 
 
-def stage_material(model, slot, index, blend, prefix):
-    leaf = sheet_of(model, slot)
-    unique_name = (material_name(model, slot, prefix) + ("" if blend == "opaque" else " " + blend))
+def stage_material(model, slot, index, blend, prefix, style, flip):
+    leaf = shine_leaf(model, slot) if style == "mirror" else sheet_of(model, slot)
+    unique_name = (material_name(model, slot, prefix) + ("" if blend == "opaque" else " " + blend)
+                   + ("" if style == "plain" else " " + style))
     known = bpy.data.materials.get(unique_name)
 
     if known is not None:
@@ -1676,7 +1812,14 @@ def stage_material(model, slot, index, blend, prefix):
     mapping = tree.nodes.new("ShaderNodeMapping")
     mapping.name = "Mapping"
     tree.links.new(mapping.inputs["Vector"], coord.outputs["UV"])
-    tree.links.new(texture.inputs["Vector"], mapping.outputs["Vector"])
+
+    if style == "mirror":
+        texture.extension = "EXTEND"
+        tree.links.new(texture.inputs["Vector"], sphere_vector(tree))
+    elif style == "shining":
+        tree.links.new(texture.inputs["Vector"], window_vector(tree, flip))
+    else:
+        tree.links.new(texture.inputs["Vector"], mapping.outputs["Vector"])
 
     shade = tree.nodes.new("ShaderNodeAttribute")
     shade.attribute_name = "Shade"
@@ -1693,7 +1836,14 @@ def stage_material(model, slot, index, blend, prefix):
     tree.links.new(tint.inputs[7], linear.outputs["Color"])
 
     emission = tree.nodes.new("ShaderNodeEmission")
-    tree.links.new(emission.inputs["Color"], shined(tree, model, slot, index, tint.outputs[2]))
+    lit = tint.outputs[2]
+
+    if style == "plain":
+        lit = shined(tree, model, slot, index, lit, sphere_vector(tree))
+    elif style == "shining":
+        lit = shined(tree, model, slot, index, lit, mapping.outputs["Vector"])
+
+    tree.links.new(emission.inputs["Color"], lit)
 
     fade = tree.nodes.new("ShaderNodeMath")
     fade.operation = "MULTIPLY"
@@ -1748,6 +1898,7 @@ def stage_material(model, slot, index, blend, prefix):
 
     material["mua_slot"] = slot
     material["mua_texture"] = leaf
+    material["mua_style"] = style
     material["mua_blendmode"] = 1 if blend == "add" else 0
     material["mua_material"] = model.value[slot] if 0 <= slot < len(model.value) else []
 
@@ -1875,6 +2026,7 @@ class SheetArt(object):
         self.alphas = {}
         self.clear = {}
         self.peaks = {}
+        self.hidden = {}
 
     def read(self, leaf):
         where = found_texture(self.index, leaf)
@@ -1909,6 +2061,25 @@ class SheetArt(object):
 
         return self.peaks[leaf]
 
+    def vanishes(self, leaf):
+        if leaf not in self.hidden:
+            self.hidden[leaf] = self.alpha(leaf).vanishes()
+
+        return self.hidden[leaf]
+
+
+def style_of(model, mesh, slot, art):
+    if not shine_leaf(model, slot):
+        return "plain"
+
+    if model.flagsOf(mesh) & SHINING_FLAG:
+        return "shining"
+
+    if art.vanishes(sheet_of(model, slot)):
+        return "mirror"
+
+    return "plain"
+
 
 def build_object(index, model, mesh, options, sheets, collection, prefix, runs, art):
     if model.flagsOf(mesh) & HIDDEN_FLAG:
@@ -1920,6 +2091,7 @@ def build_object(index, model, mesh, options, sheets, collection, prefix, runs, 
     collection.objects.link(obj)
 
     scale = options["scale"]
+    solid = model.blendOf(mesh) == BLEND_OPAQUE
     verts = []
     kept = []
     weights = []
@@ -1934,7 +2106,7 @@ def build_object(index, model, mesh, options, sheets, collection, prefix, runs, 
             "normal": (nx, ny, -nz if options["mirror"] else nz),
             "uv": (raw["uv"][0], 1.0 - raw["uv"][1] if options["flip"] else raw["uv"][1]),
             "texel": tuple(raw["uv"]),
-            "colour": tuple(c / 255.0 for c in raw["colour"]),
+            "colour": tuple(c / 255.0 for c in raw["colour"][:3]) + (1.0 if solid else raw["colour"][3] / 255.0,),
         })
         weights.append(raw["weights"] or [(0, 1.0)])
 
@@ -1973,7 +2145,8 @@ def build_object(index, model, mesh, options, sheets, collection, prefix, runs, 
     rim = rim_of(model, order, kept, border(verts, faces, slots), art) if blend in SOFT_KINDS else 0.0
 
     for material in order:
-        obj.data.materials.append(stage_material(model, material, sheets, blend, prefix))
+        obj.data.materials.append(stage_material(model, material, sheets, blend, prefix,
+                                                 style_of(model, mesh, material, art), options["flip"]))
 
     data.from_pydata(verts, [], faces)
     data.update()
@@ -2120,10 +2293,12 @@ def bind(obj, weights, model, mesh, rig, names):
 
 def deltas(model, first, count, take, place):
     rest = [model.bone[first + i]["matrix"] for i in range(count)]
-    settled = [as_matrix(model.chain(first, i, rest)).inverted() for i in range(count)]
+    bound = min(count, take.bones)
+    settled = [as_matrix(take.unbind[i]) if take.unbind is not None and i < bound
+               else as_matrix(model.chain(first, i, rest)).inverted() for i in range(count)]
     unplace = place.inverted()
 
-    moving = set(i for i in range(count) if take.moves(i))
+    moving = set(i for i in range(bound) if take.moves(i))
     grown = True
 
     while grown:
@@ -2153,7 +2328,8 @@ def deltas(model, first, count, take, place):
     frames = set()
 
     for i in needed:
-        frames.update(take.keyframes(i))
+        if i < bound:
+            frames.update(take.keyframes(i))
 
     frames = sorted(f for f in frames if f >= 0)
 
@@ -2163,8 +2339,8 @@ def deltas(model, first, count, take, place):
     out = dict((i, []) for i in moving)
 
     for frame in frames:
-        local = dict((i, compose(*take.sample(i, frame, model.bone[first + i]["rest"])))
-                     for i in needed)
+        local = dict((i, take.pose(i, frame, model.bone[first + i]["rest"]))
+                     for i in needed if i < bound)
         built = {}
 
         for i in needed:
@@ -2184,6 +2360,9 @@ def build_action(rig, names, model, first, count, take, label, place):
         return None
 
     action = fresh_action(rig, label)
+    action.use_frame_range = True
+    action.frame_start = 0
+    action.frame_end = max(take.frames, 1)
     written = 0
 
     for local, steps in sorted(moved.items()):
@@ -2249,42 +2428,79 @@ def keyed(action, rig, bone, frames, basis):
     return written
 
 
+def take_segments(run):
+    out = []
+
+    for tick, (name, since) in enumerate(zip(run.takes, run.since)):
+        if tick and name == run.takes[tick - 1] and since:
+            continue
+
+        out.append([name, tick, since])
+
+    for at, segment in enumerate(out):
+        segment.append(out[at + 1][1] if at + 1 < len(out) else None)
+
+    if out and not run.settled():
+        out[-1][3] = run.length
+
+    return out
+
+
 def arrange(rig, actions, model, runs, picked):
     longest = 0
+    looping = []
 
     for first in sorted(actions):
         label = model.bone[first]["name"] or "bone%03d" % first
+        group = actions[first]
+        own = group.get(MODEL_TAKE)
         run = runs.get(picked.get(first))
-        entries = run.picks if run is not None else []
+        segments = take_segments(run) if run is not None else []
+        track = rig.animation_data.nla_tracks.new()
 
-        if not entries:
-            for name in sorted(actions[first]):
-                track = rig.animation_data.nla_tracks.new()
-                track.name = "%s %s" % (label, name.rsplit(".", 1)[0])
-                longest = max(longest, place_strip(track, actions[first][name], 0, 0))
+        if not any(name for name, _start, _since, _end in segments):
+            for name in sorted(group):
+                if name == MODEL_TAKE:
+                    continue
 
+                spare = rig.animation_data.nla_tracks.new()
+                spare.name = "%s %s" % (label, name.rsplit(".", 1)[0])
+                spare.mute = True
+                place_strip(spare, group[name], 0, 0, None)
+
+            if own is None:
+                rig.animation_data.nla_tracks.remove(track)
+                continue
+
+            track.name = "%s %s" % (label, MODEL_TAKE)
+            strip = place_strip(track, own, 0, 0, None)
+            looping.append(strip)
+            longest = max(longest, strip.frame_end)
             continue
 
-        loop = run.length if run.cyclic else 0
-        track = rig.animation_data.nla_tracks.new()
         track.name = model.scriptAt(picked[first])
 
-        for at, (frame, leaf) in enumerate(entries):
-            action = actions[first].get(leaf)
-            ends = entries[at + 1][0] if at + 1 < len(entries) else loop
+        for at, (name, start, since, end) in enumerate(segments):
+            action = group.get(name) if name else own
 
             if action is None:
                 continue
 
-            longest = max(longest, place_strip(track, action, frame, ends - frame))
+            offset = since if at == 0 else 0
+            span = None if end is None else end - start
+            longest = max(longest, place_strip(track, action, start, offset, span).frame_end)
 
-        longest = max(longest, loop)
+        longest = max(longest, run.length)
+
+    for strip in looping:
+        length = max(strip.action_frame_end - strip.action_frame_start, 1.0)
+        strip.repeat = max(1.0, longest / length)
 
     return longest
 
 
-def place_strip(track, action, start, span):
-    strip = track.strips.new(action.name, int(start), action)
+def place_strip(track, action, start, offset, span):
+    strip = track.strips.new(action.name, int(start - offset), action)
 
     if hasattr(strip, "action_slot") and len(action.slots):
         strip.action_slot = action.slots[0]
@@ -2293,11 +2509,18 @@ def place_strip(track, action, start, span):
     strip.use_auto_blend = False
     strip.extrapolation = "HOLD"
 
-    if span > 0 and strip.action_frame_end - strip.action_frame_start > span:
-        strip.action_frame_end = strip.action_frame_start + span
-        strip.frame_end = start + span
+    if span is None:
+        return strip
 
-    return strip.frame_end
+    length = max(strip.action_frame_end - strip.action_frame_start, 1.0)
+    covered = span + offset
+
+    if covered < length:
+        strip.action_frame_end = strip.action_frame_start + covered
+    else:
+        strip.repeat = covered / length
+
+    return strip
 
 
 def changes(values, run):
@@ -2408,8 +2631,10 @@ def placements(order, leaf, script, sizes):
         sheet = frame[0]
         wanted = script.sheets[sheet].lower() if 0 <= sheet < len(script.sheets) else leaf
 
-        if wanted in sizes:
-            out.append((frame, wanted))
+        if wanted == BANNER_SHEET and leaf in sizes:
+            out.append((frame, leaf, (0, 0, sizes[leaf][0], BANNER_LINES * frame[4])))
+        elif wanted in sizes:
+            out.append((frame, wanted, frame[1:]))
 
     return out
 
@@ -2417,7 +2642,12 @@ def placements(order, leaf, script, sizes):
 def sprites(obj, run, script, sizes, collection, flip, index):
     leaf = (obj.get("mua_sheet") or "").lower()
     placed = placements(distinct(run.rects), leaf, script, sizes)
-    fitted = set(rect for rect, _wanted in placed)
+    fitted = set(rect for rect, _wanted, _crop in placed)
+
+    if run.specked:
+        obj.hide_viewport = True
+        obj.hide_render = True
+        return [], fitted
 
     if not placed:
         return [(obj, None)], fitted
@@ -2427,11 +2657,11 @@ def sprites(obj, run, script, sizes, collection, flip, index):
     targets = [obj] + [copied(obj, at, collection) for at in range(1, count)]
     out = [(targets.pop(0), None)] if bare else []
 
-    for target, (rect, wanted) in zip(targets, placed):
+    for target, (rect, wanted, crop) in zip(targets, placed):
         if wanted != leaf:
             swap_sheet(target, wanted, index)
 
-        framed(target, rect[1:], sizes[wanted], flip)
+        framed(target, crop, sizes[wanted], flip)
         out.append((target, rect))
 
     return out, fitted
@@ -2439,7 +2669,7 @@ def sprites(obj, run, script, sizes, collection, flip, index):
 
 def shown_ticks(run, rect, fitted):
     if rect is None:
-        return [one not in fitted for one in run.rects]
+        return [one not in fitted and (one is not None or not run.drawn) for one in run.rects]
 
     return [one == rect for one in run.rects]
 
@@ -2624,7 +2854,7 @@ def show_materials(context):
 
 
 def animate(rig, names, model, files, runs, options):
-    made = takes(model, files)
+    made = takes(model, files, runs)
     actions = {}
     picked = {}
 
@@ -2640,9 +2870,9 @@ def animate(rig, names, model, files, runs, options):
             if action is not None:
                 actions.setdefault(first, {})[label] = action
 
-    for index, mesh in enumerate(model.mesh):
-        if mesh["skeleton"] in runs and mesh["bone"] in actions:
-            picked[mesh["bone"]] = mesh["skeleton"]
+    for which in runs:
+        if 0 <= which < len(model.skeleton) and model.skeleton[which][0] in actions:
+            picked[model.skeleton[which][0]] = which
 
     if not actions:
         return {"take": 0, "frames": 0}

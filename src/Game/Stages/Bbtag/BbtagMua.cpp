@@ -132,11 +132,8 @@ void BbtagMua::Model::ReadMaterials()
 
 			if (span > 0.0f)
 			{
-				const float du = (Float(last) - Float(one)) / span;
-				const float dv = (Float(last + 4) - Float(one + 4)) / span;
-
-				flow.across = (du < 0.0f ? -du : du) > (dv < 0.0f ? -dv : dv);
-				flow.rate = flow.across ? du : dv;
+				flow.across = (Float(last) - Float(one)) / span;
+				flow.down = (Float(last + 4) - Float(one + 4)) / span;
 				flow.known = true;
 			}
 		}
@@ -261,6 +258,9 @@ void BbtagMua::Model::ReadMeshes()
 		mesh.name = Named(static_cast<int>(Dword(at + 0xb4)));
 		mesh.skeleton = skeleton;
 		mesh.partner = static_cast<int>(Dword(at + 0xb8));
+
+		for (int k = 0; k < 3; ++k)
+			mesh.pivot[k] = Float(at + 0x88 + k * 4);
 		mesh.bone = skeleton >= 0 && skeleton < static_cast<int>(m_skeleton.size())
 			? m_skeleton[skeleton].firstBone : -1;
 

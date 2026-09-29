@@ -62,8 +62,8 @@ namespace BbtagScript
 		bool lit;
 		Rect rect;
 		double ramp;
-		bool picked;
-		int64_t pick;
+		int64_t take;
+		int64_t since;
 	};
 
 	struct Played
@@ -83,6 +83,10 @@ namespace BbtagScript
 	};
 
 	typedef std::map<std::string, std::vector<uint8_t> > Scripts;
+
+	constexpr int kLeastRect = 4;
+
+	bool Speck(const Rect& rect);
 
 	bool Play(const std::vector<uint8_t>& blob, const std::string& label, Played& out);
 

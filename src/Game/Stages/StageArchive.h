@@ -38,6 +38,7 @@ namespace StageArchive
 			return false;
 		}
 		virtual bool Flips(const std::string&, std::vector<BbtagScript::Flip>&) { return false; }
+		virtual bool Once(const std::string&, std::vector<int>&) { return false; }
 		virtual bool Fading(const std::string&) { return false; }
 	};
 

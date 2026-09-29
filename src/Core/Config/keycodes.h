@@ -6,3 +6,4 @@ int GetVirtualKeyFromName(const std::string& name);
 const char* GetNameFromVirtualKey(int virtualKey);
 
 int PollPressedKey();
+bool IsModifierKey(int virtualKey);

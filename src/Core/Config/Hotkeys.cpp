@@ -6,6 +6,10 @@
 #include "Core/Config/Settings.h"
 #include "Core/utils.h"
 
+#include <Windows.h>
+
+#include <algorithm>
+#include <cctype>
 #include <string>
 
 namespace {
@@ -13,6 +17,7 @@ namespace {
 constexpr const char* kKeySection = "Keybinds";
 constexpr const char* kPadSection = "PadKeybinds";
 constexpr const char* kFunctionPrefix = "Fn+";
+constexpr const char* kCtrlPrefix = "Ctrl+";
 
 struct Entry
 {
@@ -26,13 +31,28 @@ struct Entry
 Entry g_entries[Hotkeys::Action_Count] = {};
 
 bool g_needsFunction[Hotkeys::Action_Count] = {};
+bool g_needsCtrl[Hotkeys::Action_Count] = {};
+bool g_keyPressed[Hotkeys::Action_Count] = {};
 int g_padButton[Hotkeys::Action_Count] = {};
 
 int g_functionButton = PadInput::kNone;
 
-bool HasFunctionPrefix(const std::string& text)
+std::string Lowered(std::string text)
 {
-	return _strnicmp(text.c_str(), kFunctionPrefix, 3) == 0;
+	std::transform(text.begin(), text.end(), text.begin(),
+		[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+	return text;
+}
+
+bool HasPrefix(const std::string& text, const char* prefix)
+{
+	return Lowered(text).find(Lowered(prefix)) != std::string::npos;
+}
+
+bool IsCtrlKey(int key)
+{
+	return key == VK_CONTROL || key == VK_LCONTROL || key == VK_RCONTROL;
 }
 
 bool Valid(Hotkeys::Action action)
@@ -47,9 +67,17 @@ bool FunctionKeyHeld()
 	return IsHotkeyHeld(key);
 }
 
+bool CtrlGatePasses(Hotkeys::Action action)
+{
+	if (IsCtrlKey(*g_entries[action].value) || IsCtrlKey(g_modVals.functionKey))
+		return true;
+
+	return g_needsCtrl[action] == IsHotkeyHeld(VK_CONTROL);
+}
+
 bool KeyGatePasses(Hotkeys::Action action)
 {
-	return g_needsFunction[action] == FunctionKeyHeld();
+	return g_needsFunction[action] == FunctionKeyHeld() && CtrlGatePasses(action);
 }
 
 bool PadGatePasses()
@@ -58,11 +86,10 @@ bool PadGatePasses()
 		PadInput::IsDown(g_functionButton);
 }
 
-std::string KeyTextFor(int key, bool needsFunction)
+std::string KeyTextFor(int key, bool needsFunction, bool needsCtrl)
 {
-	const std::string name = GetNameFromVirtualKey(key);
-
-	return needsFunction ? std::string(kFunctionPrefix) + name : name;
+	return std::string(needsFunction ? kFunctionPrefix : "") + (needsCtrl ? kCtrlPrefix : "") +
+		GetNameFromVirtualKey(key);
 }
 
 }
@@ -91,7 +118,8 @@ void Hotkeys::Load()
 
 	for (int i = 0; i < Action_Count; ++i)
 	{
-		g_needsFunction[i] = HasFunctionPrefix(*g_entries[i].keyText);
+		g_needsFunction[i] = HasPrefix(*g_entries[i].keyText, kFunctionPrefix);
+		g_needsCtrl[i] = HasPrefix(*g_entries[i].keyText, kCtrlPrefix);
 		g_padButton[i] = PadInput::GetButtonFromName(g_entries[i].padText->c_str());
 	}
 
@@ -118,21 +146,27 @@ bool Hotkeys::GetKeyNeedsFunction(Action action)
 	return Valid(action) && g_needsFunction[action];
 }
 
+bool Hotkeys::GetKeyNeedsCtrl(Action action)
+{
+	return Valid(action) && g_needsCtrl[action];
+}
+
 int Hotkeys::GetPadButton(Action action)
 {
 	return Valid(action) ? g_padButton[action] : PadInput::kNone;
 }
 
-void Hotkeys::SetKey(Action action, int key, bool needsFunction)
+void Hotkeys::SetKey(Action action, int key, bool needsFunction, bool needsCtrl)
 {
 	if (!Valid(action))
 		return;
 
 	*g_entries[action].value = key;
 	g_needsFunction[action] = key != 0 && needsFunction;
+	g_needsCtrl[action] = key != 0 && needsCtrl && !IsCtrlKey(key);
 
 	Settings::SaveString(kKeySection, g_entries[action].key,
-		key != 0 ? KeyTextFor(key, g_needsFunction[action]).c_str() : "");
+		key != 0 ? KeyTextFor(key, g_needsFunction[action], g_needsCtrl[action]).c_str() : "");
 }
 
 void Hotkeys::SetPadButton(Action action, int button)
@@ -169,12 +203,38 @@ void Hotkeys::SetFunctionButton(int button)
 	Settings::SaveString(kPadSection, "FunctionButton", PadInput::GetButtonName(button));
 }
 
+void Hotkeys::Poll()
+{
+	constexpr int kKeys = 256;
+
+	bool polled[kKeys] = {};
+	bool edge[kKeys] = {};
+
+	for (int i = 0; i < Action_Count; ++i)
+	{
+		g_keyPressed[i] = false;
+
+		const int key = g_entries[i].value != nullptr ? *g_entries[i].value : 0;
+
+		if (key <= 0 || key >= kKeys)
+			continue;
+
+		if (!polled[key])
+		{
+			edge[key] = IsHotkeyPressed(key);
+			polled[key] = true;
+		}
+
+		g_keyPressed[i] = edge[key];
+	}
+}
+
 bool Hotkeys::Pressed(Action action)
 {
 	if (!Valid(action))
 		return false;
 
-	const bool key = IsHotkeyPressed(*g_entries[action].value) && KeyGatePasses(action);
+	const bool key = g_keyPressed[action] && KeyGatePasses(action);
 
 	if (key)
 		return true;

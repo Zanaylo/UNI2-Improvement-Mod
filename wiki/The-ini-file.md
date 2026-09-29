@@ -11,7 +11,7 @@ version show up on the next launch.
 |---|---|---|
 | `DinputDllWrapper` | empty | Full path to another `dinput8.dll` to chain-load. Empty uses the system one. |
 | `CheckForUpdates` | `1` | Checks GitHub once, in the background, for a newer release. Nothing is downloaded until you press **Update now**. |
-| `SettingsRevision` | `2` | Which release's defaults this file was last updated to. The mod uses it to fix a setting whose old default turned out to be unsafe. Do not edit it. |
+| `SettingsRevision` | `5` | Which release's defaults this file was last updated to. The mod uses it to fix a setting whose old default turned out to be unsafe. Do not edit it. |
 
 ## `[Keybinds]`
 
@@ -20,11 +20,17 @@ version show up on the next launch.
 | `ToggleOverlay` | `F1` | Opens and closes the main window. |
 | `ToggleHitboxOverlay` | `F2` | Hitbox viewer. |
 | `ToggleFrameMeter` | `F3` | Frame meter. |
-| `FreezeFrame` | `F5` | Pause and resume. |
+| `FreezeFrame` | `F5` | Pause and resume. Only inside a training, replay, single player or local versus fight, and a pause never carries into the next fight. |
 | `StepForward` | `F6` | One frame forward. Hold to repeat. |
 | `NextPalette` | `F8` | Next palette on the character you are playing. After the last one it goes back to the game's own colours. |
 | `PreviousPalette` | `F7` | The same, backwards. |
+| `HideHud` | empty | Hides the game's HUD in a fight. |
+| `RestartGame` | `Ctrl+F5` | Goes back to the game's start screen, as in MBTL IM. From training it leaves the fight first. Refused in a Steam lobby, a ranked or lobby match, and while spectating. |
 | `FunctionKey` | empty | A key you hold together with another one, like a shortcut. To use it, start the bind with `Fn+` (for example `Fn+F8`). While it is held, binds without the prefix are ignored, so one key can do two things. |
+
+A bind can also start with `Ctrl+` (for example `Ctrl+F5`), and both prefixes can be combined as
+`Fn+Ctrl+F5`. A bind without `Ctrl+` does not fire while Ctrl is held, so `F5` and `Ctrl+F5` are two
+different shortcuts. In the Config tab, press the key with Ctrl held, or tick **Ctrl** next to it.
 
 ## `[PadKeybinds]`
 

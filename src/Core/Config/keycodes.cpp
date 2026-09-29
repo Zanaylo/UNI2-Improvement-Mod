@@ -2,6 +2,8 @@
 
 #include <Windows.h>
 
+#include <cstring>
+
 namespace {
 
 struct KeyName
@@ -35,6 +37,8 @@ constexpr KeyName kKeys[] = {
 	{ "NONE", 0 },
 };
 
+constexpr const char* kPrefixes[] = { "Fn+", "Ctrl+" };
+
 }
 
 int GetVirtualKeyFromName(const std::string& name)
@@ -46,8 +50,21 @@ int GetVirtualKeyFromName(const std::string& name)
 	const size_t last = name.find_last_not_of(" \t");
 	std::string trimmed = name.substr(first, last - first + 1);
 
-	if (_strnicmp(trimmed.c_str(), "Fn+", 3) == 0)
-		trimmed.erase(0, 3);
+	for (bool stripped = true; stripped;)
+	{
+		stripped = false;
+
+		for (const char* prefix : kPrefixes)
+		{
+			const size_t length = strlen(prefix);
+
+			if (_strnicmp(trimmed.c_str(), prefix, length) != 0)
+				continue;
+
+			trimmed.erase(0, length);
+			stripped = true;
+		}
+	}
 
 	for (const KeyName& key : kKeys)
 	{
@@ -78,4 +95,11 @@ int PollPressedKey()
 	}
 
 	return 0;
+}
+
+bool IsModifierKey(int virtualKey)
+{
+	return virtualKey == VK_SHIFT || virtualKey == VK_CONTROL || virtualKey == VK_MENU ||
+		virtualKey == VK_LSHIFT || virtualKey == VK_RSHIFT || virtualKey == VK_LCONTROL ||
+		virtualKey == VK_RCONTROL || virtualKey == VK_LMENU || virtualKey == VK_RMENU;
 }

@@ -16,6 +16,7 @@
 #include "Core/utils.h"
 #include "D3D9/Device/D3D9Proxy.h"
 #include "D3D9/Device/D3D9Wrapper.h"
+#include "D3D9/Device/DeviceHooks.h"
 #include "D3D9/Device/SceneScale.h"
 #include "D3D9/Post/ShaderPack.h"
 #include "Game/Patches/GamePatches.h"
@@ -200,20 +201,18 @@ void Stage_FileOverrides()
 	ScreenTheme::Reload();
 }
 
-void WarnIfTheDeviceWasMissed()
+void RecoverIfTheDeviceWasMissed()
 {
-	if (D3D9Proxy::IsActive() || D3D9Wrapper::SawDirect3D9())
+	if (D3D9Proxy::IsActive())
 		return;
 
-	for (int i = 0; i < kDeviceWaitTicks && !D3D9Wrapper::SawDirect3D9(); ++i)
+	for (int i = 0; i < kDeviceWaitTicks && !DeviceHooks::IsInstalled(); ++i)
 		Sleep(kDeviceWaitStepMs);
 
-	if (D3D9Wrapper::SawDirect3D9())
+	if (DeviceHooks::IsInstalled())
 		return;
 
-	LOG("The overlay will not appear this run: the game built its Direct3D device before the mod "
-		"hooked Direct3DCreate9, so there is nothing left to hook. Rename dinput8.dll to d3d9.dll, "
-		"which cannot lose this race, and report this log.");
+	D3D9Wrapper::RecoverMissedDevice();
 }
 
 void Stage_InputHooks()
@@ -249,10 +248,7 @@ DWORD WINAPI InitThread(LPVOID)
 			"is left alone. Set [Compat] WineSafeMode = 0 to take it back.");
 	}
 
-	Modules::RunGuarded("update check", Stage_UpdateCheck);
 	Modules::RunGuarded("graphics settings", Stage_GraphicsSettings);
-	Modules::RunGuarded("ui assets", Stage_UiAssets);
-	Modules::RunGuarded("process tuning", Stage_ProcessTuning);
 
 	g_gameProc.baseAddress = GetGameBaseAddress();
 	g_gameProc.moduleSize = GetGameModuleSize();
@@ -269,6 +265,9 @@ DWORD WINAPI InitThread(LPVOID)
 		LOG("stage 'hook manager init' took %lu ms", GetTickCount() - hookManagerStarted);
 
 	Modules::RunGuarded("d3d9 hooks", Stage_D3D9);
+	Modules::RunGuarded("update check", Stage_UpdateCheck);
+	Modules::RunGuarded("ui assets", Stage_UiAssets);
+	Modules::RunGuarded("process tuning", Stage_ProcessTuning);
 	Modules::RunGuarded("input entry point", Stage_InputEntry);
 	Modules::RunGuarded("code signatures", [] { CodeSignatures::Initialize(); });
 	Modules::RunGuarded("file overrides", Stage_FileOverrides);
@@ -291,7 +290,7 @@ DWORD WINAPI InitThread(LPVOID)
 	ReclaimCrashHandler();
 	ModuleInventory::LogForeignModules("at startup");
 
-	WarnIfTheDeviceWasMissed();
+	RecoverIfTheDeviceWasMissed();
 	return 0;
 }
 

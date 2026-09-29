@@ -16,13 +16,15 @@ namespace BbtagMmot
 		int Bones() const { return m_bones; }
 		int Frames() const { return m_frames; }
 
-		void Sample(int bone, int frame, const float restTranslate[3], const float restRotate[3],
-			const float restScale[3], float translate[3], float rotate[3], float scale[3]) const;
+		void Pose(int bone, int frame, const float restTranslate[3], const float restRotate[3],
+			const float restScale[3], float out[16]) const;
 
-		enum class Kind { Translation, Rotation, Scale };
+		bool Unbind(int bone, float out[16]) const;
+
+		enum class Kind { Translation, Rotation, Turn, Scale };
 
 		void Reset(int bones, int frames);
-		void Add(int bone, Kind kind, const float value[3], int frame);
+		void Add(int bone, Kind kind, const float value[4], int frame);
 
 	private:
 		struct Track
@@ -34,17 +36,19 @@ namespace BbtagMmot
 		{
 			Track translation;
 			Track rotation;
+			Track turn;
 			Track scale;
 		};
 
+		static Track& Of(BoneTracks& tracks, Kind kind);
+
 		void Value(const Track& track, int frame, const float fallback[3], float out[3]) const;
+		void Turned(const Track& track, int frame, float out[4]) const;
 
 		std::string m_target;
 		int m_bones = 0;
 		int m_frames = 0;
 		std::vector<BoneTracks> m_track;
+		std::vector<std::vector<float> > m_unbind;
 	};
-
-	void Compose(const float translate[3], const float rotate[3], const float scale[3],
-		float out[16]);
 }

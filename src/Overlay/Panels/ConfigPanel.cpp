@@ -349,10 +349,18 @@ void CaptureBind()
 		return;
 
 	if (g_bindCapture == kFunctionRow)
+	{
 		Hotkeys::SetFunctionKey(pressed);
-	else
-		Hotkeys::SetKey(action, pressed, Hotkeys::GetKeyNeedsFunction(action));
+		SetBindCapture(-1, false);
+		return;
+	}
 
+	if (IsModifierKey(pressed))
+		return;
+
+	const bool ctrlHeld = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+
+	Hotkeys::SetKey(action, pressed, Hotkeys::GetKeyNeedsFunction(action), ctrlHeld);
 	SetBindCapture(-1, false);
 }
 
@@ -414,9 +422,15 @@ void DrawBindRow(Hotkeys::Action action)
 	ImGui::SameLine();
 
 	bool needsFunction = Hotkeys::GetKeyNeedsFunction(action);
+	bool needsCtrl = Hotkeys::GetKeyNeedsCtrl(action);
 
 	if (ImGui::Checkbox("Fn", &needsFunction))
-		Hotkeys::SetKey(action, key, needsFunction);
+		Hotkeys::SetKey(action, key, needsFunction, needsCtrl);
+
+	ImGui::SameLine();
+
+	if (ImGui::Checkbox("Ctrl", &needsCtrl))
+		Hotkeys::SetKey(action, key, needsFunction, needsCtrl);
 
 	ImGui::TableNextColumn();
 	ImGui::TextUnformatted(padCapturing ? "press a button"
@@ -436,7 +450,7 @@ void DrawBindRow(Hotkeys::Action action)
 
 	if (ImGui::SmallButton("Clear"))
 	{
-		Hotkeys::SetKey(action, 0, false);
+		Hotkeys::SetKey(action, 0, false, false);
 		Hotkeys::SetPadButton(action, PadInput::kNone);
 	}
 
@@ -456,8 +470,11 @@ void DrawBindConflicts()
 			if (Hotkeys::GetKey(mine) == 0 || Hotkeys::GetKey(mine) != Hotkeys::GetKey(theirs))
 				continue;
 
-			if (Hotkeys::GetKeyNeedsFunction(mine) != Hotkeys::GetKeyNeedsFunction(theirs))
+			if (Hotkeys::GetKeyNeedsFunction(mine) != Hotkeys::GetKeyNeedsFunction(theirs) ||
+				Hotkeys::GetKeyNeedsCtrl(mine) != Hotkeys::GetKeyNeedsCtrl(theirs))
+			{
 				continue;
+			}
 
 			ImGui::TextColored(ImVec4(0.95f, 0.55f, 0.45f, 1.0f), "%s and %s are both %s.",
 				Hotkeys::GetLabel(mine), Hotkeys::GetLabel(theirs),

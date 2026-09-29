@@ -76,6 +76,7 @@ volatile LONG g_resetGeneration = 0;
 IDirect3DDevice9* g_device = nullptr;
 D3DPRESENT_PARAMETERS g_presentParameters = {};
 bool g_installed = false;
+volatile LONG g_watching = 0;
 
 const char* HeldDefaultResources()
 {
@@ -402,6 +403,33 @@ void ReportModWork(const LARGE_INTEGER& start)
 	NetLink::OnPresent((now.QuadPart - start.QuadPart) * 1000000 / frequency.QuadPart);
 }
 
+void Adopt(IDirect3DDevice9* device)
+{
+	if (InterlockedExchange(&g_watching, 0) == 0 || device == nullptr)
+		return;
+
+	D3DPRESENT_PARAMETERS parameters = {};
+	IDirect3DSwapChain9* chain = nullptr;
+
+	if (SUCCEEDED(device->GetSwapChain(0, &chain)) && chain != nullptr)
+	{
+		chain->GetPresentParameters(&parameters);
+		chain->Release();
+	}
+
+	D3DDEVICE_CREATION_PARAMETERS creation = {};
+	HWND window = parameters.hDeviceWindow;
+
+	if (SUCCEEDED(device->GetCreationParameters(&creation)) && creation.hFocusWindow != nullptr)
+		window = creation.hFocusWindow;
+
+	BootTrace("the game's device 0x%p reached the watched Present, so the mod takes it over there "
+		"(window 0x%p, %ux%u, windowed %d)", static_cast<void*>(device), static_cast<void*>(window),
+		parameters.BackBufferWidth, parameters.BackBufferHeight, parameters.Windowed);
+
+	DeviceHooks::Install(device, parameters, window);
+}
+
 bool FrozenFrameCouldBeReplayed()
 {
 	return FrameStepper::IsImplemented() && GameState::AllowsTrainingTools() &&
@@ -413,6 +441,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 {
 	InterlockedIncrement(&g_presentCount);
 	ThreadRole::Mark(ThreadRole::Role_Render);
+
+	if (!g_installed)
+		Adopt(device);
 
 	LARGE_INTEGER modStart = {};
 	QueryPerformanceCounter(&modStart);
@@ -523,6 +554,9 @@ bool HookVTableEntry(void** vtable, int index, GameHook<Fn>& hook, Handler handl
 		return false;
 	}
 
+	if (hook.IsLive() && hook.Target() == target)
+		return true;
+
 	return hook.Install(target, handler);
 }
 
@@ -595,6 +629,18 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 	WindowManager::GetInstance().Initialize(g_gameProc.hWndGame, device);
 	FrozenFrame::OnDeviceReset(device, g_presentParameters.BackBufferWidth,
 		g_presentParameters.BackBufferHeight, g_presentParameters.BackBufferFormat);
+	return true;
+}
+
+bool DeviceHooks::WatchPresent(void* present)
+{
+	if (g_installed || present == nullptr || !IsReadableMemory(present, 1))
+		return false;
+
+	if (!g_presentHook.IsLive() && !g_presentHook.Install(present, &HookedPresent))
+		return false;
+
+	InterlockedExchange(&g_watching, 1);
 	return true;
 }
 
