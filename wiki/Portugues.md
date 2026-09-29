@@ -33,8 +33,13 @@ Extraia o zip da release na pasta do `uni2.exe`:
 <Steam>\steamapps\common\UNDER NIGHT IN-BIRTH II Sys Celes\
 ```
 
-São dois arquivos. `dinput8.dll` é o mod. `UNI2IMUpdater.exe` instala as próximas versões. Sozinho
-ele não faz nada, e o mod funciona sem ele.
+São dois arquivos. `dinput8.dll` é o mod. `UNI2IMUpdater.exe` instala as próximas versões, e o mod
+funciona sem ele.
+
+Abra o `UNI2IMUpdater.exe` você mesmo e ele consulta o GitHub. Sem o mod na pasta, ele oferece
+baixar e instalar; com uma versão antiga, oferece a atualização; com a mais nova, só avisa. Feche
+o jogo antes. Se ele não estiver ao lado do `uni2.exe`, pede a pasta do jogo. O mod também o
+chama sozinho quando você atualiza pela interface.
 
 No jogo, aperte **F1** para abrir a interface. Para desinstalar, apague os dois arquivos.
 

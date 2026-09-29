@@ -1,7 +1,7 @@
 ﻿#include "Overlay/Windows/SoundWindow.h"
 
 #include "Game/Audio/CharaSounds.h"
-#include "Game/Tables/CharaTables.h"
+#include "Game/Audio/SoundOwners.h"
 #include "Game/Audio/SoundPacks.h"
 #include "Game/Audio/SoundsReadme.h"
 #include "Game/Audio/VoiceImport.h"
@@ -146,17 +146,18 @@ void SoundWindow::Reload()
 
 void SoundWindow::DrawPicker()
 {
-	const int count = CharaTables::GetCharaCount();
-	int picked = m_chara;
+	const int count = SoundOwners::Count();
+	const int at = SoundOwners::IndexOf(m_chara);
+	int picked = at;
 
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
 
-	if (ImGui::BeginCombo("##chara", CharaTables::Name(m_chara)))
+	if (ImGui::BeginCombo("##chara", SoundOwners::Name(m_chara)))
 	{
-		for (int chara = 0; chara < count; ++chara)
+		for (int index = 0; index < count; ++index)
 		{
-			if (ImGui::Selectable(CharaTables::Name(chara), chara == m_chara))
-				picked = chara;
+			if (ImGui::Selectable(SoundOwners::Name(SoundOwners::At(index)), index == at))
+				picked = index;
 		}
 
 		ImGui::EndCombo();
@@ -164,9 +165,9 @@ void SoundWindow::DrawPicker()
 
 	WheelPicked(picked, count);
 
-	if (picked != m_chara)
+	if (picked != at)
 	{
-		m_chara = picked;
+		m_chara = SoundOwners::At(picked);
 		Reload();
 	}
 
@@ -215,7 +216,7 @@ void SoundWindow::AskForPack(int index)
 		return;
 	}
 
-	sprintf_s(m_packName, "My %s", CharaTables::Name(m_chara));
+	sprintf_s(m_packName, "My %s", SoundOwners::Name(m_chara));
 	m_askPack = true;
 }
 
@@ -341,7 +342,7 @@ void SoundWindow::DrawNewPack()
 
 	UiText::Muted("%s still uses the game's own sounds. Your changes are saved in a pack, so give "
 		"it a name. The name is also its folder, which is what you send to a friend.",
-		CharaTables::Name(m_chara));
+		SoundOwners::Name(m_chara));
 
 	ImGui::Spacing();
 	ImGui::SetNextItemWidth(Ui::Scaled(280.0f));
@@ -386,6 +387,9 @@ void SoundWindow::DrawGetVoice()
 		m_importing = false;
 		Reload();
 	}
+
+	if (!SoundOwners::IsFighter(m_chara))
+		return;
 
 	ImGui::BeginDisabled(VoiceImport::IsBusy());
 

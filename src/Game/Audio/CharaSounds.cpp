@@ -6,10 +6,10 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/AudioFile.h"
-#include "Game/Tables/CharaTables.h"
 #include "Game/Files/DataArchive.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Audio/SeList.h"
+#include "Game/Audio/SoundOwners.h"
 #include "Game/Audio/SoundPacks.h"
 
 #include <Windows.h>
@@ -315,6 +315,9 @@ std::string SharedFile(const std::string& folder, const std::string& stem,
 
 void AddNotesAndShared(Entries& entries, int chara)
 {
+	if (!SoundOwners::IsFighter(chara))
+		return;
+
 	const std::string text = ReadList(chara);
 
 	if (text.empty())
@@ -440,12 +443,12 @@ DWORD WINAPI LoadWorker(void* parameter)
 
 	if (build->entries.empty())
 	{
-		sprintf_s(build->status, "no sounds were found for %s", CharaTables::Name(build->chara));
+		sprintf_s(build->status, "no sounds were found for %s", SoundOwners::Name(build->chara));
 	}
 	else
 	{
 		sprintf_s(build->status, "%d sound(s) for %s", static_cast<int>(build->entries.size()),
-			CharaTables::Name(build->chara));
+			SoundOwners::Name(build->chara));
 	}
 
 	LOG("CharaSounds: %s", build->status);
@@ -464,7 +467,7 @@ DWORD WINAPI LoadWorker(void* parameter)
 
 void CharaSounds::Load(int chara)
 {
-	if (chara < 0 || chara >= CharaTables::GetCharaCount())
+	if (!SoundOwners::Has(chara))
 		return;
 
 	if (!DataArchive::IsAvailable())
@@ -476,7 +479,7 @@ void CharaSounds::Load(int chara)
 	if (InterlockedCompareExchange(&g_loading, 1, 0) != 0)
 		return;
 
-	sprintf_s(g_status, "reading %s's sounds...", CharaTables::Name(chara));
+	sprintf_s(g_status, "reading %s's sounds...", SoundOwners::Name(chara));
 
 	Build* const build = new Build();
 	build->chara = chara;

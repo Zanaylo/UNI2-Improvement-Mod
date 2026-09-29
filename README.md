@@ -18,7 +18,8 @@ renderer. Built on the architecture of
 3. Extract the zip there, next to `uni2.exe`. You get `dinput8.dll` and `UNI2IMUpdater.exe`.
 4. Start the game and press **F1**.
 
-`UNI2IMUpdater.exe` installs later versions. It does nothing on its own.
+`UNI2IMUpdater.exe` installs later versions. Open it yourself to install the mod or update it
+from GitHub; it tells you when you already have the latest.
 
 To uninstall, delete both files. Nothing else is touched.
 

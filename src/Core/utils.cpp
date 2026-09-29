@@ -82,7 +82,7 @@ std::string GetModFilePath(const std::string& fileName)
 
 namespace {
 
-const char* const kModFolder = "UNI2-IM";
+const char* const kModFolder = UNI2_IM_DATA_FOLDER;
 
 bool MakeDirectory(const std::string& path)
 {

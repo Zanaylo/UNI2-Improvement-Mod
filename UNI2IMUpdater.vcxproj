@@ -45,6 +45,7 @@
     <TargetName>UNI2IMUpdater</TargetName>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\Updater\</IntDir>
+    <IncludePath>$(ProjectDir)src;$(IncludePath)</IncludePath>
     <GameDir Condition="'$(GameDir)'==''">D:\Jogos\steam\steamapps\common\UNDER NIGHT IN-BIRTH II Sys Celes\</GameDir>
   </PropertyGroup>
 
@@ -58,7 +59,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shell32.lib;comctl32.lib;ole32.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
@@ -92,6 +93,17 @@
 
   <ItemGroup>
     <ClCompile Include="src\Updater\UNI2IMUpdater.cpp" />
+    <ClCompile Include="src\Updater\Install.cpp" />
+    <ClCompile Include="src\Updater\Standalone.cpp" />
+    <ClCompile Include="src\Updater\UpdaterLog.cpp" />
+    <ClCompile Include="src\Updater\UpdaterPaths.cpp" />
+    <ClCompile Include="src\Updater\UpdaterUi.cpp" />
+    <ClCompile Include="src\Web\GitHubRelease.cpp" />
+    <ClCompile Include="src\Web\Http.cpp" />
+    <ClCompile Include="src\Web\ReleasePackage.cpp" />
+    <ClCompile Include="src\Core\Formats\Deflate.cpp" />
+    <ClCompile Include="src\Core\Formats\Json.cpp" />
+    <ClCompile Include="src\Core\Formats\ZipArchive.cpp" />
   </ItemGroup>
 
   <ItemGroup>

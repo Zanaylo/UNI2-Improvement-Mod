@@ -140,6 +140,7 @@
     <ClCompile Include="src\Web\Job.cpp" />
     <ClCompile Include="src\Web\GitHubRelease.cpp" />
     <ClCompile Include="src\Web\UpdateInstall.cpp" />
+    <ClCompile Include="src\Web\ReleasePackage.cpp" />
     <ClCompile Include="src\Game\Customize\BasePals.cpp" />
     <ClCompile Include="src\Game\Patches\PatchPacks.cpp" />
     <ClCompile Include="src\Network\NetLog.cpp" />
@@ -169,6 +170,7 @@
     <ClCompile Include="src\Game\Audio\UserMusic.cpp" />
     <ClCompile Include="src\Game\Audio\SeListFile.cpp" />
     <ClCompile Include="src\Game\Audio\SoundPacks.cpp" />
+    <ClCompile Include="src\Game\Audio\SoundOwners.cpp" />
     <ClCompile Include="src\Game\Audio\CharaSounds.cpp" />
     <ClCompile Include="src\Game\Files\GameArchive.cpp" />
     <ClCompile Include="src\Game\Audio\SeList.cpp" />
@@ -500,6 +502,7 @@
     <ClInclude Include="src\Web\Job.h" />
     <ClInclude Include="src\Web\GitHubRelease.h" />
     <ClInclude Include="src\Web\UpdateInstall.h" />
+    <ClInclude Include="src\Web\ReleasePackage.h" />
     <ClInclude Include="src\Game\Customize\BasePals.h" />
     <ClInclude Include="src\Game\Patches\PatchPacks.h" />
     <ClInclude Include="src\Network\NetLog.h" />
@@ -529,6 +532,7 @@
     <ClInclude Include="src\Game\Audio\UserMusic.h" />
     <ClInclude Include="src\Game\Audio\SeListFile.h" />
     <ClInclude Include="src\Game\Audio\SoundPacks.h" />
+    <ClInclude Include="src\Game\Audio\SoundOwners.h" />
     <ClInclude Include="src\Game\Audio\CharaSounds.h" />
     <ClInclude Include="src\Game\Files\GameArchive.h" />
     <ClInclude Include="src\Game\Audio\SeList.h" />

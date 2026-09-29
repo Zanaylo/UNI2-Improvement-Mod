@@ -8,6 +8,7 @@
 #include "Game/Audio/AudioFile.h"
 #include "Game/Tables/CharaTables.h"
 #include "Game/Audio/SeListFile.h"
+#include "Game/Audio/SoundOwners.h"
 #include "Game/Audio/SoundsReadme.h"
 
 #include <algorithm>
@@ -108,18 +109,23 @@ void LoadChoices()
 	const std::string ini = Settings::GetIniPath();
 
 	g_shared = ReadIni(ini, kSection, kSharedKey, "");
-	g_choices.resize(CharaTables::GetCharaCount());
+	g_choices.resize(SoundOwners::Count());
 
 	for (size_t i = 0; i < g_choices.size(); ++i)
-		g_choices[i] = ReadIni(ini, kSection, CharaKey(static_cast<int>(i)).c_str(), "");
+	{
+		const int owner = SoundOwners::At(static_cast<int>(i));
+		g_choices[i] = ReadIni(ini, kSection, CharaKey(owner).c_str(), "");
+	}
 }
 
 const std::string& ChoiceOf(int chara)
 {
-	if (chara < 0 || chara >= static_cast<int>(g_choices.size()))
+	const int index = SoundOwners::IndexOf(chara);
+
+	if (index < 0 || index >= static_cast<int>(g_choices.size()))
 		return g_shared;
 
-	return g_choices[chara];
+	return g_choices[index];
 }
 
 int CharaFromPath(const std::string& key)
@@ -137,7 +143,7 @@ int CharaFromPath(const std::string& key)
 
 	const int chara = atoi(key.c_str() + at + 3);
 
-	return chara >= 0 && chara < CharaTables::GetCharaCount() ? chara : -1;
+	return SoundOwners::Has(chara) ? chara : -1;
 }
 
 bool PrivateStem(const std::string& key, const std::string& source, int& outChara,
@@ -385,7 +391,7 @@ void ScanPack(const std::string& folder, const std::string& id, std::vector<Conv
 	pack.source = ReadIni(ini, "Pack", "Source", "");
 	pack.owner = atoi(ReadIni(ini, "Pack", "Character", "-1").c_str());
 
-	if (pack.owner < 0 || pack.owner >= CharaTables::GetCharaCount())
+	if (!SoundOwners::Has(pack.owner))
 		pack.owner = -1;
 
 	FileIndex index;
@@ -460,10 +466,12 @@ void DropMissingChoices()
 		if (Present(g_choices[i]))
 			continue;
 
-		LOG("SoundPacks: %s wore '%s', which is not there any more", CharaTables::Name(
-			static_cast<int>(i)), g_choices[i].c_str());
+		const int owner = SoundOwners::At(static_cast<int>(i));
 
-		Settings::SaveString(kSection, CharaKey(static_cast<int>(i)).c_str(), "");
+		LOG("SoundPacks: %s wore '%s', which is not there any more", SoundOwners::Name(owner),
+			g_choices[i].c_str());
+
+		Settings::SaveString(kSection, CharaKey(owner).c_str(), "");
 		g_choices[i].clear();
 	}
 
@@ -474,6 +482,19 @@ void DropMissingChoices()
 
 	Settings::SaveString(kSection, kSharedKey, "");
 	g_shared.clear();
+}
+
+std::vector<int> CharactersOf(const std::string& id)
+{
+	std::lock_guard<std::mutex> guard(g_lock);
+
+	for (const SoundPacks::Pack& pack : g_packs)
+	{
+		if (pack.id == id)
+			return pack.characters;
+	}
+
+	return std::vector<int>();
 }
 
 }
@@ -633,26 +654,30 @@ const char* SoundPacks::ChoiceFor(int chara)
 {
 	LoadChoices();
 
-	if (chara < 0 || chara >= static_cast<int>(g_choices.size()))
+	const int index = SoundOwners::IndexOf(chara);
+
+	if (index < 0 || index >= static_cast<int>(g_choices.size()))
 		return "";
 
-	return g_choices[chara].c_str();
+	return g_choices[index].c_str();
 }
 
 void SoundPacks::Choose(int chara, const std::string& id)
 {
 	LoadChoices();
 
-	if (chara < 0 || chara >= static_cast<int>(g_choices.size()))
+	const int index = SoundOwners::IndexOf(chara);
+
+	if (index < 0 || index >= static_cast<int>(g_choices.size()))
 		return;
 
-	g_choices[chara] = id;
+	g_choices[index] = id;
 
 	Settings::SaveString(kSection, CharaKey(chara).c_str(), id.c_str());
 	InterlockedIncrement(&g_revision);
 	InterlockedExchange(&g_changed, 1);
 
-	LOG("SoundPacks: %s wears '%s'", CharaTables::Name(chara), id.empty() ? "the game" : id.c_str());
+	LOG("SoundPacks: %s wears '%s'", SoundOwners::Name(chara), id.empty() ? "the game" : id.c_str());
 }
 
 const char* SoundPacks::SharedChoice()
@@ -826,7 +851,26 @@ bool SoundPacks::Import(const std::string& archive, char* status, int statusSize
 
 	Scan();
 
-	sprintf_s(status, statusSize, "unpacked %d file(s) into %s", written, id.c_str());
+	const std::vector<int> owners = CharactersOf(id);
+
+	for (const int owner : owners)
+		Choose(owner, id);
+
+	if (owners.empty())
+	{
+		sprintf_s(status, statusSize, "unpacked %d file(s) into %s", written, id.c_str());
+		return true;
+	}
+
+	if (owners.size() == 1)
+	{
+		sprintf_s(status, statusSize, "unpacked %d file(s) into %s. %s wears it now", written,
+			id.c_str(), SoundOwners::Name(owners.front()));
+		return true;
+	}
+
+	sprintf_s(status, statusSize, "unpacked %d file(s) into %s. %d characters wear it now",
+		written, id.c_str(), static_cast<int>(owners.size()));
 	return true;
 }
 

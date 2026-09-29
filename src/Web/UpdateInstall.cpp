@@ -1,11 +1,10 @@
 #include "Web/UpdateInstall.h"
 
-#include "Core/Formats/Json.h"
-#include "Core/Formats/ZipArchive.h"
 #include "Core/info.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Web/Http.h"
+#include "Web/ReleasePackage.h"
 #include "Web/UpdateCheck.h"
 
 #include <Windows.h>
@@ -13,11 +12,8 @@
 #include <atomic>
 #include <cstdio>
 #include <cstring>
-#include <vector>
 
 namespace {
-
-constexpr const char* kManifestAsset = "manifest.json";
 
 Web::Job g_job;
 std::atomic<bool> g_staged{ false };
@@ -57,38 +53,6 @@ bool EnsureFolder(const std::string& path)
 		GetLastError() == ERROR_ALREADY_EXISTS;
 }
 
-void EmptyFolder(const std::string& folder)
-{
-	WIN32_FIND_DATAA found = {};
-	const HANDLE search = FindFirstFileA(Combine(folder, "*").c_str(), &found);
-
-	if (search == INVALID_HANDLE_VALUE)
-		return;
-
-	do
-	{
-		if (found.cFileName[0] == '.' && (found.cFileName[1] == '\0' ||
-			(found.cFileName[1] == '.' && found.cFileName[2] == '\0')))
-		{
-			continue;
-		}
-
-		const std::string path = Combine(folder, found.cFileName);
-
-		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-		{
-			EmptyFolder(path);
-			RemoveDirectoryA(path.c_str());
-			continue;
-		}
-
-		DeleteFileA(path.c_str());
-	}
-	while (FindNextFileA(search, &found) != 0);
-
-	FindClose(search);
-}
-
 std::string Stamp()
 {
 	SYSTEMTIME now = {};
@@ -99,87 +63,6 @@ std::string Stamp()
 		now.wMinute, now.wSecond);
 
 	return text;
-}
-
-bool IsAllowedEntry(const std::string& name)
-{
-	return _stricmp(name.c_str(), UNI2_IM_ENTRY_DLL) == 0 ||
-		_stricmp(name.c_str(), UNI2_IM_UPDATER_EXE) == 0;
-}
-
-bool ValidateZip(const std::string& path, std::string& outError)
-{
-	std::vector<std::string> names;
-
-	if (!ZipArchive::List(path, names))
-	{
-		outError = "the downloaded file is not a zip";
-		return false;
-	}
-
-	bool hasDll = false;
-
-	for (const std::string& name : names)
-	{
-		if (name.empty() || name.back() == '/' || name.back() == '\\')
-			continue;
-
-		if (!IsAllowedEntry(name))
-		{
-			outError = "the release zip contains '" + name + "', which the updater will not install";
-			return false;
-		}
-
-		hasDll = hasDll || _stricmp(name.c_str(), UNI2_IM_ENTRY_DLL) == 0;
-	}
-
-	if (!hasDll)
-	{
-		outError = "the release zip has no " UNI2_IM_ENTRY_DLL;
-		return false;
-	}
-
-	return true;
-}
-
-const GitHubRelease::Asset* PickPackage(const GitHubRelease::Release& release)
-{
-	const std::string wanted = std::string("UNI2-Improvement-Mod-") + release.version + ".zip";
-
-	const GitHubRelease::Asset* asset = release.FindAsset(wanted.c_str());
-
-	return asset != nullptr ? asset : release.FindAssetEndingWith(".zip");
-}
-
-bool ExpectedSha256(const GitHubRelease::Release& release, const std::string& assetName,
-	std::string& outSha)
-{
-	outSha.clear();
-
-	const GitHubRelease::Asset* const manifest = release.FindAsset(kManifestAsset);
-
-	if (manifest == nullptr)
-		return false;
-
-	std::string text;
-	std::string error;
-
-	if (!Http::GetText(manifest->url, text, error))
-	{
-		LOG("UpdateInstall: the manifest could not be read - %s", error.c_str());
-		return false;
-	}
-
-	Json::Value root;
-
-	if (!Json::Parse(text, root) || !root.IsObject())
-		return false;
-
-	if (_stricmp(root.MemberString("assetName").c_str(), assetName.c_str()) != 0)
-		return false;
-
-	outSha = root.MemberString("sha256");
-	return outSha.size() == 64;
 }
 
 bool WriteHandoff(const GitHubRelease::Release& release, const std::string& stage,
@@ -204,8 +87,8 @@ bool WriteHandoff(const GitHubRelease::Release& release, const std::string& stag
 	body += "Tag=" + release.tag + "\r\n";
 	body += "Version=" + release.version + "\r\n";
 	body += "EntryDll=" UNI2_IM_ENTRY_DLL "\r\n";
-	body += "SteamAppId=2076010\r\n";
-	body += "GameExe=" + Combine(GetModDirectory(), "uni2.exe") + "\r\n";
+	body += "SteamAppId=" UNI2_IM_STEAM_APP_ID "\r\n";
+	body += "GameExe=" + Combine(GetModDirectory(), UNI2_IM_GAME_EXE) + "\r\n";
 	body += "Relaunch=1\r\n";
 
 	FILE* file = nullptr;
@@ -270,57 +153,35 @@ bool VerifyPackage(const GitHubRelease::Release& release, const GitHubRelease::A
 	const std::string& archive, Web::Job& job)
 {
 	std::string expected;
+	std::string error;
 
-	if (!ExpectedSha256(release, package.name, expected))
+	if (!ReleasePackage::ExpectedSha256(release, package.name, expected, error))
+	{
+		if (!error.empty())
+			LOG("UpdateInstall: the manifest could not be read - %s", error.c_str());
+
 		return true;
+	}
 
 	job.SetStep("checking the download");
 	job.SetIndeterminate();
 
-	std::string actual;
-	std::string error;
-
-	if (!Http::Sha256OfFile(archive, actual, error))
-	{
-		job.SetError(error);
-		return false;
-	}
-
-	if (_stricmp(actual.c_str(), expected.c_str()) == 0)
+	if (ReleasePackage::MatchesChecksum(archive, expected, error))
 		return true;
 
-	DeleteFileA(archive.c_str());
-	job.SetError("the download does not match the release checksum");
+	job.SetError(error);
 	return false;
 }
 
 bool StagePackage(const std::string& archive, const std::string& stage, Web::Job& job)
 {
-	job.SetStep("checking the package");
+	job.SetStep("unpacking");
 
 	std::string error;
 
-	if (!ValidateZip(archive, error))
+	if (!ReleasePackage::Unpack(archive, stage, error))
 	{
 		job.SetError(error);
-		return false;
-	}
-
-	job.SetStep("unpacking");
-	EmptyFolder(stage);
-
-	int files = 0;
-	char status[192] = {};
-
-	if (!ZipArchive::Extract(archive, stage, files, status, sizeof(status)))
-	{
-		job.SetError(status);
-		return false;
-	}
-
-	if (!Exists(Combine(stage, UNI2_IM_ENTRY_DLL)))
-	{
-		job.SetError("the package did not unpack a " UNI2_IM_ENTRY_DLL);
 		return false;
 	}
 
@@ -342,7 +203,7 @@ bool RunJob(Web::Job& job)
 		return false;
 	}
 
-	const GitHubRelease::Asset* const package = PickPackage(release);
+	const GitHubRelease::Asset* const package = ReleasePackage::Pick(release);
 
 	if (package == nullptr)
 	{

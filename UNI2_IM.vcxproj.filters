@@ -249,6 +249,9 @@
     <ClCompile Include="src\Web\UpdateInstall.cpp">
       <Filter>Web</Filter>
     </ClCompile>
+    <ClCompile Include="src\Web\ReleasePackage.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Customize\BasePals.cpp">
       <Filter>Game\Customize</Filter>
     </ClCompile>
@@ -334,6 +337,9 @@
       <Filter>Game\Audio</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Audio\SoundPacks.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\SoundOwners.cpp">
       <Filter>Game\Audio</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Audio\CharaSounds.cpp">
@@ -1424,6 +1430,9 @@
     <ClInclude Include="src\Web\UpdateInstall.h">
       <Filter>Web</Filter>
     </ClInclude>
+    <ClInclude Include="src\Web\ReleasePackage.h">
+      <Filter>Web</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Customize\BasePals.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>
@@ -1509,6 +1518,9 @@
       <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Audio\SoundPacks.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\SoundOwners.h">
       <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Audio\CharaSounds.h">
