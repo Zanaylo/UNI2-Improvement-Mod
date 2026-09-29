@@ -206,6 +206,7 @@ struct Job
 	std::vector<BbtagScript::Lamp> lamps;
 	std::vector<BbtagScript::Flip> flips;
 	std::vector<int> once;
+	std::vector<int> kick;
 	int id;
 	bool fading;
 	bool removing;
@@ -753,15 +754,15 @@ std::string FlipLines(const std::vector<BbtagScript::Flip>& flips)
 	return out;
 }
 
-std::string OnceLine(const std::vector<int>& once)
+std::string IntsLine(const char* name, const std::vector<int>& values)
 {
-	if (once.empty())
+	if (values.empty())
 		return std::string();
 
-	std::string out = "Once = [ ";
+	std::string out = std::string(name) + " = [ ";
 
-	for (size_t i = 0; i < once.size(); ++i)
-		out += (i == 0 ? "" : ", ") + std::to_string(once[i]);
+	for (size_t i = 0; i < values.size(); ++i)
+		out += (i == 0 ? "" : ", ") + std::to_string(values[i]);
 
 	return out + " ]\r\n";
 }
@@ -818,7 +819,8 @@ void WriteNote(const std::string& target, const Job& job, const std::string& blo
 	}
 
 	note += FlipLines(job.flips);
-	note += OnceLine(job.once);
+	note += IntsLine("Once", job.once);
+	note += IntsLine("Kick", job.kick);
 
 	if (job.fading)
 		note += "VertexAlpha = 1\r\n";
@@ -958,6 +960,7 @@ bool Fetch(Job& job)
 		source->Lamps(job.stage, job.lamps);
 		source->Flips(job.stage, job.flips);
 		source->Once(job.stage, job.once);
+		source->Kick(job.stage, job.kick);
 		job.fading = source->Fading(job.stage);
 		LiftImages(StageLibrary::FolderOf(job.id),
 			ImageDonor(FbGameFolder::Detect(job.folder.c_str()), job.stage));

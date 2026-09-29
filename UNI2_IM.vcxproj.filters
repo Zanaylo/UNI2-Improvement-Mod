@@ -393,6 +393,9 @@
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagCrypt.cpp">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagDefaults.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagMmot.cpp">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
@@ -489,7 +492,13 @@
     <ClCompile Include="src\Game\Stages\StageObjects.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Stages\StageKick.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Stages\StageOnce.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\StageSampler.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\StageCapture.cpp">
@@ -1556,6 +1565,9 @@
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagCrypt.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagDefaults.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagMmot.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
@@ -1655,7 +1667,13 @@
     <ClInclude Include="src\Game\Stages\StageObjects.h">
       <Filter>Game\Stages</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageKick.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Stages\StageOnce.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageSampler.h">
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\StageCapture.h">

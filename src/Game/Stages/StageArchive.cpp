@@ -1144,6 +1144,7 @@ public:
 	bool Lamps(const std::string& stage, std::vector<BbtagScript::Lamp>& out) override;
 	bool Flips(const std::string& stage, std::vector<BbtagScript::Flip>& out) override;
 	bool Once(const std::string& stage, std::vector<int>& out) override;
+	bool Kick(const std::string& stage, std::vector<int>& out) override;
 	bool Fading(const std::string& stage) override;
 
 	bool IsOpen() const { return !m_stage.empty(); }
@@ -1522,6 +1523,17 @@ bool BbtagSource::Once(const std::string& stage, std::vector<int>& out)
 	return !out.empty();
 }
 
+bool BbtagSource::Kick(const std::string& stage, std::vector<int>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	out = m_result.kick;
+	return !out.empty();
+}
+
 bool BbtagSource::Fading(const std::string& stage)
 {
 	return Built(stage) && m_result.fading;
@@ -1541,7 +1553,8 @@ bool BbtagSource::BgList(std::string& out)
 		out += header;
 		out += Readable(held.first);
 		out += "\",\r\n\t\tDataFile = \"" + held.first + "\",\r\n\r\n";
-		out += held.first == Lowered(m_ready) ? BbtagStage::Block(m_result.tilt) : BbtagStage::Block();
+		out += held.first == Lowered(m_ready) ? BbtagStage::Block(held.first, m_result.tilt)
+			: BbtagStage::Block(held.first);
 		out += "\t}\r\n";
 	}
 

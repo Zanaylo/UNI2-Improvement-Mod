@@ -188,6 +188,7 @@
     <ClCompile Include="src\Game\Stages\BgObjectFix.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagArt.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagCrypt.cpp" />
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagDefaults.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagMmot.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagMua.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagPac.cpp" />
@@ -220,7 +221,9 @@
     <ClCompile Include="src\Game\Stages\StageThumb.cpp" />
     <ClCompile Include="src\Game\Stages\StageIcons.cpp" />
     <ClCompile Include="src\Game\Stages\StageObjects.cpp" />
+    <ClCompile Include="src\Game\Stages\StageKick.cpp" />
     <ClCompile Include="src\Game\Stages\StageOnce.cpp" />
+    <ClCompile Include="src\Game\Stages\StageSampler.cpp" />
     <ClCompile Include="src\Game\Stages\StageCapture.cpp" />
     <ClCompile Include="src\Game\Stages\TextureLoad.cpp" />
     <ClCompile Include="src\Game\Stages\StageCards.cpp" />
@@ -544,6 +547,7 @@
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagArt.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagCamera.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagCrypt.h" />
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagDefaults.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagMmot.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagMua.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagPac.h" />
@@ -577,7 +581,9 @@
     <ClInclude Include="src\Game\Stages\StageThumb.h" />
     <ClInclude Include="src\Game\Stages\StageIcons.h" />
     <ClInclude Include="src\Game\Stages\StageObjects.h" />
+    <ClInclude Include="src\Game\Stages\StageKick.h" />
     <ClInclude Include="src\Game\Stages\StageOnce.h" />
+    <ClInclude Include="src\Game\Stages\StageSampler.h" />
     <ClInclude Include="src\Game\Stages\StageCapture.h" />
     <ClInclude Include="src\Game\Stages\TextureLoad.h" />
     <ClInclude Include="src\Game\Stages\StageCards.h" />

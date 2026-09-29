@@ -41,8 +41,8 @@ std::string FlipDeclaration()
 		"void BgFlip(inout float4 uv, inout float4 position)\n"
 		"{\n"
 		"\tif (uv.x > %.1ff) return;\n"
-		"\tfloat lane = floor(uv.x / %.1ff);\n"
-		"\tfloat row = floor(uv.y);\n"
+		"\tfloat lane = floor((uv.x + %.1ff) / %.1ff);\n"
+		"\tfloat row = %.1ff * floor((uv.y + %.1ff) / %.1ff);\n"
 		"\tfloat4 rect = g_BgFlip[(int)min(-lane - 1.0f, %d.0f)];\n"
 		"\tfloat2 local = (float2(uv.x - lane * %.1ff, uv.y - row) - %.3ff) / %.3ff;\n"
 		"\tuv.x = rect.x + local.x * rect.y;\n"
@@ -50,7 +50,9 @@ std::string FlipDeclaration()
 		"\tposition *= step(0.000001f, rect.y + rect.w);\n"
 		"}\n",
 		BbtagStage::kFlipSlots, BbtagStage::kFlipRegister, -BbtagStage::kFlipMark / 2.0f,
-		BbtagStage::kFlipMark, BbtagStage::kFlipSlots - 1, BbtagStage::kFlipMark,
+		BbtagStage::kFlipMark / 2.0f, BbtagStage::kFlipMark,
+		kFlowStride, kFlowStride / 2.0f, kFlowStride,
+		BbtagStage::kFlipSlots - 1, BbtagStage::kFlipMark,
 		BbtagStage::kFlipInset, BbtagStage::kFlipSpan);
 
 	return declared;

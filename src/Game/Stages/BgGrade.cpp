@@ -4,6 +4,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
+#include "Game/Stages/Bbtag/BbtagDefaults.h"
 #include "Game/Stages/Bbtag/BbtagStage.h"
 #include "Game/Stages/BgShaderText.h"
 #include "Game/Stages/BgVertexProbe.h"
@@ -11,6 +12,7 @@
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Stages/StageLibrary.h"
+#include "Game/Stages/StageKick.h"
 #include "Game/Stages/StageOnce.h"
 #include "Game/Stages/StageSettingKey.h"
 #include "Hooks/GameHook.h"
@@ -85,6 +87,11 @@ bool From(const std::string& game, FbGameFolder::Game source)
 bool Arcsys(const std::string& game)
 {
 	return From(game, FbGameFolder::Game_BBTAG) || From(game, FbGameFolder::Game_BBCF);
+}
+
+const BbtagDefaults::Look* BbtagLook(const StageLibrary::Entry& entry)
+{
+	return From(entry.game, FbGameFolder::Game_BBTAG) ? BbtagDefaults::Of(entry.folder) : nullptr;
 }
 
 bool Flows(int stage)
@@ -440,11 +447,13 @@ void ReadRates(const char* line, Note& note)
 	}
 }
 
-bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips, std::vector<int>& once)
+bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips, std::vector<int>& once,
+	std::vector<int>& kick)
 {
 	memset(&note, 0, sizeof(note));
 	flips.clear();
 	once.clear();
+	kick.clear();
 
 	const std::string folder = StageLibrary::FolderOf(stage);
 	std::string text;
@@ -473,6 +482,14 @@ bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips, std:
 		{
 			for (double value : Numbers(line))
 				once.push_back(static_cast<int>(value));
+
+			continue;
+		}
+
+		if (strncmp(line, "Kick", 4) == 0)
+		{
+			for (double value : Numbers(line))
+				kick.push_back(static_cast<int>(value));
 
 			continue;
 		}
@@ -700,6 +717,11 @@ BgGrade::Grade BgGrade::DefaultOf(int stage)
 	if (From(entry.game, FbGameFolder::Game_UNIEL))
 		return Grade{ kUnielLift, kUnielContrast };
 
+	const BbtagDefaults::Look* const look = BbtagLook(entry);
+
+	if (look != nullptr)
+		return Grade{ kBbtagLift, look->contrast };
+
 	if (Arcsys(entry.game))
 		return Grade{ kBbtagLift, kBbtagContrast };
 
@@ -829,9 +851,11 @@ void BgGrade::Update()
 		static Note note;
 		std::vector<BbtagScript::Flip> flips;
 		std::vector<int> once;
-		const bool read = ReadNote(stage, note, flips, once);
+		std::vector<int> kick;
+		const bool read = ReadNote(stage, note, flips, once, kick);
 
 		StageOnce::Hold(once);
+		StageKick::Hold(kick);
 		const bool flowing = read && note.flowing && Flows(stage);
 		const bool fading = read && note.fading;
 
@@ -907,6 +931,11 @@ float BgGrade::DefaultGlowOf(int stage)
 
 	if (From(entry.game, FbGameFolder::Game_DFCI))
 		return kDfciGlow;
+
+	const BbtagDefaults::Look* const look = BbtagLook(entry);
+
+	if (look != nullptr)
+		return look->glow;
 
 	return Arcsys(entry.game) ? kBbtagGlow : kGameGlow;
 }

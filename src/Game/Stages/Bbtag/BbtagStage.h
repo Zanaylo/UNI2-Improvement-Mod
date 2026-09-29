@@ -40,11 +40,12 @@ namespace BbtagStage
 		std::vector<BbtagScript::Lamp> lamps;
 		std::vector<BbtagScript::Flip> flips;
 		std::vector<int> once;
+		std::vector<int> kick;
 		bool fading;
 		float tilt;
 	};
 
 	bool Convert(const Source& source, Result& out);
 
-	std::string Block(float tilt = 0.0f);
+	std::string Block(const std::string& stage, float tilt = 0.0f);
 }

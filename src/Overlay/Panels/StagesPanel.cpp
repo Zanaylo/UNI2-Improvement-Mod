@@ -368,10 +368,10 @@ void StagesPanel::DrawSource()
 	ImGui::SameLine();
 	UiText::Help("Pick the folder a game is installed in and the mod reads its stage data. "
 		"Nothing is downloaded and no UNI2 file is replaced."
-		"\n\nFrench-Bread: UNI[st], UNI[cl-r], UNI Exe:Late, MELTY BLOOD: TYPE LUMINA, MELTY "
-		"BLOOD Actress Again Current Code and DENGEKI BUNKO FIGHTING CLIMAX IGNITION."
-		"\n\nArc System Works: BLAZBLUE CROSS TAG BATTLE and BLAZBLUE CENTRALFICTION, every "
-		"stage of both.");
+		"\n\nFrench-Bread: UNI[st], UNI[cl-r], UNI Exe:Late, MELTY BLOOD: TYPE LUMINA and "
+		"DENGEKI BUNKO FIGHTING CLIMAX IGNITION."
+		"\n\nArc System Works: every stage of BLAZBLUE CROSS TAG BATTLE, and the stages of "
+		"BLAZBLUE CENTRALFICTION.\nNot every BLAZBLUE CENTRALFICTION stage may work yet.");
 
 	std::string picked;
 
@@ -415,8 +415,9 @@ void StagesPanel::DrawArcsys()
 	if (game != FbGameFolder::Game_BBCF)
 		return;
 
-	UiText::Warn("CENTRALFICTION stages use the CROSS TAG BATTLE camera, which was not checked "
-		"against CENTRALFICTION. If one looks too big or too small, change its Size.");
+	UiText::Warn("Not every CENTRALFICTION stage may work yet. They use the CROSS TAG BATTLE camera, "
+		"which was not checked against CENTRALFICTION. If one looks too big or too small, change its "
+		"Size.");
 }
 
 void StagesPanel::DrawCustom()

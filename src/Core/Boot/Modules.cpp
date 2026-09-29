@@ -49,7 +49,8 @@
 #include "Game/Stages/StageImport.h"
 #include "Game/Stages/StageCapture.h"
 #include "Game/Stages/StageObjects.h"
-#include "Game/Stages/StageOnce.h"
+#include "Game/Stages/StageKick.h"
+#include "Game/Stages/StageSampler.h"
 #include "Game/Stages/StagePlacement.h"
 #include "Game/Stages/TextureLoad.h"
 #include "Game/Subtitles/SubtitleText.h"
@@ -154,7 +155,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: subtitle watch", [] { SubtitleWatch::Install(); } },
 	{ "game hooks: subtitle text", [] { SubtitleText::Install(); } },
 	{ "game hooks: stage objects", [] { StageObjects::Initialize(); } },
-	{ "game hooks: stage once", [] { StageOnce::Initialize(); } },
+	{ "game hooks: stage sampler", [] { StageSampler::Initialize(); } },
 	{ "game hooks: texture load", [] { TextureLoad::Install(); } },
 	{ "game hooks: stage cards", [] { StageCards::Initialize(); } },
 	{ "game hooks: bgm control", [] { BgmControl::Initialize(); } },
@@ -186,6 +187,7 @@ const Task kFrame[] = {
 	[] { BgClear::Update(); },
 	[](IDirect3DDevice9* device) { BgMipmaps::Assert(device); },
 	[] { StagePlacement::Update(); },
+	[] { StageKick::Update(); },
 	[] { BattleCockpit::Update(); },
 	[] { CharaTint::Update(); },
 	[] { StageCards::OnFrame(); },

@@ -53,4 +53,7 @@ namespace BbtagParticleBake
 
 	bool Emitted(const std::vector<BbtagParticle::Effect>& effects,
 		const std::vector<Spawned>& spawned, const BbtagParticle::Surface& surface, Cards& out);
+
+	bool Kicked(const std::vector<BbtagParticle::Effect>& effects, const std::string& effect,
+		const BbtagParticle::Surface& surface, int bursts, Cards& out);
 }

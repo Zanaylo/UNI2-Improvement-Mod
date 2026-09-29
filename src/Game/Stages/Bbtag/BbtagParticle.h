@@ -15,6 +15,7 @@ namespace BbtagParticle
 		int lifeMax;
 		int delayMin;
 		int delayMax;
+		int childStart;
 	};
 
 	struct Range

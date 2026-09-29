@@ -40,9 +40,11 @@ constexpr uint32_t kDiceFallback = 0x9e3779b9u;
 constexpr double kDiceSpan = 4294967296.0;
 constexpr uint32_t kCountDraw = 0xc0;
 constexpr uint32_t kLaneDraw = 0x100;
+constexpr uint32_t kKickDraw = 0x140;
 
 constexpr uint32_t kGroupRespawns = 0x10;
 constexpr uint32_t kGroupStaggered = 0x60;
+constexpr uint32_t kGroupChildAtStart = 0x80;
 
 constexpr uint32_t kSpriteDepthTest = 0x4;
 constexpr uint32_t kSpriteRotates = 0x40;
@@ -1153,6 +1155,79 @@ bool BbtagParticleBake::Bake(const std::vector<BbtagParticle::Effect>& effects,
 	return true;
 }
 
+namespace {
+
+bool Alive(const Life& life, int age)
+{
+	return age >= 0 && age < life.Length() && age < life.Sunk();
+}
+
+BbtagParticleBake::Pose PoseOf(const Life& life, const std::vector<double>& turns, int age)
+{
+	BbtagParticleBake::Pose pose = {};
+	const State& state = life.At(age);
+	const double alpha = std::max(0.0, std::min(1.0, state.colour[0] / 255.0));
+
+	pose.shown = alpha > 0.0;
+	pose.turn = turns[static_cast<size_t>(age)] * kTau;
+
+	for (int axis = 0; axis < 3; ++axis)
+		pose.position[axis] = state.position[axis];
+
+	pose.size[0] = state.size[0] * alpha;
+	pose.size[1] = state.size[1] * alpha;
+
+	return pose;
+}
+
+void TintOf(const Effect& effect, const Cell& cell, double out[3])
+{
+	const Colour keys[3] = { Channels(effect.sprite.colourStart), Channels(effect.sprite.colourMid),
+		Channels(effect.sprite.colourEnd) };
+
+	for (int channel = 0; channel < 3; ++channel)
+	{
+		const double mean = (keys[0][channel + 1] + keys[1][channel + 1] + keys[2][channel + 1]) / 3.0;
+		out[channel] = std::min(1.0, mean / cell.pretint[channel]);
+	}
+}
+
+bool Packed(std::vector<Cell>& cells, const BbtagParticle::Surface& surface, BbtagParticleBake::Cards& out)
+{
+	int side = 0;
+
+	if (cells.empty() || surface.bgra.empty() || !PackCells(cells, side))
+		return false;
+
+	const PatWriter::Atlas atlas = AtlasFor(cells, side, surface, std::string());
+	out.side = side;
+	out.rgba = atlas.rgba;
+
+	for (const Cell& cell : cells)
+	{
+		out.cells.push_back({ static_cast<double>(cell.x) / side, static_cast<double>(cell.y) / side,
+			static_cast<double>(cell.x + cell.source[2]) / side, static_cast<double>(cell.y + cell.source[3]) / side });
+	}
+
+	return true;
+}
+
+std::vector<const Effect*> BurstParts(const std::vector<Effect>& effects, const Effect& effect)
+{
+	std::vector<const Effect*> out = { &effect };
+	const int child = effect.group.childStart;
+
+	if ((effect.group.flags & kGroupChildAtStart) != 0 && child >= 0
+		&& child < static_cast<int>(effects.size()) && effects[static_cast<size_t>(child)].sprite.sharedAtlas == 0)
+	{
+		out.push_back(&effects[static_cast<size_t>(child)]);
+	}
+
+	return out;
+}
+
+}
+
 bool BbtagParticleBake::Emitted(const std::vector<BbtagParticle::Effect>& effects,
 	const std::vector<Spawned>& spawned, const BbtagParticle::Surface& surface, Cards& out)
 {
@@ -1187,20 +1262,8 @@ bool BbtagParticleBake::Emitted(const std::vector<BbtagParticle::Effect>& effect
 		plans.push_back(plan);
 	}
 
-	int side = 0;
-
-	if (plans.empty() || surface.bgra.empty() || !PackCells(cells, side))
+	if (plans.empty() || !Packed(cells, surface, out))
 		return false;
-
-	const PatWriter::Atlas atlas = AtlasFor(cells, side, surface, std::string());
-	out.side = side;
-	out.rgba = atlas.rgba;
-
-	for (const Cell& cell : cells)
-	{
-		out.cells.push_back({ static_cast<double>(cell.x) / side, static_cast<double>(cell.y) / side,
-			static_cast<double>(cell.x + cell.source[2]) / side, static_cast<double>(cell.y + cell.source[3]) / side });
-	}
 
 	const Camera camera;
 
@@ -1212,8 +1275,6 @@ bool BbtagParticleBake::Emitted(const std::vector<BbtagParticle::Effect>& effect
 		const int loop = LoopLength(effect.group, grid);
 		const bool facesMotion = (effect.sprite.flags & kSpriteFacesMotion) != 0;
 		const Cell& cell = cells[static_cast<size_t>(plan.cell)];
-		const Colour keys[3] = { Channels(effect.sprite.colourStart), Channels(effect.sprite.colourMid),
-			Channels(effect.sprite.colourEnd) };
 
 		for (size_t o = 0; o < plan.origins.size(); ++o)
 		{
@@ -1224,12 +1285,7 @@ bool BbtagParticleBake::Emitted(const std::vector<BbtagParticle::Effect>& effect
 
 				Card card;
 				card.cell = plan.cell;
-
-				for (int channel = 0; channel < 3; ++channel)
-				{
-					const double mean = (keys[0][channel + 1] + keys[1][channel + 1] + keys[2][channel + 1]) / 3.0;
-					card.tint[channel] = std::min(1.0, mean / cell.pretint[channel]);
-				}
+				TintOf(effect, cell, card.tint);
 
 				std::vector<std::vector<double> > turned;
 
@@ -1245,25 +1301,81 @@ bool BbtagParticleBake::Emitted(const std::vector<BbtagParticle::Effect>& effect
 						const Life& life = lane[which].life;
 						const int age = Modulo(when - lane[which].birth, loop);
 
-						if (age >= life.Length() || age >= life.Sunk())
+						if (!Alive(life, age))
 							continue;
 
-						const State& state = life.At(age);
-						const double alpha = std::max(0.0, std::min(1.0, state.colour[0] / 255.0));
-
-						pose.shown = alpha > 0.0;
-						pose.turn = turned[which][static_cast<size_t>(age)] * kTau;
-
-						for (int axis = 0; axis < 3; ++axis)
-							pose.position[axis] = state.position[axis];
-
-						pose.size[0] = state.size[0] * alpha;
-						pose.size[1] = state.size[1] * alpha;
+						pose = PoseOf(life, turned[which], age);
 						break;
 					}
 
 					card.frames.push_back(pose);
 				}
+
+				out.cards.push_back(std::move(card));
+			}
+		}
+	}
+
+	return !out.cards.empty();
+}
+
+bool BbtagParticleBake::Kicked(const std::vector<BbtagParticle::Effect>& effects, const std::string& effect,
+	const BbtagParticle::Surface& surface, int bursts, Cards& out)
+{
+	out = Cards();
+
+	const Effect* const kicked = BbtagParticle::Find(effects, effect);
+
+	if (kicked == nullptr || kicked->sprite.sharedAtlas != 0 || bursts <= 0)
+		return false;
+
+	const std::vector<const Effect*> parts = BurstParts(effects, *kicked);
+	std::vector<Cell> cells;
+	std::vector<int> cellOf;
+	int frames = 0;
+
+	for (const Effect* const part : parts)
+	{
+		int low = 0;
+		int high = 0;
+		LifeRange(part->group, low, high);
+		frames = std::max(frames, high);
+		cellOf.push_back(CellFor(*part, cells));
+	}
+
+	if (!Packed(cells, surface, out))
+		return false;
+
+	const Camera camera;
+
+	for (int burst = 0; burst < bursts; ++burst)
+	{
+		for (size_t p = 0; p < parts.size(); ++p)
+		{
+			const Effect& part = *parts[p];
+			const int lanes = std::max(1, std::max(part.group.countMin, part.group.countMax));
+			const bool facesMotion = (part.sprite.flags & kSpriteFacesMotion) != 0;
+			const Cell& cell = cells[static_cast<size_t>(cellOf[p])];
+
+			for (int lane = 0; lane < lanes; ++lane)
+			{
+				Dice dice({ kSeed, kKickDraw, static_cast<uint32_t>(burst), static_cast<uint32_t>(p),
+					static_cast<uint32_t>(lane) });
+
+				int low = 0;
+				int high = 0;
+				LifeRange(part.group, low, high);
+
+				const Life life(part, { 0.0, 0.0, 0.0 }, dice, dice.Count(low, high),
+					{ part.shape.boxMin[2], part.shape.boxMax[2] }, lane, lanes, 1);
+				const std::vector<double> turns = Turns(life, camera, facesMotion);
+
+				Card card;
+				card.cell = cellOf[p];
+				TintOf(part, cell, card.tint);
+
+				for (int age = 0; age <= frames; ++age)
+					card.frames.push_back(Alive(life, age) ? PoseOf(life, turns, age) : Pose{});
 
 				out.cards.push_back(std::move(card));
 			}

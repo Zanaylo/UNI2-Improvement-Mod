@@ -82,6 +82,12 @@ namespace BbtagScript
 		int bone;
 	};
 
+	struct Zone
+	{
+		int limit;
+		int kind;
+	};
+
 	typedef std::map<std::string, std::vector<uint8_t> > Scripts;
 
 	constexpr int kLeastRect = 4;
@@ -103,4 +109,6 @@ namespace BbtagScript
 	bool Tilt(const std::vector<uint8_t>& blob, float& degrees);
 
 	bool Spawns(const std::vector<uint8_t>& blob, std::vector<Spawn>& out);
+
+	bool Zones(const std::vector<uint8_t>& blob, std::vector<Zone>& out);
 }

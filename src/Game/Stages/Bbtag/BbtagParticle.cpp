@@ -153,6 +153,14 @@ BbtagParticle::Move MoveAt(const Reader& at)
 	return out;
 }
 
+int EntryIndex(const std::vector<uint8_t>& blob, uint32_t offset)
+{
+	if (offset < kHeader || (offset - kHeader) % kEntry != 0 || offset + kEntry > blob.size())
+		return -1;
+
+	return static_cast<int>((offset - kHeader) / kEntry);
+}
+
 bool EffectAt(const std::vector<uint8_t>& blob, uint32_t index, BbtagParticle::Effect& out)
 {
 	const Reader entry(blob, kHeader + index * kEntry);
@@ -167,6 +175,7 @@ bool EffectAt(const std::vector<uint8_t>& blob, uint32_t index, BbtagParticle::E
 	out.group.lifeMin = entry.Int(0x14);
 	out.group.delayMax = entry.Int(0x18);
 	out.group.delayMin = entry.Int(0x1c);
+	out.group.childStart = EntryIndex(blob, entry.Dword(0x38));
 
 	const Reader sprite(blob, entry.Dword(0x2c));
 	const Reader shape(blob, entry.Dword(0x30));

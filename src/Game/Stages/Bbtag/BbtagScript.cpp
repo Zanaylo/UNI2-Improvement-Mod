@@ -35,6 +35,9 @@ constexpr uint32_t kPause = 0x15;
 constexpr uint32_t kSceneOpen = 0x1a;
 constexpr uint32_t kSceneClose = 0x1b;
 constexpr uint32_t kSceneTilt = 0x28;
+constexpr uint32_t kZoneCount = 0x25;
+constexpr uint32_t kZone = 0x26;
+constexpr size_t kMostZones = 8;
 
 constexpr int kFree = 0;
 constexpr int kSkipped = 1;
@@ -799,6 +802,54 @@ bool BbtagScript::Tilt(const std::vector<uint8_t>& blob, float& degrees)
 	}
 
 	return false;
+}
+
+bool BbtagScript::Zones(const std::vector<uint8_t>& blob, std::vector<Zone>& out)
+{
+	out.clear();
+
+	if (blob.size() < kBlocks || memcmp(blob.data(), "EVT0", 4) != 0)
+		return false;
+
+	bool open = false;
+	size_t count = 0;
+	std::vector<Zone> zones(kMostZones, Zone{ 0, 0 });
+
+	for (size_t at = Dword(blob, 0x10); at + kRecord <= blob.size(); at += kRecord)
+	{
+		const uint32_t code = Dword(blob, at);
+
+		if (code == kNone)
+			break;
+
+		if (code == kSceneOpen || code == kSceneClose)
+		{
+			open = code == kSceneOpen;
+			continue;
+		}
+
+		if (!open)
+			continue;
+
+		if (code == kZoneCount)
+		{
+			count = std::min<size_t>(Dword(blob, at + 4), kMostZones);
+			continue;
+		}
+
+		const uint32_t index = Dword(blob, at + 4);
+
+		if (code != kZone || index >= kMostZones)
+			continue;
+
+		zones[index] = { static_cast<int>(static_cast<int16_t>(Dword(blob, at + 8))),
+			static_cast<int>(static_cast<int16_t>(Dword(blob, at + 12))) };
+	}
+
+	zones.resize(count);
+	out.swap(zones);
+
+	return !out.empty();
 }
 
 bool BbtagScript::Spawns(const std::vector<uint8_t>& blob, std::vector<Spawn>& out)

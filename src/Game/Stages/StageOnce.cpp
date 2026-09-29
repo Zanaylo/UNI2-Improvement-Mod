@@ -1,31 +1,21 @@
 #include "Game/Stages/StageOnce.h"
 
 #include "Core/logger.h"
-#include "Core/utils.h"
-#include "Game/Engine/CodeSignatures.h"
-#include "Game/Engine/GameOffsets.h"
-#include "Hooks/GameHook.h"
 
 #include <Windows.h>
 
-#include <cstdint>
 #include <cstdio>
 #include <cstring>
 
 namespace {
 
 constexpr int kMaxNodes = 8192;
-constexpr size_t kAnimeIndex = 0x08;
 constexpr size_t kAnimeOwner = 0x14;
 constexpr size_t kAnimeBegin = 0x2c;
 constexpr size_t kAnimeEnd = 0x30;
 constexpr size_t kFramesBegin = 0x08;
 constexpr size_t kFramesEnd = 0x0c;
 constexpr int kMatrixShift = 6;
-
-using Sample_t = void(__fastcall*)(void*, void*, const uint8_t*, uint32_t, const int*);
-
-GameHook<Sample_t> g_sampleHook("FbxAnimeSample");
 
 uint32_t g_last[kMaxNodes] = {};
 volatile long g_held = 0;
@@ -61,46 +51,6 @@ uint32_t Frames(const uint8_t* node, int index)
 		>> kMatrixShift);
 }
 
-void __fastcall HookedSample(void* scene, void* unused, const uint8_t* node, uint32_t frame, const int* mode)
-{
-	InterlockedIncrement(&g_calls);
-
-	if (InterlockedCompareExchange(&g_held, 0, 0) != 0 && node != nullptr && mode != nullptr && *mode == 0)
-	{
-		const int index = At<int>(node, kAnimeIndex);
-
-		if (index >= 0 && index < kMaxNodes && g_last[index] != 0 && frame > g_last[index]
-			&& Frames(node, index) == g_last[index] + 1)
-		{
-			frame = g_last[index];
-			InterlockedIncrement(&g_clamps);
-		}
-	}
-
-	g_sampleHook.Original()(scene, unused, node, frame, mode);
-}
-
-}
-
-bool StageOnce::Initialize()
-{
-	const uintptr_t address = CodeSignatures::Address(GameOffsets::kFnFbxAnimeSample);
-
-	if (!IsAddressInGameModule(address))
-	{
-		strncpy_s(g_status, "the stage animation sampler is not where this game version expects it", _TRUNCATE);
-		LOG("StageOnce: %s", g_status);
-		return false;
-	}
-
-	if (!g_sampleHook.Install(reinterpret_cast<void*>(address), &HookedSample))
-	{
-		strncpy_s(g_status, "the stage animation sampler could not be hooked", _TRUNCATE);
-		LOG("StageOnce: %s", g_status);
-		return false;
-	}
-
-	return true;
 }
 
 void StageOnce::Hold(const std::vector<int>& pairs)
@@ -131,6 +81,21 @@ void StageOnce::Hold(const std::vector<int>& pairs)
 		LOG("StageOnce: %s", g_status);
 
 	InterlockedExchange(&g_held, held);
+}
+
+uint32_t StageOnce::Frame(const uint8_t* node, int index, uint32_t frame)
+{
+	InterlockedIncrement(&g_calls);
+
+	if (InterlockedCompareExchange(&g_held, 0, 0) == 0 || index < 0 || index >= kMaxNodes || g_last[index] == 0
+		|| frame <= g_last[index] || Frames(node, index) != g_last[index] + 1)
+	{
+		return frame;
+	}
+
+	InterlockedIncrement(&g_clamps);
+
+	return g_last[index];
 }
 
 int StageOnce::Held()
