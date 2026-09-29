@@ -80,7 +80,8 @@ If you find something here that gives an edge in a real match, that is a bug. Re
 - [Hantei-kun](https://github.com/Zanaylo/Hantei-kun) - HA6 / CG / PAL format ground truth
 - [undernightinbirth wiki](https://github.com/Fatih120/undernightinbirth) - modding documentation
 - [Dear ImGui](https://github.com/ocornut/imgui), [MinHook](https://github.com/TsudaKageyu/minhook)
-- Hikari - Thanks a lot for all the help with palettes and stages
+- **Hikari** - Thanks a lot for all the help with palettes and stages
+
 Thanks to Pescador Cearense, Eon, Listentothebirds - Rafael, Willyofruit, Sky Leite, Excel, ZateFGC,
 Yorezordd (Velho fudido), Thiago, Tanasinn [AZ], Licensed Grappler, Anklegator, Kozup, Henriquez, Yuko, BootySama (🫃), Glacey, firezeroboredvanguard and blue_three.
 
