@@ -53,6 +53,7 @@ const StageImage kStageImages[] = {
 };
 constexpr const char* kCustomGame = "Custom stage";
 constexpr size_t kNameBytes = 62;
+constexpr const char* kRefusedInNames = "\"|,{}[]\\=";
 constexpr int kNoThumbnail = -1;
 constexpr int kDfciPriorityFloor = 700;
 constexpr size_t kFetchThreads = 4;
@@ -1467,7 +1468,7 @@ void StageImport::Initialize()
 
 		const std::string english = English(GameNamed(entry.game), entry.folder);
 
-		if (english.empty() || english == entry.name)
+		if (english.empty() || english == entry.name || entry.renamed)
 			continue;
 
 		entry.name = english;
@@ -1522,6 +1523,7 @@ bool StageImport::Scan(const char* folder)
 		Offer offer;
 		offer.folder = stage.folder;
 		offer.bytes = stage.bytes;
+		offer.backdrop = stage.backdrop;
 		offer.name = English(game, stage.folder);
 
 		if (offer.name.empty())
@@ -1772,6 +1774,60 @@ bool StageImport::SetInGame(int id, bool inGame)
 	Apply();
 
 	sprintf_s(g_status, "%s %s the picker", entry.name.c_str(), inGame ? "joins" : "leaves");
+
+	LOG("StageImport: %s", g_status);
+	return true;
+}
+
+bool StageImport::NameAccepts(unsigned int character)
+{
+	if (character < 0x20 || character == 0x7f)
+		return false;
+
+	if (character >= 0x80)
+		return true;
+
+	return strchr(kRefusedInNames, static_cast<int>(character)) == nullptr;
+}
+
+bool StageImport::SetName(int id, const char* name)
+{
+	if (IsBusy() || name == nullptr)
+		return false;
+
+	std::string wanted = name;
+	wanted.erase(0, wanted.find_first_not_of(' '));
+	wanted.erase(wanted.find_last_not_of(' ') + 1);
+
+	if (wanted.empty())
+	{
+		sprintf_s(g_status, "a stage needs a name");
+		return false;
+	}
+
+	const bool accepted = wanted.find("//") == std::string::npos && std::all_of(wanted.begin(),
+		wanted.end(), [](char letter) { return NameAccepts(static_cast<unsigned char>(letter)); });
+
+	if (!accepted)
+	{
+		sprintf_s(g_status, "a name cannot hold %s or //", kRefusedInNames);
+		return false;
+	}
+
+	StageLibrary::Entry entry = {};
+
+	if (!StageLibrary::Of(id, entry) || entry.name == wanted)
+		return false;
+
+	if (!StageLibrary::SetName(id, wanted))
+	{
+		sprintf_s(g_status, "could not write bg%03d\\stage.txt", id);
+		return false;
+	}
+
+	Apply();
+
+	sprintf_s(g_status, "%.96s is now %.96s", entry.name.c_str(), wanted.c_str());
 
 	LOG("StageImport: %s", g_status);
 	return true;

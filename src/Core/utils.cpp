@@ -543,6 +543,16 @@ bool IsUnderSystemDirectory(const char* path)
 	return StartsWithDirectory(path, system, systemLength) || StartsWithDirectory(path, wow64, wow64Length);
 }
 
+bool EndsWithNoCase(const std::string& text, const char* tail)
+{
+	const size_t length = strlen(tail);
+
+	if (text.size() < length)
+		return false;
+
+	return _strnicmp(text.c_str() + text.size() - length, tail, length) == 0;
+}
+
 std::string GetSystemDirectoryPath()
 {
 	char path[MAX_PATH] = {};

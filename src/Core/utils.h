@@ -46,6 +46,8 @@ bool TryWriteDword(void* address, uint32_t value);
 bool TryReadUnaligned(const void* source, uint32_t& outValue);
 bool TryWriteUnaligned(void* address, uint32_t value);
 
+bool EndsWithNoCase(const std::string& text, const char* tail);
+
 std::string GetSystemDirectoryPath();
 bool IsUnderSystemDirectory(const char* path);
 

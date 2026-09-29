@@ -21,6 +21,7 @@ namespace StageLibrary
 		std::string folder;
 		std::string name;
 		std::string key;
+		bool renamed;
 	};
 
 	void Load();
@@ -47,6 +48,7 @@ namespace StageLibrary
 
 	void Put(const Entry& entry);
 	void Show(int id, bool shown);
+	bool SetName(int id, const std::string& name);
 	void Erase(int id);
 
 	std::string Root();

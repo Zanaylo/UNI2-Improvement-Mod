@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/AsyncFileDialog.h"
+#include "Game/Stages/StageImport.h"
 
 #include <string>
 #include <vector>
@@ -13,7 +14,7 @@ public:
 private:
 	struct Row
 	{
-		char name[96];
+		char name[StageImport::kNameInput];
 	};
 
 	void DrawHidden();
@@ -23,9 +24,13 @@ private:
 	void DrawReplace();
 	void DrawOffers();
 	void DrawOfferRow(int index);
+	void DrawBackdropToggle();
+	bool Offered(int index) const;
 	void DrawRoom();
 	void DrawPlacement();
 	void DrawPorted();
+	void DrawRename(int id);
+	void BeginRename(int id, const std::string& name);
 	void DrawTuning(int key, int slot);
 	void DrawHelp();
 	void DrawRestart();
@@ -42,4 +47,7 @@ private:
 	std::vector<int> m_queue;
 	std::string m_rowsFor;
 	int m_rowCount = 0;
+	int m_renaming = -1;
+	bool m_focusName = false;
+	char m_newName[StageImport::kNameInput] = {};
 };

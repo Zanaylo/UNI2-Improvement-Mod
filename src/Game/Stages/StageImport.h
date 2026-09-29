@@ -7,11 +7,14 @@
 
 namespace StageImport
 {
+	constexpr int kNameInput = 64;
+
 	struct Offer
 	{
 		std::string folder;
 		std::string name;
 		uint32_t bytes;
+		bool backdrop = false;
 	};
 
 	void Initialize();
@@ -32,6 +35,9 @@ namespace StageImport
 	bool Restore(int number);
 
 	bool SetInGame(int id, bool inGame);
+
+	bool SetName(int id, const char* name);
+	bool NameAccepts(unsigned int character);
 
 	bool Dropped(int id);
 

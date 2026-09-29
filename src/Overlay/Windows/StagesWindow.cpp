@@ -13,7 +13,7 @@ StagesWindow::StagesWindow(const std::string& title, bool closable, ImGuiWindowF
 
 void StagesWindow::BeforeDraw()
 {
-	ImGui::SetNextWindowSize(ImVec2(Ui::Scaled(880.0f), Ui::Scaled(560.0f)), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(Ui::Scaled(1120.0f), Ui::Scaled(600.0f)), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(Ui::Scaled(560.0f), Ui::Scaled(320.0f)),
 		ImVec2(FLT_MAX, FLT_MAX));
 }

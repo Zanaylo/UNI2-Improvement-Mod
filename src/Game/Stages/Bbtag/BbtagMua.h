@@ -82,6 +82,7 @@ namespace BbtagMua
 		bool Read(const std::vector<uint8_t>& blob);
 
 		const std::vector<std::string>& Textures() const { return m_texture; }
+		bool HasGeometry() const;
 		const std::vector<std::vector<int> >& Materials() const { return m_material; }
 		const std::vector<int>& Reflections() const { return m_reflection; }
 		const std::vector<Mesh>& Meshes() const { return m_mesh; }

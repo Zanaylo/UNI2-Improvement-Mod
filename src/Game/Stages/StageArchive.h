@@ -13,6 +13,7 @@ namespace StageArchive
 		std::string folder;
 		std::string name;
 		uint32_t bytes;
+		bool backdrop = false;
 	};
 
 	struct Pair

@@ -929,8 +929,8 @@ void PaletteWindow::DrawFiles(int player)
 		ImGui::SetTooltip(m_summonTabOpen[player]
 			? "Applies the colours of an indexed PNG to the summon.\nOpen the Character tab to import "
 				"for the character."
-			: "Applies the colours of an indexed PNG to this character.\nOpen the Summon tab to import "
-				"for the summon.\nThe colours must already be in the game's order.");
+			: "Applies the colours of a PNG to this character.\nTakes this character's reference sheet at "
+				"any size, or an indexed PNG in the game's order.\nOpen the Summon tab to import for the summon.");
 	}
 
 	ImGui::SameLine();
@@ -1205,8 +1205,13 @@ void PaletteWindow::CompleteImportPng(int player, const std::string& path)
 {
 	uint8_t colours[PaletteFile::kBytes] = {};
 	std::string error;
+	const uint8_t* sheet = nullptr;
+	size_t sheetSize = 0;
 
-	if (!PngPalette::Read(path, colours, error))
+	if (!m_importIntoSummon[player])
+		BasePals::Get(m_chara[player], sheet, sheetSize);
+
+	if (!PngPalette::Read(path, sheet, sheetSize, colours, error))
 	{
 		sprintf_s(m_status[player], "%s", error.c_str());
 		return;

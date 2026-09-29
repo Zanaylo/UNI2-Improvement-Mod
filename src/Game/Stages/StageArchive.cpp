@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <cstring>
 #include <map>
+#include <set>
 
 namespace {
 
@@ -32,6 +33,10 @@ constexpr const char* kMbtlArchive = "data006.bin";
 constexpr const char* kBgList = "BgList.txt";
 constexpr const char* kModel = "bg.fbx.bin";
 constexpr const char* kBbtagParticles = "data/particle/particle_dat_bg.pac";
+constexpr const char* kBbtagGeometry = "_vtx.pac";
+constexpr const char* kBbtagScene = ".pac";
+constexpr const char* kBbtagArt = "_img.pac";
+constexpr const char* kBbtagAstral = "bg_exastral";
 constexpr const char* kBbtagParticleArt = "data/particle/particle_img_bg.pac";
 constexpr const char* kBbtagHashedRoots[] = { "asset", "data" };
 constexpr size_t kTextSlack = 8192;
@@ -1154,10 +1159,13 @@ private:
 	struct Held
 	{
 		std::string relative;
+		std::string geometry;
 		uint32_t bytes;
+		bool backdrop = false;
 	};
 
 	void Sweep();
+	void SweepGroup(const std::string& folder, const std::string& relative);
 	void Listed();
 	void Hashed();
 	bool Whole(const std::string& relative, std::vector<uint8_t>& out) const;
@@ -1182,6 +1190,17 @@ std::string StageOf(const std::string& stem)
 
 std::string Readable(const std::string& stage)
 {
+	const size_t astral = strlen(kBbtagAstral);
+
+	if (stage.size() > astral && stage.compare(0, astral, kBbtagAstral) == 0)
+	{
+		std::string code = stage.substr(astral);
+		std::transform(code.begin(), code.end(), code.begin(),
+			[](char letter) { return static_cast<char>(toupper(static_cast<unsigned char>(letter))); });
+
+		return "Astral " + code;
+	}
+
 	const std::string body = stage.compare(0, 3, "bg_") == 0 ? stage.substr(3) : stage;
 	std::string out;
 	bool lead = true;
@@ -1245,40 +1264,70 @@ void BbtagSource::Sweep()
 		if (name == "." || name == "..")
 			continue;
 
-		WIN32_FIND_DATAA found = {};
-		const HANDLE inside = FindFirstFileA(Combine(Combine(bg, name), "*_vtx.pac").c_str(),
-			&found);
-
-		if (inside == INVALID_HANDLE_VALUE)
-			continue;
-
-		do
-		{
-			const std::string leaf = Lowered(found.cFileName);
-			const std::string tail = "_vtx.pac";
-
-			if (leaf.size() <= tail.size()
-				|| leaf.compare(leaf.size() - tail.size(), tail.size(), tail) != 0)
-			{
-				continue;
-			}
-
-			const std::string stage = leaf.substr(0, leaf.size() - tail.size());
-			Held held;
-			held.relative = "data/bg/" + Lowered(name) + "/" + stage;
-			held.bytes = found.nFileSizeLow
-				+ BytesOf(Combine(Combine(bg, name), stage + ".pac"))
-				+ BytesOf(Combine(Combine(bg, name), stage + "_img.pac"));
-
-			m_stage[stage] = held;
-		}
-		while (FindNextFileA(inside, &found) != 0);
-
-		FindClose(inside);
+		SweepGroup(Combine(bg, name), "data/bg/" + Lowered(name) + "/");
 	}
 	while (FindNextFileA(walk, &group) != 0);
 
 	FindClose(walk);
+}
+
+void BbtagSource::SweepGroup(const std::string& folder, const std::string& relative)
+{
+	std::set<std::string> archives;
+
+	WIN32_FIND_DATAA found = {};
+	const HANDLE inside = FindFirstFileA(Combine(folder, "*.pac").c_str(), &found);
+
+	if (inside == INVALID_HANDLE_VALUE)
+		return;
+
+	do
+		archives.insert(Lowered(found.cFileName));
+	while (FindNextFileA(inside, &found) != 0);
+
+	FindClose(inside);
+
+	for (const std::string& leaf : archives)
+	{
+		if (!EndsWithNoCase(leaf, kBbtagGeometry))
+			continue;
+
+		const std::string stage = leaf.substr(0, leaf.size() - strlen(kBbtagGeometry));
+		Held held;
+		held.relative = relative + stage;
+		held.geometry = held.relative + kBbtagGeometry;
+		held.bytes = BytesOf(Combine(folder, leaf)) + BytesOf(Combine(folder, stage + kBbtagScene))
+			+ BytesOf(Combine(folder, stage + kBbtagArt));
+
+		m_stage[stage] = held;
+	}
+
+	for (const std::string& leaf : archives)
+	{
+		if (!EndsWithNoCase(leaf, kBbtagScene) || EndsWithNoCase(leaf, kBbtagGeometry)
+			|| EndsWithNoCase(leaf, kBbtagArt))
+		{
+			continue;
+		}
+
+		const std::string stage = leaf.substr(0, leaf.size() - strlen(kBbtagScene));
+
+		if (archives.count(stage + kBbtagGeometry) != 0 || m_stage.count(stage) != 0)
+			continue;
+
+		std::vector<uint8_t> archive;
+
+		if (!ReadWholeFile(Combine(folder, leaf), archive) || !BbtagStage::HoldsWholeModel(archive))
+			continue;
+
+		Held held;
+		held.relative = relative + stage;
+		held.geometry = held.relative + kBbtagScene;
+		held.backdrop = true;
+		held.bytes = static_cast<uint32_t>(archive.size()) + BytesOf(Combine(folder, stage + kBbtagArt));
+
+		m_stage[stage] = held;
+	}
 }
 
 void BbtagSource::Listed()
@@ -1291,20 +1340,43 @@ void BbtagSource::Listed()
 	for (const char* stem : kBbtagStages)
 	{
 		const std::string relative = std::string("data/bg/") + stem;
-		const std::string* const geometry = Encrypted(relative + "_vtx.pac");
+		const std::string* const geometry = Encrypted(relative + kBbtagGeometry);
 
 		if (geometry == nullptr)
 			continue;
 
 		Held held;
 		held.relative = relative;
+		held.geometry = relative + kBbtagGeometry;
 		held.bytes = BytesOf(*geometry);
 
-		const std::string* const scene = Encrypted(relative + ".pac");
-		const std::string* const art = Encrypted(relative + "_img.pac");
+		const std::string* const scene = Encrypted(relative + kBbtagScene);
+		const std::string* const art = Encrypted(relative + kBbtagArt);
 
 		held.bytes += scene == nullptr ? 0 : BytesOf(*scene);
 		held.bytes += art == nullptr ? 0 : BytesOf(*art);
+
+		m_stage[StageOf(stem)] = held;
+	}
+
+	for (const char* stem : kBbtagWholeStages)
+	{
+		if (m_stage.count(StageOf(stem)) != 0)
+			continue;
+
+		const std::string relative = std::string("data/bg/") + stem;
+		std::vector<uint8_t> archive;
+
+		if (!Whole(relative + kBbtagScene, archive) || !BbtagStage::HoldsWholeModel(archive))
+			continue;
+
+		const std::string* const art = Encrypted(relative + kBbtagArt);
+
+		Held held;
+		held.relative = relative;
+		held.geometry = relative + kBbtagScene;
+		held.backdrop = true;
+		held.bytes = static_cast<uint32_t>(archive.size()) + (art == nullptr ? 0 : BytesOf(*art));
 
 		m_stage[StageOf(stem)] = held;
 	}
@@ -1401,11 +1473,11 @@ bool BbtagSource::Built(const std::string& stage)
 
 	BbtagStage::Source source;
 
-	if (!Whole(held->second.relative + "_vtx.pac", source.geometry))
+	if (!Whole(held->second.geometry, source.geometry))
 		return false;
 
-	Whole(held->second.relative + ".pac", source.scene);
-	Whole(held->second.relative + "_img.pac", source.art);
+	Whole(held->second.relative + kBbtagScene, source.scene);
+	Whole(held->second.relative + kBbtagArt, source.art);
 	Whole(kBbtagParticles, source.particles);
 	Whole(kBbtagParticleArt, source.particleArt);
 	source.stage = stage;
@@ -1430,6 +1502,7 @@ void BbtagSource::Stages(std::vector<StageArchive::Stage>& out)
 		stage.folder = held.first;
 		stage.name = Readable(held.first);
 		stage.bytes = held.second.bytes;
+		stage.backdrop = held.second.backdrop;
 
 		out.push_back(stage);
 	}

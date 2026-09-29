@@ -45,6 +45,16 @@ borrow one.
 
 **Remove** deletes the stage's files, its entry and its card.
 
+**Rename** edits a port's name in place. Press Enter to save, Esc to cancel. The new name is kept
+in the stage's `stage.txt` and survives a restart. The game's stage select shows it after the
+restart the panel offers. A name cannot use `" | , { } [ ] \ =` or `//`.
+
+**BBTAG Astral Heat and menu backgrounds** are hidden from the BBTAG list by default. Tick
+**Show Astral Heat and menu backgrounds** above the list to see them, as `Astral <code>` (for
+example `Astral BAZ`) and the backgrounds from `data\bg\cmn`. **Add all** only installs what the list
+shows. They were made for a cutscene or a menu camera, so some look good in a fight and some look
+wrong. Rename them to whatever you like.
+
 **Every port shows its own card.** The picker's sheet has 48 cells and the game uses 0 to 27, so
 only twenty are free. That is fewer than you can install. Ports twenty apart share a cell, but the
 picker only shows about seven cards at a time, so they are never on screen together. The mod

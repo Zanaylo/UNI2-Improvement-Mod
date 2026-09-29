@@ -70,6 +70,11 @@ std::string BbtagMua::Model::Named(int index) const
 	return m_string[index];
 }
 
+bool BbtagMua::Model::HasGeometry() const
+{
+	return m_count[kVertex] > 0 && m_count[kIndex] > 0 && !m_texture.empty();
+}
+
 void BbtagMua::Model::ReadStrings()
 {
 	m_string.clear();

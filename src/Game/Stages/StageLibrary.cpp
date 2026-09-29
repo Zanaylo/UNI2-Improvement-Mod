@@ -21,6 +21,8 @@ namespace {
 constexpr const char* kSection = "StageLibrary";
 constexpr const char* kLegacySection = "Stages";
 constexpr const char* kNote = "stage.txt";
+constexpr const char* kNoteHeader = "// UNI2 Improvement Mod\r\n";
+constexpr const char* kRenamedKey = "Renamed";
 constexpr const char* kModel = "bg.fbx.bin";
 constexpr uint64_t kFnvOffset = 0xcbf29ce484222325ull;
 constexpr uint64_t kFnvPrime = 0x100000001b3ull;
@@ -453,6 +455,19 @@ bool IsStageFolder(const std::string& folder)
 	return GetFileAttributesA((folder + "\\" + kModel).c_str()) != INVALID_FILE_ATTRIBUTES;
 }
 
+bool WriteText(const std::string& path, const std::string& text)
+{
+	FILE* file = nullptr;
+
+	if (fopen_s(&file, path.c_str(), "wb") != 0 || file == nullptr)
+		return false;
+
+	const bool written = fwrite(text.data(), 1, text.size(), file) == text.size();
+	fclose(file);
+
+	return written;
+}
+
 void NameInNote(const std::string& folder, const std::string& name)
 {
 	const std::string path = folder + "\\" + kNote;
@@ -460,14 +475,46 @@ void NameInNote(const std::string& folder, const std::string& name)
 	if (GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES)
 		return;
 
-	FILE* file = nullptr;
+	WriteText(path, std::string(kNoteHeader) + "Name = \"" + name + "\"\r\nSource = \"" + name + "\"\r\n");
+}
 
-	if (fopen_s(&file, path.c_str(), "wb") != 0 || file == nullptr)
-		return;
+bool ValueLine(const std::string& note, const char* key, size_t& valueAt, size_t& lineEnd)
+{
+	size_t valueEnd = 0;
 
-	fprintf(file, "// UNI2 Improvement Mod\r\nName = \"%s\"\r\nSource = \"%s\"\r\n", name.c_str(),
-		name.c_str());
-	fclose(file);
+	if (!StageArchive::FieldSpan(note, key, valueAt, valueEnd))
+		return false;
+
+	lineEnd = note.find_first_of("\r\n", valueAt);
+
+	if (lineEnd == std::string::npos)
+		lineEnd = note.size();
+
+	return true;
+}
+
+std::string Retitled(const std::string& note, const std::string& name)
+{
+	const std::string flag = std::string(kRenamedKey) + " = 1";
+	const std::string line = "Name = \"" + name + "\"";
+
+	size_t valueAt = 0;
+	size_t lineEnd = 0;
+
+	if (ValueLine(note, kRenamedKey, valueAt, lineEnd))
+	{
+		const std::string flagged = note.substr(0, valueAt) + "1" + note.substr(lineEnd);
+
+		if (!ValueLine(flagged, "Name", valueAt, lineEnd))
+			return std::string(kNoteHeader) + line + "\r\n" + flagged;
+
+		return flagged.substr(0, valueAt) + "\"" + name + "\"" + flagged.substr(lineEnd);
+	}
+
+	if (!ValueLine(note, "Name", valueAt, lineEnd))
+		return std::string(kNoteHeader) + line + "\r\n" + flag + "\r\n" + note;
+
+	return note.substr(0, valueAt) + "\"" + name + "\"\r\n" + flag + note.substr(lineEnd);
 }
 
 void AdoptLoose(const std::string& leaf)
@@ -561,6 +608,9 @@ void Rename()
 
 		if (!NoteText(entry.id, note))
 			continue;
+
+		std::string renamed;
+		entry.renamed = StageArchive::Field(note, kRenamedKey, renamed) && renamed == "1";
 
 		const std::string name = Unquoted(note, "Name");
 
@@ -777,6 +827,34 @@ void StageLibrary::Show(int id, bool shown)
 	}
 
 	ReleaseSRWLockExclusive(&g_lock);
+}
+
+bool StageLibrary::SetName(int id, const std::string& name)
+{
+	AcquireSRWLockExclusive(&g_lock);
+
+	bool named = false;
+
+	for (Entry& entry : g_entries)
+	{
+		if (entry.id != id)
+			continue;
+
+		std::string note;
+		NoteText(id, note);
+
+		if (!WriteText(NoteOf(id), Retitled(note, name)))
+			break;
+
+		entry.name = name;
+		entry.renamed = true;
+		Save(entry);
+		named = true;
+		break;
+	}
+
+	ReleaseSRWLockExclusive(&g_lock);
+	return named;
 }
 
 void StageLibrary::Erase(int id)

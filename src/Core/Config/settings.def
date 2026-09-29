@@ -146,6 +146,7 @@ SETTING_INT(simpleStage,            "Graphics", "SimpleStage",          0)
 SETTING_INT(stageMipmaps,           "Graphics", "StageMipmaps",         1)
 
 SETTING_BOOL(advancedStages, "Stages", "AdvancedOptions", 0)
+SETTING_BOOL(showBbtagBackdrops, "Stages", "ShowBbtagBackdrops", 0)
 SETTING_INT(stageTargetWidth,       "Stages",   "TargetWidth",          0)
 SETTING_INT(stageTargetHeight,      "Stages",   "TargetHeight",         0)
 

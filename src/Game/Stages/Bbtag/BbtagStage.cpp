@@ -356,7 +356,7 @@ void Divides(const std::vector<Plate>& siblings, float tall, int& count, int& ta
 
 	for (const Plate& plate : siblings)
 	{
-		if (plate.span > kWindowBand || fabsf(plate.tall - tall) > kWindowMatch * tall)
+		if (plate.span <= 0.0f || plate.span > kWindowBand || fabsf(plate.tall - tall) > kWindowMatch * tall)
 			continue;
 
 		const float bands = 1.0f / plate.span;
@@ -2596,23 +2596,36 @@ std::string BbtagStage::Block(const std::string& stage, float tilt)
 	return std::string(camera) + kBlock;
 }
 
+namespace {
+
+bool ModelIn(const std::vector<uint8_t>& archive, BbtagMua::Model& out)
+{
+	BbtagPac::Files files;
+
+	if (!BbtagPac::Walk(archive, files))
+		return false;
+
+	const std::vector<uint8_t>* const found = BbtagPac::Ending(files, ".mua");
+
+	return found != nullptr && out.Read(*found);
+}
+
+}
+
+bool BbtagStage::HoldsWholeModel(const std::vector<uint8_t>& archive)
+{
+	BbtagMua::Model model;
+
+	return ModelIn(archive, model) && model.HasGeometry();
+}
+
 bool BbtagStage::Convert(const Source& source, Result& out)
 {
 	out = Result();
 
-	BbtagPac::Files geometry;
-
-	if (!BbtagPac::Walk(source.geometry, geometry))
-		return false;
-
-	const std::vector<uint8_t>* const found = BbtagPac::Ending(geometry, ".mua");
-
-	if (found == nullptr)
-		return false;
-
 	BbtagMua::Model model;
 
-	if (!model.Read(*found))
+	if (!ModelIn(source.geometry, model))
 		return false;
 
 	Unpack(source.art, out.images);

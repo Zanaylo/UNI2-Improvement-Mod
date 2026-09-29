@@ -1,5 +1,8 @@
 #include "Game/Customize/PngPalette.h"
 
+#include "Core/Formats/PngImage.h"
+
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <vector>
@@ -9,6 +12,10 @@ namespace {
 constexpr uint8_t kSignature[8] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
 constexpr int kEntries = 256;
 constexpr int kGridSide = 16;
+constexpr uint8_t kMaxDepth = 6;
+constexpr int kMinSheetDivisor = 4;
+constexpr int64_t kAspectTolerancePercent = 1;
+constexpr uint64_t kMinAgreementPercent = 90;
 
 uint32_t ReadBigEndian32(const uint8_t* bytes)
 {
@@ -238,7 +245,214 @@ bool PngPalette::Recolour(const std::string& path, const uint8_t* basePng, size_
 	return false;
 }
 
-bool PngPalette::Read(const std::string& path, uint8_t* outRgba, std::string& outError)
+namespace {
+
+bool ReadPalette(const uint8_t* data, size_t size, uint8_t* outRgba)
+{
+	size_t at = sizeof(kSignature);
+
+	while (at + 8 <= size)
+	{
+		const uint32_t length = ReadBigEndian32(data + at);
+		const uint8_t* const type = data + at + 4;
+		const size_t chunkData = at + 8;
+
+		if (chunkData + length + 4 > size)
+			return false;
+
+		if (memcmp(type, "PLTE", 4) == 0)
+		{
+			const int entries = static_cast<int>(length / 3) < kEntries
+				? static_cast<int>(length / 3) : kEntries;
+
+			FillFromPalette(data + chunkData, entries, outRgba);
+			return true;
+		}
+
+		if (memcmp(type, "IDAT", 4) == 0 || memcmp(type, "IEND", 4) == 0)
+			return false;
+
+		at = chunkData + length + 4;
+	}
+
+	return false;
+}
+
+bool IsSheetShaped(int width, int height, int sheetWidth, int sheetHeight)
+{
+	if (width * kMinSheetDivisor < sheetWidth)
+		return false;
+
+	const int64_t across = static_cast<int64_t>(width) * sheetHeight;
+	const int64_t down = static_cast<int64_t>(height) * sheetWidth;
+	const int64_t gap = across > down ? across - down : down - across;
+
+	return gap * 100 <= across * kAspectTolerancePercent;
+}
+
+bool IsEdge(const std::vector<uint8_t>& indices, int width, int height, int x, int y)
+{
+	if (x == 0 || y == 0 || x == width - 1 || y == height - 1)
+		return true;
+
+	const uint8_t index = indices[static_cast<size_t>(y) * width + x];
+
+	for (int dy = -1; dy <= 1; ++dy)
+	{
+		const uint8_t* const row = &indices[static_cast<size_t>(y + dy) * width + x];
+
+		if (row[-1] != index || row[0] != index || row[1] != index)
+			return true;
+	}
+
+	return false;
+}
+
+std::vector<uint8_t> InteriorDepth(const std::vector<uint8_t>& indices, int width, int height)
+{
+	std::vector<uint8_t> depth(indices.size());
+
+	for (int y = 0; y < height; ++y)
+		for (int x = 0; x < width; ++x)
+			depth[static_cast<size_t>(y) * width + x] = IsEdge(indices, width, height, x, y) ? 0 : kMaxDepth;
+
+	for (int y = 1; y < height; ++y)
+	{
+		for (int x = 1; x < width - 1; ++x)
+		{
+			uint8_t& here = depth[static_cast<size_t>(y) * width + x];
+			const uint8_t* const up = &depth[static_cast<size_t>(y - 1) * width + x];
+			const uint8_t nearest = std::min({ up[-1], up[0], up[1], (&here)[-1] });
+
+			here = std::min<uint8_t>(here, static_cast<uint8_t>(nearest + 1));
+		}
+	}
+
+	for (int y = height - 2; y >= 0; --y)
+	{
+		for (int x = width - 2; x >= 1; --x)
+		{
+			uint8_t& here = depth[static_cast<size_t>(y) * width + x];
+			const uint8_t* const down = &depth[static_cast<size_t>(y + 1) * width + x];
+			const uint8_t nearest = std::min({ down[-1], down[0], down[1], (&here)[1] });
+
+			here = std::min<uint8_t>(here, static_cast<uint8_t>(nearest + 1));
+		}
+	}
+
+	return depth;
+}
+
+bool ReadFromSheet(const std::vector<uint8_t>& image, const uint8_t* sheetPng, size_t sheetSize,
+	uint8_t* outRgba, std::string& outError)
+{
+	if (sheetPng == nullptr)
+		return false;
+
+	int width = 0;
+	int height = 0;
+	std::vector<uint8_t> bgra;
+
+	if (!PngImage::Decode(image, width, height, bgra))
+		return false;
+
+	int sheetWidth = 0;
+	int sheetHeight = 0;
+	std::vector<uint8_t> indices;
+
+	if (!PngImage::DecodeIndices(std::vector<uint8_t>(sheetPng, sheetPng + sheetSize), sheetWidth,
+		sheetHeight, indices))
+	{
+		return false;
+	}
+
+	if (!IsSheetShaped(width, height, sheetWidth, sheetHeight))
+		return false;
+
+	const std::vector<uint8_t> depth = InteriorDepth(indices, sheetWidth, sheetHeight);
+	const size_t pixels = static_cast<size_t>(width) * height;
+
+	const auto sheetAt = [&](size_t pixel)
+	{
+		const int64_t x = static_cast<int64_t>(pixel % width) * sheetWidth / width;
+		const int64_t y = static_cast<int64_t>(pixel / width) * sheetHeight / height;
+
+		return static_cast<size_t>(y * sheetWidth + x);
+	};
+
+	int best[kEntries];
+	std::fill(best, best + kEntries, -1);
+
+	for (size_t pixel = 0; pixel < pixels; ++pixel)
+	{
+		const size_t at = sheetAt(pixel);
+		best[indices[at]] = std::max<int>(best[indices[at]], depth[at]);
+	}
+
+	std::vector<uint32_t> keys;
+
+	for (size_t pixel = 0; pixel < pixels; ++pixel)
+	{
+		const size_t at = sheetAt(pixel);
+		const uint8_t index = indices[at];
+
+		if (index == 0 || depth[at] != best[index])
+			continue;
+
+		const uint8_t* const colour = &bgra[pixel * 4];
+		keys.push_back((static_cast<uint32_t>(index) << 24) | (static_cast<uint32_t>(colour[2]) << 16) |
+			(static_cast<uint32_t>(colour[1]) << 8) | colour[0]);
+	}
+
+	std::sort(keys.begin(), keys.end());
+
+	if (!ReadPalette(sheetPng, sheetSize, outRgba))
+		return false;
+
+	uint64_t agreeing = 0;
+	size_t run = 0;
+
+	while (run < keys.size())
+	{
+		const uint32_t index = keys[run] >> 24;
+		size_t longest = 0;
+		uint32_t chosen = keys[run];
+
+		while (run < keys.size() && keys[run] >> 24 == index)
+		{
+			size_t end = run;
+
+			while (end < keys.size() && keys[end] == keys[run])
+				++end;
+
+			if (end - run > longest)
+			{
+				longest = end - run;
+				chosen = keys[run];
+			}
+
+			run = end;
+		}
+
+		agreeing += longest;
+		outRgba[index * 4 + 0] = static_cast<uint8_t>(chosen >> 16);
+		outRgba[index * 4 + 1] = static_cast<uint8_t>(chosen >> 8);
+		outRgba[index * 4 + 2] = static_cast<uint8_t>(chosen);
+	}
+
+	if (agreeing * 100 < keys.size() * kMinAgreementPercent)
+	{
+		outError = "this picture does not match this character's reference sheet";
+		return false;
+	}
+
+	return true;
+}
+
+}
+
+bool PngPalette::Read(const std::string& path, const uint8_t* sheetPng, size_t sheetSize,
+	uint8_t* outRgba, std::string& outError)
 {
 	std::vector<uint8_t> data;
 	if (!ReadFile(path, data))
@@ -253,33 +467,18 @@ bool PngPalette::Read(const std::string& path, uint8_t* outRgba, std::string& ou
 		return false;
 	}
 
-	size_t at = sizeof(kSignature);
+	if (ReadFromSheet(data, sheetPng, sheetSize, outRgba, outError))
+		return true;
 
-	while (at + 8 <= data.size())
-	{
-		const uint32_t length = ReadBigEndian32(data.data() + at);
-		const uint8_t* const type = data.data() + at + 4;
-		const size_t chunkData = at + 8;
+	if (!outError.empty())
+		return false;
 
-		if (chunkData + length + 4 > data.size())
-			break;
+	if (ReadPalette(data.data(), data.size(), outRgba))
+		return true;
 
-		if (memcmp(type, "PLTE", 4) == 0)
-		{
-			const int entries = static_cast<int>(length / 3) < kEntries
-				? static_cast<int>(length / 3) : kEntries;
-
-			FillFromPalette(data.data() + chunkData, entries, outRgba);
-			return true;
-		}
-
-		if (memcmp(type, "IDAT", 4) == 0 || memcmp(type, "IEND", 4) == 0)
-			break;
-
-		at = chunkData + length + 4;
-	}
-
-	outError = "this PNG has no palette. Save it as an indexed 8-bit image, not RGB";
+	outError = sheetPng == nullptr
+		? "this PNG has no palette. Save it as an indexed 8-bit image, not RGB"
+		: "this PNG has no palette and is not this character's reference sheet";
 	return false;
 }
 

@@ -27,16 +27,6 @@ bool EqualsNoCase(const char* a, const char* b)
 	return _stricmp(a, b) == 0;
 }
 
-bool EndsWithNoCase(const std::string& text, const char* tail)
-{
-	const size_t length = strlen(tail);
-
-	if (text.size() < length)
-		return false;
-
-	return _strnicmp(text.c_str() + text.size() - length, tail, length) == 0;
-}
-
 std::string ReadName(const std::vector<uint8_t>& data, size_t offset, int capacity)
 {
 	if (offset + capacity > data.size())

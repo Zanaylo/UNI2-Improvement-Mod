@@ -194,10 +194,18 @@ std::vector<uint8_t> SubFilteredRgb(int width, int height, const std::vector<uin
 	return raw;
 }
 
-}
+struct Raster
+{
+	std::vector<uint8_t> lines;
+	std::vector<uint8_t> palette;
+	std::vector<uint8_t> clear;
+	int width = 0;
+	int height = 0;
+	int colour = -1;
+	int channels = 0;
+};
 
-bool PngImage::Decode(const std::vector<uint8_t>& blob, int& outWidth, int& outHeight,
-	std::vector<uint8_t>& outBgra)
+bool Parse(const std::vector<uint8_t>& blob, Raster& out)
 {
 	if (blob.size() < kSignature + kChunkFrame + kHeaderBody ||
 		memcmp(blob.data(), kMagic, kSignature) != 0)
@@ -206,11 +214,6 @@ bool PngImage::Decode(const std::vector<uint8_t>& blob, int& outWidth, int& outH
 	}
 
 	std::vector<uint8_t> stream;
-	std::vector<uint8_t> palette;
-	std::vector<uint8_t> clear;
-	int width = 0;
-	int height = 0;
-	int colour = -1;
 	size_t at = kSignature;
 
 	while (at + kChunkFrame <= blob.size())
@@ -231,17 +234,17 @@ bool PngImage::Decode(const std::vector<uint8_t>& blob, int& outWidth, int& outH
 			if (length < kHeaderBody || blob[body + 8] != 8 || blob[body + 12] != 0)
 				return false;
 
-			width = static_cast<int>(Big32(blob, body));
-			height = static_cast<int>(Big32(blob, body + 4));
-			colour = blob[body + 9];
+			out.width = static_cast<int>(Big32(blob, body));
+			out.height = static_cast<int>(Big32(blob, body + 4));
+			out.colour = blob[body + 9];
 		}
 		else if (memcmp(tag, "PLTE", 4) == 0)
 		{
-			palette.assign(blob.begin() + body, blob.begin() + body + length);
+			out.palette.assign(blob.begin() + body, blob.begin() + body + length);
 		}
 		else if (memcmp(tag, "tRNS", 4) == 0)
 		{
-			clear.assign(blob.begin() + body, blob.begin() + body + length);
+			out.clear.assign(blob.begin() + body, blob.begin() + body + length);
 		}
 		else if (memcmp(tag, "IDAT", 4) == 0)
 		{
@@ -251,27 +254,53 @@ bool PngImage::Decode(const std::vector<uint8_t>& blob, int& outWidth, int& outH
 		at = body + length + 4;
 	}
 
-	const int channels = ChannelsOf(colour);
+	out.channels = ChannelsOf(out.colour);
 
-	if (width <= 0 || height <= 0 || channels == 0 || stream.size() <= kZlibHeader)
+	if (out.width <= 0 || out.height <= 0 || out.channels == 0 || stream.size() <= kZlibHeader)
 		return false;
 
-	const size_t expected = (static_cast<size_t>(width) * channels + 1) * height;
+	const size_t expected = (static_cast<size_t>(out.width) * out.channels + 1) * out.height;
 	std::vector<uint8_t> raw;
 
 	if (!Deflate::Inflate(stream.data() + kZlibHeader, stream.size() - kZlibHeader, raw, expected))
 		return false;
 
-	std::vector<uint8_t> lines;
+	return Unfilter(raw, out.width, out.height, out.channels, out.lines);
+}
 
-	if (!Unfilter(raw, width, height, channels, lines))
+}
+
+bool PngImage::Decode(const std::vector<uint8_t>& blob, int& outWidth, int& outHeight,
+	std::vector<uint8_t>& outBgra)
+{
+	Raster raster;
+
+	if (!Parse(blob, raster))
 		return false;
 
-	if (!Expand(lines, width, height, channels, colour, palette, clear, outBgra))
+	if (!Expand(raster.lines, raster.width, raster.height, raster.channels, raster.colour,
+		raster.palette, raster.clear, outBgra))
+	{
+		return false;
+	}
+
+	outWidth = raster.width;
+	outHeight = raster.height;
+
+	return true;
+}
+
+bool PngImage::DecodeIndices(const std::vector<uint8_t>& blob, int& outWidth, int& outHeight,
+	std::vector<uint8_t>& outIndices)
+{
+	Raster raster;
+
+	if (!Parse(blob, raster) || raster.colour != 3)
 		return false;
 
-	outWidth = width;
-	outHeight = height;
+	outIndices.swap(raster.lines);
+	outWidth = raster.width;
+	outHeight = raster.height;
 
 	return true;
 }

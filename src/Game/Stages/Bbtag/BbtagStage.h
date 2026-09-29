@@ -47,5 +47,7 @@ namespace BbtagStage
 
 	bool Convert(const Source& source, Result& out);
 
+	bool HoldsWholeModel(const std::vector<uint8_t>& archive);
+
 	std::string Block(const std::string& stage, float tilt = 0.0f);
 }

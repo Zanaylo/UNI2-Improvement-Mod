@@ -12,6 +12,7 @@
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StageObjects.h"
 #include "Game/Stages/StageReplacements.h"
+#include "Core/Config/Settings.h"
 #include "Core/Config/interfaces.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
@@ -32,6 +33,7 @@ constexpr float kListHeight = 220.0f;
 constexpr float kNumberColumn = 60.0f;
 constexpr float kSizeColumn = 80.0f;
 constexpr float kActionColumn = 150.0f;
+constexpr float kPortedActionColumn = 205.0f;
 constexpr float kCheckboxGap = 24.0f;
 constexpr float kPortedHeight = 330.0f;
 constexpr float kStepperColumn = 118.0f;
@@ -93,6 +95,11 @@ struct Listed
 	bool yours;
 	bool replaced;
 };
+
+int FilterName(ImGuiInputTextCallbackData* data)
+{
+	return StageImport::NameAccepts(data->EventChar) ? 0 : 1;
+}
 
 int Order(const Listed& row)
 {
@@ -508,10 +515,15 @@ void StagesPanel::DrawOffers()
 	if (StageImport::OfferCount() == 0)
 		return;
 
+	DrawBackdropToggle();
+
 	if (ImGui::Button("Add all"))
 	{
 		for (int i = 0; i < StageImport::OfferCount(); ++i)
-			Queue(i);
+		{
+			if (Offered(i))
+				Queue(i);
+		}
 	}
 
 	if (ImGui::IsItemHovered())
@@ -539,12 +551,48 @@ void StagesPanel::DrawOffers()
 
 	for (int i = 0; i < StageImport::OfferCount(); ++i)
 	{
+		if (!Offered(i))
+			continue;
+
 		ImGui::PushID(i);
 		DrawOfferRow(i);
 		ImGui::PopID();
 	}
 
 	ImGui::EndTable();
+}
+
+bool StagesPanel::Offered(int index) const
+{
+	const StageImport::Offer* const offer = StageImport::OfferAt(index);
+
+	return offer != nullptr && (!offer->backdrop || g_modVals.showBbtagBackdrops);
+}
+
+void StagesPanel::DrawBackdropToggle()
+{
+	int backdrops = 0;
+
+	for (int i = 0; i < StageImport::OfferCount(); ++i)
+	{
+		const StageImport::Offer* const offer = StageImport::OfferAt(i);
+		backdrops += offer != nullptr && offer->backdrop ? 1 : 0;
+	}
+
+	if (backdrops == 0)
+		return;
+
+	char label[96] = {};
+	sprintf_s(label, "Show Astral Heat and menu backgrounds (%d)##backdrops", backdrops);
+
+	if (ImGui::Checkbox(label, &g_modVals.showBbtagBackdrops))
+		Settings::SaveInt("Stages", "ShowBbtagBackdrops", g_modVals.showBbtagBackdrops ? 1 : 0);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("BBTAG draws these behind Astral Heats and on its menus, not in fights.\n"
+			"Some make good stages, some look wrong from the fighting camera.");
+	}
 }
 
 void StagesPanel::DrawOfferRow(int index)
@@ -564,7 +612,8 @@ void StagesPanel::DrawOfferRow(int index)
 	if (index < static_cast<int>(m_rows.size()))
 	{
 		ImGui::SetNextItemWidth(-1.0f);
-		ImGui::InputText("##name", m_rows[index].name, sizeof(m_rows[index].name));
+		ImGui::InputText("##name", m_rows[index].name, sizeof(m_rows[index].name),
+			ImGuiInputTextFlags_CallbackCharFilter, FilterName);
 	}
 
 	ImGui::TableNextColumn();
@@ -753,7 +802,7 @@ void StagesPanel::DrawPorted()
 			Ui::Scaled(kStepperColumn));
 	}
 
-	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kActionColumn));
+	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kPortedActionColumn));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
 
@@ -778,12 +827,16 @@ void StagesPanel::DrawPorted()
 
 		ImGui::TableNextColumn();
 
-		if (inMatch)
+		const bool renaming = row.yours && row.id == m_renaming;
+
+		if (renaming)
+			DrawRename(row.id);
+		else if (inMatch)
 			ImGui::TextColored(kPlayingText, "%s", row.name.c_str());
 		else
 			ImGui::TextUnformatted(row.name.c_str());
 
-		if (ImGui::IsItemHovered())
+		if (!renaming && ImGui::IsItemHovered())
 			ImGui::SetTooltip("%s", row.from.c_str());
 
 		ImGui::TableNextColumn();
@@ -805,6 +858,14 @@ void StagesPanel::DrawPorted()
 		if (row.yours)
 		{
 			ImGui::BeginDisabled(StageImport::IsBusy());
+
+			if (ImGui::SmallButton("Rename"))
+				BeginRename(row.id, row.name);
+
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+				ImGui::SetTooltip("Changes the name the stage list shows.\nThe game's stage select picks it up after a restart.");
+
+			ImGui::SameLine();
 
 			if (ImGui::SmallButton("Remove"))
 				StageImport::Remove(row.id);
@@ -856,6 +917,41 @@ void StagesPanel::DrawPorted()
 		UiText::Muted("Object layer: %s", StageObjects::StatusText());
 	else
 		UiText::Warn("Object layer: %s", StageObjects::StatusText());
+}
+
+void StagesPanel::BeginRename(int id, const std::string& name)
+{
+	m_renaming = id;
+	m_focusName = true;
+	strncpy_s(m_newName, name.c_str(), _TRUNCATE);
+}
+
+void StagesPanel::DrawRename(int id)
+{
+	if (m_focusName)
+	{
+		ImGui::SetKeyboardFocusHere();
+		m_focusName = false;
+	}
+
+	ImGui::SetNextItemWidth(-1.0f);
+
+	const bool entered = ImGui::InputText("##rename", m_newName, sizeof(m_newName),
+		ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll |
+		ImGuiInputTextFlags_CallbackCharFilter, FilterName);
+
+	if (entered)
+	{
+		StageImport::SetName(id, m_newName);
+		m_renaming = -1;
+		return;
+	}
+
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Enter saves. Esc cancels.");
+
+	if (ImGui::IsItemDeactivated())
+		m_renaming = -1;
 }
 
 void StagesPanel::DrawHelp()
