@@ -16,11 +16,14 @@
 #include "Game/Stages/Bbtag/BbtagScript.h"
 #include "Game/Stages/StageArchive.h"
 #include "Game/Stages/StageCards.h"
+#include "Game/Stages/StageFields.h"
 #include "Game/Stages/StageIcons.h"
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StageNote.h"
 #include "Game/Stages/StageReplacements.h"
+#include "Game/Stages/StageSettings.h"
 #include "Game/Stages/StageThumb.h"
+#include "Game/Stages/StageTrash.h"
 
 #include <Windows.h>
 
@@ -29,6 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <map>
 #include <utility>
 #include <vector>
 
@@ -297,23 +301,6 @@ void DeleteTree(const std::string& folder)
 	RemoveDirectoryA(folder.c_str());
 }
 
-FbGameFolder::Game GameNamed(const std::string& name)
-{
-	const FbGameFolder::Game games[] = {
-		FbGameFolder::Game_UNI, FbGameFolder::Game_UNIEL, FbGameFolder::Game_MBTL,
-		FbGameFolder::Game_MBAA, FbGameFolder::Game_DFCI, FbGameFolder::Game_BBTAG,
-		FbGameFolder::Game_BBCF
-	};
-
-	for (FbGameFolder::Game game : games)
-	{
-		if (name == FbGameFolder::Name(game))
-			return game;
-	}
-
-	return FbGameFolder::Game_None;
-}
-
 const StageNameEntry* Known(FbGameFolder::Game game, const std::string& folder)
 {
 	for (const StageNameEntry& entry : kStageNames)
@@ -345,6 +332,9 @@ const char* Tag(FbGameFolder::Game game)
 
 	if (game == FbGameFolder::Game_BBCF)
 		return " (BBCF)";
+
+	if (game == FbGameFolder::Game_P4U2)
+		return " (P4U2)";
 
 	return "";
 }
@@ -381,7 +371,7 @@ bool TakeIcon(FbGameFolder::Game game, const std::string& folder, const std::str
 
 void RefreshCard(const StageLibrary::Entry& entry, bool bundleChanged)
 {
-	const FbGameFolder::Game game = GameNamed(entry.game);
+	const FbGameFolder::Game game = FbGameFolder::FromName(entry.game.c_str());
 	const std::string icon = IconOf(game, entry.folder, entry.name);
 
 	if (!icon.empty())
@@ -1060,29 +1050,15 @@ bool Register(const Job& job)
 	return true;
 }
 
-bool Drop(const Job& job)
+void Unreplace(const Job& job)
 {
 	DeleteTree(StageLibrary::FolderOf(job.id));
 
-	if (job.replacing)
-	{
-		BgListOverride::Restore(job.id);
-		StageReplacements::Forget(job.id);
-		sprintf_s(g_status, "stage %d is the game's own again", job.id);
+	BgListOverride::Restore(job.id);
+	StageReplacements::Forget(job.id);
+	sprintf_s(g_status, "stage %d is the game's own again", job.id);
 
-		LOG("StageImport: %s", g_status);
-		return true;
-	}
-
-	StageThumb::Forget(job.id);
-	StageLibrary::Erase(job.id);
-	BgGrade::Forget(job.id);
-
-	if (Numbered(job.id))
-		g_dropped[job.id] = true;
-
-	sprintf_s(g_status, "%s removed", job.name.c_str());
-	return true;
+	LOG("StageImport: %s", g_status);
 }
 
 struct Batch
@@ -1142,7 +1118,7 @@ DWORD WINAPI Worker(void* parameter)
 
 	if (batch->jobs.size() == 1 && batch->jobs.front().removing)
 	{
-		Drop(batch->jobs.front());
+		Unreplace(batch->jobs.front());
 	}
 	else
 	{
@@ -1237,7 +1213,7 @@ void KeepNote(const StageLibrary::Entry& entry)
 
 void Relocalise(const StageLibrary::Entry& entry)
 {
-	if (GameNamed(entry.game) != FbGameFolder::Game_UNIEL)
+	if (FbGameFolder::FromName(entry.game.c_str()) != FbGameFolder::Game_UNIEL)
 		return;
 
 	const std::string path = StageLibrary::FolderOf(entry.id) + "\\" + kModelFile;
@@ -1257,7 +1233,39 @@ void Relocalise(const StageLibrary::Entry& entry)
 		report.frames);
 }
 
-bool PointRecord(const StageLibrary::Entry& entry)
+struct Composed
+{
+	std::string shiftJisName;
+	std::string text;
+	int cell;
+};
+
+typedef std::map<std::pair<int, int>, Composed> Compositions;
+
+const Composed& Compose(Compositions& made, const StageLibrary::Entry& entry, int slot)
+{
+	const std::pair<int, int> key(entry.id, slot);
+	const Compositions::const_iterator known = made.find(key);
+
+	if (known != made.end())
+		return known->second;
+
+	std::string note;
+	ReadNote(entry.id, note);
+
+	StageLibrary::Entry placed = entry;
+	placed.slot = slot;
+
+	Composed out;
+	out.cell = StageThumb::HasCard(entry.id) ? StageThumb::CellFor(slot) : kNoThumbnail;
+	out.shiftJisName = ShiftJis(entry.name);
+	out.text = EntryText(note, placed, out.shiftJisName, out.cell,
+		FbGameFolder::FromName(entry.game.c_str()));
+
+	return made[key] = out;
+}
+
+bool PointRecord(Compositions& made, const StageLibrary::Entry& entry)
 {
 	if (entry.slot < 0)
 		return false;
@@ -1268,18 +1276,13 @@ bool PointRecord(const StageLibrary::Entry& entry)
 	std::string now;
 	const bool moved = !BgRecord::FolderOf(entry.slot, now) || now != folder;
 
-	std::string note;
-	ReadNote(entry.id, note);
+	const Composed& composed = Compose(made, entry, entry.slot);
 
-	const int cell = StageThumb::HasCard(entry.id)
-		? StageThumb::CellFor(entry.slot) : kNoThumbnail;
-	const std::string name = ShiftJis(entry.name);
-	const std::string text = EntryText(note, entry, name, cell, GameNamed(entry.game));
-
-	return BgRecord::Apply(entry.slot, entry.id, text, name, cell) && moved;
+	return BgRecord::Apply(entry.slot, entry.id, composed.text, composed.shiftJisName,
+		composed.cell) && moved;
 }
 
-void Repoint()
+void Repoint(Compositions& made)
 {
 	if (!BgRecord::Reachable())
 		return;
@@ -1290,7 +1293,7 @@ void Repoint()
 	int moved = 0;
 
 	for (const StageLibrary::Entry& entry : entries)
-		moved += PointRecord(entry) ? 1 : 0;
+		moved += PointRecord(made, entry) ? 1 : 0;
 
 	if (moved != 0)
 		StageCards::Repaint();
@@ -1323,7 +1326,7 @@ std::vector<BgListOverride::Reworked> Reworks()
 	return reworked;
 }
 
-void SyncList()
+void SyncList(Compositions& made)
 {
 	std::vector<StageLibrary::Entry> entries;
 	StageLibrary::Snapshot(entries);
@@ -1341,19 +1344,13 @@ void SyncList()
 		if (known.position < 0 || known.position >= budget)
 			continue;
 
-		StageLibrary::Entry entry = known;
-		entry.slot = StageLibrary::SlotAt(known.position);
-
-		std::string note;
-		ReadNote(entry.id, note);
-
-		const int cell = StageThumb::HasCard(entry.id)
-			? StageThumb::CellFor(entry.slot) : kNoThumbnail;
+		const int slot = StageLibrary::SlotAt(known.position);
+		const Composed& composed = Compose(made, known, slot);
 
 		BgListOverride::Slotted one;
-		one.number = entry.slot;
-		one.shiftJisName = ShiftJis(entry.name);
-		one.entry = EntryText(note, entry, one.shiftJisName, cell, GameNamed(entry.game));
+		one.number = slot;
+		one.shiftJisName = composed.shiftJisName;
+		one.entry = composed.text;
 
 		ours.push_back(one);
 	}
@@ -1364,8 +1361,16 @@ void SyncList()
 
 void Apply()
 {
-	SyncList();
-	Repoint();
+	const ULONGLONG started = GetTickCount64();
+
+	Compositions made;
+	SyncList(made);
+	const ULONGLONG synced = GetTickCount64();
+	Repoint(made);
+
+	LOG("StageImport: %d stage entr(ies) composed and applied in %llu ms, the list %llu ms, the "
+		"records %llu ms", static_cast<int>(made.size()), GetTickCount64() - started,
+		synced - started, GetTickCount64() - synced);
 }
 
 void Rehome()
@@ -1449,8 +1454,10 @@ void StartBackfill()
 
 void StageImport::Initialize()
 {
+	StageTrash::Sweep();
 	StageLibrary::Load();
 	Rehome();
+	StageSettings::Migrate();
 
 	std::vector<StageLibrary::Entry> entries;
 	StageLibrary::Snapshot(entries);
@@ -1462,11 +1469,12 @@ void StageImport::Initialize()
 		KeepNote(entry);
 		Relocalise(entry);
 		LiftImages(StageLibrary::FolderOf(entry.id),
-			ImageDonor(GameNamed(entry.game), entry.folder));
+			ImageDonor(FbGameFolder::FromName(entry.game.c_str()), entry.folder));
 
 		RefreshCard(entry, bundleChanged);
 
-		const std::string english = English(GameNamed(entry.game), entry.folder);
+		const std::string english =
+			English(FbGameFolder::FromName(entry.game.c_str()), entry.folder);
 
 		if (english.empty() || english == entry.name || entry.renamed)
 			continue;
@@ -1479,7 +1487,9 @@ void StageImport::Initialize()
 		StageIcons::RememberBundle();
 
 	StageReplacements::Load();
-	SyncList();
+
+	Compositions made;
+	SyncList(made);
 	StartBackfill();
 
 	g_seenFiles = ModFiles::Revision();
@@ -1499,7 +1509,7 @@ bool StageImport::Scan(const char* folder)
 
 	if (game != FbGameFolder::Game_MBTL && game != FbGameFolder::Game_UNI
 		&& game != FbGameFolder::Game_UNIEL && game != FbGameFolder::Game_DFCI
-		&& game != FbGameFolder::Game_BBTAG && game != FbGameFolder::Game_BBCF)
+		&& !FbGameFolder::IsArcsys(game))
 	{
 		sprintf_s(g_status, "that folder holds %s, and the mod cannot port its stages",
 			FbGameFolder::Name(game));
@@ -1664,11 +1674,10 @@ Job FolderJob(const char* folder, int id, const char* name)
 	return job;
 }
 
-Job RemovalJob(int id, const std::string& name)
+Job RemovalJob(int id)
 {
 	Job job;
 	job.id = id;
-	job.name = name;
 	job.fading = false;
 	job.removing = true;
 	job.custom = false;
@@ -1709,14 +1718,31 @@ bool StageImport::InstallFolder(const char* folder, const char* name)
 
 bool StageImport::Remove(int id)
 {
+	if (IsBusy())
+		return false;
+
 	StageLibrary::Entry entry = {};
 
 	if (!StageLibrary::Of(id, entry))
 		return false;
 
-	sprintf_s(g_status, "removing %s...", entry.name.c_str());
+	const ULONGLONG started = GetTickCount64();
 
-	return StartOne(RemovalJob(entry.id, entry.name));
+	StageTrash::Discard(StageLibrary::FolderOf(id));
+	StageThumb::Forget(id);
+	StageLibrary::Erase(id);
+	BgGrade::Forget(id);
+
+	if (Numbered(id))
+		g_dropped[id] = true;
+
+	Apply();
+
+	sprintf_s(g_status, "%s removed", entry.name.c_str());
+
+	LOG("StageImport: %s in %llu ms, its files are deleted in the background", g_status,
+		GetTickCount64() - started);
+	return true;
 }
 
 bool StageImport::ReplaceFolder(const char* folder, int number)
@@ -1744,7 +1770,7 @@ bool StageImport::Restore(int number)
 	if (number <= 0 || !StageLibrary::GameOwns(number))
 		return false;
 
-	Job job = RemovalJob(number, std::string());
+	Job job = RemovalJob(number);
 	job.replacing = true;
 
 	sprintf_s(g_status, "restoring stage %d...", number);
@@ -1833,6 +1859,57 @@ bool StageImport::SetName(int id, const char* name)
 	return true;
 }
 
+std::string StageImport::FieldOf(int id, const char* key)
+{
+	std::string value;
+
+	if (StageFields::Read(id, key, value))
+		return value;
+
+	for (const Defaulted& fallback : kDefaults)
+	{
+		if (_stricmp(fallback.key, key) == 0)
+			return fallback.value;
+	}
+
+	return std::string();
+}
+
+bool StageImport::Forces(int id, const char* key)
+{
+	StageLibrary::Entry entry = {};
+
+	return StageLibrary::Of(id, entry) && Forced(FbGameFolder::FromName(entry.game.c_str()), key);
+}
+
+bool StageImport::SetField(int id, const char* key, const std::string& value)
+{
+	if (IsBusy() || Forces(id, key) || FieldOf(id, key) == value)
+		return false;
+
+	if (!StageFields::Write(id, key, value))
+	{
+		sprintf_s(g_status, "could not write bg%03d\\stage.txt", id);
+		return false;
+	}
+
+	Apply();
+
+	sprintf_s(g_status, "%s is %.64s now", key, value.c_str());
+	return true;
+}
+
+bool StageImport::ResetFields(int id)
+{
+	if (IsBusy() || !StageFields::Reset(id))
+		return false;
+
+	Apply();
+
+	sprintf_s(g_status, "bg%03d is back to the settings it came with", id);
+	return true;
+}
+
 bool StageImport::Dropped(int id)
 {
 	return Numbered(id) && g_dropped[id];
@@ -1842,11 +1919,20 @@ void StageImport::Update()
 {
 	if (InterlockedCompareExchange(&g_finished, 0, 1) == 1)
 	{
+		const ULONGLONG started = GetTickCount64();
+
 		StageLibrary::Load();
 		StageReplacements::Load();
+		const ULONGLONG loaded = GetTickCount64();
+
 		ModFiles::Rescan();
+		const ULONGLONG rescanned = GetTickCount64();
+
 		Apply();
 		g_seenFiles = ModFiles::Revision();
+
+		LOG("StageImport: after the job, library %llu ms, file index %llu ms, total %llu ms",
+			loaded - started, rescanned - loaded, GetTickCount64() - started);
 		return;
 	}
 

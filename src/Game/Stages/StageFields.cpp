@@ -1,0 +1,174 @@
+#include "Game/Stages/StageFields.h"
+
+#include "Core/logger.h"
+#include "Core/utils.h"
+#include "Game/Stages/StageArchive.h"
+#include "Game/Stages/StageLibrary.h"
+#include "Game/Stages/StageSettings.h"
+
+#include <Windows.h>
+
+#include <cstdio>
+#include <cstring>
+#include <vector>
+
+namespace {
+
+constexpr const char* kSection = "StageFields";
+constexpr const char* kAbsent = "-";
+constexpr DWORD kSectionBytes = 16 * 1024;
+
+struct Original
+{
+	std::string key;
+	std::string value;
+};
+
+bool Load(int id, std::string& out)
+{
+	std::vector<uint8_t> data;
+
+	if (!ReadWholeFile(StageLibrary::NoteOf(id), data) || data.empty())
+		return false;
+
+	out.assign(data.begin(), data.end());
+	return true;
+}
+
+bool Save(int id, const std::string& note)
+{
+	FILE* file = nullptr;
+
+	if (fopen_s(&file, StageLibrary::NoteOf(id).c_str(), "wb") != 0 || file == nullptr)
+		return false;
+
+	const bool written = fwrite(note.data(), 1, note.size(), file) == note.size();
+	fclose(file);
+
+	return written;
+}
+
+void Put(std::string& note, const char* key, const std::string& value)
+{
+	size_t valueAt = 0;
+	size_t valueEnd = 0;
+
+	if (StageArchive::FieldSpan(note, key, valueAt, valueEnd))
+	{
+		note.replace(valueAt, valueEnd - valueAt, value);
+		return;
+	}
+
+	if (!note.empty() && note.back() != '\n')
+		note += "\r\n";
+
+	note += std::string("\t") + key + " = " + value + ",\r\n";
+}
+
+void Drop(std::string& note, const char* key)
+{
+	size_t valueAt = 0;
+	size_t valueEnd = 0;
+
+	if (!StageArchive::FieldSpan(note, key, valueAt, valueEnd))
+		return;
+
+	const size_t newline = note.rfind('\n', valueAt);
+	const size_t lineStart = newline == std::string::npos ? 0 : newline + 1;
+	const size_t lineEnd = note.find('\n', valueEnd);
+
+	note.erase(lineStart, lineEnd == std::string::npos ? std::string::npos : lineEnd + 1 - lineStart);
+}
+
+std::vector<Original> Originals(int id)
+{
+	std::vector<char> buffer(kSectionBytes);
+	const DWORD length = GetPrivateProfileSectionA(kSection, buffer.data(), kSectionBytes,
+		StageSettings::PathOf(id).c_str());
+
+	std::vector<Original> out;
+
+	for (const char* at = buffer.data(); at < buffer.data() + length && *at != 0;
+		at += strlen(at) + 1)
+	{
+		const char* const equals = strchr(at, '=');
+
+		if (equals != nullptr)
+			out.push_back({ std::string(at, equals), std::string(equals + 1) });
+	}
+
+	return out;
+}
+
+void KeepOriginal(int id, const char* key, const std::string& note)
+{
+	if (!StageSettings::Read(id, kSection, key).empty())
+		return;
+
+	std::string value;
+
+	if (!StageArchive::Field(note, key, value))
+		value = kAbsent;
+
+	StageSettings::Write(id, kSection, key, value);
+}
+
+}
+
+bool StageFields::Read(int id, const char* key, std::string& out)
+{
+	std::string note;
+
+	return Load(id, note) && StageArchive::Field(note, key, out);
+}
+
+bool StageFields::Write(int id, const char* key, const std::string& value)
+{
+	std::string note;
+
+	if (key == nullptr || value.empty() || !Load(id, note))
+		return false;
+
+	KeepOriginal(id, key, note);
+	Put(note, key, value);
+
+	if (!Save(id, note))
+	{
+		LOG("StageFields: bg%03d\\stage.txt could not be written", id);
+		return false;
+	}
+
+	LOG("StageFields: bg%03d %s = %s", id, key, value.c_str());
+	return true;
+}
+
+bool StageFields::Edited(int id)
+{
+	return !Originals(id).empty();
+}
+
+bool StageFields::Reset(int id)
+{
+	const std::vector<Original> originals = Originals(id);
+	std::string note;
+
+	if (originals.empty() || !Load(id, note))
+		return false;
+
+	for (const Original& original : originals)
+	{
+		if (original.value == kAbsent)
+			Drop(note, original.key.c_str());
+		else
+			Put(note, original.key.c_str(), original.value);
+	}
+
+	if (!Save(id, note))
+		return false;
+
+	WritePrivateProfileStringA(kSection, nullptr, nullptr, StageSettings::PathOf(id).c_str());
+
+	LOG("StageFields: bg%03d is back to the %d value(s) it came with", id,
+		static_cast<int>(originals.size()));
+	return true;
+}

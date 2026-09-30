@@ -1,5 +1,6 @@
 ﻿#include "Game/Files/FbGameFolder.h"
 
+#include <cstring>
 #include <string>
 
 #include <Windows.h>
@@ -47,7 +48,29 @@ FbGameFolder::Game FbGameFolder::Detect(const char* folder)
 	if (Exists(root, "BBCF.exe"))
 		return Game_BBCF;
 
+	if (Exists(root, "P4U2.exe"))
+		return Game_P4U2;
+
 	return Game_None;
+}
+
+FbGameFolder::Game FbGameFolder::FromName(const char* name)
+{
+	if (name == nullptr)
+		return Game_None;
+
+	for (int game = Game_None + 1; game <= Game_P4U2; ++game)
+	{
+		if (strcmp(name, Name(static_cast<Game>(game))) == 0)
+			return static_cast<Game>(game);
+	}
+
+	return Game_None;
+}
+
+bool FbGameFolder::IsArcsys(Game game)
+{
+	return game == Game_BBTAG || game == Game_BBCF || game == Game_P4U2;
 }
 
 const char* FbGameFolder::Name(Game game)
@@ -68,6 +91,8 @@ const char* FbGameFolder::Name(Game game)
 		return "BLAZBLUE CROSS TAG BATTLE";
 	case Game_BBCF:
 		return "BLAZBLUE CENTRALFICTION";
+	case Game_P4U2:
+		return "PERSONA 4 ARENA ULTIMAX";
 	default:
 		return "nothing the mod knows";
 	}

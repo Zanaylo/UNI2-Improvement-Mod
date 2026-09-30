@@ -39,6 +39,11 @@ namespace StageImport
 	bool SetName(int id, const char* name);
 	bool NameAccepts(unsigned int character);
 
+	std::string FieldOf(int id, const char* key);
+	bool Forces(int id, const char* key);
+	bool SetField(int id, const char* key, const std::string& value);
+	bool ResetFields(int id);
+
 	bool Dropped(int id);
 
 	void Update();

@@ -37,6 +37,8 @@ constexpr const char* kBbtagGeometry = "_vtx.pac";
 constexpr const char* kBbtagScene = ".pac";
 constexpr const char* kBbtagArt = "_img.pac";
 constexpr const char* kBbtagAstral = "bg_exastral";
+constexpr size_t kPacHeader = 16;
+constexpr size_t kPacCount = 12;
 constexpr const char* kBbtagParticleArt = "data/particle/particle_img_bg.pac";
 constexpr const char* kBbtagHashedRoots[] = { "asset", "data" };
 constexpr size_t kTextSlack = 8192;
@@ -1169,10 +1171,12 @@ private:
 	void Listed();
 	void Hashed();
 	bool Whole(const std::string& relative, std::vector<uint8_t>& out) const;
+	bool Empty(const std::string& relative) const;
 	const std::string* Encrypted(const std::string& relative) const;
 	bool Built(const std::string& stage);
 
 	std::string m_root;
+	BbtagCrypt::Key m_key;
 	std::map<std::string, Held> m_stage;
 	std::map<std::string, std::string> m_hashed;
 	std::string m_ready;
@@ -1225,6 +1229,39 @@ std::string Readable(const std::string& stage)
 	return out;
 }
 
+std::string Plain(const std::string& relative)
+{
+	std::string plain = relative;
+	std::replace(plain.begin(), plain.end(), '/', '\\');
+
+	return plain;
+}
+
+bool ReadHead(const std::string& path, std::vector<uint8_t>& out)
+{
+	FILE* file = nullptr;
+
+	if (fopen_s(&file, path.c_str(), "rb") != 0 || file == nullptr)
+		return false;
+
+	out.assign(kPacHeader, 0);
+	const bool read = fread(out.data(), 1, out.size(), file) == out.size();
+	fclose(file);
+
+	return read;
+}
+
+bool IsEmptyPac(const std::vector<uint8_t>& head)
+{
+	if (head.size() < kPacHeader || memcmp(head.data(), "FPAC", 4) != 0)
+		return false;
+
+	uint32_t count = 0;
+	memcpy(&count, head.data() + kPacCount, sizeof(count));
+
+	return count == 0;
+}
+
 uint32_t BytesOf(const std::string& path)
 {
 	WIN32_FILE_ATTRIBUTE_DATA info = {};
@@ -1237,6 +1274,8 @@ uint32_t BytesOf(const std::string& path)
 
 BbtagSource::BbtagSource(const std::string& folder)
 	: m_root(folder)
+	, m_key(FbGameFolder::Detect(folder.c_str()) == FbGameFolder::Game_P4U2
+		? BbtagCrypt::Key_P4U2 : BbtagCrypt::Key_BBTAG)
 {
 	Sweep();
 
@@ -1293,6 +1332,10 @@ void BbtagSource::SweepGroup(const std::string& folder, const std::string& relat
 			continue;
 
 		const std::string stage = leaf.substr(0, leaf.size() - strlen(kBbtagGeometry));
+
+		if (Empty(relative + stage + kBbtagGeometry))
+			continue;
+
 		Held held;
 		held.relative = relative + stage;
 		held.geometry = held.relative + kBbtagGeometry;
@@ -1342,7 +1385,7 @@ void BbtagSource::Listed()
 		const std::string relative = std::string("data/bg/") + stem;
 		const std::string* const geometry = Encrypted(relative + kBbtagGeometry);
 
-		if (geometry == nullptr)
+		if (geometry == nullptr || Empty(relative + kBbtagGeometry))
 			continue;
 
 		Held held;
@@ -1436,15 +1479,7 @@ bool BbtagSource::Whole(const std::string& relative, std::vector<uint8_t>& out) 
 {
 	out.clear();
 
-	std::string plain = relative;
-
-	for (char& letter : plain)
-	{
-		if (letter == '/')
-			letter = '\\';
-	}
-
-	if (ReadWholeFile(Combine(m_root, plain), out))
+	if (ReadWholeFile(Combine(m_root, Plain(relative)), out))
 		return true;
 
 	const std::string* const hashed = Encrypted(relative);
@@ -1452,8 +1487,24 @@ bool BbtagSource::Whole(const std::string& relative, std::vector<uint8_t>& out) 
 	if (hashed == nullptr || !ReadWholeFile(*hashed, out))
 		return false;
 
-	BbtagCrypt::Decrypt(Lowered(BbtagCrypt::NameOf(relative)), out);
+	BbtagCrypt::Decrypt(m_key, Lowered(BbtagCrypt::NameOf(relative)), out);
 	return true;
+}
+
+bool BbtagSource::Empty(const std::string& relative) const
+{
+	std::vector<uint8_t> head;
+
+	if (ReadHead(Combine(m_root, Plain(relative)), head))
+		return IsEmptyPac(head);
+
+	const std::string* const hashed = Encrypted(relative);
+
+	if (hashed == nullptr || !ReadHead(*hashed, head))
+		return false;
+
+	BbtagCrypt::Decrypt(m_key, Lowered(BbtagCrypt::NameOf(relative)), head);
+	return IsEmptyPac(head);
 }
 
 bool BbtagSource::Built(const std::string& stage)
@@ -1672,6 +1723,7 @@ StageArchive::Source* StageArchive::Open(const char* folder)
 
 	case FbGameFolder::Game_BBTAG:
 	case FbGameFolder::Game_BBCF:
+	case FbGameFolder::Game_P4U2:
 		return Opened<BbtagSource>(folder);
 
 	default:
@@ -1796,7 +1848,7 @@ bool StageArchive::FieldSpan(const std::string& block, const char* key, size_t& 
 {
 	const size_t length = strlen(key);
 
-	for (size_t at = 0; at + length < block.size(); ++at)
+	for (size_t at = block.find(key); at != std::string::npos; at = block.find(key, at + 1))
 	{
 		if (!KeyAt(block, at, key, length))
 			continue;

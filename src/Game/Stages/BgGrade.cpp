@@ -1,6 +1,5 @@
 #include "Game/Stages/BgGrade.h"
 
-#include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
@@ -14,7 +13,7 @@
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StageKick.h"
 #include "Game/Stages/StageOnce.h"
-#include "Game/Stages/StageSettingKey.h"
+#include "Game/Stages/StageSettings.h"
 #include "Hooks/GameHook.h"
 #include "Training/FrameStepper.h"
 
@@ -31,6 +30,9 @@
 namespace {
 
 constexpr const char* kSection = "StageColour";
+constexpr const char* kGradeKey = "Grade";
+constexpr const char* kGlowKey = "Glow";
+constexpr const char* kOffKey = "Off";
 constexpr const char* kStale = "Mods\\Shader\\sh_bgspeculer.txt";
 constexpr int kLampRegister = 194;
 constexpr int kLampSlots = BbtagStage::kLampSlots;
@@ -86,7 +88,7 @@ bool From(const std::string& game, FbGameFolder::Game source)
 
 bool Arcsys(const std::string& game)
 {
-	return From(game, FbGameFolder::Game_BBTAG) || From(game, FbGameFolder::Game_BBCF);
+	return FbGameFolder::IsArcsys(FbGameFolder::FromName(game.c_str()));
 }
 
 const BbtagDefaults::Look* BbtagLook(const StageLibrary::Entry& entry)
@@ -515,14 +517,6 @@ bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips, std:
 	return true;
 }
 
-std::string Key(int stage)
-{
-	char key[16] = {};
-	sprintf_s(key, "Stage%d", stage);
-
-	return StageSettingKey::For(kSection, stage, key, { "", "Glow", "Off" });
-}
-
 bool Same(float one, float other)
 {
 	const float apart = one - other;
@@ -737,16 +731,14 @@ BgGrade::Grade BgGrade::Of(int stage)
 
 	const Grade measured = DefaultOf(stage);
 
-	char stored[64] = {};
-
-	GetPrivateProfileStringA(kSection, Key(stage).c_str(), "", stored, sizeof(stored),
-		Settings::GetIniPath().c_str());
+	const std::string stored = StageSettings::Read(stage, kSection, kGradeKey);
 
 	float lift = 0.0f;
 	float contrast = 0.0f;
 	float wasLift = 0.0f;
 	float wasContrast = 0.0f;
-	const int read = sscanf_s(stored, "%f,%f,%f,%f", &lift, &contrast, &wasLift, &wasContrast);
+	const int read = sscanf_s(stored.c_str(), "%f,%f,%f,%f", &lift, &contrast, &wasLift,
+		&wasContrast);
 
 	if (read == 4 && Same(wasLift, measured.lift) && Same(wasContrast, measured.contrast))
 	{
@@ -756,12 +748,12 @@ BgGrade::Grade BgGrade::Of(int stage)
 		return kept;
 	}
 
-	if (stored[0] != 0)
+	if (!stored.empty())
 	{
-		Settings::SaveString(kSection, Key(stage).c_str(), "");
+		StageSettings::Write(stage, kSection, kGradeKey, std::string());
 
 		LOG("BgGrade: stage %d carried '%s', which was stored against a colour the mod no longer "
-			"measures, so the stage takes the table's %.3f, %.3f instead", stage, stored,
+			"measures, so the stage takes the table's %.3f, %.3f instead", stage, stored.c_str(),
 			measured.lift, measured.contrast);
 	}
 
@@ -777,7 +769,7 @@ void BgGrade::Set(int stage, const Grade& grade)
 	sprintf_s(value, "%.4f,%.4f,%.4f,%.4f", grade.lift, grade.contrast, measured.lift,
 		measured.contrast);
 
-	Settings::SaveString(kSection, Key(stage).c_str(), value);
+	StageSettings::Write(stage, kSection, kGradeKey, value);
 
 	g_cache[stage] = grade;
 	InterlockedExchange(&g_dirty, 1);
@@ -786,8 +778,8 @@ void BgGrade::Set(int stage, const Grade& grade)
 
 void BgGrade::Forget(int stage)
 {
-	Settings::SaveString(kSection, Key(stage).c_str(), "");
-	Settings::SaveString(kSection, (Key(stage) + "Glow").c_str(), "");
+	StageSettings::Write(stage, kSection, kGradeKey, std::string());
+	StageSettings::Write(stage, kSection, kGlowKey, std::string());
 
 	g_cache.erase(stage);
 	g_glowCache.erase(stage);
@@ -949,14 +941,11 @@ float BgGrade::GlowOf(int stage)
 
 	float glow = DefaultGlowOf(stage);
 
-	char stored[32] = {};
+	const std::string stored = StageSettings::Read(stage, kSection, kGlowKey);
 
-	GetPrivateProfileStringA(kSection, (Key(stage) + "Glow").c_str(), "", stored, sizeof(stored),
-		Settings::GetIniPath().c_str());
-
-	if (stored[0] != 0)
+	if (!stored.empty())
 	{
-		const float kept = static_cast<float>(atof(stored));
+		const float kept = static_cast<float>(atof(stored.c_str()));
 
 		if (kept >= 0.0f && kept <= 4.0f)
 			glow = kept;
@@ -976,7 +965,7 @@ void BgGrade::SetGlow(int stage, float glow)
 
 	char value[32] = {};
 	sprintf_s(value, "%.3f", glow);
-	Settings::SaveString(kSection, (Key(stage) + "Glow").c_str(), value);
+	StageSettings::Write(stage, kSection, kGlowKey, value);
 
 	InterlockedExchange(&g_dirty, 1);
 }
@@ -988,8 +977,7 @@ bool BgGrade::IsOff(int stage)
 	if (known != g_offCache.end())
 		return known->second;
 
-	const bool off = GetPrivateProfileIntA(kSection, (Key(stage) + "Off").c_str(), 0,
-		Settings::GetIniPath().c_str()) != 0;
+	const bool off = atoi(StageSettings::Read(stage, kSection, kOffKey).c_str()) != 0;
 
 	g_offCache[stage] = off;
 
@@ -1000,7 +988,7 @@ void BgGrade::SetOff(int stage, bool off)
 {
 	g_offCache[stage] = off;
 
-	Settings::SaveString(kSection, (Key(stage) + "Off").c_str(), off ? "1" : "");
+	StageSettings::Write(stage, kSection, kOffKey, off ? "1" : "");
 
 	InterlockedExchange(&g_dirty, 1);
 	FrameStepper::RequestRepaint();

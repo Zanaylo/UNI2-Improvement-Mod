@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
@@ -18,6 +19,7 @@ class FileIndex
 {
 public:
 	using Map = std::unordered_map<std::string, std::string>;
+	using Stamps = std::unordered_map<std::string, uint64_t>;
 
 	static std::string Key(const char* path, size_t length);
 	static std::string Key(const std::string& path);
@@ -33,6 +35,7 @@ public:
 	bool Has(const std::string& key) const;
 
 	const Map& Entries() const;
+	const Stamps& Stamped() const;
 	int Count() const;
 
 	void Swap(FileIndex& other);
@@ -42,4 +45,5 @@ private:
 	void WalkInto(const std::string& folder, const std::string& relative, FileIndexNaming& naming);
 
 	Map m_entries;
+	Stamps m_stamps;
 };

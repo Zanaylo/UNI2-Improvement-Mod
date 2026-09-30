@@ -6,7 +6,14 @@ namespace StagePlacement
 	{
 		float scale[3];
 		float position[3];
+		float fov;
+		float horizon;
+		float tilt;
+		float turn;
 	};
+
+	constexpr float kLeastFov = 1.0f;
+	constexpr float kMostFov = 150.0f;
 
 	void Update();
 

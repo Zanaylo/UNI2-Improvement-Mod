@@ -1,13 +1,12 @@
 #include "Game/Stages/StagePlacement.h"
 
-#include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Stages/BgCeiling.h"
 #include "Game/Stages/ExtraStages.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Stages/StageLibrary.h"
-#include "Game/Stages/StageSettingKey.h"
+#include "Game/Stages/StageSettings.h"
 
 #include <Windows.h>
 
@@ -21,9 +20,12 @@
 namespace {
 
 constexpr const char* kSection = "StagePlacement";
-constexpr uintptr_t kScaleField = 0x6c;
-constexpr uintptr_t kPositionField = 0x78;
-constexpr int kAxes = 3;
+constexpr const char* kPlaceKey = "Place";
+constexpr uintptr_t kPlaceField = 0x6c;
+constexpr int kFloats = sizeof(StagePlacement::Place) / sizeof(float);
+constexpr int kPlacementFloats = 6;
+
+static_assert(sizeof(StagePlacement::Place) == 0x94 - 0x6c, "Place mirrors record +0x6c..+0x94");
 
 std::map<int, StagePlacement::Place> g_shipped;
 std::map<int, StagePlacement::Place> g_edited;
@@ -33,12 +35,11 @@ int g_stage = -1;
 long g_revision = -1;
 char g_status[160] = "no stage is loaded";
 
-std::string Key(int stage)
+int FolderNumber(int stage)
 {
-	char text[32] = {};
-	sprintf_s(text, "Stage%03d", stage);
+	const int id = StageLibrary::IdForSlot(stage);
 
-	return StageSettingKey::For(kSection, StageLibrary::IdForSlot(stage), text, { "" });
+	return id >= 0 ? id : stage;
 }
 
 void Describe(int stage)
@@ -52,11 +53,21 @@ void Describe(int stage)
 	sprintf_s(g_status, "stage %d is in its original place", stage);
 }
 
+const float* Floats(const StagePlacement::Place& place)
+{
+	return reinterpret_cast<const float*>(&place);
+}
+
+float* Floats(StagePlacement::Place& place)
+{
+	return reinterpret_cast<float*>(&place);
+}
+
 bool Sane(const StagePlacement::Place& place)
 {
-	for (int i = 0; i < kAxes; ++i)
+	for (int i = 0; i < kFloats; ++i)
 	{
-		if (!std::isfinite(place.scale[i]) || !std::isfinite(place.position[i]))
+		if (!std::isfinite(Floats(place)[i]))
 			return false;
 	}
 
@@ -68,14 +79,8 @@ bool Read(uintptr_t record, StagePlacement::Place& out)
 	if (record == 0)
 		return false;
 
-	if (!TryReadMemory(out.scale, reinterpret_cast<const void*>(record + kScaleField),
-		sizeof(out.scale)))
-	{
-		return false;
-	}
-
-	return TryReadMemory(out.position, reinterpret_cast<const void*>(record + kPositionField),
-		sizeof(out.position)) && Sane(out);
+	return TryReadMemory(&out, reinterpret_cast<const void*>(record + kPlaceField), sizeof(out))
+		&& Sane(out);
 }
 
 bool Write(uintptr_t record, const StagePlacement::Place& place)
@@ -83,24 +88,21 @@ bool Write(uintptr_t record, const StagePlacement::Place& place)
 	if (record == 0 || !Sane(place))
 		return false;
 
-	if (!TryWriteMemory(reinterpret_cast<void*>(record + kScaleField), place.scale,
-		sizeof(place.scale)))
-	{
-		return false;
-	}
-
-	return TryWriteMemory(reinterpret_cast<void*>(record + kPositionField), place.position,
-		sizeof(place.position));
+	return TryWriteMemory(reinterpret_cast<void*>(record + kPlaceField), &place, sizeof(place));
 }
 
 void Store(int stage, const StagePlacement::Place& place)
 {
-	char value[128] = {};
+	std::string value;
 
-	sprintf_s(value, "%.4f,%.4f,%.4f,%.4f,%.4f,%.4f", place.scale[0], place.scale[1],
-		place.scale[2], place.position[0], place.position[1], place.position[2]);
+	for (int i = 0; i < kFloats; ++i)
+	{
+		char number[32] = {};
+		sprintf_s(number, "%s%.4f", i == 0 ? "" : ",", Floats(place)[i]);
+		value += number;
+	}
 
-	Settings::SaveString(kSection, Key(stage).c_str(), value);
+	StageSettings::Write(FolderNumber(stage), kSection, kPlaceKey, value);
 }
 
 bool Learn(int stage)
@@ -143,18 +145,22 @@ void ForgetMovedSlots()
 
 bool Recall(int stage, StagePlacement::Place& out)
 {
-	char stored[128] = {};
+	const std::string stored = StageSettings::Read(FolderNumber(stage), kSection, kPlaceKey);
 
-	GetPrivateProfileStringA(kSection, Key(stage).c_str(), "", stored, sizeof(stored),
-		Settings::GetIniPath().c_str());
-
-	if (stored[0] == 0)
+	if (stored.empty() || !StagePlacement::Shipped(stage, out))
 		return false;
 
-	const int read = sscanf_s(stored, "%f,%f,%f,%f,%f,%f", &out.scale[0], &out.scale[1],
-		&out.scale[2], &out.position[0], &out.position[1], &out.position[2]);
+	int read = 0;
+	const char* at = stored.c_str();
 
-	return read == 6 && Sane(out);
+	while (read < kFloats && at != nullptr && sscanf_s(at, "%f", &Floats(out)[read]) == 1)
+	{
+		++read;
+		at = strchr(at, ',');
+		at = at == nullptr ? nullptr : at + 1;
+	}
+
+	return (read == kPlacementFloats || read == kFloats) && Sane(out);
 }
 
 }
@@ -264,7 +270,7 @@ void StagePlacement::Set(int stage, const Place& place)
 void StagePlacement::Forget(int stage)
 {
 	g_edited.erase(stage);
-	Settings::SaveString(kSection, Key(stage).c_str(), "");
+	StageSettings::Write(FolderNumber(stage), kSection, kPlaceKey, std::string());
 
 	Place shipped = {};
 

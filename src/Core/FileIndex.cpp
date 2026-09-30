@@ -4,6 +4,19 @@
 
 #include <cctype>
 
+namespace {
+
+uint64_t Stamp(const WIN32_FIND_DATAA& found)
+{
+	const uint64_t size = (static_cast<uint64_t>(found.nFileSizeHigh) << 32) | found.nFileSizeLow;
+	const uint64_t written = (static_cast<uint64_t>(found.ftLastWriteTime.dwHighDateTime) << 32)
+		| found.ftLastWriteTime.dwLowDateTime;
+
+	return size * 0x100000001b3ull ^ written;
+}
+
+}
+
 bool FileIndexNaming::Folder(const std::string&, const std::string& relative, std::string& renamed)
 {
 	renamed = relative;
@@ -86,8 +99,11 @@ void FileIndex::WalkInto(const std::string& folder, const std::string& relative,
 
 		std::string key;
 
-		if (naming.File(relative, found.cFileName, key))
-			m_entries[key] = full;
+		if (!naming.File(relative, found.cFileName, key))
+			continue;
+
+		m_entries[key] = full;
+		m_stamps[key] = Stamp(found);
 	}
 	while (FindNextFileA(search, &found) != 0);
 
@@ -102,6 +118,7 @@ void FileIndex::Add(const std::string& key, const std::string& path)
 void FileIndex::Remove(const std::string& key)
 {
 	m_entries.erase(key);
+	m_stamps.erase(key);
 }
 
 const std::string* FileIndex::Find(const std::string& key) const
@@ -121,6 +138,11 @@ const FileIndex::Map& FileIndex::Entries() const
 	return m_entries;
 }
 
+const FileIndex::Stamps& FileIndex::Stamped() const
+{
+	return m_stamps;
+}
+
 int FileIndex::Count() const
 {
 	return static_cast<int>(m_entries.size());
@@ -129,9 +151,11 @@ int FileIndex::Count() const
 void FileIndex::Swap(FileIndex& other)
 {
 	m_entries.swap(other.m_entries);
+	m_stamps.swap(other.m_stamps);
 }
 
 void FileIndex::Clear()
 {
 	m_entries.clear();
+	m_stamps.clear();
 }

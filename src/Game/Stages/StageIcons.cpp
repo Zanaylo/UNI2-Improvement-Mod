@@ -45,6 +45,7 @@ const char* KeyOf(FbGameFolder::Game game)
 	case FbGameFolder::Game_MBTL: return "MBTL";
 	case FbGameFolder::Game_BBTAG: return "BBTAG";
 	case FbGameFolder::Game_BBCF: return "BBCF";
+	case FbGameFolder::Game_P4U2: return "P4U2";
 	case FbGameFolder::Game_UNI: return "UNICLR";
 	case FbGameFolder::Game_UNIEL: return "UNIEL";
 	default: return nullptr;

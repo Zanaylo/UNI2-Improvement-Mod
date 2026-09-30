@@ -268,52 +268,42 @@ const uint8_t* SourceFor(const Player& entry)
 	return nullptr;
 }
 
-int ReadBaseX(int player)
+void LogLatch(int player, uintptr_t owner, uintptr_t was)
 {
-	void* const chara = MemoryMap::GetCharaSlot(player);
-	uint32_t x = 0;
-
-	if (chara == nullptr || !MemoryMap::ReadStructDword(chara, GameOffsets::kPlayerDataBaseX, x))
-		return 0;
-
-	return static_cast<int>(x);
-}
-
-int FindPointerIn(int player, uintptr_t value)
-{
-	void* const chara = MemoryMap::GetCharaSlot(player);
-
-	if (chara == nullptr)
-		return -1;
-
-	uint32_t data[GameOffsets::kPlayerDataSize / 4] = {};
-
-	if (!TryReadMemory(data, chara, sizeof(data)))
-		return -1;
-
-	for (int i = 0; i < static_cast<int>(GameOffsets::kPlayerDataSize / 4); ++i)
-	{
-		if (data[i] == value)
-			return i * 4;
-	}
-
-	return -1;
-}
-
-void LogLatch(int player, uintptr_t owner)
-{
-	LOG("palette latch: p%d takes owner 0x%08x  screen side %d  seat side %d  x %d vs %d  "
-		"in p0 at %d  in p1 at %d", player, static_cast<unsigned>(owner),
-		PlayerSides::ScreenSideOf(player), PaletteSeat::GetSideByOwner(owner),
-		ReadBaseX(player), ReadBaseX(player == 0 ? 1 : 0),
-		FindPointerIn(0, owner), FindPointerIn(1, owner));
+	LOG("palette latch: p%d takes owner 0x%08x, was 0x%08x  seat side %d  screen side %d", player,
+		static_cast<unsigned>(owner), static_cast<unsigned>(was), PaletteSeat::GetSideByOwner(owner),
+		PlayerSides::ScreenSideOf(player));
 }
 
 uintptr_t OwnerFor(int player)
 {
-	const int side = PlayerSides::ScreenSideOf(player);
+	void* const chara = MemoryMap::GetCharaSlot(player);
+	uint32_t table = 0;
 
-	return side >= 0 ? PaletteSeat::GetOwner(side) : 0;
+	if (chara == nullptr
+		|| !MemoryMap::ReadStructDword(chara, GameOffsets::kPlayerDataPaletteTable, table))
+	{
+		return 0;
+	}
+
+	uint32_t owner = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(table + GameOffsets::kPaletteTableCurrent), owner))
+		return 0;
+
+	return PaletteSeat::GetSideByOwner(owner) >= 0 ? owner : 0;
+}
+
+void Follow(Player& entry, int player)
+{
+	const uintptr_t owner = OwnerFor(player);
+
+	if (owner == 0 || owner == entry.owner)
+		return;
+
+	LogLatch(player, owner, entry.owner);
+	Release(entry);
+	entry.owner = owner;
 }
 
 }
@@ -329,13 +319,7 @@ void PalettePaint::Stage(int player, const uint8_t* colours)
 	entry.staged = true;
 	++entry.revision;
 
-	const uintptr_t owner = OwnerFor(player);
-
-	if (owner == 0 || owner == entry.owner)
-		return;
-
-	LogLatch(player, owner);
-	entry.owner = owner;
+	Follow(entry, player);
 }
 
 void PalettePaint::StageCompanion(int player, const uint8_t* colours)
@@ -423,8 +407,7 @@ void PalettePaint::StageRemote(int player, const uint8_t* colours)
 	memcpy(entry.remote, colours, kBytes);
 	entry.hasRemote = true;
 
-	if (entry.owner == 0)
-		entry.owner = OwnerFor(player);
+	Follow(entry, player);
 }
 
 void PalettePaint::ClearRemote(int player)
@@ -471,8 +454,7 @@ void PalettePaint::Preview(int player, const uint8_t* colours)
 	memcpy(entry.preview, colours, kBytes);
 	entry.previewing = true;
 
-	if (entry.owner == 0)
-		entry.owner = OwnerFor(player);
+	Follow(entry, player);
 }
 
 void PalettePaint::EndPreview(int player)
@@ -517,21 +499,12 @@ void PalettePaint::OnFrame()
 	{
 		Player& entry = g_players[player];
 
+		Follow(entry, player);
+
 		uintptr_t named = 0;
 		uint32_t rows = 0;
 
-		if (entry.owner == 0 || !PaletteSeat::GetByOwner(entry.owner, named, rows))
-		{
-			const uintptr_t fresh = OwnerFor(player);
-			const uintptr_t theirs = g_players[player == 0 ? 1 : 0].owner;
-
-			if (fresh != 0 && fresh != entry.owner && fresh != theirs)
-			{
-				LogLatch(player, fresh);
-				Release(entry);
-				entry.owner = fresh;
-			}
-		}
+		PaletteSeat::GetByOwner(entry.owner, named, rows);
 
 		if (rows != 0)
 			entry.rows = rows;

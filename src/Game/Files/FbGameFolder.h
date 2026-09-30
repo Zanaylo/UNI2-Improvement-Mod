@@ -12,9 +12,13 @@ namespace FbGameFolder
 		Game_UNIEL,
 		Game_BBTAG,
 		Game_BBCF,
+		Game_P4U2,
 	};
 
 	Game Detect(const char* folder);
 
 	const char* Name(Game game);
+	Game FromName(const char* name);
+
+	bool IsArcsys(Game game);
 }

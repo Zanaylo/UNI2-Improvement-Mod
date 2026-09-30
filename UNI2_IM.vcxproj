@@ -203,7 +203,7 @@
     <ClCompile Include="src\Game\Stages\BgMipmaps.cpp" />
     <ClCompile Include="src\Game\Stages\DxtMips.cpp" />
     <ClCompile Include="src\Game\Stages\StagePlacement.cpp" />
-    <ClCompile Include="src\Game\Stages\StageSettingKey.cpp" />
+    <ClCompile Include="src\Game\Stages\StageSettings.cpp" />
     <ClCompile Include="src\Game\Stages\BgVertexProbe.cpp" />
     <ClCompile Include="src\Game\Stages\BgGrade.cpp" />
     <ClCompile Include="src\Game\Stages\BgShaderText.cpp" />
@@ -221,6 +221,8 @@
     <ClCompile Include="src\Game\Stages\StageNote.cpp" />
     <ClCompile Include="src\Game\Stages\StageReplacements.cpp" />
     <ClCompile Include="src\Game\Stages\StageThumb.cpp" />
+    <ClCompile Include="src\Game\Stages\StageFields.cpp" />
+    <ClCompile Include="src\Game\Stages\StageTrash.cpp" />
     <ClCompile Include="src\Game\Stages\StageIcons.cpp" />
     <ClCompile Include="src\Game\Stages\StageObjects.cpp" />
     <ClCompile Include="src\Game\Stages\StageKick.cpp" />
@@ -239,6 +241,7 @@
     <ClCompile Include="src\Overlay\Hud\ProrationHud.cpp" />
     <ClCompile Include="src\Overlay\Panels\RestartPrompt.cpp" />
     <ClCompile Include="src\Overlay\Panels\StagesPanel.cpp" />
+    <ClCompile Include="src\Overlay\Panels\StageFieldsWindow.cpp" />
     <ClCompile Include="src\Overlay\Windows\StagesWindow.cpp" />
     <ClCompile Include="src\Game\Audio\OstPac.cpp" />
     <ClCompile Include="src\Game\Audio\OstUniNames.cpp" />
@@ -565,7 +568,7 @@
     <ClInclude Include="src\Game\Stages\BgMipmaps.h" />
     <ClInclude Include="src\Game\Stages\DxtMips.h" />
     <ClInclude Include="src\Game\Stages\StagePlacement.h" />
-    <ClInclude Include="src\Game\Stages\StageSettingKey.h" />
+    <ClInclude Include="src\Game\Stages\StageSettings.h" />
     <ClInclude Include="src\Game\Stages\BgVertexProbe.h" />
     <ClInclude Include="src\Game\Stages\BgGrade.h" />
     <ClInclude Include="src\Game\Stages\BgShaderText.h" />
@@ -583,6 +586,8 @@
     <ClInclude Include="src\Game\Stages\StageNote.h" />
     <ClInclude Include="src\Game\Stages\StageReplacements.h" />
     <ClInclude Include="src\Game\Stages\StageThumb.h" />
+    <ClInclude Include="src\Game\Stages\StageFields.h" />
+    <ClInclude Include="src\Game\Stages\StageTrash.h" />
     <ClInclude Include="src\Game\Stages\StageIcons.h" />
     <ClInclude Include="src\Game\Stages\StageObjects.h" />
     <ClInclude Include="src\Game\Stages\StageKick.h" />
@@ -601,6 +606,7 @@
     <ClInclude Include="src\Overlay\Hud\ProrationHud.h" />
     <ClInclude Include="src\Overlay\Panels\RestartPrompt.h" />
     <ClInclude Include="src\Overlay\Panels\StagesPanel.h" />
+    <ClInclude Include="src\Overlay\Panels\StageFieldsWindow.h" />
     <ClInclude Include="src\Overlay\Windows\StagesWindow.h" />
     <ClInclude Include="src\Game\Audio\OstPac.h" />
     <ClInclude Include="src\Game\Audio\OstUniNames.h" />

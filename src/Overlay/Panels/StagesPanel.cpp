@@ -33,7 +33,7 @@ constexpr float kListHeight = 220.0f;
 constexpr float kNumberColumn = 60.0f;
 constexpr float kSizeColumn = 80.0f;
 constexpr float kActionColumn = 150.0f;
-constexpr float kPortedActionColumn = 205.0f;
+constexpr float kPortedActionColumn = 275.0f;
 constexpr float kCheckboxGap = 24.0f;
 constexpr float kPortedHeight = 330.0f;
 constexpr float kStepperColumn = 118.0f;
@@ -41,6 +41,12 @@ constexpr float kInGameColumn = 70.0f;
 constexpr float kPlacementWidth = 260.0f;
 constexpr float kMostMove = 40.0f;
 constexpr float kMoveSpeed = 0.05f;
+constexpr float kFovSpeed = 0.1f;
+constexpr float kHorizonSpeed = 0.005f;
+constexpr float kMostHorizon = 2.0f;
+constexpr float kAngleSpeed = 0.1f;
+constexpr float kMostTilt = 90.0f;
+constexpr float kMostTurn = 180.0f;
 
 constexpr float kStepPercent = 5.0f;
 constexpr float kDragSpeed = 0.5f;
@@ -68,6 +74,12 @@ void Resize(StagePlacement::Place& place, float size)
 
 	for (int i = 0; i < 3; ++i)
 		place.scale[i] *= by;
+}
+
+void HoverTip(const char* text)
+{
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("%s", text);
 }
 
 float Snapped(float percent, float step)
@@ -318,6 +330,7 @@ void StagesPanel::Draw()
 	}
 
 	DrawRestart();
+	m_fields.Draw();
 }
 
 void StagesPanel::DrawHidden()
@@ -378,7 +391,8 @@ void StagesPanel::DrawSource()
 		"\n\nFrench-Bread: UNI[st], UNI[cl-r], UNI Exe:Late, MELTY BLOOD: TYPE LUMINA and "
 		"DENGEKI BUNKO FIGHTING CLIMAX IGNITION."
 		"\n\nArc System Works: every stage of BLAZBLUE CROSS TAG BATTLE, and the stages of "
-		"BLAZBLUE CENTRALFICTION.\nNot every BLAZBLUE CENTRALFICTION stage may work yet.");
+		"PERSONA 4 ARENA ULTIMAX and BLAZBLUE CENTRALFICTION.\nPERSONA 4 ARENA ULTIMAX stages are not "
+		"perfect yet. Some of them work.\nNot every BLAZBLUE CENTRALFICTION stage may work yet.");
 
 	std::string picked;
 
@@ -412,12 +426,21 @@ void StagesPanel::DrawArcsys()
 {
 	const FbGameFolder::Game game = StageImport::ScannedKind();
 
-	if (game != FbGameFolder::Game_BBTAG && game != FbGameFolder::Game_BBCF)
+	if (!FbGameFolder::IsArcsys(game))
 		return;
 
 	UiText::Muted("These stages convert with their motions, sprite animations, lights and the "
 		"BLAZBLUE camera. To edit one, open it with the Mua add-on for Blender and import the result "
 		"with the button below.");
+
+	if (game == FbGameFolder::Game_P4U2)
+	{
+		UiText::Warn("PERSONA 4 ARENA ULTIMAX stages are not perfect yet. Some of them work, others may "
+			"look wrong.");
+		UiText::Warn("PERSONA 4 ARENA ULTIMAX places its camera where CROSS TAG BATTLE does, but its "
+			"field of view was not checked. If a stage looks too big or too small, change its Size.");
+		return;
+	}
 
 	if (game != FbGameFolder::Game_BBCF)
 		return;
@@ -678,16 +701,32 @@ void StagesPanel::DrawPlacement()
 	if (stage < 0 || !StagePlacement::Of(stage, place))
 		return;
 
-	if (!ImGui::CollapsingHeader("Stage position"))
+	if (!ImGui::CollapsingHeader("Stage position and camera"))
 		return;
 
-	UiText::Muted("Moves the scenery around the fight. The fighters stay where they are. Size is "
-		"in the list below.");
+	UiText::Muted("Moves the scenery and the camera for this stage only. The fighters stay where "
+		"they are. Size is in the list below.");
 
 	ImGui::PushItemWidth(Ui::Scaled(kPlacementWidth));
 
-	const bool changed = ImGui::DragFloat3("Position##placemove", place.position, kMoveSpeed,
+	bool changed = ImGui::DragFloat3("Position##placemove", place.position, kMoveSpeed,
 		-kMostMove, kMostMove, "%.2f");
+
+	changed |= ImGui::DragFloat("Field of view##placefov", &place.fov, kFovSpeed,
+		StagePlacement::kLeastFov, StagePlacement::kMostFov, "%.1f");
+	HoverTip("In degrees. Wider shows more scenery around the fight, the fight keeps its size.");
+
+	changed |= ImGui::DragFloat("Horizon##placehorizon", &place.horizon, kHorizonSpeed,
+		-kMostHorizon, kMostHorizon, "%.3f");
+	HoverTip("Slides the view up or down without tilting it. Higher puts the horizon lower.");
+
+	changed |= ImGui::DragFloat("Tilt##placetilt", &place.tilt, kAngleSpeed, -kMostTilt, kMostTilt,
+		"%.1f");
+	HoverTip("In degrees. Tips the scenery toward or away from the camera.");
+
+	changed |= ImGui::DragFloat("Turn##placeturn", &place.turn, kAngleSpeed, -kMostTurn, kMostTurn,
+		"%.1f");
+	HoverTip("In degrees. Turns the scenery left or right around the fight.");
 
 	ImGui::PopItemWidth();
 
@@ -867,6 +906,14 @@ void StagesPanel::DrawPorted()
 
 			ImGui::SameLine();
 
+			if (ImGui::SmallButton("Advanced"))
+				m_fields.Open(row.id, row.slot, row.name);
+
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+				ImGui::SetTooltip("Camera, fog, shadows, bloom and smoothing from the stage's stage.txt.");
+
+			ImGui::SameLine();
+
 			if (ImGui::SmallButton("Remove"))
 				StageImport::Remove(row.id);
 
@@ -959,7 +1006,8 @@ void StagesPanel::DrawHelp()
 	ImGui::SeparatorText("Adding a stage");
 
 	UiText::Muted("Take one from MELTY BLOOD: TYPE LUMINA, UNI[st], UNI[cl-r], UNI Exe:Late, DFCI, "
-		"BLAZBLUE CROSS TAG BATTLE or BLAZBLUE CENTRALFICTION, or import a folder you made in "
+		"BLAZBLUE CROSS TAG BATTLE, BLAZBLUE CENTRALFICTION or PERSONA 4 ARENA ULTIMAX, or import a "
+		"folder you made in "
 		"Blender. Nothing is downloaded and none of the game's files are replaced.");
 
 	ImGui::SeparatorText("Hidden stages");

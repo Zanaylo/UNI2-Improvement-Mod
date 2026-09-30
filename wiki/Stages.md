@@ -43,11 +43,25 @@ stage names are translated by the mod.
 get their card from MBTL's own picker sheet. Ports numbered past 47 have no free cell left and
 borrow one.
 
-**Remove** deletes the stage's files, its entry and its card.
+**Remove** takes the stage, its entry and its card off the list at once. Its files are moved to
+`UNI2-IM\Trash` and deleted in the background, so the game never waits for them. Anything left
+there is deleted on the next launch.
+
+**Advanced** opens the stage's own settings: camera (Scale, Position, FOV, Vanishing point, View
+rotation X), fog, MSAA, stage width, bloom, shadows, stage bloom and FXAA. The camera is saved
+with the Size column, everything else in the port's `stage.txt`. A change shows the next time the
+stage loads. **Reset all** puts back every value the stage came with.
 
 **Rename** edits a port's name in place. Press Enter to save, Esc to cancel. The new name is kept
 in the stage's `stage.txt` and survives a restart. The game's stage select shows it after the
 restart the panel offers. A name cannot use `" | , { } [ ] \ =` or `//`.
+
+**PERSONA 4 ARENA ULTIMAX** works like BBTAG: pick the folder with `P4U2.exe`. Its stages use
+BBTAG's camera, and its field of view was not checked, so if one looks too big or too small,
+change its Size.
+
+> **PERSONA 4 ARENA ULTIMAX stages are not perfect yet.** Some of them work, others may look
+> wrong.
 
 **BBTAG Astral Heat and menu backgrounds** are hidden from the BBTAG list by default. Tick
 **Show Astral Heat and menu backgrounds** above the list to see them, as `Astral <code>` (for
@@ -117,10 +131,24 @@ big or too small next to the characters. UNI2's own stages ship at `10`, and por
 match, so you should only need a small nudge.
 
 Size changes all three axes together and keeps the stage's shape. For the loaded stage there is also
-**Where the fight sits in this stage**, above the list. It opens the three axes and the position
-separately. Use it when a stage needs to move rather than grow. Both are saved under
-`[StagePlacement]` as `StageNNN=scale x,y,z,position x,y,z`, and **Reset** puts back the stage's
-original values.
+**Stage position and camera**, above the list, with **Advanced stage options** turned on. It moves
+the stage and sets its camera, for that stage only:
+
+- **Position** moves the scenery around the fight.
+- **Field of view**, in degrees. Wider shows more scenery around the fight, and the fight keeps its
+  size.
+- **Horizon** slides the view up or down without tilting it.
+- **Tilt** and **Turn**, in degrees, rotate the scenery around the fight.
+
+The changes show while you drag, so you can test a stage in training. **Reset** puts back the
+stage's original values.
+
+**Every stage keeps its own settings file**, `settings.ini`, with its colour, glow, size, position
+and camera. A port's is in its own folder, `UNI2-IM\Mods\bg\bgNNN\settings.ini`, so it goes wherever
+the stage goes and is deleted with it. The game's own stages keep theirs in
+`UNI2-IM\Mods\bg\own\bgNNN\settings.ini`. Settings an older build left in `UNI2_IM.ini`
+(`[StageColour]`, `[StagePlacement]`) move into these files the next time the game starts, and are
+taken out of the ini. A line whose stage is no longer installed stays in the ini.
 
 ## Sprites a stage asks for and does not have
 

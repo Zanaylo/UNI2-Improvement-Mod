@@ -66,6 +66,10 @@ DWORD g_stirredAt = 0;
 bool g_stirred = false;
 bool g_packsStirred = false;
 volatile long g_revision = 0;
+uint64_t g_fingerprint = 0;
+
+constexpr const char* kBookkeeping[] = { "bg\\bglist.txt", "bg\\bglist_str.txt" };
+constexpr const char* kStageSettingsLeaf = "\\settings.ini";
 bool g_slotsLogged = false;
 
 constexpr const char* kLanguageRoots[] = {
@@ -415,10 +419,45 @@ void ArmSearchPath()
 		"replaced");
 }
 
-void Rebuild()
+bool Bookkeeping(const std::string& key)
+{
+	for (const char* generated : kBookkeeping)
+	{
+		if (key == generated)
+			return true;
+	}
+
+	return EndsWithNoCase(key, kStageSettingsLeaf);
+}
+
+uint64_t Fingerprint(const FileIndex& index)
+{
+	uint64_t sum = 0;
+
+	for (const FileIndex::Stamps::value_type& stamp : index.Stamped())
+	{
+		if (Bookkeeping(stamp.first))
+			continue;
+
+		uint64_t hash = 0xcbf29ce484222325ull;
+
+		for (const char letter : stamp.first)
+			hash = (hash ^ static_cast<uint8_t>(letter)) * 0x100000001b3ull;
+
+		sum += (hash ^ stamp.second) * 0x9e3779b97f4a7c15ull;
+	}
+
+	return sum;
+}
+
+bool Rebuild()
 {
 	FileIndex own;
 	own.Walk(g_root);
+
+	const uint64_t fingerprint = Fingerprint(own);
+	const bool changed = fingerprint != g_fingerprint;
+	g_fingerprint = fingerprint;
 
 	FileIndex built;
 
@@ -447,6 +486,8 @@ void Rebuild()
 	InterlockedExchange(&g_indexed, count);
 
 	DataSearchPath::HoldOverrides(count > 0);
+
+	return changed;
 }
 
 void WatchFolder(int which, const std::string& folder)
@@ -555,13 +596,20 @@ void ModFiles::Rescan()
 {
 	g_stirred = false;
 
-	if (g_packsStirred)
+	const bool packs = g_packsStirred;
+
+	if (packs)
 	{
 		g_packsStirred = false;
 		ModPacks::Scan();
 	}
 
-	Rebuild();
+	if (!Rebuild() && !packs)
+	{
+		LOG("ModFiles: only the mod's own bookkeeping changed, %s", g_status);
+		return;
+	}
+
 	InterlockedIncrement(&g_revision);
 	LOG("ModFiles: %s", g_status);
 }

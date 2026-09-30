@@ -74,4 +74,7 @@ static const StageNameEntry kStageNames[] = {
 	{ FbGameFolder::Game_BBTAG, "bg_station_2", "Rail Station -Last Train-", -1 },
 	{ FbGameFolder::Game_BBTAG, "bg_street", "Convenience Store", -1 },
 	{ FbGameFolder::Game_BBTAG, "bg_town", "Monorail", -1 },
+	{ FbGameFolder::Game_P4U2, "bg_foodcourt", "Junes Food Court", -1 },
+	{ FbGameFolder::Game_P4U2, "bg_gate_p4u2", "School Gate", -1 },
+	{ FbGameFolder::Game_P4U2, "bg_street", "Convenience Store", -1 },
 };

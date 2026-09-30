@@ -2,6 +2,7 @@
 
 #include "Core/AsyncFileDialog.h"
 #include "Game/Stages/StageImport.h"
+#include "Overlay/Panels/StageFieldsWindow.h"
 
 #include <string>
 #include <vector>
@@ -42,6 +43,7 @@ private:
 	AsyncFileDialog m_sourceDialog;
 	AsyncFileDialog m_customDialog;
 	AsyncFileDialog m_replaceDialog;
+	StageFieldsWindow m_fields;
 	int m_replaceNumber = 0;
 	std::vector<Row> m_rows;
 	std::vector<int> m_queue;

@@ -8,6 +8,7 @@
 #include "Game/Stages/ExtraStages.h"
 #include "Game/Files/FbGameFolder.h"
 #include "Game/Stages/StageArchive.h"
+#include "Game/Stages/StageTrash.h"
 
 #include <Windows.h>
 
@@ -577,7 +578,8 @@ void Adopt()
 		}
 
 		if (id < StageLibrary::kSlotFirst || id > StageLibrary::kIdLast
-			|| StageLibrary::GameOwns(id) || Known(id))
+			|| StageLibrary::GameOwns(id) || Known(id)
+			|| StageTrash::Pending(StageLibrary::FolderOf(id)))
 		{
 			continue;
 		}
