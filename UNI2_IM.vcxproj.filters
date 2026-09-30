@@ -552,8 +552,8 @@
     <ClCompile Include="src\Overlay\Panels\StagesPanel.cpp">
       <Filter>Overlay\Panels</Filter>
     </ClCompile>
-    <ClCompile Include="src\Overlay\Panels\StageFieldsWindow.cpp">
-      <Filter>Overlay\Panels</Filter>
+    <ClCompile Include="src\Overlay\Windows\StageFieldsWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Windows\StagesWindow.cpp">
       <Filter>Overlay\Windows</Filter>
@@ -1742,8 +1742,8 @@
     <ClInclude Include="src\Overlay\Panels\StagesPanel.h">
       <Filter>Overlay\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="src\Overlay\Panels\StageFieldsWindow.h">
-      <Filter>Overlay\Panels</Filter>
+    <ClInclude Include="src\Overlay\Windows\StageFieldsWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Windows\StagesWindow.h">
       <Filter>Overlay\Windows</Filter>

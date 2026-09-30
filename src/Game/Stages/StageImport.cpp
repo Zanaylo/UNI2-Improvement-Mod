@@ -336,6 +336,12 @@ const char* Tag(FbGameFolder::Game game)
 	if (game == FbGameFolder::Game_P4U2)
 		return " (P4U2)";
 
+	if (game == FbGameFolder::Game_MBTL)
+		return " (MBTL)";
+
+	if (game == FbGameFolder::Game_DFCI)
+		return " (DFCI)";
+
 	return "";
 }
 
@@ -1473,14 +1479,13 @@ void StageImport::Initialize()
 
 		RefreshCard(entry, bundleChanged);
 
-		const std::string english =
-			English(FbGameFolder::FromName(entry.game.c_str()), entry.folder);
+		const FbGameFolder::Game game = FbGameFolder::FromName(entry.game.c_str());
+		const std::string english = English(game, entry.folder);
 
-		if (english.empty() || english == entry.name || entry.renamed)
+		if (english.empty() || entry.renamed || english + Tag(game) == entry.name)
 			continue;
 
-		entry.name = english;
-		StageLibrary::Put(entry);
+		StageLibrary::Retitle(entry.id, english + Tag(game));
 	}
 
 	if (bundleChanged)
@@ -1899,9 +1904,14 @@ bool StageImport::SetField(int id, const char* key, const std::string& value)
 	return true;
 }
 
-bool StageImport::ResetFields(int id)
+std::vector<std::string> StageImport::EditedFields(int id)
 {
-	if (IsBusy() || !StageFields::Reset(id))
+	return StageFields::Edited(id);
+}
+
+bool StageImport::ResetFields(int id, const std::vector<std::string>& keys)
+{
+	if (IsBusy() || !StageFields::Reset(id, keys))
 		return false;
 
 	Apply();

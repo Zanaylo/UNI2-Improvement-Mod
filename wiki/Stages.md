@@ -36,8 +36,11 @@ is replaced.
 
 Sizes: UNI stages are 4-30 MB, MBTL stages are 17-98 MB.
 
-**Names** are in English. UNI's stages are also in UNI2, so they use UNI2's own English name. MBTL
-stage names are translated by the mod.
+**Names** are in English and end with the game they came from, like `Summer Sky (MBTL)`. UNI's
+stages are also in UNI2, so they use UNI2's own English name. MBTL stages use MBTL's own English
+names. DFCI has no English text of its own, so its stages use the western release's names. Two
+stages that share a name get a part in dashes: `Magician's Night EX -Night-` and
+`Magician's Night EX -Stars-`. A name you gave a stage yourself is never changed.
 
 **Cards** come from the source game. UNI stages use the card UNI2 already has for them. MBTL stages
 get their card from MBTL's own picker sheet. Ports numbered past 47 have no free cell left and
@@ -48,9 +51,10 @@ borrow one.
 there is deleted on the next launch.
 
 **Advanced** opens the stage's own settings: camera (Scale, Position, FOV, Vanishing point, View
-rotation X), fog, MSAA, stage width, bloom, shadows, stage bloom and FXAA. The camera is saved
+rotation X), fog, MSAA, bloom, shadows, stage bloom and FXAA. The camera is saved
 with the Size column, everything else in the port's `stage.txt`. A change shows the next time the
-stage loads. **Reset all** puts back every value the stage came with.
+stage loads. Each part has its own **Reset**, and **Reset all** puts back every value the stage came
+with. The window stays open when you close or collapse the Stages window.
 
 **Rename** edits a port's name in place. Press Enter to save, Esc to cancel. The new name is kept
 in the stage's `stage.txt` and survives a restart. The game's stage select shows it after the

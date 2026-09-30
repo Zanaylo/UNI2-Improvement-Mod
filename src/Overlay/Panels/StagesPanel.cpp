@@ -17,6 +17,8 @@
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Overlay/Panels/RestartPrompt.h"
+#include "Overlay/Framework/WindowManager.h"
+#include "Overlay/Windows/StageFieldsWindow.h"
 
 #include <imgui.h>
 
@@ -80,6 +82,16 @@ void HoverTip(const char* text)
 {
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("%s", text);
+}
+
+void ShowFields(int id, int slot, const std::string& name)
+{
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	StageFieldsWindow* const window = container != nullptr
+		? container->GetWindow<StageFieldsWindow>(WindowType_StageFields) : nullptr;
+
+	if (window != nullptr)
+		window->Show(id, slot, name);
 }
 
 float Snapped(float percent, float step)
@@ -330,7 +342,6 @@ void StagesPanel::Draw()
 	}
 
 	DrawRestart();
-	m_fields.Draw();
 }
 
 void StagesPanel::DrawHidden()
@@ -907,7 +918,7 @@ void StagesPanel::DrawPorted()
 			ImGui::SameLine();
 
 			if (ImGui::SmallButton("Advanced"))
-				m_fields.Open(row.id, row.slot, row.name);
+				ShowFields(row.id, row.slot, row.name);
 
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 				ImGui::SetTooltip("Camera, fog, shadows, bloom and smoothing from the stage's stage.txt.");

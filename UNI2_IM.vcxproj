@@ -241,7 +241,7 @@
     <ClCompile Include="src\Overlay\Hud\ProrationHud.cpp" />
     <ClCompile Include="src\Overlay\Panels\RestartPrompt.cpp" />
     <ClCompile Include="src\Overlay\Panels\StagesPanel.cpp" />
-    <ClCompile Include="src\Overlay\Panels\StageFieldsWindow.cpp" />
+    <ClCompile Include="src\Overlay\Windows\StageFieldsWindow.cpp" />
     <ClCompile Include="src\Overlay\Windows\StagesWindow.cpp" />
     <ClCompile Include="src\Game\Audio\OstPac.cpp" />
     <ClCompile Include="src\Game\Audio\OstUniNames.cpp" />
@@ -606,7 +606,7 @@
     <ClInclude Include="src\Overlay\Hud\ProrationHud.h" />
     <ClInclude Include="src\Overlay\Panels\RestartPrompt.h" />
     <ClInclude Include="src\Overlay\Panels\StagesPanel.h" />
-    <ClInclude Include="src\Overlay\Panels\StageFieldsWindow.h" />
+    <ClInclude Include="src\Overlay\Windows\StageFieldsWindow.h" />
     <ClInclude Include="src\Overlay\Windows\StagesWindow.h" />
     <ClInclude Include="src\Game\Audio\OstPac.h" />
     <ClInclude Include="src\Game\Audio\OstUniNames.h" />

@@ -8,6 +8,7 @@
 
 #include <Windows.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <vector>
@@ -142,33 +143,44 @@ bool StageFields::Write(int id, const char* key, const std::string& value)
 	return true;
 }
 
-bool StageFields::Edited(int id)
+std::vector<std::string> StageFields::Edited(int id)
 {
-	return !Originals(id).empty();
+	std::vector<std::string> keys;
+
+	for (const Original& original : Originals(id))
+		keys.push_back(original.key);
+
+	return keys;
 }
 
-bool StageFields::Reset(int id)
+bool StageFields::Reset(int id, const std::vector<std::string>& keys)
 {
-	const std::vector<Original> originals = Originals(id);
 	std::string note;
 
-	if (originals.empty() || !Load(id, note))
+	if (keys.empty() || !Load(id, note))
 		return false;
 
-	for (const Original& original : originals)
+	int restored = 0;
+
+	for (const Original& original : Originals(id))
 	{
+		if (std::find(keys.begin(), keys.end(), original.key) == keys.end())
+			continue;
+
 		if (original.value == kAbsent)
 			Drop(note, original.key.c_str());
 		else
 			Put(note, original.key.c_str(), original.value);
+
+		++restored;
 	}
 
-	if (!Save(id, note))
+	if (restored == 0 || !Save(id, note))
 		return false;
 
-	WritePrivateProfileStringA(kSection, nullptr, nullptr, StageSettings::PathOf(id).c_str());
+	for (const std::string& key : keys)
+		StageSettings::Write(id, kSection, key.c_str(), std::string());
 
-	LOG("StageFields: bg%03d is back to the %d value(s) it came with", id,
-		static_cast<int>(originals.size()));
+	LOG("StageFields: bg%03d is back to the value(s) it came with for %d setting(s)", id, restored);
 	return true;
 }

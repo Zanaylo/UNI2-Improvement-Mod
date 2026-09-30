@@ -1,6 +1,5 @@
-#include "Overlay/Panels/StageFieldsWindow.h"
+#include "Overlay/Windows/StageFieldsWindow.h"
 
-#include "Game/Stages/StageFields.h"
 #include "Game/Stages/StageImport.h"
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StagePlacement.h"
@@ -9,6 +8,7 @@
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -56,7 +56,6 @@ const Field kFields[] = {
 	{ "FogEnd", "Fog end", "Fog", Kind::Real, 0, 10000, 1, "How far away the fog is solid." },
 	{ "FogColor", "Fog colour", "Fog", Kind::Colour, 0, 1, 0, "The colour far scenery fades into." },
 	{ "MSAA", "MSAA", "Quality", Kind::Whole, 4, 8, 0.05f, "Antialiasing samples. 4 is what the game's own stages use." },
-	{ "StageW", "Stage width", "Quality", Kind::Whole, 4096, 16384, 16, "Width of the area the fighters can walk. 4096 is the least the game's own stages use." },
 	{ "IsBloom", "Bloom", "Light", Kind::Toggle, 0, 1, 0, "The game's bloom on the whole screen." },
 	{ "ShadowLightType", "Shadow light type", "Shadows", Kind::Whole, 0, 3, 0.05f, "Which light casts the fighters' shadows." },
 	{ "ShadowReflexColor", "Shadow reflection colour", "Shadows", Kind::Colour, 0, 1, 0, "The colour reflected into the shadows." },
@@ -138,15 +137,21 @@ void HoverTip(const char* text)
 
 }
 
-void StageFieldsWindow::Open(int id, int slot, const std::string& name)
+StageFieldsWindow::StageFieldsWindow(const std::string& title, bool closable,
+	ImGuiWindowFlags windowFlags)
+	: IWindow(title, closable, windowFlags)
+{
+}
+
+void StageFieldsWindow::Show(int id, int slot, const std::string& name)
 {
 	m_id = id;
 	m_slot = slot;
-	m_name = name;
-	m_open = true;
+	m_title = "Advanced: " + name + "###stagefields";
+	m_focus = true;
 
 	Refresh();
-	ImGui::SetWindowFocus("###stagefields");
+	Open();
 }
 
 void StageFieldsWindow::Refresh()
@@ -160,21 +165,29 @@ void StageFieldsWindow::Refresh()
 		m_forced[i] = StageImport::Forces(m_id, kFields[i].key);
 	}
 
-	m_edited = StageFields::Edited(m_id);
-
+	m_edited = StageImport::EditedFields(m_id);
 	m_revision = StageLibrary::Revision();
+}
+
+void StageFieldsWindow::BeforeDraw()
+{
+	ImGui::SetNextWindowSize(ImVec2(Ui::Scaled(kWindowWidth), Ui::Scaled(kWindowHeight)),
+		ImGuiCond_FirstUseEver);
+
+	if (!m_focus)
+		return;
+
+	ImGui::SetNextWindowFocus();
+	m_focus = false;
 }
 
 void StageFieldsWindow::Draw()
 {
-	if (!m_open)
-		return;
-
 	StageLibrary::Entry entry = {};
 
 	if (!StageLibrary::Of(m_id, entry))
 	{
-		m_open = false;
+		Close();
 		return;
 	}
 
@@ -182,18 +195,6 @@ void StageFieldsWindow::Draw()
 		Refresh();
 
 	m_slot = entry.slot;
-
-	ImGui::SetNextWindowSize(ImVec2(Ui::Scaled(kWindowWidth), Ui::Scaled(kWindowHeight)),
-		ImGuiCond_FirstUseEver);
-
-	char title[128] = {};
-	sprintf_s(title, "Advanced: %.96s###stagefields", m_name.c_str());
-
-	if (!ImGui::Begin(title, &m_open))
-	{
-		ImGui::End();
-		return;
-	}
 
 	UiText::Muted("The camera is saved with the Size column, the rest in bg%03d\\stage.txt. A change "
 		"shows the next time the stage loads.", m_id);
@@ -209,7 +210,9 @@ void StageFieldsWindow::Draw()
 		if (group == nullptr || strcmp(group, kFields[i].group) != 0)
 		{
 			group = kFields[i].group;
-			ImGui::SeparatorText(group);
+
+			if (GroupHeader(group, GroupEdited(group)))
+				ResetGroup(group);
 		}
 
 		DrawField(i);
@@ -217,14 +220,67 @@ void StageFieldsWindow::Draw()
 
 	ImGui::PopItemWidth();
 
-	DrawReset();
+	DrawResetAll();
+}
 
-	ImGui::End();
+bool StageFieldsWindow::GroupHeader(const char* group, bool edited)
+{
+	ImGui::PushID(group);
+	ImGui::Spacing();
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextUnformatted(group);
+
+	const float button = ImGui::CalcTextSize("Reset").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - button);
+	ImGui::BeginDisabled(!edited);
+
+	const bool pressed = ImGui::SmallButton("Reset");
+
+	ImGui::EndDisabled();
+	HoverTip("Puts back the values this stage came with for this part.");
+
+	ImGui::Separator();
+	ImGui::PopID();
+
+	return pressed;
+}
+
+bool StageFieldsWindow::GroupEdited(const char* group) const
+{
+	for (const Field& field : kFields)
+	{
+		if (strcmp(field.group, group) != 0)
+			continue;
+
+		if (std::find(m_edited.begin(), m_edited.end(), field.key) != m_edited.end())
+			return true;
+	}
+
+	return false;
+}
+
+void StageFieldsWindow::ResetGroup(const char* group)
+{
+	std::vector<std::string> keys;
+
+	for (const Field& field : kFields)
+	{
+		if (strcmp(field.group, group) == 0)
+			keys.push_back(field.key);
+	}
+
+	StageImport::ResetFields(m_id, keys);
+	Refresh();
 }
 
 void StageFieldsWindow::DrawCamera()
 {
-	ImGui::SeparatorText("Camera");
+	const bool placed = m_slot >= 0 && StagePlacement::Edited(m_slot);
+
+	if (GroupHeader("Camera", placed))
+		StagePlacement::Forget(m_slot);
 
 	StagePlacement::Place place = {};
 
@@ -333,17 +389,18 @@ void StageFieldsWindow::Commit(int index, const std::string& value)
 	Refresh();
 }
 
-void StageFieldsWindow::DrawReset()
+void StageFieldsWindow::DrawResetAll()
 {
+	ImGui::Spacing();
 	ImGui::Separator();
 
 	const bool placed = m_slot >= 0 && StagePlacement::Edited(m_slot);
 
-	ImGui::BeginDisabled(!m_edited && !placed);
+	ImGui::BeginDisabled(m_edited.empty() && !placed);
 
 	if (ImGui::Button("Reset all"))
 	{
-		StageImport::ResetFields(m_id);
+		StageImport::ResetFields(m_id, m_edited);
 
 		if (placed)
 			StagePlacement::Forget(m_slot);

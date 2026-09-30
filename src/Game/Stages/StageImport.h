@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace StageImport
 {
@@ -42,7 +43,8 @@ namespace StageImport
 	std::string FieldOf(int id, const char* key);
 	bool Forces(int id, const char* key);
 	bool SetField(int id, const char* key, const std::string& value);
-	bool ResetFields(int id);
+	std::vector<std::string> EditedFields(int id);
+	bool ResetFields(int id, const std::vector<std::string>& keys);
 
 	bool Dropped(int id);
 

@@ -49,6 +49,7 @@ namespace StageLibrary
 	void Put(const Entry& entry);
 	void Show(int id, bool shown);
 	bool SetName(int id, const std::string& name);
+	bool Retitle(int id, const std::string& name);
 	void Erase(int id);
 
 	std::string Root();

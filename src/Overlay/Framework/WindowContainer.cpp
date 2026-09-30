@@ -12,6 +12,7 @@
 #include "Overlay/Windows/SoundWindow.h"
 #include "Overlay/Windows/SubtitlesWindow.h"
 #include "Overlay/Windows/ModsWindow.h"
+#include "Overlay/Windows/StageFieldsWindow.h"
 #include "Overlay/Windows/StagesWindow.h"
 #include "Overlay/Windows/PatchWindow.h"
 #include "Overlay/Windows/NetplayWindow.h"
@@ -65,6 +66,9 @@ WindowContainer::WindowContainer()
 	m_windows[WindowType_Patches] = std::make_unique<PatchWindow>("Game patches", true);
 
 	m_windows[WindowType_Stages] = std::make_unique<StagesWindow>("Stages", true);
+
+	m_windows[WindowType_StageFields] = std::make_unique<StageFieldsWindow>(
+		"Advanced###stagefields", true);
 
 	m_windows[WindowType_Mods] = std::make_unique<ModsWindow>("Mods", true);
 

@@ -518,6 +518,45 @@ std::string Retitled(const std::string& note, const std::string& name)
 	return note.substr(0, valueAt) + "\"" + name + "\"\r\n" + flag + note.substr(lineEnd);
 }
 
+std::string Named(const std::string& note, const std::string& name)
+{
+	size_t valueAt = 0;
+	size_t lineEnd = 0;
+
+	if (!ValueLine(note, "Name", valueAt, lineEnd))
+		return std::string(kNoteHeader) + "Name = \"" + name + "\"\r\n" + note;
+
+	return note.substr(0, valueAt) + "\"" + name + "\"" + note.substr(lineEnd);
+}
+
+bool Title(int id, const std::string& name, bool byHand)
+{
+	AcquireSRWLockExclusive(&g_lock);
+
+	bool named = false;
+
+	for (StageLibrary::Entry& entry : g_entries)
+	{
+		if (entry.id != id)
+			continue;
+
+		std::string note;
+		NoteText(id, note);
+
+		if (!WriteText(StageLibrary::NoteOf(id), byHand ? Retitled(note, name) : Named(note, name)))
+			break;
+
+		entry.name = name;
+		entry.renamed = entry.renamed || byHand;
+		Save(entry);
+		named = true;
+		break;
+	}
+
+	ReleaseSRWLockExclusive(&g_lock);
+	return named;
+}
+
 void AdoptLoose(const std::string& leaf)
 {
 	const std::string from = StageLibrary::Root() + "\\" + leaf;
@@ -833,30 +872,12 @@ void StageLibrary::Show(int id, bool shown)
 
 bool StageLibrary::SetName(int id, const std::string& name)
 {
-	AcquireSRWLockExclusive(&g_lock);
+	return Title(id, name, true);
+}
 
-	bool named = false;
-
-	for (Entry& entry : g_entries)
-	{
-		if (entry.id != id)
-			continue;
-
-		std::string note;
-		NoteText(id, note);
-
-		if (!WriteText(NoteOf(id), Retitled(note, name)))
-			break;
-
-		entry.name = name;
-		entry.renamed = true;
-		Save(entry);
-		named = true;
-		break;
-	}
-
-	ReleaseSRWLockExclusive(&g_lock);
-	return named;
+bool StageLibrary::Retitle(int id, const std::string& name)
+{
+	return Title(id, name, false);
 }
 
 void StageLibrary::Erase(int id)

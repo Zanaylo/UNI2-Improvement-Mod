@@ -18,6 +18,7 @@ enum WindowType
 	WindowType_Patches,
 	WindowType_Theme,
 	WindowType_Stages,
+	WindowType_StageFields,
 	WindowType_Mods,
 	WindowType_Debug,
 	WindowType_UpdateNotifier,
