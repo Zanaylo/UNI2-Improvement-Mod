@@ -2,6 +2,11 @@
 
 #include "Core/Boot/Modules.h"
 #include "Core/Profiler.h"
+#include "D3D9/Device/DeviceHooks.h"
+
+#include <Windows.h>
+#include <psapi.h>
+#include <d3d9.h>
 
 #include <cstdio>
 
@@ -55,6 +60,32 @@ std::string Histogram()
 	return text;
 }
 
+std::string Memory()
+{
+	PROCESS_MEMORY_COUNTERS_EX counters = {};
+	counters.cb = sizeof(counters);
+
+	if (!GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters),
+		sizeof(counters)))
+		return "error the memory counters could not be read";
+
+	MEMORYSTATUSEX status = {};
+	status.dwLength = sizeof(status);
+	GlobalMemoryStatusEx(&status);
+
+	DWORD handles = 0;
+	GetProcessHandleCount(GetCurrentProcess(), &handles);
+
+	IDirect3DDevice9* const device = DeviceHooks::GetDevice();
+	const unsigned int textureMemory = device != nullptr ? device->GetAvailableTextureMem() : 0;
+
+	char text[256] = {};
+	sprintf_s(text, "ok private %zu working %zu virtual %llu handles %lu texture_free %u", counters.PrivateUsage,
+		counters.WorkingSetSize, status.ullTotalVirtual - status.ullAvailVirtual, handles, textureMemory);
+
+	return text;
+}
+
 std::string Start()
 {
 	Profiler::SetEnabled(true);
@@ -84,6 +115,12 @@ bool PerfCommands::Execute(const std::vector<std::string>& words, std::string& r
 	if (words.size() >= 2 && words[1] == "start")
 	{
 		reply = Start();
+		return true;
+	}
+
+	if (words.size() >= 2 && words[1] == "memory")
+	{
+		reply = Memory();
 		return true;
 	}
 

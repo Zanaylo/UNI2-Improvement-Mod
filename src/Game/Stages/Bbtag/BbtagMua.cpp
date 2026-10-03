@@ -27,6 +27,8 @@ constexpr int kBaseLayer = 1;
 constexpr int kReflectionLayer = 3;
 constexpr size_t kVertexBytes = 0x50;
 constexpr size_t kHeader = 0x20;
+constexpr size_t kMeshPivot = 0x88;
+constexpr size_t kMeshPivotScale = 0xa0;
 
 }
 
@@ -265,7 +267,10 @@ void BbtagMua::Model::ReadMeshes()
 		mesh.partner = static_cast<int>(Dword(at + 0xb8));
 
 		for (int k = 0; k < 3; ++k)
-			mesh.pivot[k] = Float(at + 0x88 + k * 4);
+			mesh.pivot[k] = Float(at + kMeshPivot + k * 4);
+
+		mesh.reversed = Float(at + kMeshPivotScale) * Float(at + kMeshPivotScale + 4)
+			* Float(at + kMeshPivotScale + 8) < 0.0f;
 		mesh.bone = skeleton >= 0 && skeleton < static_cast<int>(m_skeleton.size())
 			? m_skeleton[skeleton].firstBone : -1;
 

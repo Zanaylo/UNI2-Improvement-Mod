@@ -224,6 +224,18 @@ bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t mi
 	return read == out.size();
 }
 
+bool WriteWholeFile(const std::string& path, const std::vector<uint8_t>& data)
+{
+	FILE* file = nullptr;
+	if (fopen_s(&file, path.c_str(), "wb") != 0 || file == nullptr)
+		return false;
+
+	const size_t written = data.empty() ? 0 : fwrite(data.data(), 1, data.size(), file);
+	const bool closed = fclose(file) == 0;
+
+	return closed && written == data.size();
+}
+
 std::string ResourceFileName(const char* name)
 {
 	if (name == nullptr)

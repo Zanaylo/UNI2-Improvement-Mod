@@ -15,6 +15,8 @@ namespace BbtagPac
 
 	bool Walk(const std::vector<uint8_t>& blob, Files& out);
 
+	std::vector<std::string> Names(const std::vector<uint8_t>& blob);
+
 	const std::vector<uint8_t>* Ending(const Files& files, const std::string& tail);
 
 	const std::vector<uint8_t>* Named(const Files& files, const std::string& leaf);

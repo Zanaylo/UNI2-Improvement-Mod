@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Game/Files/FbGameFolder.h"
 #include "Game/Stages/Bbtag/BbtagScript.h"
 
 #include <cstdint>
@@ -19,6 +20,7 @@ namespace BbtagStage
 		std::vector<uint8_t> particles;
 		std::vector<uint8_t> particleArt;
 		std::string stage;
+		FbGameFolder::Game game = FbGameFolder::Game_BBTAG;
 	};
 
 	constexpr int kFlowSlots = 16;
@@ -49,5 +51,5 @@ namespace BbtagStage
 
 	bool HoldsWholeModel(const std::vector<uint8_t>& archive);
 
-	std::string Block(const std::string& stage, float tilt = 0.0f);
+	std::string Block(const std::string& stage, FbGameFolder::Game game, float tilt = 0.0f);
 }

@@ -1176,6 +1176,7 @@ private:
 	bool Built(const std::string& stage);
 
 	std::string m_root;
+	FbGameFolder::Game m_game;
 	BbtagCrypt::Key m_key;
 	std::map<std::string, Held> m_stage;
 	std::map<std::string, std::string> m_hashed;
@@ -1274,8 +1275,8 @@ uint32_t BytesOf(const std::string& path)
 
 BbtagSource::BbtagSource(const std::string& folder)
 	: m_root(folder)
-	, m_key(FbGameFolder::Detect(folder.c_str()) == FbGameFolder::Game_P4U2
-		? BbtagCrypt::Key_P4U2 : BbtagCrypt::Key_BBTAG)
+	, m_game(FbGameFolder::Detect(folder.c_str()))
+	, m_key(m_game == FbGameFolder::Game_P4U2 ? BbtagCrypt::Key_P4U2 : BbtagCrypt::Key_BBTAG)
 {
 	Sweep();
 
@@ -1532,6 +1533,7 @@ bool BbtagSource::Built(const std::string& stage)
 	Whole(kBbtagParticles, source.particles);
 	Whole(kBbtagParticleArt, source.particleArt);
 	source.stage = stage;
+	source.game = m_game;
 
 	if (!BbtagStage::Convert(source, m_result))
 	{
@@ -1680,8 +1682,8 @@ bool BbtagSource::BgList(std::string& out)
 		out += header;
 		out += Readable(held.first);
 		out += "\",\r\n\t\tDataFile = \"" + held.first + "\",\r\n\r\n";
-		out += held.first == Lowered(m_ready) ? BbtagStage::Block(held.first, m_result.tilt)
-			: BbtagStage::Block(held.first);
+		out += held.first == Lowered(m_ready) ? BbtagStage::Block(held.first, m_game, m_result.tilt)
+			: BbtagStage::Block(held.first, m_game);
 		out += "\t}\r\n";
 	}
 

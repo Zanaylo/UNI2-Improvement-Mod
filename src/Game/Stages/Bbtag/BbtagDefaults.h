@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Game/Files/FbGameFolder.h"
+
 #include <string>
 
 namespace BbtagDefaults
@@ -12,5 +14,5 @@ namespace BbtagDefaults
 		float glow;
 	};
 
-	const Look* Of(const std::string& stage);
+	const Look* Of(FbGameFolder::Game game, const std::string& stage);
 }

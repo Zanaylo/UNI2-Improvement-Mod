@@ -38,28 +38,51 @@ std::string Stem(const std::string& name)
 	return dot == std::string::npos ? name : name.substr(0, dot);
 }
 
+struct Layout
+{
+	size_t start;
+	size_t count;
+	size_t nameBytes;
+	size_t stride;
+};
+
+bool LayoutOf(const std::vector<uint8_t>& blob, Layout& out)
+{
+	if (!BbtagPac::IsArchive(blob))
+		return false;
+
+	out.start = Dword(blob, 4);
+	out.count = Dword(blob, 12);
+	out.nameBytes = Dword(blob, 20);
+
+	if (out.count == 0 || out.nameBytes == 0 || out.nameBytes > 256)
+		return false;
+
+	out.stride = Align(out.nameBytes + kEntryTail);
+
+	if (out.start <= kHeader)
+		return true;
+
+	const size_t stated = (out.start - kHeader) / out.count;
+
+	if (stated >= out.nameBytes + kEntryTail)
+		out.stride = stated;
+
+	return true;
+}
+
 bool Gather(const std::vector<uint8_t>& blob, const std::string& prefix, int depth,
 	BbtagPac::Files& out)
 {
-	if (depth > 8 || !BbtagPac::IsArchive(blob))
+	Layout layout = {};
+
+	if (depth > 8 || !LayoutOf(blob, layout))
 		return false;
 
-	const size_t start = Dword(blob, 4);
-	const size_t count = Dword(blob, 12);
-	const size_t nameBytes = Dword(blob, 20);
-
-	if (count == 0 || nameBytes == 0 || nameBytes > 256)
-		return false;
-
-	size_t stride = Align(nameBytes + kEntryTail);
-
-	if (start > kHeader)
-	{
-		const size_t stated = (start - kHeader) / count;
-
-		if (stated >= nameBytes + kEntryTail)
-			stride = stated;
-	}
+	const size_t start = layout.start;
+	const size_t count = layout.count;
+	const size_t nameBytes = layout.nameBytes;
+	const size_t stride = layout.stride;
 
 	for (size_t i = 0; i < count; ++i)
 	{
@@ -117,6 +140,30 @@ bool BbtagPac::Walk(const std::vector<uint8_t>& blob, Files& out)
 		return Gather(plain, std::string(), 0, out);
 
 	return Gather(blob, std::string(), 0, out);
+}
+
+std::vector<std::string> BbtagPac::Names(const std::vector<uint8_t>& blob)
+{
+	std::vector<std::string> out;
+	std::vector<uint8_t> plain;
+	const std::vector<uint8_t>& archive = Unpacked(blob, plain) ? plain : blob;
+
+	Layout layout = {};
+
+	if (!LayoutOf(archive, layout))
+		return out;
+
+	for (size_t i = 0; i < layout.count; ++i)
+	{
+		const size_t at = kHeader + i * layout.stride;
+
+		if (at + layout.nameBytes > archive.size())
+			return std::vector<std::string>();
+
+		out.push_back(Leaf(archive, at, layout.nameBytes));
+	}
+
+	return out;
 }
 
 const std::vector<uint8_t>* BbtagPac::Ending(const Files& files, const std::string& tail)

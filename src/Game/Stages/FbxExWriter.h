@@ -22,6 +22,7 @@ namespace FbxExWriter
 		int child;
 		int sibling;
 		int blendmode;
+		int alpha = 0;
 		float matrix[kMatrixFloats];
 		std::vector<float> vertices;
 		std::vector<Submesh> submeshes;

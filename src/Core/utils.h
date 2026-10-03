@@ -25,6 +25,8 @@ bool CreateDirectoryTree(const std::string& folder);
 
 bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t minimumSize = 0);
 
+bool WriteWholeFile(const std::string& path, const std::vector<uint8_t>& data);
+
 uint32_t ReadLittle32(const std::vector<uint8_t>& blob, size_t at);
 
 std::string ResourceFileName(const char* name);

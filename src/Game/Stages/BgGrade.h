@@ -23,6 +23,7 @@ namespace BgGrade
 	constexpr float kBbtagLift = 0.00f;
 	constexpr float kBbtagContrast = 1.00f;
 	constexpr float kBbtagGlow = 1.00f;
+	constexpr float kP4u2Contrast = 1.17f;
 	constexpr float kGameGlow = 1.00f;
 
 	bool Initialize();

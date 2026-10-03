@@ -93,7 +93,7 @@ bool Arcsys(const std::string& game)
 
 const BbtagDefaults::Look* BbtagLook(const StageLibrary::Entry& entry)
 {
-	return From(entry.game, FbGameFolder::Game_BBTAG) ? BbtagDefaults::Of(entry.folder) : nullptr;
+	return BbtagDefaults::Of(FbGameFolder::FromName(entry.game.c_str()), entry.folder);
 }
 
 bool Flows(int stage)
@@ -715,6 +715,9 @@ BgGrade::Grade BgGrade::DefaultOf(int stage)
 
 	if (look != nullptr)
 		return Grade{ kBbtagLift, look->contrast };
+
+	if (From(entry.game, FbGameFolder::Game_P4U2))
+		return Grade{ kBbtagLift, kP4u2Contrast };
 
 	if (Arcsys(entry.game))
 		return Grade{ kBbtagLift, kBbtagContrast };

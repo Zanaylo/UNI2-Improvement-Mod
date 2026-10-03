@@ -33,6 +33,7 @@ namespace BbtagMua
 		int firstPart;
 		int parts;
 		float pivot[3];
+		bool reversed;
 	};
 
 	struct Bone

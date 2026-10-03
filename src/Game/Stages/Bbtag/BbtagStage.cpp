@@ -1637,24 +1637,25 @@ void Vertices(const BbtagMua::Model& model, const BbtagMua::Mesh& mesh, std::vec
 	}
 }
 
-void Wind(const BbtagMua::Triangle& triangle, bool twoSided, std::vector<int>& indices)
+void Wind(const BbtagMua::Triangle& triangle, bool flipped, bool twoSided, std::vector<int>& indices)
 {
 	indices.push_back(triangle.a);
-	indices.push_back(kMirror ? triangle.c : triangle.b);
-	indices.push_back(kMirror ? triangle.b : triangle.c);
+	indices.push_back(flipped ? triangle.c : triangle.b);
+	indices.push_back(flipped ? triangle.b : triangle.c);
 
 	if (!twoSided)
 		return;
 
 	indices.push_back(triangle.a);
-	indices.push_back(kMirror ? triangle.b : triangle.c);
-	indices.push_back(kMirror ? triangle.c : triangle.b);
+	indices.push_back(flipped ? triangle.b : triangle.c);
+	indices.push_back(flipped ? triangle.c : triangle.b);
 }
 
 std::vector<FbxExWriter::Submesh> Submeshes(const BbtagMua::Model& model, const BbtagMua::Mesh& mesh,
 	int materials, bool twoSided)
 {
 	std::vector<FbxExWriter::Submesh> out;
+	const bool flipped = kMirror != mesh.reversed;
 
 	for (int p = 0; p < mesh.parts; ++p)
 	{
@@ -1676,7 +1677,7 @@ std::vector<FbxExWriter::Submesh> Submeshes(const BbtagMua::Model& model, const 
 			if (triangle.a >= mesh.vertices || triangle.b >= mesh.vertices || triangle.c >= mesh.vertices)
 				continue;
 
-			Wind(triangle, twoSided, submesh.indices);
+			Wind(triangle, flipped, twoSided, submesh.indices);
 		}
 
 		if (!submesh.indices.empty())
@@ -1777,10 +1778,10 @@ void Subdivided(std::vector<float>& vertices, std::vector<int>& rigged,
 	}
 }
 
-void ScreenMapped(std::vector<float>& vertices)
+void ScreenMapped(std::vector<float>& vertices, const BbtagCamera::Lens& lens)
 {
-	const double half = tan(BbtagCamera::kFov * BbtagCamera::kPi / 360.0);
-	const double drift = BbtagCamera::kEyeHeight * kSkyDriftY;
+	const double half = tan(lens.fov * BbtagCamera::kPi / 360.0);
+	const double drift = lens.eyeHeight * kSkyDriftY;
 	const size_t rows = vertices.size() / kFloats;
 
 	for (size_t v = 0; v < rows; ++v)
@@ -1789,9 +1790,9 @@ void ScreenMapped(std::vector<float>& vertices)
 		const double x = row[0] / kScale;
 		const double y = row[1] / kScale;
 		const double z = (kMirror ? -row[2] : row[2]) / kScale;
-		const double depth = std::max(kNearest, z + BbtagCamera::kEyeDistance);
+		const double depth = std::max(kNearest, z + lens.eyeDistance);
 		const double across = x / (depth * half * BbtagCamera::kAspect);
-		const double down = (y - BbtagCamera::kEyeHeight) / (depth * half) + drift;
+		const double down = (y - lens.eyeHeight) / (depth * half) + drift;
 
 		vertices[v * kFloats + kU] = static_cast<float>(across);
 		vertices[v * kFloats + kV] = static_cast<float>(kFlip ? 1.0 - down : down);
@@ -2191,7 +2192,7 @@ private:
 		std::vector<int> rigged = body.rigged;
 		std::vector<FbxExWriter::Submesh> finer = body.submeshes;
 		Subdivided(mapped, rigged, finer);
-		ScreenMapped(mapped);
+		ScreenMapped(mapped, BbtagCamera::LensOf(m_source.game));
 		Mark(mapped, lamp);
 		Add(look, mapped, rigged, finer, nullptr, -1);
 
@@ -2576,13 +2577,14 @@ private:
 
 }
 
-std::string BbtagStage::Block(const std::string& stage, float tilt)
+std::string BbtagStage::Block(const std::string& stage, FbGameFolder::Game game, float tilt)
 {
-	const BbtagDefaults::Look* const look = BbtagDefaults::Of(stage);
+	const BbtagCamera::Lens lens = BbtagCamera::LensOf(game);
+	const BbtagDefaults::Look* const look = BbtagDefaults::Of(game, stage);
 	const double size = look != nullptr ? look->size : 1.0;
-	const double half = tan(BbtagCamera::kFov * BbtagCamera::kPi / 360.0);
-	const double scale = size * (1.0 / half) / (BbtagCamera::kEyeDistance * kUni2Character / kCharacter);
-	const double vanish = kUni2EyeHeight - BbtagCamera::kEyeHeight / (BbtagCamera::kEyeDistance * half);
+	const double half = tan(lens.fov * BbtagCamera::kPi / 360.0);
+	const double scale = size * (1.0 / half) / (lens.eyeDistance * kUni2Character / kCharacter);
+	const double vanish = kUni2EyeHeight - lens.eyeHeight / (lens.eyeDistance * half);
 
 	char camera[320] = {};
 	sprintf_s(camera, "\tScale = [ %.4f, %.4f, %.4f ],\r\n"
@@ -2590,7 +2592,7 @@ std::string BbtagStage::Block(const std::string& stage, float tilt)
 		"\tViewGrid = 0,\r\n"
 		"\tFOV = %.1f,\r\n"
 		"\tViewRotationX = %.1f,\r\n"
-		"\tVanishingPoint = %.4f,\r\n", scale, scale, scale, BbtagCamera::kFov, tilt,
+		"\tVanishingPoint = %.4f,\r\n", scale, scale, scale, lens.fov, tilt,
 		vanish);
 
 	return std::string(camera) + kBlock;

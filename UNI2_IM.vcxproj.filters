@@ -408,6 +408,51 @@
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagMua.cpp">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Stages\FbxExReader.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\FbxExHierarchy.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\StageExport.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagExport.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagInstall.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\IntroCamera.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\StageInstall.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Files\SteamLibrary.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagPose.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagRig.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\EvbWriter.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\MmotWriter.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\MuaWriter.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\PacWriter.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\TriangleStrip.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagPac.cpp">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
@@ -1593,6 +1638,51 @@
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagMua.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\FbxExReader.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\FbxExHierarchy.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageExport.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagExport.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagInstall.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\IntroCamera.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\StageInstall.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\SteamLibrary.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagPose.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagRig.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\EvbWriter.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\MmotWriter.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\MuaWriter.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\PacWriter.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\TriangleStrip.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagPac.h">

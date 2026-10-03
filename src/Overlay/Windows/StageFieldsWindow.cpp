@@ -1,5 +1,6 @@
 #include "Overlay/Windows/StageFieldsWindow.h"
 
+#include "Game/Stages/StageExport.h"
 #include "Game/Stages/StageImport.h"
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StagePlacement.h"
@@ -7,6 +8,8 @@
 #include "Overlay/Widgets/UiText.h"
 
 #include <imgui.h>
+
+#include <Windows.h>
 
 #include <algorithm>
 #include <cstdio>
@@ -76,6 +79,37 @@ const Field kFields[] = {
 };
 
 constexpr int kFieldCount = static_cast<int>(sizeof(kFields) / sizeof(kFields[0]));
+
+struct ExportGame
+{
+	FbGameFolder::Game game;
+	const char* label;
+};
+
+constexpr ExportGame kExportGames[] = { { FbGameFolder::Game_BBTAG, "BBTAG" }, { FbGameFolder::Game_BBCF, "BBCF" } };
+
+const char* LabelOf(FbGameFolder::Game game)
+{
+	for (const ExportGame& one : kExportGames)
+	{
+		if (one.game == game)
+			return one.label;
+	}
+
+	return "";
+}
+
+std::string TargetLabel(FbGameFolder::Game game, const StageInstall::Target& target)
+{
+	const size_t slash = target.folder.find_last_of('\\');
+	std::string out = target.stem + " (" + target.folder.substr(slash + 1) + ")";
+	const std::string installed = StageInstall::Installed(game, target);
+
+	if (!installed.empty())
+		out += ", now " + installed;
+
+	return out;
+}
 
 int Numbers(const std::string& text, float* out, int wanted)
 {
@@ -221,6 +255,7 @@ void StageFieldsWindow::Draw()
 	ImGui::PopItemWidth();
 
 	DrawResetAll();
+	DrawExport();
 }
 
 bool StageFieldsWindow::GroupHeader(const char* group, bool edited)
@@ -412,4 +447,174 @@ void StageFieldsWindow::DrawResetAll()
 	HoverTip("Puts back every value this stage came with.");
 
 	UiText::Muted("%s", StageImport::StatusText());
+}
+
+void StageFieldsWindow::DrawExport()
+{
+	ImGui::Spacing();
+	ImGui::SeparatorText("Export");
+
+	UiText::Muted("Puts this stage into BBTAG or BBCF in place of one of their stages. Neither game "
+		"can take a new stage, so one has to make room. The original is backed up first.");
+
+	const bool busy = StageExport::IsBusy();
+
+	if (!m_targetsLoaded || (m_exportBusy && !busy))
+		RefreshTargets();
+
+	m_exportBusy = busy;
+
+	DrawGamePicker();
+	DrawTargetPicker();
+	DrawInstallButtons();
+
+	if (!m_installStatus.empty())
+		UiText::Muted("%s", m_installStatus.c_str());
+
+	UiText::Muted("%s", StageExport::StatusText().c_str());
+}
+
+void StageFieldsWindow::DrawGamePicker()
+{
+	std::string picked;
+
+	if (m_folderDialog.TakeResult(picked) && !picked.empty())
+	{
+		m_installStatus = StageInstall::ChooseGameFolder(m_exportGame, picked)
+			? std::string() : std::string("That folder has no ") + LabelOf(m_exportGame) + " in it.";
+		RefreshTargets();
+	}
+
+	ImGui::SetNextItemWidth(Ui::Scaled(kFieldWidth));
+
+	if (ImGui::BeginCombo("Game", LabelOf(m_exportGame)))
+	{
+		for (const ExportGame& one : kExportGames)
+		{
+			if (ImGui::Selectable(one.label, one.game == m_exportGame) && one.game != m_exportGame)
+			{
+				m_exportGame = one.game;
+				m_installStatus.clear();
+				RefreshTargets();
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(m_folderDialog.IsRunning());
+
+	if (ImGui::Button("Choose folder"))
+		m_folderDialog.BeginFolder("Pick the game folder");
+
+	ImGui::EndDisabled();
+
+	if (m_gameFolder.empty())
+		UiText::Muted("%s was not found. Choose its folder.", LabelOf(m_exportGame));
+	else
+		UiText::Muted("%s", m_gameFolder.c_str());
+}
+
+void StageFieldsWindow::DrawTargetPicker()
+{
+	if (m_targets.empty())
+	{
+		if (!m_gameFolder.empty())
+			UiText::Muted("No stage files were found in its data\\bg folder.");
+
+		return;
+	}
+
+	const char* current = ChosenTarget() == nullptr ? "" : m_targetLabels[m_target].c_str();
+
+	ImGui::SetNextItemWidth(Ui::Scaled(kFieldWidth));
+
+	if (!ImGui::BeginCombo("Replace", current))
+		return;
+
+	for (int i = 0; i < static_cast<int>(m_targets.size()); ++i)
+	{
+		ImGui::PushID(i);
+
+		if (ImGui::Selectable(m_targetLabels[i].c_str(), i == m_target))
+			m_target = i;
+
+		ImGui::PopID();
+	}
+
+	ImGui::EndCombo();
+}
+
+void StageFieldsWindow::DrawInstallButtons()
+{
+	const StageInstall::Target* chosen = ChosenTarget();
+	const bool busy = StageExport::IsBusy();
+
+	ImGui::BeginDisabled(busy || chosen == nullptr);
+
+	if (ImGui::Button("Install in game") && chosen != nullptr)
+	{
+		m_installStatus.clear();
+		StageExport::Install(m_id, m_exportGame, *chosen);
+	}
+
+	ImGui::EndDisabled();
+	HoverTip("Backs up the stage it replaces the first time, then writes this one over it.");
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(busy || chosen == nullptr || !m_targetBackups[m_target]);
+
+	if (ImGui::Button("Restore original") && chosen != nullptr)
+	{
+		StageInstall::Restore(m_exportGame, *chosen, m_installStatus);
+		RefreshTargets();
+	}
+
+	ImGui::EndDisabled();
+	HoverTip("Puts the backed up stage back.");
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(busy);
+
+	if (ImGui::Button("Export files only"))
+		StageExport::Start(m_id);
+
+	ImGui::EndDisabled();
+	HoverTip("Writes the .MUA, .mmot, .evb, textures and both games' .pac files into UNI2-IM\\Export.");
+
+	const std::string folder = StageExport::Folder();
+
+	if (folder.empty())
+		return;
+
+	ImGui::SameLine();
+
+	if (ImGui::Button("Open folder"))
+		ShellExecuteA(nullptr, "open", folder.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+void StageFieldsWindow::RefreshTargets()
+{
+	m_targetsLoaded = true;
+	m_gameFolder = StageInstall::GameFolder(m_exportGame);
+	m_targets = StageInstall::Targets(m_exportGame);
+	const int last = static_cast<int>(m_targets.size()) - 1;
+	m_target = m_target > last ? (last < 0 ? 0 : last) : m_target;
+	m_targetLabels.clear();
+	m_targetBackups.clear();
+
+	for (const StageInstall::Target& target : m_targets)
+	{
+		m_targetLabels.push_back(TargetLabel(m_exportGame, target));
+		m_targetBackups.push_back(StageInstall::HasBackup(m_exportGame, target));
+	}
+}
+
+const StageInstall::Target* StageFieldsWindow::ChosenTarget() const
+{
+	if (m_target < 0 || m_target >= static_cast<int>(m_targets.size()))
+		return nullptr;
+
+	return &m_targets[m_target];
 }

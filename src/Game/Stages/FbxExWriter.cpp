@@ -43,7 +43,7 @@ void PutBlock(std::vector<uint8_t>& out, int count, const std::vector<uint8_t>& 
 void PutMesh(std::vector<uint8_t>& out, const FbxExWriter::Node& node)
 {
 	PutInt(out, node.blendmode);
-	PutInt(out, 0);
+	PutInt(out, node.alpha);
 
 	for (float value : node.matrix)
 		PutFloat(out, value);
