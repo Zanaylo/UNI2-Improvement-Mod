@@ -84,6 +84,8 @@
 { GameOffsets::kFnRankMatchSetup, "kFnRankMatchSetup", "53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 ?? ?? ?? ?? 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 53 ?? ?? ?? ?? 00 00 A1 ?? ?? ?? ?? 33 C5 89 45 EC 56 57 50 8D 45 F4 64 A3 00 00 00 00 8B 15 ?? ?? ?? ?? 33 C0" },
 { GameOffsets::kFnMatchDispatch, "kFnMatchDispatch", "55 8B EC 83 E4 F8 56 8B F1 57 8B 06 48" },
 { GameOffsets::kFnSetRoomRows, "kFnSetRoomRows", "55 8B EC 83 EC 10 53 8B D9 8B 4D 0C" },
+{ GameOffsets::kFnRoomMemberRead, "kFnRoomMemberRead", "55 8B EC 51 53 56 8B C1 57 89 45 FC" },
+{ GameOffsets::kFnRoomMemberWrite, "kFnRoomMemberWrite", "55 8B EC 83 E4 F8 83 EC 0C 53 8B 5D 08 8B C1" },
 { GameOffsets::kFnResolvePersonaName, "kFnResolvePersonaName", "55 8B EC 83 E4 F8 83 EC 1C A1 ?? ?? ?? ?? 33 C4 89 44 24 18 56 FF 71 04" },
 { GameOffsets::kFnOptionChoiceAdd, "kFnOptionChoiceAdd", "55 8B EC 51 56 8B F1 ?? ?? ?? ?? 00 00 85 C9 ?? ?? ?? ?? ?? ?? 8B 45 08" },
 { GameOffsets::kFnOptionRowAdd, "kFnOptionRowAdd", "55 8B EC 53 8B D9 ?? ?? ?? ?? 00 00 85 D2" },

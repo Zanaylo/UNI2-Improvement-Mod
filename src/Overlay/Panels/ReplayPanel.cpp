@@ -1,5 +1,6 @@
 #include "Overlay/Panels/ReplayPanel.h"
 
+#include "Core/ShellOpen.h"
 #include "Overlay/Widgets/UiScale.h"
 
 #include "Core/Config/Hotkeys.h"
@@ -142,7 +143,7 @@ void DrawReplaySection()
 	ImGui::SameLine();
 
 	if (ImGui::Button("Open folder"))
-		ShellExecuteA(nullptr, "open", ReplayFiles::GetFolder().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		ShellOpen::Open(ReplayFiles::GetFolder());
 
 	ImGui::SameLine();
 

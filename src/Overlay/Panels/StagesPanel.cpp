@@ -7,6 +7,7 @@
 #include "Game/Stages/StagePlacement.h"
 #include "Game/Stages/ExtraStages.h"
 #include "Game/Stages/OnlineStage.h"
+#include "Game/Lobby/RoomStage.h"
 #include "Game/Stages/BgCeiling.h"
 #include "Game/Stages/StageImport.h"
 #include "Game/Stages/StageLibrary.h"
@@ -1061,10 +1062,11 @@ void StagesPanel::DrawHelp()
 	UiText::Muted("An added stage is only on your machine, so an opponent is never offered it: they get "
 		"the game's first stage while you keep playing on yours. A stage they ask for that this game "
 		"does not have plays as the game's first stage here. A replaced stage keeps the game's number, "
-		"so an opponent without it sees the game's own. Online, Random picks only from the game's own "
-		"stages. Colour settings are never sent.");
+		"so an opponent without it sees the game's own. In a Player Match room the same holds for every "
+		"member. Online, Random picks only from the game's own stages. Colour settings are never sent.");
 
 	UiText::Muted("%s", OnlineStage::StatusText());
+	UiText::Muted("Rooms: %s", RoomStage::StatusText());
 
 	ImGui::SeparatorText("Blender");
 

@@ -1,8 +1,10 @@
 #include "Core/Harness/StageCommands.h"
 
 #include "Core/Harness/CleanFrame.h"
+#include "Core/ShellOpen.h"
 #include "Core/utils.h"
 #include "D3D9/Draw/DrawTrace.h"
+#include "D3D9/Draw/TargetDump.h"
 #include "Game/Battle/GameRestart.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Stages/StageExport.h"
@@ -233,6 +235,32 @@ std::string RunTrace(const Words&, const std::string&)
 	return "ok armed";
 }
 
+std::string RunDumpTargets(const Words&, const std::string&)
+{
+	TargetDump::Arm();
+	return "ok armed";
+}
+
+std::string RunOpen(const Words&, const std::string& line)
+{
+	const std::string target = Rest(line);
+
+	if (target.empty())
+		return "error open needs a path";
+
+	ShellOpen::Open(target);
+	return "ok opening";
+}
+
+std::string RunDumpAfter(const Words& words, const std::string&)
+{
+	if (words.size() < 2)
+		return "error dumpafter needs a draw number";
+
+	TargetDump::ArmAfterDraw(atoi(words[1].c_str()));
+	return "ok armed";
+}
+
 FbGameFolder::Game ExportGameOf(const std::string& word)
 {
 	return word == kBbcfWord ? FbGameFolder::Game_BBCF : FbGameFolder::Game_BBTAG;
@@ -301,6 +329,9 @@ constexpr Command kCommands[] = {
 	{ "library", &RunLibrary },
 	{ "remove", &RunRemove },
 	{ "trace", &RunTrace },
+	{ "dumptargets", &RunDumpTargets },
+	{ "dumpafter", &RunDumpAfter },
+	{ "open", &RunOpen },
 	{ "install", &RunInstall },
 	{ "exporting", &RunExporting },
 	{ "restore", &RunRestore },

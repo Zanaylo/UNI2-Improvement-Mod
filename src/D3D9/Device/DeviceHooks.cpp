@@ -10,9 +10,15 @@
 #include "Core/utils.h"
 #include "D3D9/Device/GraphicsWrapper.h"
 #include "Game/Engine/GameOffsets.h"
+#include "D3D9/Device/GameCaller.h"
 #include "D3D9/Device/PresentTuning.h"
+#include "D3D9/Device/PretransformedDraws.h"
+#include "D3D9/Device/ScaledDeviceState.h"
+#include "D3D9/Device/ScaledTargets.h"
+#include "D3D9/Device/StageDetail.h"
 #include "D3D9/Post/SceneUpscale.h"
 #include "D3D9/Draw/DrawTrace.h"
+#include "D3D9/Draw/TargetDump.h"
 #include "D3D9/Post/PostChain.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Stages/BgGrade.h"
@@ -84,12 +90,13 @@ const char* HeldDefaultResources()
 
 	const int palettes = PaletteTexture::HeldVolatileCount();
 
-	snprintf(text, sizeof(text), "%s%s%s%s%s%s",
+	snprintf(text, sizeof(text), "%s%s%s%s%s%s%s",
 		WindowManager::GetInstance().HoldsDeviceResources() ? "overlay " : "",
 		FrozenFrame::HoldsDeviceResources() ? "frozen-frame " : "",
 		QuadRenderer::HoldsDeviceResources() ? "quads " : "",
 		PostChain::HoldsDeviceResources() ? "post-chain " : "",
 		SceneUpscale::HoldsDeviceResources() ? "upscale " : "",
+		StageDetail::HoldsDeviceResources() ? "stage-detail " : "",
 		palettes > 0 ? "palette-textures" : "");
 
 	return text[0] != 0 ? text : "none of the mod's";
@@ -124,6 +131,8 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 		PostChain::OnDeviceLost();
 		SceneUpscale::OnDeviceLost();
 		StageCapture::OnDeviceLost();
+		ScaledTargets::OnDeviceLost();
+		StageDetail::OnDeviceLost();
 	}
 
 	HRESULT result = g_resetHook.Original()(device, presentParameters);
@@ -183,6 +192,7 @@ bool TargetIsFullFrame(IDirect3DDevice9* device, unsigned& outWidth, unsigned& o
 		backBuffer->Release();
 	}
 
+	const bool scaled = ScaledTargets::IsScaled(target);
 	target->Release();
 
 	if (!described)
@@ -196,7 +206,7 @@ bool TargetIsFullFrame(IDirect3DDevice9* device, unsigned& outWidth, unsigned& o
 
 	const bool referenceSized = desc.Width == kSceneWidth && desc.Height == kSceneHeight;
 
-	return presentSized || referenceSized;
+	return presentSized || referenceSized || scaled;
 }
 
 struct ClearSignature
@@ -263,7 +273,10 @@ HRESULT STDMETHODCALLTYPE HookedClear(IDirect3DDevice9* device, DWORD count, con
 			color = BgClear::Behind(color);
 	}
 
-	return g_clearHook.Original()(device, count, rects, flags, color, z, stencil);
+	const D3DRECT* const scaledRects = IS_GAME_CALLER() ? ScaledDeviceState::ScaleClearRects(count, rects) : rects;
+	DrawTrace::OnClear(device, count, scaledRects, flags, color);
+
+	return g_clearHook.Original()(device, count, scaledRects, flags, color, z, stencil);
 }
 
 HRESULT STDMETHODCALLTYPE HookedSetTexture(IDirect3DDevice9* device, DWORD stage,
@@ -291,7 +304,21 @@ HRESULT STDMETHODCALLTYPE HookedDrawPrimitive(IDirect3DDevice9* device, D3DPRIMI
 	if (CleanFrame::SkipsDraw(device))
 		return D3D_OK;
 
+	if (PretransformedDraws::Applies())
+	{
+		return PretransformedDraws::DrawPrimitive(device, type, startVertex, primitiveCount,
+			g_drawPrimitiveHook.Original());
+	}
+
 	return g_drawPrimitiveHook.Original()(device, type, startVertex, primitiveCount);
+}
+
+HRESULT DrawIndexed(IDirect3DDevice9* device, D3DPRIMITIVETYPE type, INT baseVertexIndex, UINT minVertexIndex,
+	UINT numVertices, UINT startIndex, UINT primitiveCount)
+{
+	Profiler::Scope scope(Profiler::Section_DrawDevice);
+	return g_drawIndexedPrimitiveHook.Original()(device, type, baseVertexIndex, minVertexIndex, numVertices,
+		startIndex, primitiveCount);
 }
 
 HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
@@ -309,9 +336,25 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
 			return D3D_OK;
 	}
 
-	Profiler::Scope scope(Profiler::Section_DrawDevice);
-	return g_drawIndexedPrimitiveHook.Original()(device, type, baseVertexIndex, minVertexIndex, numVertices,
-		startIndex, primitiveCount);
+	if (PretransformedDraws::Applies())
+	{
+		const HRESULT scaled = PretransformedDraws::DrawIndexedPrimitive(device, type, baseVertexIndex,
+			minVertexIndex, numVertices, startIndex, primitiveCount, g_drawIndexedPrimitiveHook.Original());
+		TargetDump::AfterDraw(device);
+		return scaled;
+	}
+
+	const bool smoothed = StageDetail::SmoothReducedComposite(device);
+	const HRESULT result = DrawIndexed(device, type, baseVertexIndex, minVertexIndex, numVertices, startIndex,
+		primitiveCount);
+
+	if (smoothed)
+		StageDetail::EndSmoothing(device);
+
+	StageDetail::OnIndexedDraw(device, { type, baseVertexIndex, minVertexIndex, numVertices, startIndex, primitiveCount },
+		g_drawIndexedPrimitiveHook.Original());
+	TargetDump::AfterDraw(device);
+	return result;
 }
 
 HRESULT STDMETHODCALLTYPE HookedDrawPrimitiveUP(IDirect3DDevice9* device, D3DPRIMITIVETYPE type,
@@ -321,6 +364,12 @@ HRESULT STDMETHODCALLTYPE HookedDrawPrimitiveUP(IDirect3DDevice9* device, D3DPRI
 	DrawTrace::OnDraw(device, "dpup", type, primitiveCount, vertexData, stride);
 	if (CleanFrame::SkipsDraw(device))
 		return D3D_OK;
+
+	if (PretransformedDraws::Applies())
+	{
+		return PretransformedDraws::DrawPrimitiveUP(device, type, primitiveCount, vertexData, stride,
+			g_drawPrimitiveUPHook.Original());
+	}
 
 	return g_drawPrimitiveUPHook.Original()(device, type, primitiveCount, vertexData, stride);
 }
@@ -333,6 +382,12 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitiveUP(IDirect3DDevice9* device,
 	DrawTrace::OnDraw(device, "dipup", type, primitiveCount, vertexData, stride, numVertices);
 	if (CleanFrame::SkipsDraw(device))
 		return D3D_OK;
+
+	if (PretransformedDraws::Applies())
+	{
+		return PretransformedDraws::DrawIndexedPrimitiveUP(device, type, minVertexIndex, numVertices,
+			primitiveCount, indexData, indexFormat, vertexData, stride, g_drawIndexedPrimitiveUPHook.Original());
+	}
 
 	return g_drawIndexedPrimitiveUPHook.Original()(device, type, minVertexIndex, numVertices, primitiveCount,
 		indexData, indexFormat, vertexData, stride);
@@ -462,6 +517,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	}
 
 	DrawTrace::OnPresentBegin(sourceRect, destRect);
+	TargetDump::OnPresent(device);
 	GraphicsWrapper::Detect(device);
 	Modules::Run(Modules::Group_PresentBegin, device);
 
@@ -622,6 +678,9 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 
 	BgGrade::Initialize();
 	BgGrade::Attach(device);
+
+	ScaledTargets::Attach(device);
+	PretransformedDraws::Attach(device);
 
 	g_installed = true;
 	LOG("Device hooks installed on device 0x%p, window 0x%p", (void*)device, (void*)g_gameProc.hWndGame);

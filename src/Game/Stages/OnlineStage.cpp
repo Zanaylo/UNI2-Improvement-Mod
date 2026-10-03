@@ -13,8 +13,6 @@
 
 namespace {
 
-constexpr int kStockStage = 1;
-
 int g_ownPick = 0;
 int g_sent = 0;
 int g_received = 0;
@@ -67,7 +65,7 @@ void HoldOutgoing()
 	if (!ReadStage(field, stage) || StageLibrary::GameOwns(stage))
 		return;
 
-	WriteStage(field, kStockStage);
+	WriteStage(field, StageLibrary::kStockStage);
 
 	if (stage == g_sent)
 		return;
@@ -75,7 +73,7 @@ void HoldOutgoing()
 	g_sent = stage;
 
 	LOG("OnlineStage: stage %d is only on this machine, so the opponent is offered stage %d", stage,
-		kStockStage);
+		StageLibrary::kStockStage);
 }
 
 void HoldIncoming()
@@ -86,7 +84,7 @@ void HoldIncoming()
 	if (!ReadStage(field, stage) || StageLibrary::GameOwns(stage))
 		return;
 
-	WriteStage(field, kStockStage);
+	WriteStage(field, StageLibrary::kStockStage);
 
 	if (stage == g_received)
 		return;
@@ -94,7 +92,7 @@ void HoldIncoming()
 	g_received = stage;
 
 	LOG("OnlineStage: the opponent asked for stage %d, which this game does not have, so it plays as "
-		"stage %d", stage, kStockStage);
+		"stage %d", stage, StageLibrary::kStockStage);
 }
 
 void Hold()
@@ -143,7 +141,7 @@ void ShowOwnStage(int pick)
 	g_ownPick = pick;
 
 	sprintf_s(g_status, "stage %d is added, so it stays on this screen and the opponent plays stage %d",
-		pick, kStockStage);
+		pick, StageLibrary::kStockStage);
 
 	LOG("OnlineStage: %s", g_status);
 }

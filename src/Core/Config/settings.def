@@ -110,6 +110,8 @@ SETTING_COPY(presentHeight, "Graphics", "PresentHeight", 0)
 SETTING_INT(potatoHeight,           "Graphics", "PotatoHeight",         360)
 
 SETTING_COPY(supersample, "Graphics", "Supersample", 0)
+SETTING_COPY(internalResolution, "Graphics", "InternalResolution", 0)
+SETTING_COPY(potatoStage, "Graphics", "PotatoStage", 0)
 SETTING_RANGE(sharpenStrength, "Graphics", "Sharpen", 0, 0, 100)
 SETTING_INT(sceneUpscale,           "Graphics", "SceneUpscale",         0)
 

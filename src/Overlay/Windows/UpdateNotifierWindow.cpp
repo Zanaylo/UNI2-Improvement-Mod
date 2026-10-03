@@ -1,5 +1,6 @@
 #include "Overlay/Windows/UpdateNotifierWindow.h"
 
+#include "Core/ShellOpen.h"
 #include "Core/info.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Config/Settings.h"
@@ -96,8 +97,7 @@ void UpdateNotifierWindow::Draw()
 
 	if (ImGui::Button("Open the releases page"))
 	{
-		ShellExecuteA(nullptr, "open", UpdateCheck::GetReleaseUrl(), nullptr, nullptr,
-			SW_SHOWNORMAL);
+		ShellOpen::Open(UpdateCheck::GetReleaseUrl());
 	}
 
 	ImGui::SameLine();

@@ -5,7 +5,10 @@
 #include "D3D9/Post/DeviceState.h"
 #include "D3D9/Post/FullScreenPass.h"
 #include "D3D9/Post/ScratchTarget.h"
+#include "D3D9/Device/ScaledTargets.h"
 #include "D3D9/Device/SceneScale.h"
+#include "D3D9/Device/StageDetail.h"
+#include "D3D9/Post/Shaders/StageDetailShader.h"
 #include "D3D9/Post/UpscaleFilter.h"
 
 #include <cstdarg>
@@ -14,9 +17,16 @@
 namespace {
 
 constexpr int kMaxPassesPerFrame = 2;
+constexpr float kVisibilitySensitivity = 10.0f;
+constexpr float kDarkestStage = 0.04f;
+constexpr DWORD kFirstDetailStage = 2;
+constexpr DWORD kDetailStages = 3;
 
 PixelShaderHandle g_shader;
+PixelShaderHandle g_detailShader;
 ScratchTarget g_target;
+ScratchTarget g_upscaled;
+ScratchTarget g_snapshotUpscaled;
 DeviceState g_state;
 
 int g_kind = UpscaleFilter::Kind_Off;
@@ -43,6 +53,16 @@ void Report(const char* format, ...)
 int WantedKind()
 {
 	return UpscaleFilter::Clamp(g_modVals.upscaleFilter);
+}
+
+int EffectiveKind()
+{
+	const int wanted = WantedKind();
+
+	if (wanted != UpscaleFilter::Kind_Off || !StageDetail::IsReady())
+		return wanted;
+
+	return UpscaleFilter::Kind_Bicubic;
 }
 
 bool EnsurePass(IDirect3DDevice9* device, int kind)
@@ -112,6 +132,50 @@ bool TargetIsBackBuffer(IDirect3DDevice9* device, D3DSURFACE_DESC& outDesc)
 	return same;
 }
 
+void Upscale(IDirect3DDevice9* device, IDirect3DBaseTexture9* source, const D3DSURFACE_DESC& sourceDesc,
+	const ScratchTarget& target)
+{
+	device->SetRenderTarget(0, target.Surface());
+
+	FullScreenQuad::SetConstant(device, 0, static_cast<float>(sourceDesc.Width),
+		static_cast<float>(sourceDesc.Height), 1.0f / static_cast<float>(sourceDesc.Width),
+		1.0f / static_cast<float>(sourceDesc.Height));
+
+	FullScreenQuad::Draw(device, g_shader.Get(), source, target.Width(), target.Height(),
+		UpscaleFilter::WantsLinear(g_kind));
+}
+
+void BindDetailTexture(IDirect3DDevice9* device, DWORD stage, IDirect3DBaseTexture9* texture)
+{
+	device->SetTexture(stage, texture);
+	device->SetSamplerState(stage, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+	device->SetSamplerState(stage, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+	device->SetSamplerState(stage, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+	device->SetSamplerState(stage, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+	device->SetSamplerState(stage, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+	device->SetSamplerState(stage, D3DSAMP_SRGBTEXTURE, FALSE);
+}
+
+void Combine(IDirect3DDevice9* device, IDirect3DBaseTexture9* source)
+{
+	IDirect3DBaseTexture9* const detail[kDetailStages] = { StageDetail::Detailed(), source, StageDetail::Snapshot() };
+
+	for (DWORD i = 0; i < kDetailStages; ++i)
+		BindDetailTexture(device, kFirstDetailStage + i, detail[i]);
+
+	device->SetRenderTarget(0, g_target.Surface());
+	FullScreenQuad::SetConstant(device, 0, kVisibilitySensitivity, kDarkestStage, 0.0f, 0.0f);
+	FullScreenQuad::Draw(device, g_detailShader.Get(), g_upscaled.Texture(), g_target.Width(), g_target.Height(),
+		true, g_snapshotUpscaled.Texture());
+}
+
+bool WantsDetail(IDirect3DDevice9* device, const D3DSURFACE_DESC& sourceDesc, const D3DSURFACE_DESC& backBufferDesc)
+{
+	return StageDetail::IsReady() && g_detailShader.Ensure(device, kStageDetailShader) &&
+		g_upscaled.Ensure(device, backBufferDesc.Width, backBufferDesc.Height, sourceDesc.Format) &&
+		g_snapshotUpscaled.Ensure(device, backBufferDesc.Width, backBufferDesc.Height, sourceDesc.Format);
+}
+
 bool Run(IDirect3DDevice9* device, IDirect3DTexture9* source, const D3DSURFACE_DESC& sourceDesc,
 	const D3DSURFACE_DESC& backBufferDesc)
 {
@@ -121,20 +185,24 @@ bool Run(IDirect3DDevice9* device, IDirect3DTexture9* source, const D3DSURFACE_D
 		return false;
 	}
 
+	const bool detailed = WantsDetail(device, sourceDesc, backBufferDesc);
+
 	if (!g_state.Capture(device))
 		return false;
 
 	const bool opened = SUCCEEDED(device->BeginScene());
-
-	device->SetRenderTarget(0, g_target.Surface());
 	device->SetDepthStencilSurface(nullptr);
 
-	FullScreenQuad::SetConstant(device, 0, static_cast<float>(sourceDesc.Width),
-		static_cast<float>(sourceDesc.Height), 1.0f / static_cast<float>(sourceDesc.Width),
-		1.0f / static_cast<float>(sourceDesc.Height));
-
-	FullScreenQuad::Draw(device, g_shader.Get(), source, g_target.Width(), g_target.Height(),
-		UpscaleFilter::WantsLinear(g_kind));
+	if (detailed)
+	{
+		Upscale(device, source, sourceDesc, g_upscaled);
+		Upscale(device, StageDetail::Snapshot(), sourceDesc, g_snapshotUpscaled);
+		Combine(device, source);
+	}
+	else
+	{
+		Upscale(device, source, sourceDesc, g_target);
+	}
 
 	if (opened)
 		device->EndScene();
@@ -148,7 +216,7 @@ bool Run(IDirect3DDevice9* device, IDirect3DTexture9* source, const D3DSURFACE_D
 IDirect3DBaseTexture9* SceneUpscale::OnSetTexture(IDirect3DDevice9* device, DWORD stage,
 	IDirect3DBaseTexture9* texture)
 {
-	const int kind = WantedKind();
+	const int kind = EffectiveKind();
 
 	if (kind == UpscaleFilter::Kind_Off || g_running || g_failed || stage != 0 || device == nullptr)
 		return texture;
@@ -164,7 +232,7 @@ IDirect3DBaseTexture9* SceneUpscale::OnSetTexture(IDirect3DDevice9* device, DWOR
 	if (source == nullptr)
 		return texture;
 
-	if (!IsSceneTarget(sourceDesc))
+	if (!ScaledTargets::IsScaledTexture(texture) && !IsSceneTarget(sourceDesc))
 		return texture;
 
 	D3DSURFACE_DESC backBufferDesc = {};
@@ -196,8 +264,9 @@ IDirect3DBaseTexture9* SceneUpscale::OnSetTexture(IDirect3DDevice9* device, DWOR
 	g_source = texture;
 	++g_passesThisFrame;
 
-	Report("%s, %ux%u to %ux%u", UpscaleFilter::GetName(g_kind), sourceDesc.Width,
-		sourceDesc.Height, g_target.Width(), g_target.Height());
+	Report("%s, %ux%u to %ux%u%s", UpscaleFilter::GetName(g_kind), sourceDesc.Width,
+		sourceDesc.Height, g_target.Width(), g_target.Height(),
+		StageDetail::IsReady() ? ", stage at full resolution" : "");
 
 	if (!g_announced)
 	{
@@ -224,13 +293,15 @@ void SceneUpscale::OnDeviceLost()
 {
 	g_state.Release();
 	g_target.Release();
+	g_upscaled.Release();
+	g_snapshotUpscaled.Release();
 	g_source = nullptr;
 	g_passesThisFrame = 0;
 }
 
 bool SceneUpscale::HoldsDeviceResources()
 {
-	return g_state.IsHeld() || g_target.IsHeld();
+	return g_state.IsHeld() || g_target.IsHeld() || g_upscaled.IsHeld() || g_snapshotUpscaled.IsHeld();
 }
 
 void SceneUpscale::Shutdown()
@@ -238,6 +309,7 @@ void SceneUpscale::Shutdown()
 	OnDeviceLost();
 
 	g_shader.Release();
+	g_detailShader.Release();
 	g_kind = UpscaleFilter::Kind_Off;
 	g_announced = false;
 }

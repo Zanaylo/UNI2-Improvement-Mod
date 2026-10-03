@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "Core/utils.h"
+#include "D3D9/Device/TargetSizeMask.h"
+#include "D3D9/Draw/PrimitiveCount.h"
 
 namespace {
 
@@ -82,7 +84,7 @@ Surface Describe(IDirect3DSurface9* surface)
 		return out;
 
 	D3DSURFACE_DESC desc = {};
-	if (SUCCEEDED(surface->GetDesc(&desc)))
+	if (TargetSizeMask::RealDesc(surface, desc))
 	{
 		out.width = desc.Width;
 		out.height = desc.Height;
@@ -111,6 +113,52 @@ Surface ReadTarget(IDirect3DDevice9* device, bool& outBackBuffer)
 	}
 
 	target->Release();
+	return out;
+}
+
+struct PixelShaderInfo
+{
+	const void* identity;
+	unsigned long version;
+};
+
+PixelShaderInfo ReadPixelShader(IDirect3DDevice9* device)
+{
+	IDirect3DPixelShader9* shader = nullptr;
+	if (FAILED(device->GetPixelShader(&shader)) || shader == nullptr)
+		return {};
+
+	DWORD token = 0;
+	UINT bytes = sizeof(token);
+	DWORD function[64] = {};
+	UINT size = 0;
+
+	if (SUCCEEDED(shader->GetFunction(nullptr, &size)) && size >= sizeof(token) && size <= sizeof(function) &&
+		SUCCEEDED(shader->GetFunction(function, &size)))
+	{
+		token = function[0];
+	}
+	else if (size > sizeof(function))
+	{
+		std::vector<DWORD> large(size / sizeof(DWORD) + 1);
+		bytes = size;
+		if (SUCCEEDED(shader->GetFunction(large.data(), &bytes)))
+			token = large[0];
+	}
+
+	const PixelShaderInfo out = { shader, token };
+	shader->Release();
+	return out;
+}
+
+Surface ReadDepth(IDirect3DDevice9* device)
+{
+	IDirect3DSurface9* depth = nullptr;
+	if (FAILED(device->GetDepthStencilSurface(&depth)) || depth == nullptr)
+		return {};
+
+	const Surface out = Describe(depth);
+	depth->Release();
 	return out;
 }
 
@@ -252,23 +300,6 @@ Position ReadPosition(IDirect3DDevice9* device)
 	return out;
 }
 
-unsigned VerticesFor(int primitiveType, unsigned primitiveCount)
-{
-	switch (primitiveType)
-	{
-	case D3DPT_POINTLIST:
-		return primitiveCount;
-	case D3DPT_LINELIST:
-		return primitiveCount * 2;
-	case D3DPT_LINESTRIP:
-		return primitiveCount + 1;
-	case D3DPT_TRIANGLELIST:
-		return primitiveCount * 3;
-	default:
-		return primitiveCount + 2;
-	}
-}
-
 void ReadVertex(const void* vertexData, unsigned stride, unsigned index, const Position& position,
 	float out[4])
 {
@@ -345,9 +376,35 @@ DWORD StateOf(IDirect3DDevice9* device, D3DRENDERSTATETYPE state)
 	return value;
 }
 
+DWORD SamplerOf(IDirect3DDevice9* device, D3DSAMPLERSTATETYPE state)
+{
+	DWORD value = 0;
+	device->GetSamplerState(0, state, &value);
+	return value;
+}
+
 void DescribeStates(IDirect3DDevice9* device, char* out, size_t outSize)
 {
-	sprintf_s(out, outSize, "  blend %lu src %lu dst %lu z %lu zw %lu zf %lu atest %lu aref %lu cull %lu",
+	DWORD colourOp = 0;
+	DWORD alphaOp = 0;
+	DWORD texcoordIndex = 0;
+	DWORD transform = 0;
+	device->GetTextureStageState(0, D3DTSS_COLOROP, &colourOp);
+	device->GetTextureStageState(0, D3DTSS_ALPHAOP, &alphaOp);
+	device->GetTextureStageState(0, D3DTSS_TEXCOORDINDEX, &texcoordIndex);
+	device->GetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, &transform);
+
+	const int written = sprintf_s(out, outSize, "  clip %lu planes %lu cop %lu aop %lu tci %lu ttff %lu",
+		StateOf(device, D3DRS_CLIPPING), StateOf(device, D3DRS_CLIPPLANEENABLE), colourOp, alphaOp, texcoordIndex,
+		transform);
+	if (written < 0)
+		return;
+
+	out += written;
+	outSize -= written;
+
+	sprintf_s(out, outSize, "  fog %lu mag %lu min %lu blend %lu src %lu dst %lu z %lu zw %lu zf %lu atest %lu aref %lu cull %lu",
+		StateOf(device, D3DRS_FOGENABLE), SamplerOf(device, D3DSAMP_MAGFILTER), SamplerOf(device, D3DSAMP_MINFILTER),
 		StateOf(device, D3DRS_ALPHABLENDENABLE), StateOf(device, D3DRS_SRCBLEND),
 		StateOf(device, D3DRS_DESTBLEND), StateOf(device, D3DRS_ZENABLE),
 		StateOf(device, D3DRS_ZWRITEENABLE), StateOf(device, D3DRS_ZFUNC),
@@ -464,6 +521,7 @@ void DescribeVertices(IDirect3DDevice9* device, const void* shader, const void* 
 		DumpShaderOnce(device, shader);
 
 	Range raw = {};
+	Range depth = {};
 	Range pixel = {};
 	Range uv = {};
 	const unsigned limit = vertexCount < kMaxVertices ? vertexCount : kMaxVertices;
@@ -473,6 +531,7 @@ void DescribeVertices(IDirect3DDevice9* device, const void* shader, const void* 
 		float vertex[4] = {};
 		ReadVertex(vertexData, stride, i, position, vertex);
 		Include(raw, vertex[0], vertex[1]);
+		Include(depth, vertex[2], vertex[3]);
 
 		if (position.texcoordOffset >= 0 &&
 			static_cast<unsigned>(position.texcoordOffset) + 8 <= stride)
@@ -489,8 +548,9 @@ void DescribeVertices(IDirect3DDevice9* device, const void* shader, const void* 
 			Include(pixel, x, y);
 	}
 
-	int written = sprintf_s(out, outSize, "  %s x %.3f..%.3f y %.3f..%.3f",
-		position.pretransformed ? "xyzrhw" : "pos", raw.minX, raw.maxX, raw.minY, raw.maxY);
+	int written = sprintf_s(out, outSize, "  %s x %.3f..%.3f y %.3f..%.3f z %.3f..%.3f w %.3f..%.3f",
+		position.pretransformed ? "xyzrhw" : "pos", raw.minX, raw.maxX, raw.minY, raw.maxY, depth.minX, depth.maxX,
+		depth.minY, depth.maxY);
 
 	if (written > 0 && position.colourOffset >= 0 && position.colourFloats == 0
 		&& static_cast<unsigned>(position.colourOffset) + 4 <= stride)
@@ -527,6 +587,11 @@ void DescribeVertices(IDirect3DDevice9* device, const void* shader, const void* 
 		pixel.minX, pixel.maxX, pixel.minY, pixel.maxY);
 }
 
+}
+
+int DrawTrace::LastDrawIndex()
+{
+	return g_state == State::Capturing ? g_draws - 1 : -1;
 }
 
 void DrawTrace::Arm()
@@ -574,6 +639,52 @@ void DrawTrace::OnPresentEnd()
 	LOG_SECTION("draw trace");
 	LOG_RAW("one game frame, every draw call in order; rt/tex are surface identities, a tex "
 		"matching an earlier rt means that draw samples what was rendered there");
+}
+
+void DrawTrace::OnClear(IDirect3DDevice9* device, unsigned long count, const void* rects,
+	unsigned long flags, unsigned long colour)
+{
+	if (g_state != State::Capturing || device == nullptr || !Emit())
+		return;
+
+	bool backBuffer = false;
+	const Surface target = ReadTarget(device, backBuffer);
+	const Surface depth = ReadDepth(device);
+	const D3DRECT* const first = static_cast<const D3DRECT*>(rects);
+
+	LOG_RAW("clear rt %p %ux%u ds %ux%u flags 0x%lx colour %08lx count %lu%s", target.identity, target.width,
+		target.height, depth.width, depth.height, flags, colour, count, first == nullptr ? "" : " rects:");
+
+	for (unsigned long i = 0; first != nullptr && i < count && Emit(); ++i)
+		LOG_RAW("  %ld,%ld..%ld,%ld", first[i].x1, first[i].y1, first[i].x2, first[i].y2);
+}
+
+void DrawTrace::OnSetViewport(unsigned long x, unsigned long y, unsigned long width, unsigned long height,
+	unsigned long appliedWidth, unsigned long appliedHeight, long result)
+{
+	if (g_state != State::Capturing || !Emit())
+		return;
+
+	LOG_RAW("viewport asked %lu,%lu %lux%lu applied %lux%lu result 0x%08lx", x, y, width, height, appliedWidth,
+		appliedHeight, static_cast<unsigned long>(result));
+}
+
+void DrawTrace::OnStretchRect(IDirect3DSurface9* source, const RECT* sourceRect,
+	IDirect3DSurface9* destination, const RECT* destinationRect)
+{
+	if (g_state != State::Capturing || !Emit())
+		return;
+
+	const Surface from = Describe(source);
+	const Surface to = Describe(destination);
+	const RECT whole = {};
+	const RECT& a = sourceRect != nullptr ? *sourceRect : whole;
+	const RECT& b = destinationRect != nullptr ? *destinationRect : whole;
+
+	LOG_RAW("stretch %p %ux%u rect %ld,%ld..%ld,%ld%s -> %p %ux%u rect %ld,%ld..%ld,%ld%s", from.identity,
+		from.width, from.height, a.left, a.top, a.right, a.bottom, sourceRect != nullptr ? "" : " (whole)",
+		to.identity, to.width, to.height, b.left, b.top, b.right, b.bottom,
+		destinationRect != nullptr ? "" : " (whole)");
 }
 
 void DrawTrace::OnIndexedDraw(IDirect3DDevice9* device, int primitiveType,
@@ -634,6 +745,7 @@ void DrawTrace::OnDraw(IDirect3DDevice9* device, const char* kind, int primitive
 	const Surface target = ReadTarget(device, backBuffer);
 	const Surface texture0 = ReadTexture(device, 0);
 	const Surface texture1 = ReadTexture(device, 1);
+	const Surface depth = ReadDepth(device);
 
 	D3DVIEWPORT9 viewport = {};
 	device->GetViewport(&viewport);
@@ -649,11 +761,13 @@ void DrawTrace::OnDraw(IDirect3DDevice9* device, const char* kind, int primitive
 	if (shader != nullptr)
 		shader->Release();
 
-	char vertices[256] = {};
+	const PixelShaderInfo pixel = ReadPixelShader(device);
+
+	char vertices[320] = {};
 	if (vertexData != nullptr)
 	{
 		const unsigned count = vertexCount != 0 ? vertexCount
-			: VerticesFor(primitiveType, primitiveCount);
+			: PrimitiveVertexCount(primitiveType, primitiveCount);
 		DescribeVertices(device, shader, vertexData, stride, count, viewport, vertices,
 			sizeof(vertices));
 	}
@@ -665,12 +779,12 @@ void DrawTrace::OnDraw(IDirect3DDevice9* device, const char* kind, int primitive
 			scissor.bottom);
 	}
 
-	char states[96] = {};
+	char states[192] = {};
 	DescribeStates(device, states, sizeof(states));
 
-	LOG_RAW("#%03d %-5s t%d n%-4u rt %p %ux%u%s vp %lu,%lu %lux%lu tex0 %p %ux%u tex1 %ux%u "
-		"vs %p%s%s%s", index, kind, primitiveType, primitiveCount, target.identity, target.width,
-		target.height, backBuffer ? " (bb)" : "", viewport.X, viewport.Y, viewport.Width,
-		viewport.Height, texture0.identity, texture0.width, texture0.height, texture1.width,
-		texture1.height, static_cast<const void*>(shader), clip, states, vertices);
+	LOG_RAW("#%03d %-5s t%d n%-4u rt %p %ux%u%s ds %ux%u vp %lu,%lu %lux%lu tex0 %p %ux%u tex1 %ux%u "
+		"vs %p ps %p v%lx%s%s%s", index, kind, primitiveType, primitiveCount, target.identity, target.width,
+		target.height, backBuffer ? " (bb)" : "", depth.width, depth.height, viewport.X, viewport.Y,
+		viewport.Width, viewport.Height, texture0.identity, texture0.width, texture0.height, texture1.width,
+		texture1.height, static_cast<const void*>(shader), pixel.identity, pixel.version, clip, states, vertices);
 }

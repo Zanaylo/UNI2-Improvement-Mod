@@ -632,6 +632,9 @@ namespace GameOffsets
 	constexpr uintptr_t kFnSetFallbackName = 0x38db0;
 
 	constexpr uintptr_t kFnSetRoomRows = 0x2ea8b0;
+	constexpr uintptr_t kFnRoomMemberWrite = 0x1ecbf0;
+	constexpr uintptr_t kFnRoomMemberRead = 0x1eca50;
+	constexpr uintptr_t kRoomMemberStage = 0x24;
 	constexpr size_t kRoomRowStride = 0x220;
 	constexpr size_t kRoomRowName = 0x8;
 	constexpr size_t kRoomRowNameSize = 0x10;

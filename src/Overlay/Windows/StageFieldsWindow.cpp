@@ -1,5 +1,6 @@
 #include "Overlay/Windows/StageFieldsWindow.h"
 
+#include "Core/ShellOpen.h"
 #include "Game/Stages/StageExport.h"
 #include "Game/Stages/StageImport.h"
 #include "Game/Stages/StageLibrary.h"
@@ -591,7 +592,7 @@ void StageFieldsWindow::DrawInstallButtons()
 	ImGui::SameLine();
 
 	if (ImGui::Button("Open folder"))
-		ShellExecuteA(nullptr, "open", folder.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		ShellOpen::Open(folder);
 }
 
 void StageFieldsWindow::RefreshTargets()

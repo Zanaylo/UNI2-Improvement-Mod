@@ -16,6 +16,7 @@
 #include "D3D9/Post/UpscaleFilter.h"
 #include "Game/Display/EngineQuality.h"
 #include "Game/Display/Improvements.h"
+#include "Game/Display/InternalResolution.h"
 #include "Game/Display/PotatoMode.h"
 #include "Overlay/Widgets/ComboNav.h"
 #include "Overlay/Widgets/OverlayFont.h"
@@ -86,9 +87,9 @@ void DrawUpscaleFilter()
 	if (RadioRow("filter", UpscaleFilter::Kind_COUNT, &UpscaleFilter::GetName, current, chosen))
 		PostStages::SetUpscaleFilter(chosen);
 
-	Help("The game draws the scene at 1280x720 and stretches it to your window. This picks a "
-		"better filter for that stretch.\n\n"
-		"It does nothing until you raise the present size above 1280x720 on the Improvements tab.");
+	Help("The game draws the scene at its render resolution and stretches it to your window. This "
+		"picks a better filter for that stretch.\n\n"
+		"It does nothing while the output resolution is not above the render resolution.");
 
 	Muted("%s", UpscaleFilter::Describe(current));
 	Muted("%s", SceneUpscale::GetStatusText());
@@ -106,7 +107,7 @@ void DrawAntiAliasing()
 
 	Help("FXAA over the finished frame.\n\n"
 		"Multisampling cannot work here, because the game draws its scene into textures. For "
-		"smoother edges, use this or raise the present size on the Improvements tab.");
+		"smoother edges, use this or raise the render resolution on the Improvements tab.");
 
 	Muted("%s", AntiAlias::Describe(current));
 }
@@ -305,9 +306,9 @@ bool GraphicsPanel::DrawEverythingOff()
 {
 	if (!ImGui::Button("Everything off"))
 	{
-		Help("Turns off every graphics option in the mod: present size, shaders, back buffer "
-			"multisampling, Character Visual Improvements, the empty stage and POTATO MODE. After "
-			"this the mod draws nothing into the frame.");
+		Help("Turns off every graphics option in the mod: output and render resolution, shaders, "
+			"back buffer multisampling, Character Visual Improvements, the empty stage and POTATO MODE. "
+			"After this the mod draws nothing into the frame.");
 		return false;
 	}
 
@@ -327,6 +328,7 @@ bool GraphicsPanel::DrawEverythingOff()
 	EngineQuality::Apply();
 	PotatoMode::Apply(PotatoMode::Level_Off);
 	Improvements::Apply(Improvements::Level_Off);
+	InternalResolution::Apply(InternalResolution::Level_Off);
 
 	return true;
 }

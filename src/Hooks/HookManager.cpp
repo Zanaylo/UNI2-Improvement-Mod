@@ -50,10 +50,15 @@ constexpr int kMaxJmpHops = 8;
 constexpr int kMaxRecords = 96;
 
 constexpr size_t kStubBytes = 16;
+constexpr uint8_t kPushEax = 0x50;
+constexpr uint8_t kMovEaxImm32 = 0xB8;
 constexpr uint8_t kLockPrefix = 0xF0;
 constexpr uint8_t kIncOpcode = 0xFF;
-constexpr uint8_t kAbsoluteDisp32 = 0x05;
+constexpr uint8_t kIncAtEax = 0x00;
+constexpr uint8_t kPopEax = 0x58;
 constexpr uint8_t kJmpRel32 = 0xE9;
+constexpr size_t kStubJumpAt = 10;
+constexpr size_t kStubLength = 15;
 
 struct HookRecord
 {
@@ -90,13 +95,16 @@ void* CountingStub(int index, volatile LONG* counter, void* handler)
 	if (stub == nullptr)
 		return handler;
 
-	stub[0] = kLockPrefix;
-	stub[1] = kIncOpcode;
-	stub[2] = kAbsoluteDisp32;
-	*reinterpret_cast<volatile LONG**>(stub + 3) = counter;
-	stub[7] = kJmpRel32;
-	*reinterpret_cast<int32_t*>(stub + 8) =
-		static_cast<int32_t>(static_cast<uint8_t*>(handler) - (stub + 12));
+	stub[0] = kPushEax;
+	stub[1] = kMovEaxImm32;
+	*reinterpret_cast<volatile LONG**>(stub + 2) = counter;
+	stub[6] = kLockPrefix;
+	stub[7] = kIncOpcode;
+	stub[8] = kIncAtEax;
+	stub[9] = kPopEax;
+	stub[kStubJumpAt] = kJmpRel32;
+	*reinterpret_cast<int32_t*>(stub + kStubJumpAt + 1) =
+		static_cast<int32_t>(static_cast<uint8_t*>(handler) - (stub + kStubLength));
 
 	FlushInstructionCache(GetCurrentProcess(), stub, kStubBytes);
 	return stub;

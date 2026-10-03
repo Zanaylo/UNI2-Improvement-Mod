@@ -9,6 +9,7 @@
 #include "Core/logger.h"
 #include "D3D9/Device/SceneScale.h"
 #include "D3D9/Post/SceneUpscale.h"
+#include "D3D9/Device/StageDetail.h"
 #include "Game/Audio/BgmControl.h"
 #include "Game/Audio/CharaSounds.h"
 #include "Game/Audio/MusicRefresh.h"
@@ -33,6 +34,7 @@
 #include "Game/Files/ModFiles.h"
 #include "Game/Lobby/NameCensor.h"
 #include "Game/Lobby/RoomNameCensor.h"
+#include "Game/Lobby/RoomStage.h"
 #include "Game/Menus/BattleCockpit.h"
 #include "Game/Menus/CharaSelectProbe.h"
 #include "Game/Patches/GamePatches.h"
@@ -151,6 +153,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: training hud", [] { ProrationHud::Install(); } },
 	{ "game hooks: name censor", [] { NameCensor::Install(); } },
 	{ "game hooks: room name censor", [] { RoomNameCensor::Install(); } },
+	{ "game hooks: room stage", [] { RoomStage::Install(); } },
 	{ "game hooks: random stage", [] { RandomStage::Install(); } },
 	{ "game hooks: subtitle watch", [] { SubtitleWatch::Install(); } },
 	{ "game hooks: subtitle text", [] { SubtitleText::Install(); } },
@@ -253,6 +256,7 @@ const Task kTail[] = {
 	[] { SceneScale::OnFrame(); },
 	[] { Camera::PollDiagnosticRequest(); },
 	[] { SceneUpscale::OnPresent(); },
+	[] { StageDetail::OnPresent(); },
 	[] { InputProbe::OnFrame(); },
 	[] { StageColor::OnFrame(); },
 	[] { ExtraStages::OnFrame(); },

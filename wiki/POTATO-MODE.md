@@ -42,8 +42,26 @@ on a weak card. The mod keeps it off, because the game's own options screen turn
 *Back buffer multisampling* costs nothing to lose. A Direct3D 9 texture cannot be multisampled, and
 the whole scene is drawn into textures, so the game's Antialias never reaches a sprite edge. The only
 thing it can touch is the single quad the finished frame is drawn with, and its only edges are the
-edges of the screen. Raising the internal resolution above 100% is the only anti-aliasing this engine
-can use, and the ini still allows it.
+edges of the screen. The render resolution on the [Improvements](Improvements) tab is the
+anti-aliasing this engine can use for the stage: it draws the stage bigger.
+
+## Stage quality
+
+The same tab has a **Stage quality** row: the size the 3D stage is drawn at while POTATO MODE is on.
+Characters, effects, menus and text are not touched.
+
+| Level | Stage drawn at |
+|---|---|
+| 720p | 1280x720, the game's own |
+| 540p | 960x540, about half the stage work |
+| 360p | 640x360, a quarter |
+| 270p | 480x270, a seventh |
+
+The smaller stage is stretched back with a smooth filter, so it looks out of focus rather than
+blocky. Measured on a Radeon RX 7600 with Balanced: 360p took the whole frame's graphics card load
+from 7.8% to 5.4%. On a weak card the stage is often the heaviest part of a frame. It needs a
+restart, and it is also in Option, Display, Improvement Mod Display Settings as *Potato stage*. In the
+ini it is `PotatoStage`.
 
 **Nothing here reaches the simulation.** Same match, nobody online can tell, and none of it is a
 training tool. It only changes how the frame is drawn.

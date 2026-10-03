@@ -37,6 +37,7 @@ const char* const kSectionNames[Profiler::Section_COUNT] = {
 	"Tick/oFrameUpdate",
 	"Draw/mod hooks",
 	"Draw/oSetTexture+oDIP",
+	"Draw/scaled screen draws",
 };
 
 bool g_enabled = false;

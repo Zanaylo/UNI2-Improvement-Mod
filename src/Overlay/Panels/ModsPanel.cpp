@@ -1,5 +1,6 @@
 #include "Overlay/Panels/ModsPanel.h"
 
+#include "Core/ShellOpen.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Files/ModPacks.h"
 #include "Game/Stages/StageImport.h"
@@ -26,7 +27,7 @@ const ImVec4 kOwnText(0.45f, 0.90f, 0.50f, 1.0f);
 
 void Open(const std::string& folder)
 {
-	ShellExecuteA(nullptr, "open", folder.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+	ShellOpen::Open(folder);
 }
 
 }

@@ -195,6 +195,9 @@
     <ClCompile Include="src\Game\Lobby\RoomNameCensor.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Lobby\RoomStage.cpp">
+      <Filter>Game\Lobby</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network\Steam\SteamFriends.cpp">
       <Filter>Network\Steam</Filter>
     </ClCompile>
@@ -1116,7 +1119,37 @@
     <ClCompile Include="src\D3D9\Device\SceneScale.cpp">
       <Filter>D3D9\Device</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ScaledTargets.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ShellOpen.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ScreenSpaceShader.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\StageDetail.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\TargetSizeMask.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ScaledDeviceState.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\PretransformedDraws.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\InternalResolution.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\PotatoStage.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
     <ClCompile Include="src\D3D9\Draw\DrawTrace.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\TargetDump.cpp">
       <Filter>D3D9\Draw</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Draw\DrawQueueProbe.cpp">
@@ -1425,6 +1458,9 @@
       <Filter>Game\Lobby</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Lobby\RoomNameCensor.h">
+      <Filter>Game\Lobby</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Lobby\RoomStage.h">
       <Filter>Game\Lobby</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\Steam\SteamFriends.h">
@@ -2327,7 +2363,52 @@
     <ClInclude Include="src\D3D9\Device\SceneScale.h">
       <Filter>D3D9\Device</Filter>
     </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ScaledTargets.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ShellOpen.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ScreenSpaceShader.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\StageDetail.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\ScreenSpaceShader3.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\StageDetailShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\ScreenSpaceShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\GameCaller.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\TargetSizeMask.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ScaledDeviceState.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\PretransformedDraws.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\InternalResolution.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\PotatoStage.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\PrimitiveCount.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
     <ClInclude Include="src\D3D9\Draw\DrawTrace.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\TargetDump.h">
       <Filter>D3D9\Draw</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Draw\DrawQueueProbe.h">
@@ -2579,6 +2660,12 @@
       <Filter>Resources\shaders</Filter>
     </None>
     <None Include="resource\shaders\bloom_mix.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\screenspace.hlsl">
+      <Filter>Resources\shaders</Filter>
+    </None>
+    <None Include="resource\shaders\stagedetail.hlsl">
       <Filter>Resources\shaders</Filter>
     </None>
     <None Include="resource\shaders\fxaa.hlsl">

@@ -10,6 +10,7 @@ namespace StageLibrary
 	constexpr int kIdLast = 998;
 	constexpr int kTrainingStage = 90;
 	constexpr int kDebugStage = 99;
+	constexpr int kStockStage = 1;
 
 	struct Entry
 	{

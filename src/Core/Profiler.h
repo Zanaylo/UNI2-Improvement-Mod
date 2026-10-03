@@ -22,6 +22,7 @@ namespace Profiler
 		Section_TickGame,
 		Section_DrawModHooks,
 		Section_DrawDevice,
+		Section_DrawScaled,
 		Section_COUNT
 	};
 

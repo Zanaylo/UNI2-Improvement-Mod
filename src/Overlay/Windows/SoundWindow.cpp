@@ -1,5 +1,6 @@
 ﻿#include "Overlay/Windows/SoundWindow.h"
 
+#include "Core/ShellOpen.h"
 #include "Game/Audio/CharaSounds.h"
 #include "Game/Audio/SoundOwners.h"
 #include "Game/Audio/SoundPacks.h"
@@ -554,8 +555,7 @@ void SoundWindow::DrawPacks()
 
 	if (ImGui::Button("Open the folder"))
 	{
-		ShellExecuteA(nullptr, "open", SoundPacks::Root().c_str(), nullptr, nullptr,
-			SW_SHOWNORMAL);
+		ShellOpen::Open(SoundPacks::Root());
 	}
 
 	ImGui::Spacing();
@@ -650,16 +650,14 @@ void SoundWindow::DrawHowTo()
 
 	if (ImGui::Button("Open the readme"))
 	{
-		ShellExecuteA(nullptr, "open", SoundsReadme::Path().c_str(), nullptr, nullptr,
-			SW_SHOWNORMAL);
+		ShellOpen::Open(SoundsReadme::Path());
 	}
 
 	ImGui::SameLine();
 
 	if (ImGui::Button("Open the Sounds folder"))
 	{
-		ShellExecuteA(nullptr, "open", SoundPacks::Root().c_str(), nullptr, nullptr,
-			SW_SHOWNORMAL);
+		ShellOpen::Open(SoundPacks::Root());
 	}
 
 	ImGui::Spacing();

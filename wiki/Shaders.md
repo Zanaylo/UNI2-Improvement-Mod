@@ -8,7 +8,8 @@ mod does not read the back buffer at all and the frame is the game's own.
 
 - **Upscale filter**: Off, bicubic, Lanczos or FidelityFX EASU, instead of the engine's bilinear
   stretch to your window. EASU follows the edges it finds, so a diagonal looks like a line instead of
-  a staircase. It needs a back buffer larger than 1280x720, so raise the present size with it.
+  a staircase. It only runs while the output resolution is above the render resolution (both on the
+  Improvements tab).
 - **Anti-aliasing**: FXAA in five steps. Multisampling is not offered because it cannot work in this
   game. A Direct3D 9 texture cannot be multisampled and the whole scene is drawn into textures.
 - **Bloom**: cuts out the bright parts of the frame, blurs them at a quarter size and screens them

@@ -6,7 +6,9 @@
 #include "D3D9/Post/PostStages.h"
 #include "D3D9/Post/UpscaleFilter.h"
 #include "Game/Display/Improvements.h"
+#include "Game/Display/InternalResolution.h"
 #include "Game/Display/PotatoMode.h"
+#include "Game/Display/PotatoStage.h"
 #include "Game/Menus/OptionMenu.h"
 
 #include <atomic>
@@ -58,14 +60,20 @@ const char* HeightName(int index)
 }
 
 const Setting kSettings[] = {
-	{ "Improvements", "Draw the frame bigger than the window and scale it down. Needs a restart.",
+	{ "Output resolution", "The size of the picture sent to your screen. Set it to your screen. Needs a restart.",
 		Improvements::Level_COUNT, &Improvements::GetLevelName, Improvements::Level_Off,
 		&Improvements::GetLevel, &Improvements::Apply },
+	{ "Render resolution", "The size the stage is drawn at. Match the output. Needs a restart.",
+		InternalResolution::Level_COUNT, &InternalResolution::GetLevelName, InternalResolution::Level_Off,
+		&InternalResolution::GetLevel, &InternalResolution::Apply },
 	{ "POTATO MODE", "Draw less to keep 60 fps on a weak PC. Gameplay does not change.",
 		PotatoMode::Level_COUNT, &PotatoMode::GetLevelName, PotatoMode::Level_Off,
 		&PotatoMode::GetLevel, &PotatoMode::Apply },
 	{ "Potato resolution", "The size the frame is drawn at on the Potato level.",
 		kHeightCount, &HeightName, kDefaultHeight, &ReadHeight, &WriteHeight },
+	{ "Potato stage", "The size the stage is drawn at while POTATO MODE is on. Needs a restart.",
+		PotatoStage::Level_COUNT, &PotatoStage::GetLevelName, PotatoStage::Level_Full,
+		&PotatoStage::GetLevel, &PotatoStage::Apply },
 	{ "Upscale filter", "The filter that stretches the 1280x720 scene to your window.",
 		UpscaleFilter::Kind_COUNT, &UpscaleFilter::GetName, UpscaleFilter::Kind_Off,
 		&PostStages::GetUpscaleFilter, &PostStages::SetUpscaleFilter },
@@ -108,7 +116,7 @@ public:
 
 	const char* EntryInfo() const override
 	{
-		return "Present size, POTATO MODE and the shaders of UNI2 Improvement Mod.";
+		return "Output and render resolution, POTATO MODE and the shaders of UNI2 Improvement Mod.";
 	}
 
 	const char* Title() const override

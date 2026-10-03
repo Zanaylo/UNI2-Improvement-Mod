@@ -286,17 +286,34 @@ tem. A aba mostra o tamanho final.
 O tamanho vale na próxima vez que o jogo montar a tela: reinicie ou mude qualquer opção de vídeo no
 menu do jogo. O resto vale na hora. **Nada aqui afeta a simulação.**
 
+**Stage quality** (na mesma aba, e em Option, Display, Improvement Mod Display Settings como *Potato
+stage*): o tamanho em que o palco 3D é desenhado enquanto o POTATO MODE estiver ligado, 720p, 540p,
+360p ou 270p. Personagens, efeitos e menus não mudam; o palco menor é esticado com filtro suave. Num
+Radeon RX 7600 em Balanced, 360p baixou a carga da placa de vídeo de 7,8% para 5,4%. Precisa
+reiniciar. No ini é `PotatoStage`.
+
 ### Improvements
 
-Na mesma janela, o contrário: o quadro é desenhado **maior** que a sua janela e o Direct3D reduz de
-volta, o que suaviza as bordas.
+Na mesma janela, o contrário: o jogo é desenhado **maior** que 720p. Também fica no menu do jogo, em
+Option, Display, Improvement Mod Display Settings. São duas opções:
 
-Personagens e palco continuam em 1280x720, então os sprites não ganham detalhe. O que melhora é o que
-é desenhado direto na tela: HUD, menus, as bordas da imagem e a interface do mod. É supersampling, não
-aumento de resolução interna.
+| Opção | O que define | O que fica mais nítido |
+|---|---|---|
+| **Output resolution** | o tamanho da imagem final enviada para a tela | o esticamento da imagem de 720p, feito pelo filtro de upscale da aba Shaders |
+| **Render resolution** | o palco 3D | o detalhe do palco |
 
-**Sharpening** fica na mesma aba e é a parte mais útil. O borrado que você vê vem do upscale, não da
-arte, e o sharpening devolve o contraste das bordas. A faixa útil é 40-60%.
+O jogo desenha a cena em 1280x720 e estica até a output resolution. Personagens, efeitos, menus e
+texto são arte de 720p: ficam em 720p e o filtro de upscale amplia, então ficam iguais em qualquer
+nível. O palco é 3D, então a render resolution desenha ele com detalhe de verdade, como o Melty Blood
+Type Lumina e o BlazBlue, e o mod devolve esse detalhe onde o palco aparece. **Ponha as duas na
+resolução da sua tela.**
+
+As duas precisam reiniciar o jogo, e a render resolution fica desligada enquanto o POTATO MODE estiver
+ligado. Num Radeon RX 7600 em 4K, nenhum nível passou de 17 ms por frame no menu, no treino ou no menu
+de treino. No ini são `Supersample` e `InternalResolution`.
+
+**Sharpening** fica na aba Shaders. Ele devolve o contraste das bordas que o esticamento suaviza. A
+faixa útil é 40-60%.
 
 Só em janela e borderless.
 
