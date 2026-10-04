@@ -72,32 +72,6 @@ const Build* BuildFor(const std::string& folder)
 	return nullptr;
 }
 
-void RemoveTree(const std::string& folder)
-{
-	WIN32_FIND_DATAA found = {};
-	const HANDLE search = FindFirstFileA(Combine(folder, "*").c_str(), &found);
-
-	if (search == INVALID_HANDLE_VALUE)
-		return;
-
-	do
-	{
-		if (found.cFileName[0] == '.')
-			continue;
-
-		const std::string child = Combine(folder, found.cFileName);
-
-		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-			RemoveTree(child);
-		else
-			DeleteFileA(child.c_str());
-	}
-	while (FindNextFileA(search, &found));
-
-	FindClose(search);
-	RemoveDirectoryA(folder.c_str());
-}
-
 bool WriteWhole(const std::string& path, const uint8_t* data, size_t size)
 {
 	ZipArchive::MakeFolders(path);
@@ -243,7 +217,7 @@ bool RunVoiceMod(const std::string& folder, int chara)
 	strncpy_s(g_pack, id, _TRUNCATE);
 
 	const std::string root = Combine(GetModRootPath("Sounds"), id);
-	RemoveTree(root);
+	RemoveDirectoryTree(root);
 
 	VoiceMap::LooseReader theirs(folder);
 	const int written = CopyAll(theirs, copies, root);
@@ -251,7 +225,7 @@ bool RunVoiceMod(const std::string& folder, int chara)
 	if (written == 0)
 	{
 		strncpy_s(g_status, "no sound could be copied out of that folder", _TRUNCATE);
-		RemoveTree(root);
+		RemoveDirectoryTree(root);
 		return false;
 	}
 
@@ -303,14 +277,14 @@ bool Run(const std::string& folder, int chara)
 	InterlockedExchange(&g_progress, 20);
 
 	const std::string root = PackFolder(chara, *build);
-	RemoveTree(root);
+	RemoveDirectoryTree(root);
 
 	const int written = CopyAll(*theirs, copies, root);
 
 	if (written == 0)
 	{
 		strncpy_s(g_status, "no voice file could be copied out of that install", _TRUNCATE);
-		RemoveTree(root);
+		RemoveDirectoryTree(root);
 		return false;
 	}
 

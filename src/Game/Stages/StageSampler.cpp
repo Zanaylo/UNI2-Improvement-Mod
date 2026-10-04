@@ -8,6 +8,8 @@
 #include "Game/Stages/StageOnce.h"
 #include "Hooks/GameHook.h"
 
+#include <Windows.h>
+
 #include <cstdint>
 #include <cstring>
 
@@ -18,6 +20,7 @@ constexpr size_t kAnimeIndex = 0x08;
 using Sample_t = void(__fastcall*)(void*, void*, const uint8_t*, uint32_t, const int*);
 
 GameHook<Sample_t> g_sampleHook("FbxAnimeSample");
+volatile long g_clock = 0;
 
 void __fastcall HookedSample(void* scene, void* unused, const uint8_t* node, uint32_t frame, const int* mode)
 {
@@ -26,6 +29,8 @@ void __fastcall HookedSample(void* scene, void* unused, const uint8_t* node, uin
 		g_sampleHook.Original()(scene, unused, node, frame, mode);
 		return;
 	}
+
+	InterlockedExchange(&g_clock, static_cast<long>(frame));
 
 	int index = 0;
 	memcpy(&index, node + kAnimeIndex, sizeof(index));
@@ -41,6 +46,16 @@ void __fastcall HookedSample(void* scene, void* unused, const uint8_t* node, uin
 		StageKick::Place(scene, index);
 }
 
+}
+
+bool StageSampler::Ticking()
+{
+	return g_sampleHook.IsLive();
+}
+
+uint32_t StageSampler::Clock()
+{
+	return static_cast<uint32_t>(InterlockedCompareExchange(&g_clock, 0, 0));
 }
 
 bool StageSampler::Initialize()

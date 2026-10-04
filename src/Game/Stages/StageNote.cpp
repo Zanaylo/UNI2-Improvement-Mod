@@ -10,7 +10,7 @@ namespace {
 using Pair = StageArchive::Pair;
 
 const char* const kOwnKeys[] = {
-	"Name", "From", "Source", "DataFile", "StageSelTex", "Flow", "VertexAlpha", "CharaTint",
+	"Name", "From", "Source", "DataFile", "StageSelTex", "Flow", "VertexAlpha", "CharaTint", "EngineClock", "PaintOrder",
 };
 
 const char* const kIdentityKeys[] = { "Name", "From", "Source" };

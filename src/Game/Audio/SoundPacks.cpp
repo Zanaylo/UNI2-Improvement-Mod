@@ -417,32 +417,6 @@ void ScanPack(const std::string& folder, const std::string& id, std::vector<Conv
 	g_packs.push_back(pack);
 }
 
-void RemoveTree(const std::string& folder)
-{
-	WIN32_FIND_DATAA found = {};
-	const HANDLE search = FindFirstFileA(FileIndex::Join(folder, "*").c_str(), &found);
-
-	if (search == INVALID_HANDLE_VALUE)
-		return;
-
-	do
-	{
-		if (found.cFileName[0] == '.')
-			continue;
-
-		const std::string child = FileIndex::Join(folder, found.cFileName);
-
-		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-			RemoveTree(child);
-		else
-			DeleteFileA(child.c_str());
-	}
-	while (FindNextFileA(search, &found));
-
-	FindClose(search);
-	RemoveDirectoryA(folder.c_str());
-}
-
 bool Present(const std::string& id)
 {
 	if (id.empty())
@@ -744,7 +718,7 @@ bool SoundPacks::Remove(const std::string& id, char* status, int statusSize)
 		return false;
 	}
 
-	RemoveTree(folder);
+	RemoveDirectoryTree(folder);
 
 	if (GetFileAttributesA(folder.c_str()) != INVALID_FILE_ATTRIBUTES)
 	{

@@ -175,6 +175,32 @@ bool CreateDirectoryTree(const std::string& folder)
 	return MakeDirectory(folder);
 }
 
+void RemoveDirectoryTree(const std::string& folder)
+{
+	WIN32_FIND_DATAA found = {};
+	const HANDLE search = FindFirstFileA((folder + "\\*").c_str(), &found);
+
+	if (search == INVALID_HANDLE_VALUE)
+		return;
+
+	do
+	{
+		if (found.cFileName[0] == '.')
+			continue;
+
+		const std::string child = folder + "\\" + found.cFileName;
+
+		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+			RemoveDirectoryTree(child);
+		else
+			DeleteFileA(child.c_str());
+	}
+	while (FindNextFileA(search, &found));
+
+	FindClose(search);
+	RemoveDirectoryA(folder.c_str());
+}
+
 uint32_t ReadLittle32(const std::vector<uint8_t>& blob, size_t at)
 {
 	uint32_t value = 0;

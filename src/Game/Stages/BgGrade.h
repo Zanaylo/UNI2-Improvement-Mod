@@ -20,6 +20,9 @@ namespace BgGrade
 	constexpr float kUnielLift = 0.00f;
 	constexpr float kUnielContrast = 1.00f;
 
+	constexpr float kMbaaLift = 0.00f;
+	constexpr float kMbaaContrast = 1.00f;
+
 	constexpr float kBbtagLift = 0.00f;
 	constexpr float kBbtagContrast = 1.00f;
 	constexpr float kBbtagGlow = 1.00f;

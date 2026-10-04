@@ -42,6 +42,8 @@ namespace StageArchive
 		virtual bool Once(const std::string&, std::vector<int>&) { return false; }
 		virtual bool Kick(const std::string&, std::vector<int>&) { return false; }
 		virtual bool Fading(const std::string&) { return false; }
+		virtual bool EngineClock(const std::string&) { return false; }
+		virtual bool PaintOrder(const std::string&) { return false; }
 	};
 
 	Source* Open(const char* folder);

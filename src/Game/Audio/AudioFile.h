@@ -36,4 +36,6 @@ namespace AudioFile
 
 	bool ConvertToOgg(const std::string& source, const std::string& target, char* status,
 		int statusSize);
+	bool ConvertBytesToOgg(const std::vector<uint8_t>& bytes, const std::string& target, char* status,
+		int statusSize);
 }

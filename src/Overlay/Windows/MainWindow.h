@@ -23,5 +23,6 @@ private:
 	void DrawThemeSection();
 	void DrawStagesSection();
 	void DrawModsSection();
+	void DrawMiscSection();
 
 };

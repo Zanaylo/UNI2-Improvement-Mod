@@ -22,6 +22,7 @@ std::string GetModShaderPath(const std::string& fileName = std::string());
 bool CreateModDirectories();
 
 bool CreateDirectoryTree(const std::string& folder);
+void RemoveDirectoryTree(const std::string& folder);
 
 bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t minimumSize = 0);
 

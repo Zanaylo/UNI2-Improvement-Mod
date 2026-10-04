@@ -11,6 +11,7 @@
 #include "Overlay/Windows/MusicWindow.h"
 #include "Overlay/Windows/SoundWindow.h"
 #include "Overlay/Windows/SubtitlesWindow.h"
+#include "Overlay/Windows/MiscWindow.h"
 #include "Overlay/Windows/ModsWindow.h"
 #include "Overlay/Windows/StageFieldsWindow.h"
 #include "Overlay/Windows/StagesWindow.h"
@@ -71,6 +72,8 @@ WindowContainer::WindowContainer()
 		"Advanced###stagefields", true);
 
 	m_windows[WindowType_Mods] = std::make_unique<ModsWindow>("Mods", true);
+
+	m_windows[WindowType_Misc] = std::make_unique<MiscWindow>("Misc", true);
 
 	if (!ScreenDirector::kOnHold)
 		m_windows[WindowType_Theme] = std::make_unique<ThemeWindow>("Theme", true);

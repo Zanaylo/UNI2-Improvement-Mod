@@ -120,6 +120,9 @@ bool OstPac::Archive::Open(const std::string& path)
 		std::vector<uint8_t> raw(table.begin() + at, table.begin() + at + kFolderName);
 		at += kFolderName;
 
+		if (size == 0)
+			continue;
+
 		Folder folder;
 		folder.name = TakeName(raw, m_seed, static_cast<uint8_t>(size & 0xff));
 		folder.first = spare;

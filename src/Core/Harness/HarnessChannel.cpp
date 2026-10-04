@@ -5,6 +5,7 @@
 #include "Core/Harness/Harness.h"
 #include "Core/Harness/InjectedKeys.h"
 #include "Core/Harness/QuietWindow.h"
+#include "Core/Harness/ImportCommands.h"
 #include "Core/Harness/PerfCommands.h"
 #include "Core/Harness/StageCommands.h"
 #include "Core/logger.h"
@@ -183,6 +184,9 @@ std::string Execute(const std::string& line)
 		return reply;
 
 	if (PerfCommands::Execute(words, reply))
+		return reply;
+
+	if (ImportCommands::Execute(words, line, reply))
 		return reply;
 
 	return "error unknown command " + verb;

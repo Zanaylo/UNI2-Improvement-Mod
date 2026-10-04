@@ -112,6 +112,33 @@
   </ItemDefinitionGroup>
 
   <ItemGroup>
+    <ClCompile Include="src\Game\Customize\AnnouncerScroll.cpp" />
+    <ClCompile Include="src\Overlay\Windows\MiscWindow.cpp" />
+    <ClCompile Include="src\Overlay\Panels\MiscPanel.cpp" />
+    <ClCompile Include="src\Game\Customize\PortraitLayer.cpp" />
+    <ClCompile Include="src\Game\Customize\PortraitPicks.cpp" />
+    <ClCompile Include="src\Game\Customize\PortraitGauge.cpp" />
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaGeometry.cpp" />
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaAtlas.cpp" />
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaTimeline.cpp" />
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaScene.cpp" />
+    <ClCompile Include="src\Game\Files\MbaaArchive.cpp" />
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaStage.cpp" />
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaCg.cpp" />
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaBg.cpp" />
+    <ClCompile Include="src\Game\Customize\PortraitImport.cpp" />
+    <ClCompile Include="src\Game\Customize\PortraitArt.cpp" />
+    <ClCompile Include="src\Core\BackgroundJob.cpp" />
+    <ClCompile Include="src\Game\Audio\AnnouncerRoster.cpp" />
+    <ClCompile Include="src\Core\Harness\ImportCommands.cpp" />
+    <ClCompile Include="src\Game\Customize\AnnouncerArt.cpp" />
+    <ClCompile Include="src\Game\Customize\AnnouncerList.cpp" />
+    <ClCompile Include="src\Game\Audio\AnnouncerImport.cpp" />
+    <ClCompile Include="src\Game\Audio\AnnouncerLines.cpp" />
+    <ClCompile Include="src\Game\Files\MbtlArchive.cpp" />
+    <ClCompile Include="src\Screens\PatEdit.cpp" />
+    <ClCompile Include="src\Core\Formats\ImageOps.cpp" />
+    <ClCompile Include="src\Core\Formats\DdsImage.cpp" />
     <ClCompile Include="src\Core\Boot\dllmain.cpp" />
     <ClCompile Include="src\D3D9\Device\GraphicsWrapper.cpp" />
     <ClCompile Include="src\D3D9\Device\DgVoodoo.cpp" />
@@ -490,6 +517,33 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Game\Customize\AnnouncerScroll.h" />
+    <ClInclude Include="src\Overlay\Windows\MiscWindow.h" />
+    <ClInclude Include="src\Overlay\Panels\MiscPanel.h" />
+    <ClInclude Include="src\Game\Customize\PortraitLayer.h" />
+    <ClInclude Include="src\Game\Customize\PortraitPicks.h" />
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaGeometry.h" />
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaAtlas.h" />
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaTimeline.h" />
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaScene.h" />
+    <ClInclude Include="src\Game\Files\MbaaArchive.h" />
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaStage.h" />
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaCg.h" />
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaBg.h" />
+    <ClInclude Include="src\Game\Customize\PortraitImport.h" />
+    <ClInclude Include="src\Game\Customize\PortraitArt.h" />
+    <ClInclude Include="src\Core\BackgroundJob.h" />
+    <ClInclude Include="src\Game\Audio\AnnouncerRoster.h" />
+    <ClInclude Include="src\Core\Harness\ImportCommands.h" />
+    <ClInclude Include="src\Game\Customize\AnnouncerArt.h" />
+    <ClInclude Include="src\Game\Customize\AnnouncerList.h" />
+    <ClInclude Include="src\Game\Audio\AnnouncerImport.h" />
+    <ClInclude Include="src\Game\Audio\AnnouncerLines.h" />
+    <ClInclude Include="src\Game\Files\MbtlArchive.h" />
+    <ClInclude Include="src\Screens\PatEdit.h" />
+    <ClInclude Include="src\Screens\PatBytes.h" />
+    <ClInclude Include="src\Core\Formats\ImageOps.h" />
+    <ClInclude Include="src\Core\Formats\DdsImage.h" />
     <ClInclude Include="src\Core\Config\Settings.h" />
     <ClInclude Include="src\Core\Harness\Harness.h" />
     <ClInclude Include="src\Core\Harness\QuietWindow.h" />

@@ -102,6 +102,8 @@ void MainWindow::Draw()
 	DrawThemeSection();
 	ImGui::Separator();
 	DrawModsSection();
+
+	DrawMiscSection();
 	ImGui::Separator();
 	ConfigPanel::Draw();
 }
@@ -302,6 +304,21 @@ void MainWindow::DrawOnlineSection()
 	if (g_modVals.censorNames)
 		UiText::Good("Opponent names are being replaced with \"%s\".",
 			NameCensor::Mask());
+}
+
+void MainWindow::DrawMiscSection()
+{
+	if (!ImGui::CollapsingHeader("Misc"))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr
+		? container->GetWindow(WindowType_Misc) : nullptr;
+
+	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close misc" : "Open misc"))
+		window->Toggle();
+
+	ImGui::TextWrapped("The old portraits of UNI[st] and the MELTY BLOOD TYPE LUMINA announcers.");
 }
 
 void MainWindow::DrawModsSection()

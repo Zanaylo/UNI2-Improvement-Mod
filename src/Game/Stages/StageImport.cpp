@@ -214,6 +214,8 @@ struct Job
 	std::vector<int> kick;
 	int id;
 	bool fading;
+	bool engineClock = false;
+	bool paintOrder = false;
 	bool removing;
 	bool custom;
 	bool fetched;
@@ -338,6 +340,9 @@ const char* Tag(FbGameFolder::Game game)
 
 	if (game == FbGameFolder::Game_MBTL)
 		return " (MBTL)";
+
+	if (game == FbGameFolder::Game_MBAA)
+		return " (MBAACC)";
 
 	if (game == FbGameFolder::Game_DFCI)
 		return " (DFCI)";
@@ -822,6 +827,12 @@ void WriteNote(const std::string& target, const Job& job, const std::string& blo
 	if (job.fading)
 		note += "VertexAlpha = 1\r\n";
 
+	if (job.engineClock)
+		note += "EngineClock = 1\r\n";
+
+	if (job.paintOrder)
+		note += "PaintOrder = 1\r\n";
+
 	note += "\r\n";
 	note += StageNote::Body(block);
 
@@ -959,6 +970,8 @@ bool Fetch(Job& job)
 		source->Once(job.stage, job.once);
 		source->Kick(job.stage, job.kick);
 		job.fading = source->Fading(job.stage);
+		job.engineClock = source->EngineClock(job.stage);
+		job.paintOrder = source->PaintOrder(job.stage);
 		LiftImages(StageLibrary::FolderOf(job.id),
 			ImageDonor(FbGameFolder::Detect(job.folder.c_str()), job.stage));
 	}
@@ -991,6 +1004,9 @@ void MakeCard(const Job& job, const std::string& block)
 	const FbGameFolder::Game game = FbGameFolder::Detect(job.folder.c_str());
 
 	if (TakeIcon(game, job.stage, job.name, job.id))
+		return;
+
+	if (game == FbGameFolder::Game_MBAA && StageThumb::TakeFolder(StageLibrary::FolderOf(job.id), job.id))
 		return;
 
 	int cell = -1;
@@ -1550,8 +1566,9 @@ bool StageImport::Scan(const char* folder)
 
 	const FbGameFolder::Game game = FbGameFolder::Detect(folder);
 
-	if (game != FbGameFolder::Game_MBTL && game != FbGameFolder::Game_UNI
-		&& game != FbGameFolder::Game_UNIEL && game != FbGameFolder::Game_DFCI
+	if (game != FbGameFolder::Game_MBTL && game != FbGameFolder::Game_MBAA
+		&& game != FbGameFolder::Game_UNI && game != FbGameFolder::Game_UNIEL
+		&& game != FbGameFolder::Game_DFCI
 		&& !FbGameFolder::IsArcsys(game))
 	{
 		sprintf_s(g_status, "that folder holds %s, and the mod cannot port its stages",

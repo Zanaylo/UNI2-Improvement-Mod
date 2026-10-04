@@ -5,6 +5,7 @@
 #include "Core/utils.h"
 #include "Game/Files/DataSearchPath.h"
 #include "Game/Patches/GamePatches.h"
+#include "Game/Customize/PortraitLayer.h"
 #include "Game/Files/ModPacks.h"
 #include "Game/Audio/SoundPacks.h"
 #include "Game/Audio/UserMusic.h"
@@ -462,6 +463,7 @@ bool Rebuild()
 	FileIndex built;
 
 	ModPacks::Layer(built);
+	PortraitLayer::Layer(built);
 
 	for (const FileIndex::Map::value_type& entry : own.Entries())
 		built.Add(entry.first, entry.second);

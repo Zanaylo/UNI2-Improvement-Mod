@@ -1,6 +1,7 @@
 #include "Game/Stages/StageThumb.h"
 
 #include "Core/logger.h"
+#include "Core/Formats/DdsImage.h"
 #include "Core/Formats/PngImage.h"
 #include "Core/utils.h"
 #include "Game/Files/DataArchive.h"
@@ -18,7 +19,6 @@
 
 namespace {
 
-constexpr size_t kDdsHeader = 128;
 constexpr int kSheetSide = 1024;
 
 constexpr int kOurColumns = 8;
@@ -83,12 +83,7 @@ constexpr uint32_t kMbtlThumb01Offset = 457022146;
 constexpr uint32_t kDriftSpan = 0x100000;
 constexpr uint32_t kPhaseCount = 0x400;
 
-struct Image
-{
-	std::vector<uint8_t> pixels;
-	int width;
-	int height;
-};
+using Image = DdsImage::Image;
 
 struct Rect
 {
@@ -200,146 +195,6 @@ std::string OurPath(int sheet)
 	return GetModRootPath(leaf);
 }
 
-bool Unpack(const std::vector<uint8_t>& blob, Image& out)
-{
-	if (blob.size() < kDdsHeader || memcmp(blob.data(), "DDS ", 4) != 0)
-		return false;
-
-	out.height = static_cast<int>(ReadLittle32(blob, 12));
-	out.width = static_cast<int>(ReadLittle32(blob, 16));
-
-	const size_t need = static_cast<size_t>(out.width) * out.height * 4;
-
-	if (out.width <= 0 || out.height <= 0 || blob.size() < kDdsHeader + need)
-		return false;
-
-	out.pixels.assign(blob.begin() + kDdsHeader, blob.begin() + kDdsHeader + need);
-	return true;
-}
-
-void Rgb565(uint16_t packed, uint8_t* out)
-{
-	out[2] = static_cast<uint8_t>((((packed >> 11) & 0x1f) * 255) / 31);
-	out[1] = static_cast<uint8_t>((((packed >> 5) & 0x3f) * 255) / 63);
-	out[0] = static_cast<uint8_t>(((packed & 0x1f) * 255) / 31);
-}
-
-bool DecodeDxt(const std::vector<uint8_t>& blob, Image& out)
-{
-	if (blob.size() < kDdsHeader || memcmp(blob.data(), "DDS ", 4) != 0)
-		return false;
-
-	const uint32_t flags = ReadLittle32(blob, 80);
-	const uint32_t fourcc = ReadLittle32(blob, 84);
-
-	if ((flags & 4) == 0)
-		return Unpack(blob, out);
-
-	const bool five = fourcc == 0x35545844;
-	const bool one = fourcc == 0x31545844;
-
-	if (!five && !one)
-		return false;
-
-	out.height = static_cast<int>(ReadLittle32(blob, 12));
-	out.width = static_cast<int>(ReadLittle32(blob, 16));
-
-	if (out.width <= 0 || out.height <= 0 || out.width > 8192 || out.height > 8192)
-		return false;
-
-	const int blocksX = (out.width + 3) / 4;
-	const int blocksY = (out.height + 3) / 4;
-	const size_t stride = five ? 16 : 8;
-
-	if (blob.size() < kDdsHeader + static_cast<size_t>(blocksX) * blocksY * stride)
-		return false;
-
-	out.pixels.assign(static_cast<size_t>(out.width) * out.height * 4, 0);
-
-	for (int by = 0; by < blocksY; ++by)
-	{
-		for (int bx = 0; bx < blocksX; ++bx)
-		{
-			const uint8_t* const block = blob.data() + kDdsHeader
-				+ (static_cast<size_t>(by) * blocksX + bx) * stride;
-			const uint8_t* const colour = five ? block + 8 : block;
-
-			uint8_t alpha[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
-			uint64_t alphaBits = 0;
-
-			if (five)
-			{
-				alpha[0] = block[0];
-				alpha[1] = block[1];
-
-				if (alpha[0] > alpha[1])
-				{
-					for (int i = 1; i < 7; ++i)
-						alpha[i + 1] = static_cast<uint8_t>(((7 - i) * alpha[0] + i * alpha[1]) / 7);
-				}
-				else
-				{
-					for (int i = 1; i < 5; ++i)
-						alpha[i + 1] = static_cast<uint8_t>(((5 - i) * alpha[0] + i * alpha[1]) / 5);
-
-					alpha[6] = 0;
-					alpha[7] = 255;
-				}
-
-				for (int i = 0; i < 6; ++i)
-					alphaBits |= static_cast<uint64_t>(block[2 + i]) << (8 * i);
-			}
-
-			const uint16_t c0 = static_cast<uint16_t>(colour[0] | (colour[1] << 8));
-			const uint16_t c1 = static_cast<uint16_t>(colour[2] | (colour[3] << 8));
-
-			uint8_t palette[4][4] = {};
-			Rgb565(c0, palette[0]);
-			Rgb565(c1, palette[1]);
-
-			for (int i = 0; i < 3; ++i)
-			{
-				if (c0 > c1 || five)
-				{
-					palette[2][i] = static_cast<uint8_t>((2 * palette[0][i] + palette[1][i]) / 3);
-					palette[3][i] = static_cast<uint8_t>((palette[0][i] + 2 * palette[1][i]) / 3);
-				}
-				else
-				{
-					palette[2][i] = static_cast<uint8_t>((palette[0][i] + palette[1][i]) / 2);
-					palette[3][i] = 0;
-				}
-			}
-
-			const uint32_t bits = ReadLittle32(blob, static_cast<size_t>(colour - blob.data()) + 4);
-
-			for (int py = 0; py < 4; ++py)
-			{
-				for (int px = 0; px < 4; ++px)
-				{
-					const int x = bx * 4 + px;
-					const int y = by * 4 + py;
-
-					if (x >= out.width || y >= out.height)
-						continue;
-
-					const int i = py * 4 + px;
-					const uint8_t* const src = palette[(bits >> (2 * i)) & 3];
-					uint8_t* const dst = &out.pixels[(static_cast<size_t>(y) * out.width + x) * 4];
-
-					dst[0] = src[0];
-					dst[1] = src[1];
-					dst[2] = src[2];
-					dst[3] = five ? alpha[(alphaBits >> (3 * i)) & 7]
-						: static_cast<uint8_t>((c0 > c1 || ((bits >> (2 * i)) & 3) != 3) ? 255 : 0);
-				}
-			}
-		}
-	}
-
-	return true;
-}
-
 bool DfciSheet(const std::string& gameFolder, std::vector<uint8_t>& blob)
 {
 	std::string path = gameFolder;
@@ -447,7 +302,7 @@ bool MbtlSheet(const std::string& gameFolder, uint32_t recorded, std::vector<uin
 		}
 	}
 
-	const size_t size = kDdsHeader + static_cast<size_t>(kSheetSide) * kSheetSide * 4;
+	const size_t size = DdsImage::kHeaderBytes + static_cast<size_t>(kSheetSide) * kSheetSide * 4;
 	std::vector<uint8_t> raw;
 	const bool whole = found && ReadAt(handle, recorded + static_cast<uint32_t>(at), size, raw) &&
 		raw.size() == size;
@@ -697,7 +552,7 @@ bool FolderImage(const std::string& folder, Image& out)
 		if (PngImage::Decode(blob, out.width, out.height, out.pixels))
 			return true;
 
-		if (DecodeDxt(blob, out) || Unpack(blob, out))
+		if (DdsImage::Decode(blob, out) || DdsImage::DecodePlain(blob, out))
 			return true;
 
 		LOG("StageThumb: %s is not a PNG or DDS the mod can decode", leaf);
@@ -718,7 +573,7 @@ bool TakeDfci(const std::string& gameFolder, int sourceCell, int number)
 
 	Image sheet;
 
-	if (!DecodeDxt(raw, sheet))
+	if (!DdsImage::Decode(raw, sheet))
 	{
 		LOG("StageThumb: that DFCI picker sheet is not a DDS the mod can decode");
 		return false;
@@ -756,7 +611,7 @@ bool TakeUni(const std::string& gameFolder, int sourceCell, int number)
 
 	Image sheet;
 
-	if (!DecodeDxt(raw, sheet))
+	if (!DdsImage::Decode(raw, sheet))
 	{
 		LOG("StageThumb: that UNI picker sheet is not a DDS the mod can decode");
 		return false;
@@ -790,7 +645,7 @@ bool TakeMbtl(const std::string& gameFolder, int sourceCell, int number)
 
 	Image sheet;
 
-	if (!Unpack(blob, sheet))
+	if (!DdsImage::DecodePlain(blob, sheet))
 		return false;
 
 	int x = 0;
@@ -878,7 +733,7 @@ bool StageThumb::TakeImage(const uint8_t* data, size_t size, int id)
 	const std::vector<uint8_t> blob(data, data + size);
 	Image card;
 
-	if (!DecodeDxt(blob, card) || card.width <= 0 || card.height <= 0)
+	if (!DdsImage::Decode(blob, card) || card.width <= 0 || card.height <= 0)
 		return false;
 
 	if (!Paint(card, 0, 0, card.width, card.height, id, true))

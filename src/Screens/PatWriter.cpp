@@ -1,5 +1,7 @@
 #include "Screens/PatWriter.h"
 
+#include "Screens/PatBytes.h"
+
 #include <cstring>
 
 namespace {
@@ -19,55 +21,7 @@ constexpr size_t kDdsTail = 16;
 constexpr size_t kDdsSize = 128;
 constexpr size_t kBytesPerPixel = 4;
 
-class Out
-{
-public:
-	void Tag(const char* name) { Bytes(name, 4); }
-	void Byte(uint8_t value) { m_blob.push_back(value); }
-
-	void Dword(uint32_t value)
-	{
-		for (int shift = 0; shift < 32; shift += 8)
-			m_blob.push_back(static_cast<uint8_t>(value >> shift));
-	}
-
-	void Int(int value) { Dword(static_cast<uint32_t>(value)); }
-
-	void Word(uint16_t value)
-	{
-		m_blob.push_back(static_cast<uint8_t>(value));
-		m_blob.push_back(static_cast<uint8_t>(value >> 8));
-	}
-
-	void Float(float value)
-	{
-		uint32_t raw = 0;
-		memcpy(&raw, &value, 4);
-		Dword(raw);
-	}
-
-	void Bytes(const void* data, size_t size)
-	{
-		const uint8_t* const bytes = static_cast<const uint8_t*>(data);
-		m_blob.insert(m_blob.end(), bytes, bytes + size);
-	}
-
-	void Zeros(size_t size) { m_blob.insert(m_blob.end(), size, 0); }
-
-	void Name(const char* tag, const std::string& text)
-	{
-		Tag(tag);
-		Byte(static_cast<uint8_t>(text.size()));
-		Bytes(text.data(), text.size());
-	}
-
-	std::vector<uint8_t>& Blob() { return m_blob; }
-
-private:
-	std::vector<uint8_t> m_blob;
-};
-
-void WriteSprite(Out& out, const PatWriter::Sprite& sprite)
+void WriteSprite(PatBytes& out, const PatWriter::Sprite& sprite)
 {
 	out.Tag("PRST");
 	out.Int(sprite.id);
@@ -107,7 +61,7 @@ void WriteSprite(Out& out, const PatWriter::Sprite& sprite)
 	out.Tag("PRED");
 }
 
-void WriteCutout(Out& out, const PatWriter::Cutout& cut, const PatWriter::Atlas& atlas)
+void WriteCutout(PatBytes& out, const PatWriter::Cutout& cut, const PatWriter::Atlas& atlas)
 {
 	out.Tag("PPST");
 	out.Int(cut.id);
@@ -131,7 +85,7 @@ void WriteCutout(Out& out, const PatWriter::Cutout& cut, const PatWriter::Atlas&
 	out.Tag("PPED");
 }
 
-void WriteDds(Out& out, const PatWriter::Atlas& atlas)
+void WriteDds(PatBytes& out, const PatWriter::Atlas& atlas)
 {
 	out.Bytes("DDS ", 4);
 	out.Dword(kDdsHeader);
@@ -162,7 +116,7 @@ void WriteDds(Out& out, const PatWriter::Atlas& atlas)
 	}
 }
 
-void WriteAtlas(Out& out, const PatWriter::Atlas& atlas)
+void WriteAtlas(PatBytes& out, const PatWriter::Atlas& atlas)
 {
 	const uint32_t surface = static_cast<uint32_t>(atlas.width * atlas.height * kBytesPerPixel);
 
@@ -170,9 +124,7 @@ void WriteAtlas(Out& out, const PatWriter::Atlas& atlas)
 	out.Int(0);
 	out.Tag("PGNM");
 
-	const size_t named = atlas.name.size() < kAtlasName ? atlas.name.size() : kAtlasName;
-	out.Bytes(atlas.name.data(), named);
-	out.Zeros(kAtlasName - named);
+	out.Padded(atlas.name, kAtlasName);
 
 	out.Tag("PGT2");
 	out.Dword(surface + static_cast<uint32_t>(kDdsSize));
@@ -189,7 +141,7 @@ void WriteAtlas(Out& out, const PatWriter::Atlas& atlas)
 std::vector<uint8_t> PatWriter::Build(const std::vector<Pattern>& patterns,
 	const std::vector<Cutout>& cutouts, const Atlas& atlas)
 {
-	Out out;
+	PatBytes out;
 	out.Bytes(kHeader, strlen(kHeader));
 	out.Zeros(kBody - strlen(kHeader));
 	out.Tag("_STR");

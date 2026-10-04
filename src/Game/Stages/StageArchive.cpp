@@ -7,7 +7,9 @@
 #include "Game/Stages/Bbtag/BbtagCrypt.h"
 #include "Game/Stages/Bbtag/BbtagStage.h"
 #include "Game/Stages/FbxToFbxEx.h"
+#include "Game/Files/MbaaArchive.h"
 #include "Game/Files/MbtlCipher.h"
+#include "Game/Stages/Mbaa/MbaaStage.h"
 #include "Game/Files/UnielCipher.h"
 
 #include <Windows.h>
@@ -37,6 +39,9 @@ constexpr const char* kBbtagGeometry = "_vtx.pac";
 constexpr const char* kBbtagScene = ".pac";
 constexpr const char* kBbtagArt = "_img.pac";
 constexpr const char* kBbtagAstral = "bg_exastral";
+constexpr const char* kMbaaFolder = "bg";
+constexpr const char* kMbaaStage = ".dat";
+constexpr const char* kMbaaCard = "Thumbnail.dds";
 constexpr size_t kPacHeader = 16;
 constexpr size_t kPacCount = 12;
 constexpr const char* kBbtagParticleArt = "data/particle/particle_img_bg.pac";
@@ -1690,6 +1695,185 @@ bool BbtagSource::BgList(std::string& out)
 	return !out.empty();
 }
 
+class MbaaSource : public StageArchive::Source
+{
+public:
+	explicit MbaaSource(const std::string& folder);
+
+	void Stages(std::vector<StageArchive::Stage>& out) override;
+	void Files(const std::string& stage, std::vector<std::string>& out) override;
+	bool Read(const std::string& stage, const std::string& file,
+		std::vector<uint8_t>& out) override;
+	bool BgList(std::string& out) override;
+	bool Fading(const std::string& stage) override;
+	bool Lamps(const std::string& stage, std::vector<BbtagScript::Lamp>& out) override;
+	bool Flips(const std::string& stage, std::vector<BbtagScript::Flip>& out) override;
+	bool EngineClock(const std::string& stage) override;
+	bool PaintOrder(const std::string&) override { return true; }
+
+	bool IsOpen() const { return !m_stages.empty(); }
+
+private:
+	bool Built(const std::string& stage);
+
+	MbaaArchive m_archive;
+	std::map<std::string, uint32_t> m_stages;
+	std::string m_ready;
+	MbaaStage::Result m_result;
+};
+
+MbaaSource::MbaaSource(const std::string& folder)
+{
+	if (!m_archive.Open(folder))
+		return;
+
+	for (const OstPac::Entry& entry : m_archive.List(kMbaaFolder))
+	{
+		if (!EndsWithNoCase(entry.name, kMbaaStage))
+			continue;
+
+		m_stages[Lowered(entry.name.substr(0, entry.name.size() - strlen(kMbaaStage)))] = entry.size;
+	}
+}
+
+bool MbaaSource::Built(const std::string& stage)
+{
+	if (m_ready == Lowered(stage))
+		return true;
+
+	m_ready.clear();
+	m_result = MbaaStage::Result();
+
+	std::vector<uint8_t> dat;
+
+	if (m_stages.count(Lowered(stage)) == 0
+		|| !m_archive.Read(kMbaaFolder, (stage + kMbaaStage).c_str(), dat))
+		return false;
+
+	if (!MbaaStage::Convert(dat, m_result))
+	{
+		LOG("StageArchive: %s could not be read as a MELTY BLOOD stage", stage.c_str());
+		return false;
+	}
+
+	m_ready = Lowered(stage);
+	return true;
+}
+
+void MbaaSource::Stages(std::vector<StageArchive::Stage>& out)
+{
+	out.clear();
+
+	for (const std::pair<const std::string, uint32_t>& held : m_stages)
+	{
+		StageArchive::Stage stage;
+		stage.folder = held.first;
+		stage.name = held.first;
+		stage.bytes = held.second;
+
+		out.push_back(stage);
+	}
+}
+
+void MbaaSource::Files(const std::string& stage, std::vector<std::string>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return;
+
+	out.push_back(kModel);
+	out.push_back(kMbaaCard);
+
+	for (const MbaaStage::Texture& texture : m_result.textures)
+		out.push_back(texture.name);
+}
+
+bool MbaaSource::Read(const std::string& stage, const std::string& file,
+	std::vector<uint8_t>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	if (_stricmp(file.c_str(), kModel) == 0)
+	{
+		out = m_result.model;
+		return true;
+	}
+
+	if (_stricmp(file.c_str(), kMbaaCard) == 0)
+	{
+		out = m_result.card;
+		return true;
+	}
+
+	for (const MbaaStage::Texture& texture : m_result.textures)
+	{
+		if (_stricmp(file.c_str(), texture.name.c_str()) != 0)
+			continue;
+
+		out = texture.dds;
+		return true;
+	}
+
+	return false;
+}
+
+bool MbaaSource::BgList(std::string& out)
+{
+	out.clear();
+
+	int index = 0;
+
+	for (const std::pair<const std::string, uint32_t>& held : m_stages)
+	{
+		char header[64] = {};
+		sprintf_s(header, "\tBg_%03d =\r\n\t{\r\n\t\tName = \"", index++);
+
+		out += header;
+		out += held.first;
+		out += "\",\r\n\t\tDataFile = \"" + held.first + "\",\r\n\r\n";
+		out += MbaaStage::Block();
+		out += "\t}\r\n";
+	}
+
+	return !out.empty();
+}
+
+bool MbaaSource::Fading(const std::string& stage)
+{
+	return Built(stage) && m_result.fading;
+}
+
+bool MbaaSource::Lamps(const std::string& stage, std::vector<BbtagScript::Lamp>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	out = m_result.lamps;
+	return !out.empty();
+}
+
+bool MbaaSource::Flips(const std::string& stage, std::vector<BbtagScript::Flip>& out)
+{
+	out.clear();
+
+	if (!Built(stage))
+		return false;
+
+	out = m_result.flips;
+	return !out.empty();
+}
+
+bool MbaaSource::EngineClock(const std::string& stage)
+{
+	return Built(stage) && m_result.engineClock;
+}
+
 template <typename T>
 StageArchive::Source* Opened(const char* folder)
 {
@@ -1722,6 +1906,9 @@ StageArchive::Source* StageArchive::Open(const char* folder)
 
 	case FbGameFolder::Game_DFCI:
 		return Opened<DfciSource>(folder);
+
+	case FbGameFolder::Game_MBAA:
+		return Opened<MbaaSource>(folder);
 
 	case FbGameFolder::Game_BBTAG:
 	case FbGameFolder::Game_BBCF:

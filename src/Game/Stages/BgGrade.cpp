@@ -13,6 +13,7 @@
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StageKick.h"
 #include "Game/Stages/StageOnce.h"
+#include "Game/Stages/StageSampler.h"
 #include "Game/Stages/StageSettings.h"
 #include "Hooks/GameHook.h"
 #include "Training/FrameStepper.h"
@@ -100,7 +101,7 @@ bool Flows(int stage)
 {
 	StageLibrary::Entry entry = {};
 
-	return StageLibrary::Of(stage, entry) && Arcsys(entry.game);
+	return StageLibrary::Of(stage, entry) && (Arcsys(entry.game) || From(entry.game, FbGameFolder::Game_MBAA));
 }
 
 char g_status[224] = "the game's own curve, unchanged";
@@ -195,6 +196,16 @@ float g_rate[kFlowSlots] = {};
 float g_glow = 1.0f;
 Lamp g_lamp[kLampSlots] = {};
 int g_frame = 0;
+volatile long g_engineClock = 0;
+volatile long g_paintOrder = 0;
+
+int Clock()
+{
+	if (InterlockedCompareExchange(&g_engineClock, 0, 0) == 0 || !StageSampler::Ticking())
+		return g_frame;
+
+	return static_cast<int>(StageSampler::Clock() & 0x7fffffffu);
+}
 std::vector<BbtagScript::Flip> g_flips;
 float g_flipLive[4 * kFlipSlots] = {};
 
@@ -230,7 +241,7 @@ void Lamps()
 		return;
 
 	for (int i = 0; i < kLampSlots; ++i)
-		g_live[kLampFirst + i] = LampAt(g_lamp[i], g_frame);
+		g_live[kLampFirst + i] = LampAt(g_lamp[i], Clock());
 }
 
 bool Flipping()
@@ -262,7 +273,7 @@ void Flips()
 		if (flip.frame.empty())
 			continue;
 
-		const int shown = flip.frame[static_cast<size_t>(g_frame) % flip.frame.size()];
+		const int shown = flip.frame[static_cast<size_t>(Clock()) % flip.frame.size()];
 		const bool known = shown >= 0 && static_cast<size_t>(4 * shown + 3) < flip.rects.size();
 
 		for (int k = 0; k < 4; ++k)
@@ -300,6 +311,8 @@ struct Note
 	bool flowing;
 	bool lighting;
 	bool fading;
+	bool engineClock;
+	bool paintOrder;
 };
 
 std::vector<double> Numbers(const char* line)
@@ -496,6 +509,22 @@ bool ReadNote(int stage, Note& note, std::vector<BbtagScript::Flip>& flips, std:
 			continue;
 		}
 
+		if (strstr(line, "PaintOrder") != nullptr)
+		{
+			const char* const equals = strchr(line, '=');
+
+			note.paintOrder = equals != nullptr && atoi(equals + 1) != 0;
+			continue;
+		}
+
+		if (strstr(line, "EngineClock") != nullptr)
+		{
+			const char* const equals = strchr(line, '=');
+
+			note.engineClock = equals != nullptr && atoi(equals + 1) != 0;
+			continue;
+		}
+
 		if (strstr(line, "VertexAlpha") != nullptr)
 		{
 			const char* const equals = strchr(line, '=');
@@ -585,6 +614,9 @@ HRESULT WINAPI HookedCreateEffect(void* device, const void* source, UINT bytes,
 HRESULT STDMETHODCALLTYPE HookedSetRenderState(IDirect3DDevice9* device,
 	D3DRENDERSTATETYPE state, DWORD value)
 {
+	if (state == D3DRS_ZWRITEENABLE && InterlockedCompareExchange(&g_paintOrder, 0, 0) != 0)
+		return g_setRenderStateHook.Original()(device, state, FALSE);
+
 	const HRESULT result = g_setRenderStateHook.Original()(device, state, value);
 
 	if (state != kDestBlend || !g_setPixelShaderConstantFHook.IsLive() || !Owning())
@@ -710,6 +742,9 @@ BgGrade::Grade BgGrade::DefaultOf(int stage)
 
 	if (From(entry.game, FbGameFolder::Game_UNIEL))
 		return Grade{ kUnielLift, kUnielContrast };
+
+	if (From(entry.game, FbGameFolder::Game_MBAA))
+		return Grade{ kMbaaLift, kMbaaContrast };
 
 	const BbtagDefaults::Look* const look = BbtagLook(entry);
 
@@ -863,6 +898,14 @@ void BgGrade::Update()
 		const bool lighting = read && note.lighting;
 
 		g_frame = 0;
+		InterlockedExchange(&g_engineClock, read && note.engineClock ? 1 : 0);
+		InterlockedExchange(&g_paintOrder, read && note.paintOrder ? 1 : 0);
+
+		if (read && note.paintOrder)
+			LOG("BgGrade: stage %d is painted in draw order, so it writes no depth", stage);
+
+		if (read && note.engineClock)
+			LOG("BgGrade: stage %d runs its flipbooks and lamps on the stage animation clock", stage);
 
 		for (int i = 0; i < kLampSlots; ++i)
 		{

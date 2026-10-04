@@ -94,6 +94,9 @@
     <Filter Include="Game\Stages\Bbtag">
       <UniqueIdentifier>{b8427edf-61af-34f2-e9ab-58353bc2bb34}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Stages\Mbaa">
+      <UniqueIdentifier>{19e7d136-cd7f-44bb-727b-e4a0c7a93db3}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Game\Subtitles">
       <UniqueIdentifier>{67ed653b-a097-1c5a-c3aa-ff7deadf592c}</UniqueIdentifier>
     </Filter>
@@ -165,6 +168,87 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game\Customize\AnnouncerScroll.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\MiscWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\MiscPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitLayer.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitPicks.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitGauge.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaGeometry.cpp">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaAtlas.cpp">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaTimeline.cpp">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaScene.cpp">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Files\MbaaArchive.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaStage.cpp">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaCg.cpp">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Mbaa\MbaaBg.cpp">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitImport.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitArt.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\BackgroundJob.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\AnnouncerRoster.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\ImportCommands.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\AnnouncerArt.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\AnnouncerList.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\AnnouncerImport.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\AnnouncerLines.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Files\MbtlArchive.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Screens\PatEdit.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Formats\ImageOps.cpp">
+      <Filter>Core\Formats</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Formats\DdsImage.cpp">
+      <Filter>Core\Formats</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Boot\dllmain.cpp">
       <Filter>Core\Boot</Filter>
     </ClCompile>
@@ -1394,6 +1478,87 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Game\Customize\AnnouncerScroll.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\MiscWindow.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\MiscPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitLayer.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitPicks.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaGeometry.h">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaAtlas.h">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaTimeline.h">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaScene.h">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\MbaaArchive.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaStage.h">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaCg.h">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Mbaa\MbaaBg.h">
+      <Filter>Game\Stages\Mbaa</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitImport.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitArt.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\BackgroundJob.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\AnnouncerRoster.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Harness\ImportCommands.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\AnnouncerArt.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\AnnouncerList.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\AnnouncerImport.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\AnnouncerLines.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\MbtlArchive.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\PatEdit.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\PatBytes.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Formats\ImageOps.h">
+      <Filter>Core\Formats</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Formats\DdsImage.h">
+      <Filter>Core\Formats</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Config\Settings.h">
       <Filter>Core\Config</Filter>
     </ClInclude>

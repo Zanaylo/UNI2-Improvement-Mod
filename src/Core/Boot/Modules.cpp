@@ -10,6 +10,7 @@
 #include "D3D9/Device/SceneScale.h"
 #include "D3D9/Post/SceneUpscale.h"
 #include "D3D9/Device/StageDetail.h"
+#include "Game/Audio/AnnouncerImport.h"
 #include "Game/Audio/BgmControl.h"
 #include "Game/Audio/CharaSounds.h"
 #include "Game/Audio/MusicRefresh.h"
@@ -30,6 +31,7 @@
 #include "Game/Engine/HitboxData.h"
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Engine/SceneWatch.h"
+#include "Game/Customize/PortraitImport.h"
 #include "Game/Files/DataSearchPath.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Lobby/NameCensor.h"
@@ -53,6 +55,7 @@
 #include "Game/Stages/StageObjects.h"
 #include "Game/Stages/StageKick.h"
 #include "Game/Stages/StageSampler.h"
+#include "Game/Customize/AnnouncerScroll.h"
 #include "Game/Stages/StagePlacement.h"
 #include "Game/Stages/TextureLoad.h"
 #include "Game/Subtitles/SubtitleText.h"
@@ -159,6 +162,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: subtitle text", [] { SubtitleText::Install(); } },
 	{ "game hooks: stage objects", [] { StageObjects::Initialize(); } },
 	{ "game hooks: stage sampler", [] { StageSampler::Initialize(); } },
+	{ "game hooks: announcer scroll", [] { AnnouncerScroll::Initialize(); } },
 	{ "game hooks: texture load", [] { TextureLoad::Install(); } },
 	{ "game hooks: stage cards", [] { StageCards::Initialize(); } },
 	{ "game hooks: bgm control", [] { BgmControl::Initialize(); } },
@@ -195,6 +199,8 @@ const Task kFrame[] = {
 	[] { CharaTint::Update(); },
 	[] { StageCards::OnFrame(); },
 	[] { VoiceImport::Update(); },
+	[] { AnnouncerImport::Update(); },
+	[] { PortraitImport::Update(); },
 	[] { SoundpackTransfer::Update(); },
 	[] { if (UserMusic::ConsumeChanged()) MusicRefresh::Reindex(); },
 	[] { CharaSounds::Update(); },

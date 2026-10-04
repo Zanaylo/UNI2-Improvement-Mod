@@ -20,6 +20,7 @@ enum WindowType
 	WindowType_Stages,
 	WindowType_StageFields,
 	WindowType_Mods,
+	WindowType_Misc,
 	WindowType_Debug,
 	WindowType_UpdateNotifier,
 	WindowType_COUNT

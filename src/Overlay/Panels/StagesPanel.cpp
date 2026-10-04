@@ -1028,7 +1028,8 @@ void StagesPanel::DrawHelp()
 {
 	ImGui::SeparatorText("Adding a stage");
 
-	UiText::Muted("Take one from MELTY BLOOD: TYPE LUMINA, UNI[st], UNI[cl-r], UNI Exe:Late, DFCI, "
+	UiText::Muted("Take one from MELTY BLOOD: TYPE LUMINA, MELTY BLOOD Actress Again Current Code, "
+		"UNI[st], UNI[cl-r], UNI Exe:Late, DFCI, "
 		"BLAZBLUE CROSS TAG BATTLE, BLAZBLUE CENTRALFICTION or PERSONA 4 ARENA ULTIMAX, or import a "
 		"folder you made in "
 		"Blender. Nothing is downloaded and none of the game's files are replaced.");

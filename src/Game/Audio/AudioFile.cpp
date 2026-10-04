@@ -643,6 +643,20 @@ bool AudioFile::ConvertToOgg(const std::string& source, const std::string& targe
 		return false;
 	}
 
+	return ConvertBytesToOgg(bytes, target, status, statusSize);
+}
+
+bool AudioFile::ConvertBytesToOgg(const std::vector<uint8_t>& bytes, const std::string& target,
+	char* status, int statusSize)
+{
+	const Format format = IdentifyBytes(bytes.data(), static_cast<int>(bytes.size()));
+
+	if (!CanConvert(format))
+	{
+		strncpy_s(status, statusSize, WhyItCannotPlay(format), _TRUNCATE);
+		return false;
+	}
+
 	OggWriter writer;
 	OggSink sink(writer, target);
 
