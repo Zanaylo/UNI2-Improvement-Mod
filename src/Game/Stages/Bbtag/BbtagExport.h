@@ -23,12 +23,21 @@ namespace BbtagExport
 		std::function<bool(const std::string& name, std::vector<uint8_t>& out)> image;
 		Framing framing;
 		std::string stage;
+		std::vector<uint8_t> objects;
+		std::vector<uint8_t> sheet;
+		std::string sheetName;
 	};
 
 	struct File
 	{
 		std::string name;
 		std::vector<uint8_t> data;
+	};
+
+	struct Pulled
+	{
+		int node;
+		float factor;
 	};
 
 	struct Result
@@ -41,8 +50,13 @@ namespace BbtagExport
 		std::vector<File> images;
 		std::vector<std::string> missing;
 		std::vector<std::string> foreign;
+		std::vector<std::string> absent;
+		std::vector<Pulled> pulls;
 		int meshes = 0;
 		int animated = 0;
+		int sprites = 0;
+		int front = 0;
+		int pulled = 0;
 		bool turned = false;
 	};
 

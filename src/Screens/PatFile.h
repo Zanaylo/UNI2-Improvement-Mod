@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Screens/PatReader.h"
+
 #include <cstddef>
 #include <cstdint>
 
@@ -9,49 +11,10 @@ namespace PatFile
 
 	constexpr Handle kInvalid = -1;
 
-	enum Blend
-	{
-		Blend_Normal = 0,
-		Blend_Additive = 1,
-		Blend_Subtractive = 2,
-	};
-
-	struct Atlas
-	{
-		int id;
-		int width;
-		int height;
-		const uint8_t* dds;
-		size_t ddsSize;
-	};
-
-	struct Part
-	{
-		int id;
-		int atlas;
-		int u;
-		int v;
-		int w;
-		int h;
-		int width;
-		int height;
-		int pivotX;
-		int pivotY;
-		const char* name;
-	};
-
-	struct Sprite
-	{
-		int part;
-		int x;
-		int y;
-		float zoomX;
-		float zoomY;
-		uint32_t tint;
-		int priority;
-		int blend;
-		float turns;
-	};
+	using Blend = PatReader::Blend;
+	using Atlas = PatReader::Atlas;
+	using Part = PatReader::Part;
+	using Sprite = PatReader::Sprite;
 
 	Handle Load(const char* path);
 	Handle LoadFromMemory(const char* name, const uint8_t* data, size_t size);

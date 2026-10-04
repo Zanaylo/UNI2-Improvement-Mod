@@ -3,6 +3,7 @@
 #include "Game/Stages/Bbtag/BbtagMua.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <map>
@@ -419,24 +420,50 @@ MuaWriter::Bone MuaWriter::Joint(const std::string& name, const BbtagPose::Pose&
 
 void MuaWriter::Link(std::vector<Bone>& bones, int first, int count)
 {
+	std::vector<int> parents;
+
+	for (int i = 0; i < count; ++i)
+		parents.push_back(i - 1);
+
+	Tree(bones, first, parents);
+}
+
+void MuaWriter::Tree(std::vector<Bone>& bones, int first, const std::vector<int>& parents)
+{
+	const int count = static_cast<int>(parents.size());
+
 	if (first < 0 || count < 1 || first + count > static_cast<int>(bones.size()))
 		return;
 
-	float parentWorld[16] = {};
-	BbtagMua::Identity(parentWorld);
+	std::vector<std::array<float, 16> > worlds(parents.size());
 
 	for (int i = 0; i < count; ++i)
 	{
 		Bone& bone = bones[first + i];
 		bone.index = i;
-		bone.parent = i > 0 ? i - 1 : kNone;
-		bone.child = i + 1 < count ? i + 1 : kNone;
+		bone.parent = parents[i] < i ? parents[i] : kNone;
+		bone.child = kNone;
 		bone.sibling = kNone;
-		Matrices(bone, parentWorld);
 
-		float world[16] = {};
-		BbtagMua::Multiply(bone.matrix, parentWorld, world);
-		memcpy(parentWorld, world, sizeof(world));
+		float parentWorld[16] = {};
+		BbtagMua::Identity(parentWorld);
+
+		if (bone.parent != kNone)
+			memcpy(parentWorld, worlds[bone.parent].data(), sizeof(parentWorld));
+
+		Matrices(bone, parentWorld);
+		BbtagMua::Multiply(bone.matrix, parentWorld, worlds[i].data());
+	}
+
+	for (int i = count - 1; i > 0; --i)
+	{
+		const int parent = bones[first + i].parent;
+
+		if (parent == kNone)
+			continue;
+
+		bones[first + i].sibling = bones[first + parent].child;
+		bones[first + parent].child = i;
 	}
 }
 

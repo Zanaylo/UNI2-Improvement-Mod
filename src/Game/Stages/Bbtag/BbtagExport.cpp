@@ -1,6 +1,9 @@
 #include "Game/Stages/Bbtag/BbtagExport.h"
 
 #include "Game/Stages/Bbtag/BbtagCamera.h"
+#include "Game/Stages/Bbtag/BbtagDds.h"
+#include "Game/Stages/Bbtag/BbtagFarField.h"
+#include "Game/Stages/Bbtag/BbtagLayer.h"
 #include "Game/Stages/Bbtag/BbtagMua.h"
 #include "Game/Stages/Bbtag/BbtagPose.h"
 #include "Game/Stages/Bbtag/BbtagRig.h"
@@ -13,11 +16,15 @@
 #include "Game/Stages/FbxExHierarchy.h"
 #include "Game/Stages/FbxExReader.h"
 #include "Game/Stages/FbxExWriter.h"
+#include "Game/Stages/ObjectList.h"
+#include "Screens/PatReader.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <map>
 
 namespace {
 
@@ -34,6 +41,8 @@ constexpr const char* kScriptFolder = "scr.pac";
 constexpr const char* kMotionFolder = "mot.pac";
 constexpr const char* kCameraFolder = "cammot.pac";
 constexpr const char* kFallbackTexture = "white.dds";
+constexpr const char* kFarSuffix = "_far";
+constexpr const char* kFrameSuffix = "_frame";
 
 constexpr int kMeshType = 1;
 constexpr int kAdditive = 1;
@@ -49,6 +58,14 @@ constexpr float kTurnTolerance = 1e-5f;
 constexpr float kScaleTolerance = 1e-5f;
 constexpr int kLongestSpan = 256;
 constexpr float kTiny = 1e-12f;
+constexpr int kSpanSamples = 64;
+
+constexpr int kTierPulled = 0;
+constexpr int kTierStage = 1;
+constexpr int kTierLayer = 2;
+constexpr int kQuadTriangles[] = { 0, 1, 2, 0, 2, 3 };
+constexpr int kFirstSpriteBone = 2;
+constexpr uint32_t kLayerFlags = MuaWriter::kNoDepthTest | MuaWriter::kNoDepthWrite | MuaWriter::kBothFaces;
 
 constexpr int32_t kSceneSwitches[] = { 0, 1, 0, 0 };
 constexpr int32_t kSceneVector[] = { 0, 900, -1000 };
@@ -122,6 +139,12 @@ void Transform(const float point[3], const float world[16], const float place[16
 
 	for (int c = 0; c < 3; ++c)
 		out[c] = static_cast<float>(placed[0] * place[c] + placed[1] * place[4 + c] + placed[2] * place[8 + c] + place[12 + c]);
+}
+
+void Moved(const float point[3], const float matrix[16], float out[3])
+{
+	for (int c = 0; c < 3; ++c)
+		out[c] = point[0] * matrix[c] + point[1] * matrix[4 + c] + point[2] * matrix[8 + c] + matrix[12 + c];
 }
 
 void Rotate(const float vector[3], const float matrix[16], float out[3])
@@ -331,6 +354,96 @@ struct Chunk
 	std::vector<std::pair<int, std::vector<int> > > parts;
 };
 
+struct Limb
+{
+	std::string name;
+	int parent;
+	BbtagPose::Pose rest;
+	std::vector<BbtagPose::Pose> poses;
+};
+
+struct NodePlan
+{
+	int node;
+	std::vector<Chunk> chunks;
+	BbtagRig::Rig rig;
+	bool moving;
+	float world[16];
+};
+
+struct DrawKey
+{
+	int tier;
+	int prio;
+	int order;
+};
+
+typedef std::array<float, 16> Matrix;
+
+Matrix Identity()
+{
+	Matrix out = {};
+	BbtagMua::Identity(out.data());
+
+	return out;
+}
+
+Matrix Chained(const BbtagRig::Rig& rig, int frame)
+{
+	Matrix out = Identity();
+
+	for (const BbtagRig::Joint& joint : rig.joints)
+	{
+		float local[16] = {};
+		BbtagPose::Compose(joint.poses[frame], local);
+
+		Matrix world = {};
+		BbtagMua::Multiply(local, out.data(), world.data());
+		out = world;
+	}
+
+	return out;
+}
+
+std::vector<Matrix> Motions(const NodePlan& plan)
+{
+	if (!plan.moving)
+		return { Identity() };
+
+	const Matrix rest = Chained(plan.rig, 0);
+	float unbind[16] = {};
+	BbtagMua::Invert(rest.data(), unbind);
+
+	const int step = std::max(1, plan.rig.span / kSpanSamples);
+	std::vector<Matrix> out;
+
+	for (int frame = 0; frame < plan.rig.span; frame += step)
+	{
+		const Matrix posed = Chained(plan.rig, frame);
+		Matrix motion = {};
+		BbtagMua::Multiply(unbind, posed.data(), motion.data());
+		out.push_back(motion);
+	}
+
+	return out;
+}
+
+BbtagPose::Pose PoseOf(const float matrix[16])
+{
+	BbtagPose::Pose out = {};
+	BbtagPose::Split(matrix, out);
+
+	return out;
+}
+
+uint32_t LayerBlend(int blend)
+{
+	if (blend == PatReader::Blend_Additive)
+		return MuaWriter::kBlendAdd;
+
+	return blend == PatReader::Blend_Subtractive ? MuaWriter::kBlendSubtract : MuaWriter::kBlendUnset;
+}
+
 class Exporter
 {
 public:
@@ -343,14 +456,7 @@ public:
 	bool Run(std::string& error)
 	{
 		AddScene();
-
-		for (size_t i = 0; i < m_fbx.nodes.size(); ++i)
-		{
-			const FbxExWriter::Node& node = m_fbx.nodes[i];
-
-			if (node.type == kMeshType && !node.vertices.empty() && !node.submeshes.empty())
-				AddNode(static_cast<int>(i));
-		}
+		AddNodes();
 
 		if (m_model.meshes.empty())
 		{
@@ -358,6 +464,7 @@ public:
 			return false;
 		}
 
+		AddLayer();
 		Order();
 		AddImages();
 
@@ -403,11 +510,8 @@ private:
 		return std::vector<int32_t>(values, values + N);
 	}
 
-	int TextureOf(int fbxTexture)
+	int TextureNamed(const std::string& name)
 	{
-		const bool known = fbxTexture >= 0 && fbxTexture < static_cast<int>(m_fbx.textures.size());
-		const std::string leaf = known ? Leaf(m_fbx.textures[fbxTexture]) : std::string();
-		const std::string name = leaf.empty() ? std::string(kFallbackTexture) : leaf;
 		const std::string key = Lowered(name);
 
 		for (size_t i = 0; i < m_model.textures.size(); ++i)
@@ -422,11 +526,34 @@ private:
 		return static_cast<int>(m_model.textures.size()) - 1;
 	}
 
+	int TextureOf(int fbxTexture)
+	{
+		const bool known = fbxTexture >= 0 && fbxTexture < static_cast<int>(m_fbx.textures.size());
+		const std::string leaf = known ? Leaf(m_fbx.textures[fbxTexture]) : std::string();
+
+		return TextureNamed(leaf.empty() ? std::string(kFallbackTexture) : leaf);
+	}
+
 	int MaterialOf(int fbxMaterial)
 	{
 		const bool known = fbxMaterial >= 0 && fbxMaterial < static_cast<int>(m_fbx.materials.size());
 
 		return TextureOf(known ? m_fbx.materials[fbxMaterial].textureIndex : kNone);
+	}
+
+	static void Rig(MuaWriter::Vertex& vertex, int bone)
+	{
+		for (int k = 0; k < 3; ++k)
+		{
+			vertex.bone[k] = -1.0f;
+			vertex.weight[k] = -1.0f;
+		}
+
+		if (bone == kNone)
+			return;
+
+		vertex.bone[0] = static_cast<float>(bone);
+		vertex.weight[0] = 1.0f;
 	}
 
 	MuaWriter::Vertex Converted(const float* source, const float world[16], const float normals[16], int bone) const
@@ -443,18 +570,7 @@ private:
 
 		out.uv[0] = source[kUv];
 		out.uv[1] = 1.0f - source[kUv + 1];
-
-		for (int k = 0; k < 3; ++k)
-		{
-			out.bone[k] = -1.0f;
-			out.weight[k] = -1.0f;
-		}
-
-		if (bone != kNone)
-		{
-			out.bone[0] = static_cast<float>(bone);
-			out.weight[0] = 1.0f;
-		}
+		Rig(out, bone);
 
 		return out;
 	}
@@ -521,109 +637,344 @@ private:
 		return k + 1 == rig.joints.size() ? name : name + "_" + std::to_string(rig.joints[k].node);
 	}
 
-	int AddSkeleton(int node, const std::string& name, const BbtagRig::Rig* rig)
+	int AddStill(const std::string& name, uint32_t blend, uint32_t flags)
 	{
-		const uint32_t blend = m_fbx.nodes[node].blendmode == kAdditive ? MuaWriter::kBlendAdd
-			: MuaWriter::kBlendUnset;
 		const int first = static_cast<int>(m_model.bones.size());
 
-		if (rig == nullptr)
-		{
-			MuaWriter::Bone bone = MuaWriter::Root(name);
-			bone.kind = MuaWriter::kMeshBone;
-			m_model.bones.push_back(bone);
-			m_model.skeletons.push_back(MuaWriter::Skeleton{ first, 1, MuaWriter::kNoScript, blend,
-				MuaWriter::kStaticFlags });
-
-			return static_cast<int>(m_model.skeletons.size()) - 1;
-		}
-
-		m_model.bones.push_back(MuaWriter::Root(kBonePrefix + name));
-
-		for (size_t k = 0; k < rig->joints.size(); ++k)
-			m_model.bones.push_back(MuaWriter::Joint(JointName(name, *rig, k), rig->joints[k].poses.front()));
-
-		const int bones = static_cast<int>(rig->joints.size()) + 1;
-		MuaWriter::Link(m_model.bones, first, bones);
-
-		const int script = static_cast<int>(m_model.scripts.size());
-		m_model.scripts.push_back(name + kScriptSuffix);
-		m_model.skeletons.push_back(MuaWriter::Skeleton{ first, bones, script, blend,
-			MuaWriter::kAnimatedFlags });
+		MuaWriter::Bone bone = MuaWriter::Root(name);
+		bone.kind = MuaWriter::kMeshBone;
+		m_model.bones.push_back(bone);
+		m_model.skeletons.push_back(MuaWriter::Skeleton{ first, 1, MuaWriter::kNoScript, blend, flags });
 
 		return static_cast<int>(m_model.skeletons.size()) - 1;
 	}
 
-	void AddNode(int node)
+	int AddRig(const std::string& name, const std::vector<Limb>& limbs, uint32_t blend, uint32_t flags)
 	{
-		const FbxExWriter::Node& source = m_fbx.nodes[node];
-		const std::vector<Chunk> chunks = Chunks(source);
+		const int first = static_cast<int>(m_model.bones.size());
+		std::vector<int> parents = { kNone };
 
-		if (chunks.empty())
-			return;
+		m_model.bones.push_back(MuaWriter::Root(kBonePrefix + name));
 
-		BbtagRig::Rig rig;
-		const bool moving = BbtagRig::Of(m_scene, node, m_place, rig);
-		const int bone = moving ? static_cast<int>(rig.joints.size()) : kNone;
+		for (const Limb& limb : limbs)
+		{
+			m_model.bones.push_back(MuaWriter::Joint(limb.name, limb.rest));
+			parents.push_back(limb.parent);
+		}
+
+		MuaWriter::Tree(m_model.bones, first, parents);
+
+		const int script = static_cast<int>(m_model.scripts.size());
+		m_model.scripts.push_back(name + kScriptSuffix);
+		m_model.skeletons.push_back(MuaWriter::Skeleton{ first, static_cast<int>(parents.size()), script, blend,
+			flags });
+
+		return static_cast<int>(m_model.skeletons.size()) - 1;
+	}
+
+	std::string AddMesh(const std::string& name, int skeleton, std::vector<MuaWriter::Vertex>& vertices,
+		const std::vector<std::pair<int, std::vector<int> > >& parts, const DrawKey& key)
+	{
+		std::vector<int> every;
+
+		for (const std::pair<int, std::vector<int> >& part : parts)
+			every.insert(every.end(), part.second.begin(), part.second.end());
+
+		Tangents(vertices, every);
+
+		MuaWriter::Mesh mesh = {};
+		mesh.name = name;
+		mesh.skeleton = skeleton;
+		mesh.partner = skeleton;
+		mesh.firstPart = static_cast<int>(m_model.parts.size());
+		mesh.parts = static_cast<int>(parts.size());
+		mesh.firstVertex = static_cast<int>(m_model.vertices.size());
+		mesh.vertices = static_cast<int>(vertices.size());
+
+		for (const std::pair<int, std::vector<int> >& part : parts)
+		{
+			std::vector<uint16_t> strip;
+			TriangleStrip::Build(part.second, strip);
+			m_model.parts.push_back(MuaWriter::Part{ part.first, static_cast<int>(m_model.indices.size()),
+				static_cast<int>(strip.size()) });
+			m_model.indices.insert(m_model.indices.end(), strip.begin(), strip.end());
+		}
+
+		m_model.vertices.insert(m_model.vertices.end(), vertices.begin(), vertices.end());
+		m_model.meshes.push_back(mesh);
+		m_keys.push_back(key);
+
+		return mesh.name;
+	}
+
+	bool Plan(int node, NodePlan& out)
+	{
+		out.node = node;
+		out.chunks = Chunks(m_fbx.nodes[node]);
+
+		if (out.chunks.empty())
+			return false;
+
+		out.moving = BbtagRig::Of(m_scene, node, m_place, out.rig);
+		m_scene.World(node, 0, out.world);
+
+		return true;
+	}
+
+	BbtagFarField::Span SpanOf(const NodePlan& plan) const
+	{
+		const FbxExWriter::Node& source = m_fbx.nodes[plan.node];
+		const int count = static_cast<int>(source.vertices.size() / kFloats);
+		std::vector<std::array<float, 3> > placed(static_cast<size_t>(count));
+
+		for (int v = 0; v < count; ++v)
+			Transform(source.vertices.data() + v * kFloats + kPosition, plan.world, m_place, placed[v].data());
+
+		BbtagFarField::Span out = BbtagFarField::Empty();
+
+		for (const Matrix& motion : Motions(plan))
+		{
+			for (const std::array<float, 3>& point : placed)
+			{
+				float moved[3] = {};
+				Moved(point.data(), motion.data(), moved);
+				BbtagFarField::Widen(out, moved);
+			}
+		}
+
+		return out;
+	}
+
+	void AddNodes()
+	{
+		std::vector<NodePlan> plans;
+		std::vector<BbtagFarField::Span> spans;
+
+		for (size_t i = 0; i < m_fbx.nodes.size(); ++i)
+		{
+			const FbxExWriter::Node& node = m_fbx.nodes[i];
+			NodePlan plan = {};
+
+			if (node.type != kMeshType || node.vertices.empty() || node.submeshes.empty()
+				|| !Plan(static_cast<int>(i), plan))
+			{
+				continue;
+			}
+
+			spans.push_back(SpanOf(plan));
+			plans.push_back(std::move(plan));
+		}
+
+		const std::vector<BbtagFarField::Pull> pulls = BbtagFarField::Decide(spans);
+
+		for (size_t i = 0; i < plans.size(); ++i)
+			AddNode(plans[i], pulls[i]);
+	}
+
+	std::vector<Limb> LimbsOf(const std::string& name, const BbtagRig::Rig& rig, const BbtagFarField::Pull& pull) const
+	{
+		std::vector<Limb> out;
+
+		if (pull.pulled)
+		{
+			float matrix[16] = {};
+			BbtagFarField::Matrix(pull.factor, matrix);
+			const BbtagPose::Pose pose = PoseOf(matrix);
+			out.push_back(Limb{ name + kFarSuffix, 0, pose, { pose } });
+		}
+
+		for (size_t k = 0; k < rig.joints.size(); ++k)
+		{
+			out.push_back(Limb{ JointName(name, rig, k), static_cast<int>(out.size()), rig.joints[k].poses.front(),
+				rig.joints[k].poses });
+		}
+
+		return out;
+	}
+
+	void AddNode(const NodePlan& plan, const BbtagFarField::Pull& pull)
+	{
+		const FbxExWriter::Node& source = m_fbx.nodes[plan.node];
 
 		char label[32] = {};
-		sprintf_s(label, "node_%03d", node);
+		sprintf_s(label, "node_%03d", plan.node);
 		const std::string name = label;
 
-		float world[16] = {};
-		m_scene.World(node, 0, world);
-
 		float matrix[16] = {};
-		BbtagMua::Multiply(world, m_place, matrix);
+		BbtagMua::Multiply(plan.world, m_place, matrix);
 
 		float normals[16] = {};
 		NormalMatrix(matrix, normals);
 
-		const int skeleton = AddSkeleton(node, name, moving ? &rig : nullptr);
+		float pulling[16] = {};
+		BbtagFarField::Matrix(pull.factor, pulling);
+
+		const uint32_t blend = source.blendmode == kAdditive ? MuaWriter::kBlendAdd : MuaWriter::kBlendUnset;
+		const uint32_t depth = pull.keepsDepth ? 0 : MuaWriter::kNoDepthWrite;
+		const std::vector<Limb> limbs = plan.moving ? LimbsOf(name, plan.rig, pull) : std::vector<Limb>();
+		const int bone = plan.moving ? static_cast<int>(limbs.size()) : kNone;
+		const int skeleton = plan.moving ? AddRig(name, limbs, blend, MuaWriter::kAnimatedFlags | depth)
+			: AddStill(name, blend, MuaWriter::kStaticFlags | depth);
+		const DrawKey key = { pull.pulled ? kTierPulled : kTierStage, 0, static_cast<int>(m_keys.size()) };
 		std::vector<std::string> meshNames;
 
-		for (size_t c = 0; c < chunks.size(); ++c)
+		for (size_t c = 0; c < plan.chunks.size(); ++c)
 		{
-			const Chunk& chunk = chunks[c];
+			const Chunk& chunk = plan.chunks[c];
 			std::vector<MuaWriter::Vertex> vertices;
-			std::vector<int> every;
 
 			for (int v : chunk.sources)
-				vertices.push_back(Converted(source.vertices.data() + v * kFloats, world, normals, bone));
-
-			for (const std::pair<int, std::vector<int> >& part : chunk.parts)
-				every.insert(every.end(), part.second.begin(), part.second.end());
-
-			Tangents(vertices, every);
-
-			MuaWriter::Mesh mesh = {};
-			mesh.name = c == 0 ? name : name + "_" + std::to_string(c);
-			mesh.skeleton = skeleton;
-			mesh.partner = skeleton;
-			mesh.firstPart = static_cast<int>(m_model.parts.size());
-			mesh.parts = static_cast<int>(chunk.parts.size());
-			mesh.firstVertex = static_cast<int>(m_model.vertices.size());
-			mesh.vertices = static_cast<int>(vertices.size());
-
-			for (const std::pair<int, std::vector<int> >& part : chunk.parts)
 			{
-				std::vector<uint16_t> strip;
-				TriangleStrip::Build(part.second, strip);
-				m_model.parts.push_back(MuaWriter::Part{ part.first, static_cast<int>(m_model.indices.size()),
-					static_cast<int>(strip.size()) });
-				m_model.indices.insert(m_model.indices.end(), strip.begin(), strip.end());
+				MuaWriter::Vertex vertex = Converted(source.vertices.data() + v * kFloats, plan.world, normals, bone);
+				const float placed[3] = { vertex.position[0], vertex.position[1], vertex.position[2] };
+				Moved(placed, pulling, vertex.position);
+				vertices.push_back(vertex);
 			}
 
-			m_model.vertices.insert(m_model.vertices.end(), vertices.begin(), vertices.end());
-			m_model.meshes.push_back(mesh);
-			meshNames.push_back(mesh.name);
+			meshNames.push_back(AddMesh(c == 0 ? name : name + "_" + std::to_string(c), skeleton, vertices,
+				chunk.parts, key));
 		}
 
-		if (moving)
-			AddTake(name, rig, meshNames);
+		if (plan.moving)
+			AddTake(name, limbs, plan.rig.span, meshNames);
+
+		if (!pull.pulled)
+			return;
+
+		m_out.pulls.push_back(BbtagExport::Pulled{ plan.node, pull.factor });
+		++m_out.pulled;
 	}
 
-	void AddTake(const std::string& name, const BbtagRig::Rig& rig, const std::vector<std::string>& meshes)
+	void AddLayer()
+	{
+		if (m_source.objects.empty() || m_source.sheet.empty())
+			return;
+
+		PatReader::Document sheet;
+		PatReader::Read(m_source.sheet, sheet);
+
+		const std::string text(m_source.objects.begin(), m_source.objects.end());
+		BbtagLayer::Layer layer;
+		const bool converted = BbtagLayer::Convert(ObjectList::Read(text), sheet, m_source.sheetName, layer);
+		m_out.absent = layer.missing;
+
+		if (!converted)
+			return;
+
+		m_out.sprites = layer.sprites;
+		m_out.front = layer.front;
+
+		for (const BbtagLayer::Image& image : layer.atlases)
+			m_supplied[Lowered(image.name)] = image.data;
+
+		for (const BbtagLayer::Group& group : layer.groups)
+			AddGroup(group, layer);
+	}
+
+	void AddGroup(const BbtagLayer::Group& group, const BbtagLayer::Layer& layer)
+	{
+		const size_t count = group.sprites.size();
+
+		for (size_t first = 0; first < count; first += BbtagLayer::kMostSprites)
+			AddPiece(group, layer, first, std::min(count, first + BbtagLayer::kMostSprites));
+	}
+
+	void AddPiece(const BbtagLayer::Group& group, const BbtagLayer::Layer& layer, size_t first, size_t last)
+	{
+		char label[32] = {};
+		sprintf_s(label, "layer_%03d_%d_%d", group.entry, group.blend,
+			static_cast<int>(first / BbtagLayer::kMostSprites));
+		const std::string name = label;
+
+		std::vector<Limb> limbs;
+
+		if (group.moves)
+		{
+			limbs.push_back(Limb{ name + kFrameSuffix, 0, group.frame, { group.frame } });
+
+			for (size_t k = first; k < last; ++k)
+			{
+				const BbtagLayer::Sprite& sprite = group.sprites[k];
+				limbs.push_back(Limb{ name + "_" + std::to_string(k - first), 1, sprite.rest, sprite.poses });
+			}
+		}
+
+		const uint32_t blend = LayerBlend(group.blend);
+		const int skeleton = group.moves ? AddRig(name, limbs, blend, MuaWriter::kAnimatedFlags | kLayerFlags)
+			: AddStill(name, blend, MuaWriter::kStaticFlags | kLayerFlags);
+
+		float frame[16] = {};
+		BbtagPose::Compose(group.frame, frame);
+
+		std::vector<MuaWriter::Vertex> vertices;
+		std::vector<std::pair<int, std::vector<int> > > parts;
+
+		for (size_t k = first; k < last; ++k)
+		{
+			const BbtagLayer::Sprite& sprite = group.sprites[k];
+			const int bone = group.moves ? static_cast<int>(k - first) + kFirstSpriteBone : kNone;
+			const int material = TextureNamed(layer.atlases[sprite.atlas].name);
+			std::vector<int>& indices = PartFor(parts, material);
+			const int base = static_cast<int>(vertices.size());
+
+			AddQuad(sprite, group.moves ? sprite.rest : sprite.poses.front(), frame, bone, vertices);
+
+			for (int corner : kQuadTriangles)
+				indices.push_back(base + corner);
+		}
+
+		const DrawKey key = { kTierLayer, group.prio, static_cast<int>(m_keys.size()) };
+		const std::string mesh = AddMesh(name, skeleton, vertices, parts, key);
+
+		if (group.moves)
+			AddTake(name, limbs, group.span, { mesh });
+	}
+
+	static std::vector<int>& PartFor(std::vector<std::pair<int, std::vector<int> > >& parts, int material)
+	{
+		for (std::pair<int, std::vector<int> >& part : parts)
+		{
+			if (part.first == material)
+				return part.second;
+		}
+
+		parts.emplace_back(material, std::vector<int>());
+
+		return parts.back().second;
+	}
+
+	static void AddQuad(const BbtagLayer::Sprite& sprite, const BbtagPose::Pose& pose, const float frame[16],
+		int bone, std::vector<MuaWriter::Vertex>& out)
+	{
+		float joint[16] = {};
+		BbtagPose::Compose(pose, joint);
+
+		float world[16] = {};
+		BbtagMua::Multiply(joint, frame, world);
+
+		float normals[16] = {};
+		NormalMatrix(world, normals);
+
+		const float facing[3] = { 0.0f, 0.0f, 1.0f };
+
+		for (const BbtagLayer::Corner& corner : sprite.corners)
+		{
+			MuaWriter::Vertex vertex = {};
+			Moved(corner.position, world, vertex.position);
+			Rotate(facing, normals, vertex.normal);
+
+			if (!Normalise(vertex.normal))
+				vertex.normal[2] = -1.0f;
+
+			memcpy(vertex.uv, corner.uv, sizeof(vertex.uv));
+			memcpy(vertex.colour, sprite.colour, sizeof(vertex.colour));
+			Rig(vertex, bone);
+			out.push_back(vertex);
+		}
+	}
+
+	void AddTake(const std::string& name, const std::vector<Limb>& limbs, int span,
+		const std::vector<std::string>& meshes)
 	{
 		MmotWriter::Bone still = {};
 		BbtagMua::Identity(still.local);
@@ -632,31 +983,40 @@ private:
 
 		const BbtagPose::Pose rest = MuaWriter::Root(name).pose;
 		MmotWriter::Hold(still, rest, 0);
-		MmotWriter::Hold(still, rest, rig.span);
+		MmotWriter::Hold(still, rest, span);
 
 		MmotWriter::Take take;
 		take.name = name + kTakeLabel;
 		take.root = kBonePrefix + name;
 		take.meshes = meshes;
-		take.frames = rig.span;
+		take.frames = span;
 		take.bones.push_back(still);
 
-		float parentWorld[16] = {};
-		BbtagMua::Identity(parentWorld);
+		std::vector<Matrix> worlds = { Identity() };
 
-		for (const BbtagRig::Joint& joint : rig.joints)
+		for (const Limb& limb : limbs)
 		{
+			const Matrix& parentWorld = worlds[limb.parent];
+
 			MmotWriter::Bone bone = {};
-			BbtagPose::Compose(joint.poses.front(), bone.local);
-			BbtagMua::Invert(parentWorld, bone.parentUnbind);
+			BbtagPose::Compose(limb.rest, bone.local);
+			BbtagMua::Invert(parentWorld.data(), bone.parentUnbind);
 
-			float world[16] = {};
-			BbtagMua::Multiply(bone.local, parentWorld, world);
-			BbtagMua::Invert(world, bone.unbind);
-			memcpy(parentWorld, world, sizeof(world));
+			Matrix world = {};
+			BbtagMua::Multiply(bone.local, parentWorld.data(), world.data());
+			BbtagMua::Invert(world.data(), bone.unbind);
+			worlds.push_back(world);
 
-			for (int frame : Kept(joint.poses))
-				MmotWriter::Hold(bone, joint.poses[frame], frame);
+			if (limb.poses.size() == 1)
+			{
+				MmotWriter::Hold(bone, limb.poses.front(), 0);
+				MmotWriter::Hold(bone, limb.poses.front(), span);
+			}
+			else
+			{
+				for (int frame : Kept(limb.poses))
+					MmotWriter::Hold(bone, limb.poses[frame], frame);
+			}
 
 			take.bones.push_back(bone);
 		}
@@ -681,10 +1041,38 @@ private:
 
 	void Order()
 	{
+		std::vector<int> ranked(m_model.meshes.size());
+
+		for (size_t i = 0; i < ranked.size(); ++i)
+			ranked[i] = static_cast<int>(i);
+
+		std::stable_sort(ranked.begin(), ranked.end(), [this](int left, int right)
+		{
+			const DrawKey& a = m_keys[left];
+			const DrawKey& b = m_keys[right];
+
+			if (a.tier != b.tier)
+				return a.tier < b.tier;
+
+			return a.prio != b.prio ? a.prio < b.prio : a.order < b.order;
+		});
+
 		const float count = static_cast<float>(m_model.meshes.size());
 
-		for (size_t i = 0; i < m_model.meshes.size(); ++i)
-			m_model.meshes[i].pivot[2] = count - static_cast<float>(i);
+		for (size_t rank = 0; rank < ranked.size(); ++rank)
+			m_model.meshes[ranked[rank]].pivot[2] = count - static_cast<float>(rank);
+	}
+
+	bool Supplied(const std::string& name, std::vector<uint8_t>& out) const
+	{
+		const std::map<std::string, std::vector<uint8_t> >::const_iterator found = m_supplied.find(Lowered(name));
+
+		if (found == m_supplied.end())
+			return false;
+
+		out = found->second;
+
+		return true;
 	}
 
 	void AddImages()
@@ -694,7 +1082,7 @@ private:
 			File file;
 			file.name = name;
 
-			const bool loaded = m_source.image && m_source.image(name, file.data);
+			const bool loaded = Supplied(name, file.data) || (m_source.image && m_source.image(name, file.data));
 
 			if (!loaded && Lowered(name) == kFallbackTexture)
 				file.data = WhiteDds();
@@ -708,6 +1096,7 @@ private:
 			if (file.data.size() < 4 || memcmp(file.data.data(), "DDS ", 4) != 0)
 				m_out.foreign.push_back(name);
 
+			BbtagDds::StateLinearSize(file.data);
 			m_out.images.push_back(file);
 		}
 	}
@@ -717,6 +1106,8 @@ private:
 	const FbxExHierarchy m_scene;
 	BbtagExport::Result& m_out;
 	MuaWriter::Model m_model;
+	std::vector<DrawKey> m_keys;
+	std::map<std::string, std::vector<uint8_t> > m_supplied;
 	float m_place[16] = {};
 };
 

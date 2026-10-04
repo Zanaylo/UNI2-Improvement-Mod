@@ -11,9 +11,13 @@ namespace MuaWriter
 	constexpr int kNoScript = -1;
 	constexpr uint32_t kBlendUnset = 0x7fffffff;
 	constexpr uint32_t kBlendAdd = 2;
+	constexpr uint32_t kBlendSubtract = 4;
 	constexpr uint32_t kSceneFlags = 0x10000100;
 	constexpr uint32_t kStaticFlags = 0x20000100;
 	constexpr uint32_t kAnimatedFlags = 0x10000140;
+	constexpr uint32_t kBothFaces = 0x400;
+	constexpr uint32_t kNoDepthTest = 0x1000;
+	constexpr uint32_t kNoDepthWrite = 0x2000;
 	constexpr int kRootBone = 5;
 	constexpr int kMeshBone = 0x84;
 	constexpr int kJointBone = 1;
@@ -95,6 +99,8 @@ namespace MuaWriter
 	Bone Joint(const std::string& name, const BbtagPose::Pose& pose);
 
 	void Link(std::vector<Bone>& bones, int first, int count);
+
+	void Tree(std::vector<Bone>& bones, int first, const std::vector<int>& parents);
 
 	void Build(const Model& model, bool withGeometry, std::vector<uint8_t>& out);
 }

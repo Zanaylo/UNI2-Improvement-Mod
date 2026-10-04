@@ -2,6 +2,7 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Stages/BgObjectFix.h"
 #include "Game/Stages/Bbtag/BbtagExport.h"
 #include "Game/Stages/StageImport.h"
 #include "Game/Stages/StageLibrary.h"
@@ -19,6 +20,7 @@ namespace {
 
 constexpr const char* kExportRoot = "Export";
 constexpr const char* kModelFile = "bg.fbx.bin";
+constexpr const char* kObjectList = "object.txt";
 constexpr const char* kStagePrefix = "bg_";
 constexpr const char* kModelSuffix = ".MUA";
 constexpr const char* kWritten[] = { "*.MUA", "*.mmot", "*.evb", "*.dds", "*.png", "*.tga", "*.bmp", "*.pac" };
@@ -200,6 +202,24 @@ std::string InstallInto(const Job& job, const BbtagExport::Result& result)
 	return report;
 }
 
+void ReadLayer(const std::string& folder, BbtagExport::Source& out)
+{
+	if (!ReadWholeFile(folder + "\\" + kObjectList, out.objects))
+		return;
+
+	const std::string sheet = BgObjectFix::SpriteFile(out.objects);
+
+	if (sheet.empty() || !ReadWholeFile(folder + "\\" + sheet, out.sheet))
+		return;
+
+	out.sheetName = sheet.substr(0, sheet.find_last_of('.'));
+}
+
+std::string Counted(int count, const char* what)
+{
+	return count > 0 ? " " + std::to_string(count) + " " + what : std::string();
+}
+
 std::string Summary(const Job& job, const BbtagExport::Result& result)
 {
 	char text[256] = {};
@@ -207,6 +227,10 @@ std::string Summary(const Job& job, const BbtagExport::Result& result)
 		result.meshes, result.animated, static_cast<int>(result.images.size()));
 
 	std::string out = text;
+	out += Counted(result.sprites, "layer sprite(s).");
+	out += Counted(result.front, "sprite(s) in front of the fighters in UNI2 draw behind them here.");
+	out += Counted(result.pulled, "far mesh(es) brought inside the game's far plane.");
+	out += Counted(static_cast<int>(result.absent.size()), "layer pattern(s) not found.");
 
 	if (!result.missing.empty())
 		out += " " + std::to_string(result.missing.size()) + " texture(s) not found.";
@@ -238,6 +262,7 @@ void Run(const Job& job)
 	{
 		return ReadWholeFile(job.from + "\\" + name, out);
 	};
+	ReadLayer(job.from, source);
 
 	BbtagExport::Result result;
 	std::string error;

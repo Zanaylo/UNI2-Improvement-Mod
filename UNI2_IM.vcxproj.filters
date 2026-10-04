@@ -480,6 +480,9 @@
     <ClCompile Include="src\Game\Stages\BgObjectFix.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Stages\ObjectList.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagArt.cpp">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
@@ -487,6 +490,9 @@
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagDefaults.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagDds.cpp">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagMmot.cpp">
@@ -505,6 +511,12 @@
       <Filter>Game\Stages</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagExport.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagFarField.cpp">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\Bbtag\BbtagLayer.cpp">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagInstall.cpp">
@@ -1063,6 +1075,9 @@
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="src\Screens\PatFile.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Screens\PatReader.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="src\Screens\PatTextures.cpp">
@@ -1823,6 +1838,9 @@
     <ClInclude Include="src\Game\Stages\BgObjectFix.h">
       <Filter>Game\Stages</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Stages\ObjectList.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagArt.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
@@ -1833,6 +1851,9 @@
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagDefaults.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagDds.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagMmot.h">
@@ -1851,6 +1872,12 @@
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagExport.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagFarField.h">
+      <Filter>Game\Stages\Bbtag</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\Bbtag\BbtagLayer.h">
       <Filter>Game\Stages\Bbtag</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagInstall.h">
@@ -2265,6 +2292,9 @@
       <Filter>Screens</Filter>
     </ClInclude>
     <ClInclude Include="src\Screens\PatFile.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Screens\PatReader.h">
       <Filter>Screens</Filter>
     </ClInclude>
     <ClInclude Include="src\Screens\PatTextures.h">

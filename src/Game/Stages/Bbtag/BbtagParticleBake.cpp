@@ -1,6 +1,7 @@
 #include "Game/Stages/Bbtag/BbtagParticleBake.h"
 
 #include "Game/Stages/Bbtag/BbtagCamera.h"
+#include "Game/Stages/ObjectList.h"
 #include "Screens/PatWriter.h"
 
 #include <algorithm>
@@ -16,11 +17,8 @@ constexpr uint32_t kSeed = 1;
 constexpr int kLives = 8;
 constexpr int kStep = 3;
 constexpr int kLanesPerBand = 2;
-constexpr int kEntryLimit = 99;
 constexpr size_t kPatLimit = 8u * 1024u * 1024u;
 
-constexpr double kFrameHeight = 720.0;
-constexpr double kLayerFocal = 1735.0;
 constexpr double kNearest = 1.0;
 constexpr double kTau = 2.0 * BbtagCamera::kPi;
 
@@ -651,19 +649,19 @@ int EntriesWanted(const std::vector<Plan>& plans, int perBand)
 
 int LayerDepth(double z)
 {
-	return Rounded(z * kLayerFocal / BbtagCamera::kEyeDistance);
+	return Rounded(z * BbtagCamera::kLayerFocal / BbtagCamera::kEyeDistance);
 }
 
 double EntryScale(int layerZ)
 {
-	return kLayerFocal / std::max(kLayerFocal + layerZ, kNearest);
+	return BbtagCamera::kLayerFocal / std::max(BbtagCamera::kLayerFocal + layerZ, kNearest);
 }
 
 void BuildEntries(const std::vector<Plan>& plans, std::vector<Entry>& out)
 {
 	int perBand = kLanesPerBand;
 
-	while (EntriesWanted(plans, perBand) > kEntryLimit)
+	while (EntriesWanted(plans, perBand) > ObjectList::kMostEntries)
 		++perBand;
 
 	for (size_t e = 0; e < plans.size(); ++e)
@@ -714,9 +712,7 @@ class Camera
 public:
 	Camera()
 	{
-		const double half = std::tan(BbtagCamera::kFov * BbtagCamera::kPi / 360.0);
-
-		m_pixels = kFrameHeight / (2.0 * BbtagCamera::kEyeDistance * half);
+		m_pixels = BbtagCamera::LayerUnits();
 		m_focal = m_pixels * BbtagCamera::kEyeDistance;
 		m_ground = BbtagCamera::kEyeHeight * m_pixels;
 	}
@@ -1121,7 +1117,7 @@ bool BbtagParticleBake::Bake(const std::vector<BbtagParticle::Effect>& effects,
 	std::vector<Entry> entries;
 	BuildEntries(plans, entries);
 
-	if (entries.empty() || static_cast<int>(entries.size()) > kEntryLimit)
+	if (entries.empty() || static_cast<int>(entries.size()) > ObjectList::kMostEntries)
 		return false;
 
 	const Camera camera;
