@@ -67,6 +67,14 @@ std::string RunClean(const Words& words, const std::string&)
 	return CleanFrame::IsOn() ? "ok on" : "ok off";
 }
 
+std::string RunHideFighters(const Words& words, const std::string&)
+{
+	if (words.size() >= 2)
+		CleanFrame::SetFightersHidden(words[1] == "on");
+
+	return CleanFrame::FightersHidden() ? "ok on" : "ok off";
+}
+
 std::string RunImport(const Words&, const std::string& line)
 {
 	const std::string folder = Rest(line);
@@ -322,6 +330,7 @@ struct Command
 constexpr Command kCommands[] = {
 	{ "stage", &RunStage },
 	{ "clean", &RunClean },
+	{ "hidefighters", &RunHideFighters },
 	{ "import", &RunImport },
 	{ "importsome", &RunImportSome },
 	{ "place", &RunPlace },

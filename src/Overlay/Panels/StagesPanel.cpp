@@ -95,6 +95,15 @@ void ShowFields(int id, int slot, const std::string& name)
 		window->Show(id, slot, name);
 }
 
+void AdvancedButton(int id, int slot, const std::string& name)
+{
+	if (ImGui::SmallButton("Advanced"))
+		ShowFields(id, slot, name);
+
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		ImGui::SetTooltip("Camera, fog, shadows, bloom and smoothing for this stage.");
+}
+
 float Snapped(float percent, float step)
 {
 	const float moved = floorf((percent + step) / kStepPercent + 0.5f) * kStepPercent;
@@ -917,18 +926,20 @@ void StagesPanel::DrawPorted()
 				ImGui::SetTooltip("Changes the name the stage list shows.\nThe game's stage select picks it up after a restart.");
 
 			ImGui::SameLine();
-
-			if (ImGui::SmallButton("Advanced"))
-				ShowFields(row.id, row.slot, row.name);
-
-			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-				ImGui::SetTooltip("Camera, fog, shadows, bloom and smoothing from the stage's stage.txt.");
-
+			AdvancedButton(row.id, row.slot, row.name);
 			ImGui::SameLine();
 
 			if (ImGui::SmallButton("Remove"))
 				StageImport::Remove(row.id);
 
+			ImGui::EndDisabled();
+			ImGui::SameLine();
+		}
+
+		if (!row.yours)
+		{
+			ImGui::BeginDisabled(StageImport::IsBusy());
+			AdvancedButton(row.slot, row.slot, row.name);
 			ImGui::EndDisabled();
 			ImGui::SameLine();
 		}
@@ -1050,7 +1061,7 @@ void StagesPanel::DrawHelp()
 	ImGui::SeparatorText("The list");
 
 	UiText::Muted("A green name is the stage playing right now. The game's own stages can be "
-		"recoloured but not removed.");
+		"recoloured but not removed. Their Advanced changes are kept in Mods\\bg\\own.");
 
 	ImGui::SeparatorText("Replacing a game stage");
 

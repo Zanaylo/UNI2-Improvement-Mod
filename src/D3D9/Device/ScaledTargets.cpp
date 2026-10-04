@@ -257,10 +257,17 @@ void Hook(void** vtable, int index, GameHook<Fn>& hook, Handler handler)
 	LOG("[InternalResolution] could not hook %s", hook.Label());
 }
 
+bool WantedSize(unsigned& width, unsigned& height)
+{
+	if (PotatoStage::GetSize(PotatoStage::GetLevel(), width, height))
+		return true;
+
+	return !PotatoMode::IsActive() && InternalResolution::GetSize(InternalResolution::GetLevel(), width, height);
+}
+
 void ChooseSize()
 {
-	g_active = PotatoMode::IsActive() ? PotatoStage::GetSize(PotatoStage::GetLevel(), g_width, g_height)
-		: InternalResolution::GetSize(InternalResolution::GetLevel(), g_width, g_height);
+	g_active = WantedSize(g_width, g_height);
 	g_scaleX = static_cast<float>(g_width) / static_cast<float>(InternalResolution::kBaseWidth);
 	g_scaleY = static_cast<float>(g_height) / static_cast<float>(InternalResolution::kBaseHeight);
 }
@@ -308,6 +315,18 @@ void ScaledTargets::OnDeviceLost()
 bool ScaledTargets::IsActive()
 {
 	return g_active;
+}
+
+bool ScaledTargets::NeedsRestart()
+{
+	if (!g_attached)
+		return false;
+
+	unsigned width = 0;
+	unsigned height = 0;
+	const bool wanted = WantedSize(width, height);
+
+	return wanted != g_active || (wanted && (width != g_width || height != g_height));
 }
 
 bool ScaledTargets::IsReduced()

@@ -1319,17 +1319,55 @@ void RestoreStale()
 	}
 }
 
+BgListOverride::Reworked Reworking(int number,
+	const std::vector<StageReplacements::Replacement>& replaced)
+{
+	BgListOverride::Reworked one = { number, StageFields::Note(number), std::string() };
+
+	const auto found = std::find_if(replaced.begin(), replaced.end(),
+		[number](const StageReplacements::Replacement& replacement) { return replacement.number == number; });
+
+	if (found == replaced.end())
+		return one;
+
+	one.note += "\r\n" + found->note;
+	one.shiftJisName = ShiftJis(found->name);
+
+	return one;
+}
+
 std::vector<BgListOverride::Reworked> Reworks()
 {
 	std::vector<StageReplacements::Replacement> replaced;
 	StageReplacements::Snapshot(replaced);
 
+	std::vector<int> own;
+	BgListOverride::OwnNumbers(own);
+
 	std::vector<BgListOverride::Reworked> reworked;
 
-	for (const StageReplacements::Replacement& replacement : replaced)
-		reworked.push_back({ replacement.number, replacement.note, ShiftJis(replacement.name) });
+	for (int number : own)
+		reworked.push_back(Reworking(number, replaced));
 
 	return reworked;
+}
+
+void Retune(int id, const std::vector<std::string>& keys)
+{
+	std::string block;
+
+	if (!StageLibrary::GameOwns(id) || !BgListOverride::Body(id, block))
+		return;
+
+	BgRecord::Retune(id, block, keys);
+}
+
+bool OwnField(int id, const char* key, std::string& out)
+{
+	std::string block;
+
+	return StageLibrary::GameOwns(id) && BgListOverride::Body(id, block)
+		&& StageArchive::Field(block, key, out);
 }
 
 void SyncList(Compositions& made)
@@ -1868,7 +1906,7 @@ std::string StageImport::FieldOf(int id, const char* key)
 {
 	std::string value;
 
-	if (StageFields::Read(id, key, value))
+	if (StageFields::Read(id, key, value) || OwnField(id, key, value))
 		return value;
 
 	for (const Defaulted& fallback : kDefaults)
@@ -1899,6 +1937,7 @@ bool StageImport::SetField(int id, const char* key, const std::string& value)
 	}
 
 	Apply();
+	Retune(id, { key });
 
 	sprintf_s(g_status, "%s is %.64s now", key, value.c_str());
 	return true;
@@ -1915,6 +1954,7 @@ bool StageImport::ResetFields(int id, const std::vector<std::string>& keys)
 		return false;
 
 	Apply();
+	Retune(id, keys);
 
 	sprintf_s(g_status, "bg%03d is back to the settings it came with", id);
 	return true;

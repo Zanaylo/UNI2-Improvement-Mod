@@ -6,6 +6,7 @@
 #include "Core/Config/Settings.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Config/keycodes.h"
+#include "Core/Harness/CleanFrame.h"
 #include "Core/Input/KeyboardCapture.h"
 #include "Core/Input/PadInput.h"
 #include "Core/info.h"
@@ -143,6 +144,18 @@ void DrawHitboxControls()
 		ImGui::SetTooltip("Hides the gauges, the timer and the round markers, like the game does "
 			"during a cinematic. Health values still show either way.");
 	}
+
+	bool fightersHidden = CleanFrame::FightersHidden();
+	ImGui::BeginDisabled(OnlineState::IsOnline());
+
+	if (ImGui::Checkbox("Hide characters and effects", &fightersHidden))
+		CleanFrame::SetFightersHidden(fightersHidden);
+
+	ImGui::EndDisabled();
+
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		ImGui::SetTooltip("Draws only the stage. The match keeps running as usual. Offline only, "
+			"and it turns off when the game closes.");
 }
 
 void DrawHitboxTypeControls()

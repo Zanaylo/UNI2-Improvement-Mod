@@ -1,6 +1,7 @@
 #include "Overlay/Native/TrainingMenuItems.h"
 
 #include "Core/CrossThread.h"
+#include "Core/Harness/CleanFrame.h"
 #include "Core/ThreadRole.h"
 #include "Game/Engine/OnlineState.h"
 #include "Game/Menus/TrainingMenu.h"
@@ -56,6 +57,10 @@ const Binding kBindings[] = {
 	{ 0x1006, "Proration Display",
 		"Show the proration the combo timer and the move count put on the next hit, under Damage info.",
 		&ProrationHud::IsVisible, &ProrationHud::SetVisible, nullptr },
+	{ 0x1007, "Characters and Effects",
+		"Hide the characters, their shadows and the effects, so only the stage is drawn.",
+		[]() { return !CleanFrame::FightersHidden(); },
+		[](bool shown) { CleanFrame::SetFightersHidden(!shown); }, nullptr },
 };
 
 constexpr int kBindingCount = static_cast<int>(sizeof(kBindings) / sizeof(kBindings[0]));

@@ -4,7 +4,7 @@ namespace PotatoStage
 {
 	enum Level
 	{
-		Level_Full = 0,
+		Level_Off = 0,
 		Level_540p = 1,
 		Level_360p = 2,
 		Level_270p = 3,

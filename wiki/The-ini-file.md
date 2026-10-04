@@ -25,6 +25,7 @@ version show up on the next launch.
 | `NextPalette` | `F8` | Next palette on the character you are playing. After the last one it goes back to the game's own colours. |
 | `PreviousPalette` | `F7` | The same, backwards. |
 | `HideHud` | empty | Hides the game's HUD in a fight. |
+| `HideFighters` | `F4` | Hides the characters, their shadows and the effects, so only the stage is drawn. Offline only. |
 | `RestartGame` | `Ctrl+F5` | Goes back to the game's start screen, as in MBTL IM. From training it leaves the fight first. Refused in a Steam lobby, a ranked or lobby match, and while spectating. |
 | `FunctionKey` | empty | A key you hold together with another one, like a shortcut. To use it, start the bind with `Fn+` (for example `Fn+F8`). While it is held, binds without the prefix are ignored, so one key can do two things. |
 
@@ -144,9 +145,9 @@ restores them. Change the other keys only if you want to push one further than t
 | `PresentWidth` | `0` | The width the finished frame is drawn at before it is stretched to your window. 0 keeps the game's own Display option. |
 | `PresentHeight` | `0` | The height, same rule. Set both, or neither does anything. Windowed and borderless only. |
 | `PotatoHeight` | `360` | The size the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144. |
-| `PotatoStage` | `0` | The stage quality on the POTATO MODE tab, used while `PotatoMode` is set: 0 720p, 1 540p, 2 360p, 3 270p. Needs a restart. |
+| `PotatoStage` | `0` | The stage quality on the POTATO MODE tab, at every `PotatoMode` level including off: 0 off (1280x720), 1 540p, 2 360p, 3 270p. Takes the place of `InternalResolution` while it is set. Needs a restart. |
 | `Supersample` | `0` | The output resolution on the Improvements tab, the size of the picture sent to your screen: 0 off (the game's own Display option), 1 1080p, 2 1440p, 3 4K. Ignored while `PotatoMode` is set, because both set the drawing size. |
-| `InternalResolution` | `0` | The render resolution on the Improvements tab, the size the game draws its 3D stage at: 0 off (1280x720), 1 1080p, 2 1440p, 3 4K. Characters, effects and menus stay at 720p. Set it to the same size as `Supersample`. Needs a restart, off while `PotatoMode` is set. |
+| `InternalResolution` | `0` | The render resolution on the Improvements tab, the size the game draws its 3D stage at: 0 off (1280x720), 1 1080p, 2 1440p, 3 4K. Characters, effects and menus stay at 720p. Set it to the same size as `Supersample`. Needs a restart, off while `PotatoMode` or `PotatoStage` is set. |
 | `Sharpen` | `0` | Sharpening on the finished frame, 0 to 100. 0 is off, 40-60 is the useful range. Applies right away and works at any drawing size, POTATO MODE included. |
 | `SharpenMode` | `0` | Which sharpening method: 0 off, 1 contrast adaptive, 2 FidelityFX RCAS. |
 | `UpscaleFilter` | `0` | Which filter scales the scene up to your window, instead of the engine's bilinear: 0 off, 1 bicubic, 2 Lanczos, 3 FidelityFX EASU. Only works when the back buffer is larger than 1280x720. |

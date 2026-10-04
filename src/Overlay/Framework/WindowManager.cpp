@@ -5,6 +5,7 @@
 #include "Network/NetLink.h"
 #include "Core/info.h"
 #include "Core/Config/Hotkeys.h"
+#include "Core/Harness/CleanFrame.h"
 #include "Game/Menus/BattleCockpit.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Input/PadInput.h"
@@ -581,6 +582,9 @@ void WindowManager::HandleHotkeys()
 
 	if (Hotkeys::Pressed(Hotkeys::Action_HideHud))
 		BattleCockpit::SetHidden(!BattleCockpit::IsHidden());
+
+	if (Hotkeys::Pressed(Hotkeys::Action_HideFighters) && !OnlineState::IsOnline())
+		CleanFrame::SetFightersHidden(!CleanFrame::FightersHidden());
 
 	if (Hotkeys::Pressed(Hotkeys::Action_RestartGame))
 		RestartFromHotkey();

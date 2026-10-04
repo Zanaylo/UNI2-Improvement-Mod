@@ -47,12 +47,13 @@ anti-aliasing this engine can use for the stage: it draws the stage bigger.
 
 ## Stage quality
 
-The same tab has a **Stage quality** row: the size the 3D stage is drawn at while POTATO MODE is on.
-Characters, effects, menus and text are not touched.
+The same tab has a **Stage quality** row: the size the 3D stage is drawn at. It works at every
+POTATO MODE level, Off included, so the stage can be lowered while the rest of the game stays at its
+own 720p. Characters, effects, menus and text are not touched.
 
 | Level | Stage drawn at |
 |---|---|
-| 720p | 1280x720, the game's own |
+| Off | 1280x720, the game's own |
 | 540p | 960x540, about half the stage work |
 | 360p | 640x360, a quarter |
 | 270p | 480x270, a seventh |
@@ -60,8 +61,8 @@ Characters, effects, menus and text are not touched.
 The smaller stage is stretched back with a smooth filter, so it looks out of focus rather than
 blocky. Measured on a Radeon RX 7600 with Balanced: 360p took the whole frame's graphics card load
 from 7.8% to 5.4%. On a weak card the stage is often the heaviest part of a frame. It needs a
-restart, and it is also in Option, Display, Improvement Mod Display Settings as *Potato stage*. In the
-ini it is `PotatoStage`.
+restart, and it is also in Option, Display, Improvement Mod Display Settings as *Stage quality*. In the
+ini it is `PotatoStage`. While it is lowered, the render resolution on the Improvements tab waits.
 
 **Nothing here reaches the simulation.** Same match, nobody online can tell, and none of it is a
 training tool. It only changes how the frame is drawn.

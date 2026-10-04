@@ -177,7 +177,7 @@ Performance ウィンドウのタブです。60 fps が出ない PC 向けです
 
 排他フルスクリーンでは、実際に使える表示モードに合わせてサイズが切り上げられます。設定は、次にゲームが表示を作り直したときに反映されます。**対戦の内容には一切影響しません。**
 
-**Stage quality** (同じタブ、またはゲーム内の Option、Display、Improvement Mod Display Settings の *Potato stage*): POTATO MODE 中に 3D ステージを描くサイズです。720p / 540p / 360p / 270p。キャラクター、エフェクト、メニューは変わりません。小さく描いたステージはなめらかに引き伸ばされます。再起動が必要です。ini では `PotatoStage` です。
+**Stage quality** (同じタブ、またはゲーム内の Option、Display、Improvement Mod Display Settings の *Stage quality*): 3D ステージを描くサイズです。POTATO MODE が Off でも使えます。Off (ゲーム本来の 1280x720) / 540p / 360p / 270p。キャラクター、エフェクト、メニューは変わりません。小さく描いたステージはなめらかに引き伸ばされます。再起動が必要です。ini では `PotatoStage` です。
 
 ### Improvements
 

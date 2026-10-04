@@ -41,6 +41,7 @@ struct ModValues
 	int nextPaletteKey;
 	int prevPaletteKey;
 	int hideHudKey;
+	int hideFightersKey;
 	int restartGameKey;
 	int functionKey;
 

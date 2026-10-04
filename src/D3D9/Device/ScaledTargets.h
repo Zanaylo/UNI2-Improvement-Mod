@@ -8,6 +8,7 @@ namespace ScaledTargets
 	void OnDeviceLost();
 
 	bool IsActive();
+	bool NeedsRestart();
 	bool IsReduced();
 	unsigned Width();
 	unsigned Height();

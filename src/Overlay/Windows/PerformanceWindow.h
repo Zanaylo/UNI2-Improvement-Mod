@@ -19,6 +19,7 @@ private:
 
 	bool DrawPotatoHeight();
 	bool DrawPotatoStage();
+	void DrawScaledTargetsState();
 	void DrawPotatoState();
 	bool DrawInternalResolution();
 	void DrawWhatIsHappening();

@@ -218,9 +218,10 @@ void StageFieldsWindow::BeforeDraw()
 
 void StageFieldsWindow::Draw()
 {
+	const bool gameOwns = StageLibrary::GameOwns(m_id);
 	StageLibrary::Entry entry = {};
 
-	if (!StageLibrary::Of(m_id, entry))
+	if (!gameOwns && !StageLibrary::Of(m_id, entry))
 	{
 		Close();
 		return;
@@ -229,10 +230,10 @@ void StageFieldsWindow::Draw()
 	if (m_revision != StageLibrary::Revision() && !ImGui::IsAnyItemActive())
 		Refresh();
 
-	m_slot = entry.slot;
+	m_slot = gameOwns ? m_id : entry.slot;
 
-	UiText::Muted("The camera is saved with the Size column, the rest in bg%03d\\stage.txt. A change "
-		"shows the next time the stage loads.", m_id);
+	UiText::Muted("The camera is saved with the Size column, the rest in %sbg%03d\\stage.txt. A "
+		"change shows the next time the stage loads.", gameOwns ? "own\\" : "", m_id);
 
 	ImGui::PushItemWidth(Ui::Scaled(kFieldWidth));
 
@@ -256,7 +257,9 @@ void StageFieldsWindow::Draw()
 	ImGui::PopItemWidth();
 
 	DrawResetAll();
-	DrawExport();
+
+	if (!gameOwns)
+		DrawExport();
 }
 
 bool StageFieldsWindow::GroupHeader(const char* group, bool edited)

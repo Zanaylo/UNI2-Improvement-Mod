@@ -5,6 +5,7 @@
 
 namespace StageFields
 {
+	std::string Note(int id);
 	bool Read(int id, const char* key, std::string& out);
 	bool Write(int id, const char* key, const std::string& value);
 

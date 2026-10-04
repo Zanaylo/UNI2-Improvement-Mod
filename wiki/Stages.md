@@ -56,6 +56,10 @@ with the Size column, everything else in the port's `stage.txt`. A change shows 
 stage loads. Each part has its own **Reset**, and **Reset all** puts back every value the stage came
 with. The window stays open when you close or collapse the Stages window.
 
+The game's own stages have **Advanced** too. They have no `stage.txt` of their own, so the changes go
+in `UNI2-IM\Mods\bg\own\bgNNN\stage.txt` and are laid over the game's entry for that stage. Export is only
+for ports.
+
 **Rename** edits a port's name in place. Press Enter to save, Esc to cancel. The new name is kept
 in the stage's `stage.txt` and survives a restart. The game's stage select shows it after the
 restart the panel offers. A name cannot use `" | , { } [ ] \ =` or `//`.

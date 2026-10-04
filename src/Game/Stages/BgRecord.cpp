@@ -6,6 +6,7 @@
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Stages/StageArchive.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -128,6 +129,17 @@ bool Put(uintptr_t record, const Field& field, const std::string& text)
 	return true;
 }
 
+bool Carry(uintptr_t record, const Field& field, const std::string& block)
+{
+	std::string text;
+
+	if (StageArchive::Field(block, field.key, text))
+		return Put(record, field, text);
+
+	Put(record, field, field.fallback);
+	return false;
+}
+
 bool PutText(uintptr_t record, uintptr_t at, const std::string& text, size_t bytes)
 {
 	std::vector<char> field(bytes, 0);
@@ -176,18 +188,7 @@ bool BgRecord::Apply(int slot, int id, const std::string& block, const std::stri
 	int carried = 0;
 
 	for (const Field& field : kFields)
-	{
-		std::string text;
-
-		if (!StageArchive::Field(block, field.key, text))
-		{
-			Put(record, field, field.fallback);
-			continue;
-		}
-
-		if (Put(record, field, text))
-			++carried;
-	}
+		carried += Carry(record, field, block) ? 1 : 0;
 
 	if (!shiftJisName.empty())
 		PutText(record, GameOffsets::kBgRecordNameField, shiftJisName, kNameBytes);
@@ -199,4 +200,26 @@ bool BgRecord::Apply(int slot, int id, const std::string& block, const std::stri
 		static_cast<int>(sizeof(kFields) / sizeof(kFields[0])));
 
 	return true;
+}
+
+bool BgRecord::Retune(int slot, const std::string& block, const std::vector<std::string>& keys)
+{
+	const uintptr_t record = ExtraStages::RecordAt(slot);
+
+	if (record == 0)
+		return false;
+
+	int retuned = 0;
+
+	for (const Field& field : kFields)
+	{
+		if (std::find(keys.begin(), keys.end(), field.key) == keys.end())
+			continue;
+
+		Carry(record, field, block);
+		++retuned;
+	}
+
+	LOG("BgRecord: stage %d took %d retuned field(s)", slot, retuned);
+	return retuned != 0;
 }

@@ -17,8 +17,8 @@ struct Step
 
 constexpr Step kSteps[PotatoStage::Level_COUNT] = {
 	{
-		"720p",
-		"The stage at the game's own 1280x720.",
+		"Off",
+		"The stage at the game's own 1280x720, the size it is drawn at without the mod.",
 		InternalResolution::kBaseWidth, InternalResolution::kBaseHeight,
 	},
 	{
@@ -40,8 +40,8 @@ constexpr Step kSteps[PotatoStage::Level_COUNT] = {
 
 int ClampLevel(int level)
 {
-	if (level < PotatoStage::Level_Full)
-		return PotatoStage::Level_Full;
+	if (level < PotatoStage::Level_Off)
+		return PotatoStage::Level_Off;
 
 	if (level >= PotatoStage::Level_COUNT)
 		return PotatoStage::Level_COUNT - 1;
@@ -57,7 +57,7 @@ void PotatoStage::Apply(int level)
 
 	Settings::SaveInt("Graphics", "PotatoStage", g_modVals.potatoStage);
 
-	LOG("potato stage %s, applies at the next start", kSteps[g_modVals.potatoStage].name);
+	LOG("stage quality %s, applies at the next start", kSteps[g_modVals.potatoStage].name);
 }
 
 int PotatoStage::GetLevel()
@@ -72,7 +72,7 @@ bool PotatoStage::GetSize(int level, unsigned& outWidth, unsigned& outHeight)
 	outWidth = step.width;
 	outHeight = step.height;
 
-	return ClampLevel(level) != Level_Full;
+	return ClampLevel(level) != Level_Off;
 }
 
 const char* PotatoStage::GetLevelName(int level)

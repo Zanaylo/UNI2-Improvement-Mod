@@ -27,10 +27,12 @@ struct Original
 
 bool Load(int id, std::string& out)
 {
+	out.clear();
+
 	std::vector<uint8_t> data;
 
-	if (!ReadWholeFile(StageLibrary::NoteOf(id), data) || data.empty())
-		return false;
+	if (!ReadWholeFile(StageSettings::NoteOf(id), data) || data.empty())
+		return StageLibrary::GameOwns(id);
 
 	out.assign(data.begin(), data.end());
 	return true;
@@ -40,7 +42,7 @@ bool Save(int id, const std::string& note)
 {
 	FILE* file = nullptr;
 
-	if (fopen_s(&file, StageLibrary::NoteOf(id).c_str(), "wb") != 0 || file == nullptr)
+	if (fopen_s(&file, StageSettings::NoteOf(id).c_str(), "wb") != 0 || file == nullptr)
 		return false;
 
 	const bool written = fwrite(note.data(), 1, note.size(), file) == note.size();
@@ -116,6 +118,14 @@ void KeepOriginal(int id, const char* key, const std::string& note)
 
 }
 
+std::string StageFields::Note(int id)
+{
+	std::string note;
+	Load(id, note);
+
+	return note;
+}
+
 bool StageFields::Read(int id, const char* key, std::string& out)
 {
 	std::string note;
@@ -135,7 +145,7 @@ bool StageFields::Write(int id, const char* key, const std::string& value)
 
 	if (!Save(id, note))
 	{
-		LOG("StageFields: bg%03d\\stage.txt could not be written", id);
+		LOG("StageFields: %s could not be written", StageSettings::NoteOf(id).c_str());
 		return false;
 	}
 

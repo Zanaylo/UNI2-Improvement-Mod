@@ -2,6 +2,7 @@
 
 #include "Core/utils.h"
 #include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/GameState.h"
 #include "Game/Menus/BattleCockpit.h"
 
 #include <d3d9.h>
@@ -14,6 +15,8 @@ constexpr unsigned kStages = 8;
 constexpr UINT kShadowSide = 1024;
 
 volatile bool g_on = false;
+volatile bool g_fightersHidden = false;
+bool g_hidingFighters = false;
 uint32_t g_paletteStages = 0;
 IDirect3DSurface9* g_stageTarget = nullptr;
 uint32_t g_inputDisplay = 0;
@@ -110,6 +113,16 @@ bool CleanFrame::IsOn()
 	return g_on;
 }
 
+void CleanFrame::SetFightersHidden(bool hidden)
+{
+	g_fightersHidden = hidden;
+}
+
+bool CleanFrame::FightersHidden()
+{
+	return g_fightersHidden;
+}
+
 void CleanFrame::OnSetTexture(unsigned stage, bool paletteShaped)
 {
 	if (stage >= kStages)
@@ -119,14 +132,20 @@ void CleanFrame::OnSetTexture(unsigned stage, bool paletteShaped)
 	g_paletteStages = paletteShaped ? (g_paletteStages | bit) : (g_paletteStages & ~bit);
 }
 
+void CleanFrame::OnPresentBegin()
+{
+	g_hidingFighters = false;
+}
+
 void CleanFrame::OnPresent()
 {
 	g_stageTarget = nullptr;
+	g_hidingFighters = g_fightersHidden && GameState::AllowsTrainingTools();
 }
 
 bool CleanFrame::SkipsDraw(IDirect3DDevice9* device)
 {
-	if (!g_on)
+	if (!g_on && !g_hidingFighters)
 		return false;
 
 	if (g_paletteStages != 0)

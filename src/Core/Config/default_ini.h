@@ -17,6 +17,7 @@ const char* const kDefaultIniLines[] = {
 	"StepForward = F6",
 	"NextPalette = F8",
 	"PreviousPalette = F7",
+	"HideFighters = F4",
 	"FunctionKey =",
 	"",
 	"[PadKeybinds]",

@@ -16,6 +16,7 @@
 namespace {
 
 constexpr const char* kLeaf = "settings.ini";
+constexpr const char* kNoteLeaf = "stage.txt";
 constexpr const char* kOwnFolder = "own";
 constexpr const char* kHashedPrefix = "Stage_";
 constexpr const char* kNumberedPrefix = "Stage";
@@ -207,6 +208,11 @@ void MigrateSection(const char* section, int& moved, int& kept)
 std::string StageSettings::PathOf(int number)
 {
 	return FolderOf(number) + "\\" + kLeaf;
+}
+
+std::string StageSettings::NoteOf(int number)
+{
+	return FolderOf(number) + "\\" + kNoteLeaf;
 }
 
 std::string StageSettings::Read(int number, const char* section, const char* key)

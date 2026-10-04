@@ -286,9 +286,9 @@ tem. A aba mostra o tamanho final.
 O tamanho vale na próxima vez que o jogo montar a tela: reinicie ou mude qualquer opção de vídeo no
 menu do jogo. O resto vale na hora. **Nada aqui afeta a simulação.**
 
-**Stage quality** (na mesma aba, e em Option, Display, Improvement Mod Display Settings como *Potato
-stage*): o tamanho em que o palco 3D é desenhado enquanto o POTATO MODE estiver ligado, 720p, 540p,
-360p ou 270p. Personagens, efeitos e menus não mudam; o palco menor é esticado com filtro suave. Num
+**Stage quality** (na mesma aba, e em Option, Display, Improvement Mod Display Settings como *Stage
+quality*): o tamanho em que o palco 3D é desenhado, em qualquer nível do POTATO MODE, inclusive Off:
+Off (os 1280x720 do jogo), 540p, 360p ou 270p. Personagens, efeitos e menus não mudam; o palco menor é esticado com filtro suave. Num
 Radeon RX 7600 em Balanced, 360p baixou a carga da placa de vídeo de 7,8% para 5,4%. Precisa
 reiniciar. No ini é `PotatoStage`.
 

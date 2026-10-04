@@ -517,6 +517,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	}
 
 	DrawTrace::OnPresentBegin(sourceRect, destRect);
+	CleanFrame::OnPresentBegin();
 	TargetDump::OnPresent(device);
 	GraphicsWrapper::Detect(device);
 	Modules::Run(Modules::Group_PresentBegin, device);

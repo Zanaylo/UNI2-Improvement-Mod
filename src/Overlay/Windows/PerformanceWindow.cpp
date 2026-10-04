@@ -1048,20 +1048,23 @@ bool PerformanceWindow::DrawInternalResolution()
 	Help("The size the game draws its 3D stage at. The game's own is 1280x720. Characters, effects, "
 		"menus and text are 720p art and stay at 720p, enlarged by the upscale filter, so they look "
 		"the same at every level; only the stage gains detail. Set it to the output resolution. Needs "
-		"a restart. Off while POTATO MODE is on.");
+		"a restart. Off while POTATO MODE is on or Stage quality is lowered.");
 
 	Muted("%s", InternalResolution::Describe(InternalResolution::GetLevel()));
 
-	unsigned width = 0;
-	unsigned height = 0;
-	const bool wanted = InternalResolution::GetSize(InternalResolution::GetLevel(), width, height);
+	if (PotatoStage::GetLevel() != PotatoStage::Level_Off)
+		Warn("Stage quality on the POTATO MODE tab is lowered, so this waits until it is Off.");
 
-	if (wanted != ScaledTargets::IsActive() || (wanted && width != ScaledTargets::Width()))
+	DrawScaledTargetsState();
+	return changed;
+}
+
+void PerformanceWindow::DrawScaledTargetsState()
+{
+	if (ScaledTargets::NeedsRestart())
 		Warn("Restart the game to apply.");
 	else
 		ImGui::Text("Now: %s", ScaledTargets::GetStatusText());
-
-	return changed;
 }
 
 void PerformanceWindow::DrawDiagnostics()
@@ -1101,11 +1104,12 @@ bool PerformanceWindow::DrawPotatoStage()
 		ImGui::PopID();
 	}
 
-	Help("The size the 3D stage is drawn at while POTATO MODE is on. Characters, effects and menus "
-		"are not changed. The stage is often the heaviest part of a frame on a weak graphics card. "
-		"Needs a restart.");
+	Help("The size the 3D stage is drawn at, at every POTATO MODE level, Off included. Characters, "
+		"effects and menus stay at the game's own 720p. The stage is often the heaviest part of a "
+		"frame on a weak graphics card. Needs a restart.");
 
 	Muted("%s", PotatoStage::Describe(PotatoStage::GetLevel()));
+	DrawScaledTargetsState();
 	return changed;
 }
 
