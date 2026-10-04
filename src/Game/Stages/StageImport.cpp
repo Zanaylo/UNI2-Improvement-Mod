@@ -768,7 +768,7 @@ void WriteNote(const std::string& target, const Job& job, const std::string& blo
 {
 	const std::string from = job.custom ? std::string(kCustomGame) : job.folder;
 
-	std::string note = "// UNI2 Improvement Mod\r\n";
+	std::string note = StageNote::kHeader;
 	note += "Name = \"" + job.name + "\"\r\n";
 	note += "From = \"" + from + "\"\r\n";
 	note += "Source = \"" + job.stage + "\"\r\n";
@@ -823,7 +823,7 @@ void WriteNote(const std::string& target, const Job& job, const std::string& blo
 		note += "VertexAlpha = 1\r\n";
 
 	note += "\r\n";
-	note += block;
+	note += StageNote::Body(block);
 
 	WriteWhole(target + "\\" + kStageNote, std::vector<uint8_t>(note.begin(), note.end()));
 }

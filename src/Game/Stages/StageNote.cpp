@@ -13,6 +13,8 @@ const char* const kOwnKeys[] = {
 	"Name", "From", "Source", "DataFile", "StageSelTex", "Flow", "VertexAlpha", "CharaTint",
 };
 
+const char* const kIdentityKeys[] = { "Name", "From", "Source" };
+
 const char* const kSharedKeys[] = {
 	"StageW", "BlanchStage", "BlanchChara", "SelectDisable", "RandomDisable", "VsDisable", "DLCFlag",
 };
@@ -46,6 +48,35 @@ bool Own(const std::string& key)
 bool Shared(const std::string& key)
 {
 	return Among(std::begin(kSharedKeys), std::end(kSharedKeys), key);
+}
+
+std::string WithoutLineEnd(const std::string& line)
+{
+	const size_t end = line.find_last_not_of("\r\n");
+	return end == std::string::npos ? std::string() : line.substr(0, end + 1);
+}
+
+std::string LeadingKey(const std::string& line)
+{
+	size_t end = 0;
+
+	while (end < line.size() && (isalnum(static_cast<unsigned char>(line[end])) != 0 || line[end] == '_'))
+		++end;
+
+	const size_t equals = line.find_first_not_of(" \t", end);
+
+	if (end == 0 || equals == std::string::npos || line[equals] != '=')
+		return std::string();
+
+	return line.substr(0, end);
+}
+
+bool IsIdentityLine(const std::string& line)
+{
+	if (WithoutLineEnd(line) == WithoutLineEnd(StageNote::kHeader))
+		return true;
+
+	return Among(std::begin(kIdentityKeys), std::end(kIdentityKeys), LeadingKey(line));
 }
 
 bool Held(const std::vector<Pair>& pairs, const std::string& key)
@@ -106,6 +137,26 @@ void StageNote::Values(const std::string& note, std::vector<StageArchive::Pair>&
 	Collect(note, out);
 
 	std::stable_partition(out.begin(), out.end(), [](const Pair& pair) { return !Nested(pair); });
+}
+
+std::string StageNote::Body(const std::string& note)
+{
+	std::string body;
+
+	for (size_t at = 0; at < note.size();)
+	{
+		const size_t newline = note.find('\n', at);
+		const size_t end = newline == std::string::npos ? note.size() : newline + 1;
+		const std::string line = note.substr(at, end - at);
+		at = end;
+
+		if (IsIdentityLine(line) || (body.empty() && WithoutLineEnd(line).empty()))
+			continue;
+
+		body += line;
+	}
+
+	return body;
 }
 
 std::string StageNote::Rework(const std::string& block, const std::string& note)

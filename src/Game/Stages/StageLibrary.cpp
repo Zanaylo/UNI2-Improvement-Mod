@@ -8,6 +8,7 @@
 #include "Game/Stages/ExtraStages.h"
 #include "Game/Files/FbGameFolder.h"
 #include "Game/Stages/StageArchive.h"
+#include "Game/Stages/StageNote.h"
 #include "Game/Stages/StageTrash.h"
 
 #include <Windows.h>
@@ -22,7 +23,6 @@ namespace {
 constexpr const char* kSection = "StageLibrary";
 constexpr const char* kLegacySection = "Stages";
 constexpr const char* kNote = "stage.txt";
-constexpr const char* kNoteHeader = "// UNI2 Improvement Mod\r\n";
 constexpr const char* kRenamedKey = "Renamed";
 constexpr const char* kModel = "bg.fbx.bin";
 constexpr uint64_t kFnvOffset = 0xcbf29ce484222325ull;
@@ -476,7 +476,7 @@ void NameInNote(const std::string& folder, const std::string& name)
 	if (GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES)
 		return;
 
-	WriteText(path, std::string(kNoteHeader) + "Name = \"" + name + "\"\r\nSource = \"" + name + "\"\r\n");
+	WriteText(path, std::string(StageNote::kHeader) + "Name = \"" + name + "\"\r\nSource = \"" + name + "\"\r\n");
 }
 
 bool ValueLine(const std::string& note, const char* key, size_t& valueAt, size_t& lineEnd)
@@ -507,13 +507,13 @@ std::string Retitled(const std::string& note, const std::string& name)
 		const std::string flagged = note.substr(0, valueAt) + "1" + note.substr(lineEnd);
 
 		if (!ValueLine(flagged, "Name", valueAt, lineEnd))
-			return std::string(kNoteHeader) + line + "\r\n" + flagged;
+			return std::string(StageNote::kHeader) + line + "\r\n" + flagged;
 
 		return flagged.substr(0, valueAt) + "\"" + name + "\"" + flagged.substr(lineEnd);
 	}
 
 	if (!ValueLine(note, "Name", valueAt, lineEnd))
-		return std::string(kNoteHeader) + line + "\r\n" + flag + "\r\n" + note;
+		return std::string(StageNote::kHeader) + line + "\r\n" + flag + "\r\n" + note;
 
 	return note.substr(0, valueAt) + "\"" + name + "\"\r\n" + flag + note.substr(lineEnd);
 }
@@ -524,7 +524,7 @@ std::string Named(const std::string& note, const std::string& name)
 	size_t lineEnd = 0;
 
 	if (!ValueLine(note, "Name", valueAt, lineEnd))
-		return std::string(kNoteHeader) + "Name = \"" + name + "\"\r\n" + note;
+		return std::string(StageNote::kHeader) + "Name = \"" + name + "\"\r\n" + note;
 
 	return note.substr(0, valueAt) + "\"" + name + "\"" + note.substr(lineEnd);
 }

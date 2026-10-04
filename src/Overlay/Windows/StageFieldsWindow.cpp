@@ -39,6 +39,7 @@ constexpr float kHorizonSpeed = 0.0005f;
 constexpr float kMostHorizon = 2.0f;
 constexpr float kAngleSpeed = 0.1f;
 constexpr float kMostTilt = 90.0f;
+constexpr float kMostTurn = 180.0f;
 constexpr int kColourParts = 4;
 
 struct Field
@@ -348,6 +349,10 @@ void StageFieldsWindow::DrawCamera()
 	changed |= ImGui::DragFloat("View rotation X##fieldtilt", &place.tilt, kAngleSpeed, -kMostTilt,
 		kMostTilt, "%.1f");
 	HoverTip("Tips the scenery toward or away from the camera, in degrees.");
+
+	changed |= ImGui::DragFloat("View rotation Y##fieldturn", &place.turn, kAngleSpeed, -kMostTurn,
+		kMostTurn, "%.1f");
+	HoverTip("Turns the scenery left or right around the fight, in degrees.");
 
 	if (changed)
 		StagePlacement::Set(m_slot, place);

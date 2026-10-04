@@ -11,8 +11,11 @@
 #include <Windows.h>
 
 #include <cstdio>
+#include <new>
 
 namespace {
+
+constexpr GUID kReleaseNoticeKey = { 0x4254a3d6, 0xf091, 0x4641, { 0xad, 0xa5, 0x0e, 0x41, 0xd2, 0x51, 0x47, 0xb6 } };
 
 constexpr int kCreateTextureIndex = 23;
 constexpr int kCreateRenderTargetIndex = 28;
@@ -51,6 +54,7 @@ float g_scaleX = 1.0f;
 float g_scaleY = 1.0f;
 
 bool g_boundScaled = false;
+bool g_reportedNoReleaseNotice = false;
 
 int g_scaledCreations = 0;
 int g_refusedCreations = 0;
@@ -109,6 +113,76 @@ void Forget(const void* identity)
 	ForgetLocked(identity);
 }
 
+class ReleaseNotice final : public IUnknown
+{
+public:
+	static bool Attach(IDirect3DResource9* resource)
+	{
+		ReleaseNotice* const notice = new (std::nothrow) ReleaseNotice(resource);
+
+		if (notice == nullptr)
+			return false;
+
+		const HRESULT result = resource->SetPrivateData(kReleaseNoticeKey, static_cast<IUnknown*>(notice),
+			sizeof(IUnknown*), D3DSPD_IUNKNOWN);
+
+		if (FAILED(result))
+			notice->m_identity = nullptr;
+
+		notice->Release();
+		return SUCCEEDED(result);
+	}
+
+	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID id, void** object) override
+	{
+		if (object == nullptr)
+			return E_POINTER;
+
+		*object = nullptr;
+
+		if (!IsEqualIID(id, IID_IUnknown))
+			return E_NOINTERFACE;
+
+		*object = static_cast<IUnknown*>(this);
+		AddRef();
+		return S_OK;
+	}
+
+	ULONG STDMETHODCALLTYPE AddRef() override
+	{
+		return static_cast<ULONG>(InterlockedIncrement(&m_references));
+	}
+
+	ULONG STDMETHODCALLTYPE Release() override
+	{
+		const LONG remaining = InterlockedDecrement(&m_references);
+
+		if (remaining != 0)
+			return static_cast<ULONG>(remaining);
+
+		Forget(m_identity);
+		delete this;
+		return 0;
+	}
+
+private:
+	explicit ReleaseNotice(const void* identity) : m_identity(identity) {}
+	~ReleaseNotice() = default;
+
+	const void* m_identity;
+	LONG m_references = 1;
+};
+
+void ForgetOnRelease(IDirect3DResource9* resource)
+{
+	if (ReleaseNotice::Attach(resource) || g_reportedNoReleaseNotice)
+		return;
+
+	g_reportedNoReleaseNotice = true;
+	LOG("[InternalResolution] the device keeps no private data, freed targets stay in the list (0x%p)",
+		static_cast<void*>(resource));
+}
+
 void Remember(const void* surface, const void* texture)
 {
 	ExclusiveLock lock;
@@ -146,6 +220,7 @@ void RememberTexture(IDirect3DTexture9* texture)
 	TargetSizeMask::Watch(level);
 	Remember(level, texture);
 	level->Release();
+	ForgetOnRelease(texture);
 }
 
 void ReportRefusal(const char* what, HRESULT result)
@@ -211,6 +286,7 @@ HRESULT CreateScaledSurface(const CreateSurface_t original, const char* what, ID
 	{
 		TargetSizeMask::Watch(*surface);
 		Remember(*surface, nullptr);
+		ForgetOnRelease(*surface);
 		LOG("[InternalResolution] %s format %d multisample %d created at %ux%u (0x%p)", what,
 			static_cast<int>(format), static_cast<int>(multisample), g_width, g_height,
 			static_cast<void*>(*surface));
@@ -436,7 +512,7 @@ const char* ScaledTargets::GetStatusText()
 	if (!g_active)
 		return g_status;
 
-	snprintf(g_status, sizeof(g_status), "%ux%u, %d scene targets scaled, %d refused by the device", g_width,
-		g_height, g_scaledCreations, g_refusedCreations);
+	snprintf(g_status, sizeof(g_status), "%ux%u, %d scene targets scaled, %d alive, %d refused by the device",
+		g_width, g_height, g_scaledCreations, g_targetCount, g_refusedCreations);
 	return g_status;
 }
