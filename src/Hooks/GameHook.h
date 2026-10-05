@@ -92,6 +92,9 @@ private:
 
 	bool Remember(void* target, bool created)
 	{
+		if (!created && m_target != nullptr)
+			return false;
+
 		if (!created)
 		{
 			m_original = nullptr;

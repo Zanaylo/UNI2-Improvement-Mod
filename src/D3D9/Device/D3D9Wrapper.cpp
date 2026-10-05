@@ -13,6 +13,7 @@
 #include "Hooks/HookManager.h"
 
 #include <cstring>
+#include <mutex>
 
 #include <MinHook.h>
 #include <d3d9.h>
@@ -32,6 +33,7 @@ GameHook<Direct3DCreate9_t> g_direct3DCreate9Hook("Direct3DCreate9");
 GameHook<CreateDevice_t> g_createDeviceHook("IDirect3D9::CreateDevice");
 
 bool g_createDeviceHooked = false;
+std::mutex g_createDeviceLock;
 
 IDirect3D9* g_seenD3D9 = nullptr;
 
@@ -129,6 +131,8 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 
 bool HookCreateDeviceFrom(IDirect3D9* d3d9)
 {
+	std::lock_guard<std::mutex> lock(g_createDeviceLock);
+
 	if (d3d9 == nullptr || g_createDeviceHooked)
 		return g_createDeviceHooked;
 

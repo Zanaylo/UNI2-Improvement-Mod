@@ -47,6 +47,54 @@ constexpr const char* kPartNames[LivePalette::kParts] = {
 	"Base", "Part 1", "Part 2", "Part 3", "Part 4", "Part 5",
 };
 
+int SheetSetFor(bool summon)
+{
+	return summon ? BasePals::kSummonSet : BasePals::kCharacterSet;
+}
+
+constexpr const char* kPictureExtension = ".png";
+constexpr const char* kDoppelPictureSuffix = "_p1.png";
+
+const char* ExportTooltip(bool hasBase, bool hasDoppel)
+{
+	if (!hasBase)
+		return "This character has no reference sheet in this build.";
+
+	return hasDoppel
+		? "Saves this character's reference sheet with these colours as a PNG,\nand the doppel's beside it "
+			"as _p1.png."
+		: "Saves this character's reference sheet with these colours as a PNG.";
+}
+
+std::string WithPictureExtension(const std::string& path)
+{
+	const size_t length = strlen(kPictureExtension);
+
+	if (path.size() >= length && _stricmp(path.c_str() + path.size() - length, kPictureExtension) == 0)
+		return path;
+
+	return path + kPictureExtension;
+}
+
+std::string DoppelPictureOf(const std::string& picture)
+{
+	return picture.substr(0, picture.size() - strlen(kPictureExtension)) + kDoppelPictureSuffix;
+}
+
+bool ExportSheet(int chara, int set, const std::string& target, const uint8_t* colours, std::string& error)
+{
+	const uint8_t* base = nullptr;
+	size_t size = 0;
+
+	if (!BasePals::Get(chara, set, base, size))
+	{
+		error = "no reference sheet for this character";
+		return false;
+	}
+
+	return PngPalette::Recolour(target, base, size, colours, error);
+}
+
 int Luminance(const uint8_t* rgb)
 {
 	return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
@@ -212,7 +260,7 @@ void PaletteWindow::DrawPlayer(int player)
 
 	m_summonTabOpen[player] = false;
 
-	if (m_hasCompanion[player] && ImGui::BeginTabItem("Summon"))
+	if (m_hasCompanion[player] && ImGui::BeginTabItem("Doppel"))
 	{
 		m_summonTabOpen[player] = true;
 		DrawSummon(player);
@@ -919,7 +967,7 @@ void PaletteWindow::DrawFiles(int player)
 	{
 		m_importIntoSummon[player] = m_summonTabOpen[player];
 		m_pngImportDialog[player].BeginOpen(m_importIntoSummon[player]
-			? "Import a palette PNG for the summon" : "Import a palette PNG", "PNG images\0*.png\0");
+			? "Import a palette PNG for the doppel" : "Import a palette PNG", "PNG images\0*.png\0");
 	}
 
 	ImGui::EndDisabled();
@@ -927,16 +975,18 @@ void PaletteWindow::DrawFiles(int player)
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip(m_summonTabOpen[player]
-			? "Applies the colours of an indexed PNG to the summon.\nOpen the Character tab to import "
-				"for the character."
+			? "Applies the colours of a PNG to the doppel.\nTakes the doppel's reference sheet at any size "
+				"when this build has one, or an indexed PNG in the game's order.\nOpen the Character tab to "
+				"import for the character."
 			: "Applies the colours of a PNG to this character.\nTakes this character's reference sheet at "
-				"any size, or an indexed PNG in the game's order.\nOpen the Summon tab to import for the summon.");
+				"any size, or an indexed PNG in the game's order.\nOpen the Doppel tab to import for the doppel.");
 	}
 
 	ImGui::SameLine();
 
 	const bool exporting = m_pngExportDialog[player].IsRunning();
-	const bool hasBase = BasePals::Has(m_chara[player]);
+	const bool hasBase = BasePals::Has(m_chara[player], BasePals::kCharacterSet);
+	const bool hasDoppel = BasePals::Has(m_chara[player], BasePals::kSummonSet);
 
 	ImGui::BeginDisabled(exporting || !hasBase);
 
@@ -947,18 +997,14 @@ void PaletteWindow::DrawFiles(int player)
 			? m_name[player]
 			: CharaTables::Name(m_chara[player]));
 
-		m_pngExportDialog[player].BeginSave("Export this palette as a picture",
-			"PNG images\0*.png\0", suggested);
+		m_pngExportDialog[player].BeginSave("Export this palette as a picture", "PNG images\0*.png\0",
+			suggested);
 	}
 
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip(hasBase
-			? "Saves this character's reference sheet with these colours as a PNG."
-			: "This character has no reference sheet in this build.");
-	}
+		ImGui::SetTooltip("%s", ExportTooltip(hasBase, hasDoppel));
 
 	if (!nameOk && m_name[player][0] != '\0')
 		ImGui::TextDisabled("that name cannot be a filename");
@@ -1208,8 +1254,7 @@ void PaletteWindow::CompleteImportPng(int player, const std::string& path)
 	const uint8_t* sheet = nullptr;
 	size_t sheetSize = 0;
 
-	if (!m_importIntoSummon[player])
-		BasePals::Get(m_chara[player], sheet, sheetSize);
+	BasePals::Get(m_chara[player], SheetSetFor(m_importIntoSummon[player]), sheet, sheetSize);
 
 	if (!PngPalette::Read(path, sheet, sheetSize, colours, error))
 	{
@@ -1221,12 +1266,12 @@ void PaletteWindow::CompleteImportPng(int player, const std::string& path)
 	{
 		if (!m_hasCompanion[player])
 		{
-			sprintf_s(m_status[player], "The summon has not been drawn yet. Summon it once, then import.");
+			sprintf_s(m_status[player], "The doppel has not been drawn yet. Call her once, then import.");
 			return;
 		}
 
 		ApplyImportedSummon(player, colours);
-		sprintf_s(m_status[player], "Imported into the summon. Save to keep it.");
+		sprintf_s(m_status[player], "Imported into the doppel. Save to keep it.");
 		return;
 	}
 
@@ -1250,29 +1295,35 @@ void PaletteWindow::CompleteImportPng(int player, const std::string& path)
 
 void PaletteWindow::CompleteExportPng(int player, const std::string& path)
 {
-	const uint8_t* base = nullptr;
-	size_t size = 0;
-
-	if (!BasePals::Get(m_chara[player], base, size))
-	{
-		sprintf_s(m_status[player], "no reference sheet for this character");
-		return;
-	}
-
-	std::string target = path;
-
-	if (target.size() < 4 || _stricmp(target.c_str() + target.size() - 4, ".png") != 0)
-		target += ".png";
-
+	const int chara = m_chara[player];
+	const std::string target = WithPictureExtension(path);
 	std::string error;
 
-	if (!PngPalette::Recolour(target, base, size, m_composed[player], error))
+	if (!ExportSheet(chara, BasePals::kCharacterSet, target, m_composed[player], error))
 	{
-		sprintf_s(m_status[player], "%.120s", error.c_str());
+		sprintf_s(m_status[player], "%.90s", error.c_str());
 		return;
 	}
 
-	sprintf_s(m_status[player], "Exported.");
+	if (!BasePals::Has(chara, BasePals::kSummonSet))
+	{
+		sprintf_s(m_status[player], "Exported.");
+		return;
+	}
+
+	if (!m_hasCompanion[player])
+	{
+		sprintf_s(m_status[player], "Exported the character. Call the doppel once to export her too.");
+		return;
+	}
+
+	if (!ExportSheet(chara, BasePals::kSummonSet, DoppelPictureOf(target), m_companion[player], error))
+	{
+		sprintf_s(m_status[player], "Doppel not exported: %.70s", error.c_str());
+		return;
+	}
+
+	sprintf_s(m_status[player], "Exported the character and the doppel.");
 }
 
 void PaletteWindow::Adopt(int player, int chara)
@@ -1449,11 +1500,11 @@ void PaletteWindow::DrawSummon(int player)
 {
 	if (!m_hasCompanion[player])
 	{
-		ImGui::TextDisabled("this character has no summon of its own.");
+		ImGui::TextDisabled("this character has no doppel of its own.");
 		return;
 	}
 
-	ImGui::TextWrapped("The summon reads its own colours. Changing one here leaves the character "
+	ImGui::TextWrapped("The doppel reads its own colours. Changing one here leaves the character "
 		"alone.");
 
 	unsigned char entries[LivePalette::kColours] = {};
@@ -1468,7 +1519,7 @@ void PaletteWindow::DrawSummon(int player)
 	ImGui::BeginChild("summon", Ui::Scaled(0.0f, 200.0f), ImGuiChildFlags_Borders);
 
 	if (count == 0)
-		ImGui::TextDisabled("nothing of the summon's is in this palette.");
+		ImGui::TextDisabled("nothing of the doppel's is in this palette.");
 	else
 		DrawSummonGrid(player, entries, count);
 

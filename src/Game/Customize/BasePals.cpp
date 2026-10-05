@@ -9,6 +9,7 @@
 namespace {
 
 constexpr int kMaxChara = 128;
+constexpr int kMaxSets = 4;
 
 struct Entry
 {
@@ -17,18 +18,21 @@ struct Entry
 	bool looked;
 };
 
-Entry g_entries[kMaxChara] = {};
+Entry g_entries[kMaxChara][kMaxSets] = {};
 
-bool ResourceName(int chara, char* out, int size)
+bool ResourceName(int chara, int set, char* out, int size)
 {
-	return sprintf_s(out, size, "CHR%03d", chara) > 0;
+	if (set == BasePals::kCharacterSet)
+		return sprintf_s(out, size, "CHR%03d", chara) > 0;
+
+	return sprintf_s(out, size, "CHR%03d_P%d", chara, set) > 0;
 }
 
-bool Lookup(int chara, const uint8_t*& outData, size_t& outSize)
+bool Lookup(int chara, int set, const uint8_t*& outData, size_t& outSize)
 {
 	char name[16] = {};
 
-	if (!ResourceName(chara, name, sizeof(name)))
+	if (!ResourceName(chara, set, name, sizeof(name)))
 		return false;
 
 	const HMODULE module = GetModModuleHandle();
@@ -59,7 +63,7 @@ bool Lookup(int chara, const uint8_t*& outData, size_t& outSize)
 
 }
 
-bool BasePals::Get(int chara, const uint8_t*& outData, size_t& outSize)
+bool BasePals::Get(int chara, int set, const uint8_t*& outData, size_t& outSize)
 {
 	outData = nullptr;
 	outSize = 0;
@@ -67,12 +71,15 @@ bool BasePals::Get(int chara, const uint8_t*& outData, size_t& outSize)
 	if (chara < 0 || chara >= kMaxChara)
 		return false;
 
-	Entry& entry = g_entries[chara];
+	if (set < 0 || set >= kMaxSets)
+		return false;
+
+	Entry& entry = g_entries[chara][set];
 
 	if (!entry.looked)
 	{
 		entry.looked = true;
-		Lookup(chara, entry.data, entry.size);
+		Lookup(chara, set, entry.data, entry.size);
 	}
 
 	if (entry.data == nullptr)
@@ -83,10 +90,10 @@ bool BasePals::Get(int chara, const uint8_t*& outData, size_t& outSize)
 	return true;
 }
 
-bool BasePals::Has(int chara)
+bool BasePals::Has(int chara, int set)
 {
 	const uint8_t* data = nullptr;
 	size_t size = 0;
 
-	return Get(chara, data, size);
+	return Get(chara, set, data, size);
 }
