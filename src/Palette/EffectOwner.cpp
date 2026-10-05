@@ -23,9 +23,12 @@ constexpr int kWornFreshFrames = 30;
 
 constexpr int kTolerance = 1;
 
+constexpr uint32_t kDoppelRows = 0xc;
+
 struct Entry
 {
 	uint8_t worn[kPlayers][3];
+	uint8_t doppel[kPlayers][3];
 	uint8_t stock[kPlayers][kMaxStock][3];
 	uint8_t stockCount[kPlayers];
 	uint8_t claims;
@@ -34,6 +37,7 @@ struct Entry
 Entry g_entries[kEntries] = {};
 
 bool g_wornOk[kPlayers] = {};
+bool g_doppelOk[kPlayers] = {};
 int g_wornStale[kPlayers] = {};
 bool g_mirror = false;
 
@@ -258,6 +262,47 @@ void TakeWorn(int player)
 	++g_generation;
 }
 
+void TakeDoppel(int player)
+{
+	uintptr_t texture = 0;
+	uint32_t rows = 0;
+
+	if (!PaletteSeat::GetByOwner(PalettePaint::GetOwner(player), texture, rows))
+		return;
+
+	if ((rows & kDoppelRows) == 0)
+	{
+		g_doppelOk[player] = false;
+		return;
+	}
+
+	uint8_t row[PalettePaint::kBytes] = {};
+
+	g_doppelOk[player] = PalettePaint::ReadCompanionColours(player, row);
+
+	if (!g_doppelOk[player])
+		return;
+
+	for (int entry = 0; entry < kEntries; ++entry)
+		memcpy(g_entries[entry].doppel[player], row + entry * 4, 3);
+}
+
+bool IsAnyWorn(int entry, uint8_t r, uint8_t g, uint8_t b)
+{
+	for (int player = 0; player < kPlayers; ++player)
+	{
+		if (g_wornOk[player] && Same(g_entries[entry].worn[player], r, g, b))
+			return true;
+	}
+
+	return false;
+}
+
+bool IsDoppelColour(int player, int entry, uint8_t r, uint8_t g, uint8_t b)
+{
+	return g_doppelOk[player] && Same(g_entries[entry].doppel[player], r, g, b);
+}
+
 }
 
 void EffectOwner::OnFrame()
@@ -273,6 +318,7 @@ void EffectOwner::OnFrame()
 		TakeCharacter(player, chara);
 
 		g_wornOk[player] = false;
+		g_doppelOk[player] = false;
 		g_wornIndex[player] = -2;
 		++g_generation;
 	}
@@ -311,6 +357,7 @@ void EffectOwner::OnFrame()
 		g_wornSide[player] = side[player];
 
 		TakeWorn(player);
+		TakeDoppel(player);
 	}
 
 	sprintf_s(g_description, "p1 chara %d, %d stock rows, %d claimed, worn %s%s | "
@@ -353,6 +400,22 @@ bool EffectOwner::Claims(int player, int entry)
 		return false;
 
 	return (g_entries[entry].claims & (1u << player)) != 0;
+}
+
+int EffectOwner::DoppelFor(int entry, uint8_t r, uint8_t g, uint8_t b)
+{
+	if (entry <= 0 || entry >= kEntries || IsAnyWorn(entry, r, g, b))
+		return -1;
+
+	const bool drawn[kPlayers] = {
+		IsDoppelColour(0, entry, r, g, b),
+		IsDoppelColour(1, entry, r, g, b),
+	};
+
+	if (drawn[0] == drawn[1])
+		return -1;
+
+	return drawn[0] ? 0 : 1;
 }
 
 bool EffectOwner::IsMirror()

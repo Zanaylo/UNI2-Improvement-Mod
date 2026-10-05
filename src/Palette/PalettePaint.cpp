@@ -11,6 +11,7 @@
 #include "Palette/PaletteSeat.h"
 #include "Palette/PaletteTexture.h"
 #include "Palette/PlayerSides.h"
+#include "Training/FrameStepper.h"
 
 #include <cstring>
 
@@ -54,8 +55,28 @@ struct Player
 };
 
 Player g_players[PalettePaint::kPlayers] = {};
-int g_paintedFrame = -1;
+unsigned g_pass = 0;
+unsigned g_paintedPass = ~0u;
 bool g_allowed = false;
+
+unsigned g_changes = 0;
+unsigned g_shownChanges = 0;
+
+void NoteChange()
+{
+	++g_changes;
+}
+
+void RepaintIfChanged()
+{
+	const unsigned changes = g_changes + EffectPaint::GetChanges();
+
+	if (changes == g_shownChanges)
+		return;
+
+	g_shownChanges = changes;
+	FrameStepper::RequestRepaint();
+}
 
 int g_innerOffset = -1;
 
@@ -318,6 +339,7 @@ void PalettePaint::Stage(int player, const uint8_t* colours)
 	memcpy(entry.colours, colours, kBytes);
 	entry.staged = true;
 	++entry.revision;
+	NoteChange();
 
 	Follow(entry, player);
 }
@@ -332,6 +354,7 @@ void PalettePaint::StageCompanion(int player, const uint8_t* colours)
 	memcpy(entry.companion, colours, kBytes);
 	entry.hasCompanion = true;
 	++entry.revision;
+	NoteChange();
 }
 
 bool PalettePaint::HasCompanion(int player)
@@ -344,7 +367,13 @@ void PalettePaint::PreviewCompanion(int player, const uint8_t* colours)
 	if (player < 0 || player >= kPlayers || colours == nullptr)
 		return;
 
-	memcpy(g_players[player].previewCompanion, colours, kBytes);
+	Player& entry = g_players[player];
+
+	if (memcmp(entry.previewCompanion, colours, kBytes) == 0)
+		return;
+
+	memcpy(entry.previewCompanion, colours, kBytes);
+	NoteChange();
 }
 
 void PalettePaint::ClearCompanion(int player)
@@ -354,6 +383,7 @@ void PalettePaint::ClearCompanion(int player)
 
 	g_players[player].hasCompanion = false;
 	++g_players[player].revision;
+	NoteChange();
 }
 
 bool PalettePaint::ReadCompanionColours(int player, uint8_t* rgba)
@@ -388,6 +418,7 @@ void PalettePaint::Clear(int player)
 	entry.previewing = false;
 	entry.hasCompanion = false;
 	++entry.revision;
+	NoteChange();
 
 	if (entry.hasRemote)
 		return;
@@ -406,6 +437,7 @@ void PalettePaint::StageRemote(int player, const uint8_t* colours)
 
 	memcpy(entry.remote, colours, kBytes);
 	entry.hasRemote = true;
+	NoteChange();
 
 	Follow(entry, player);
 }
@@ -418,6 +450,7 @@ void PalettePaint::ClearRemote(int player)
 	Player& entry = g_players[player];
 
 	entry.hasRemote = false;
+	NoteChange();
 
 	if (!entry.staged && !entry.previewing)
 	{
@@ -451,6 +484,9 @@ void PalettePaint::Preview(int player, const uint8_t* colours)
 
 	Player& entry = g_players[player];
 
+	if (!entry.previewing || memcmp(entry.preview, colours, kBytes) != 0)
+		NoteChange();
+
 	memcpy(entry.preview, colours, kBytes);
 	entry.previewing = true;
 
@@ -465,6 +501,7 @@ void PalettePaint::EndPreview(int player)
 	Player& entry = g_players[player];
 
 	entry.previewing = false;
+	NoteChange();
 
 	if (!entry.staged && !entry.hasRemote)
 	{
@@ -475,6 +512,8 @@ void PalettePaint::EndPreview(int player)
 
 void PalettePaint::OnFrame()
 {
+	++g_pass;
+	RepaintIfChanged();
 
 	static bool wasInMatch = false;
 	const bool inMatch = GameState::IsInMatch();
@@ -573,12 +612,10 @@ void PalettePaint::OnDraw()
 	if (!g_allowed)
 		return;
 
-	const int frame = PaletteSeat::GetFrame();
-
-	if (g_paintedFrame == frame)
+	if (g_paintedPass == g_pass)
 		return;
 
-	g_paintedFrame = frame;
+	g_paintedPass = g_pass;
 
 	for (int player = 0; player < kPlayers; ++player)
 	{
@@ -619,6 +656,14 @@ const uint8_t* PalettePaint::GetStaged(int player)
 		return nullptr;
 
 	return g_players[player].colours;
+}
+
+const uint8_t* PalettePaint::GetStagedCompanion(int player)
+{
+	if (player < 0 || player >= kPlayers || !g_players[player].hasCompanion)
+		return nullptr;
+
+	return g_players[player].companion;
 }
 
 unsigned PalettePaint::GetRevision(int player)

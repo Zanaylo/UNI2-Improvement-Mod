@@ -200,7 +200,8 @@ void DebugWindow::DrawPaletteOwnerSection()
 		ImGui::TableSetupColumn("subs");
 		ImGui::TableHeadersRow();
 
-		static const char* const kRoutes[] = { "-", "worn", "stock", "claim", "ambig", "sole" };
+		static const char* const kRoutes[] = { "-", "worn", "stock", "claim", "ambig", "sole",
+			"doppel" };
 
 		for (int i = 0; i < seen; ++i)
 		{
@@ -254,7 +255,8 @@ void DebugWindow::DrawPaletteOwnerSection()
 
 			ImGui::TableNextColumn();
 
-			const int route = call.route >= 0 && call.route < 6 ? call.route : 0;
+			const int route = call.route >= 0 && call.route < static_cast<int>(_countof(kRoutes))
+				? call.route : 0;
 
 			if (call.answer >= 0)
 				ImGui::Text("%s -> p%d", kRoutes[route], call.answer + 1);

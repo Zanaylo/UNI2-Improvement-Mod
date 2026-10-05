@@ -356,7 +356,7 @@ void FrameStepper::RequestStep(int frames)
 
 void FrameStepper::RequestRepaint()
 {
-	if (!IsFrozen() || !SuppressesTicks())
+	if (!IsFrozen() || !SuppressesTicks() || ReplayState::IsPlaying())
 		return;
 
 	g_repaintRequested = true;

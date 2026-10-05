@@ -855,6 +855,9 @@
     <ClCompile Include="src\Core\Harness\StageCommands.cpp">
       <Filter>Core\Harness</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Harness\PaletteCommands.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Harness\PerfCommands.cpp">
       <Filter>Core\Harness</Filter>
     </ClCompile>
@@ -1647,6 +1650,9 @@
       <Filter>Core\Harness</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Harness\StageCommands.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Harness\PaletteCommands.h">
       <Filter>Core\Harness</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Harness\PerfCommands.h">

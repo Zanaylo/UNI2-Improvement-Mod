@@ -100,6 +100,23 @@ int Luminance(const uint8_t* rgb)
 	return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
 }
 
+void DimForFlash(const uint8_t* colours, int keep, const uint8_t* lit, uint8_t* out)
+{
+	memcpy(out, colours, LivePalette::kBytes);
+
+	for (int i = 0; i < LivePalette::kColours; ++i)
+	{
+		const uint8_t grey = static_cast<uint8_t>(Luminance(out + i * 4) / 2);
+
+		out[i * 4 + 0] = grey;
+		out[i * 4 + 1] = grey;
+		out[i * 4 + 2] = grey;
+	}
+
+	if (keep >= 0)
+		memcpy(out + keep * 4, lit, 3);
+}
+
 bool IsUsableName(const char* name)
 {
 	if (name == nullptr || name[0] == '\0' || name[0] == ' ' || name[0] == '.')
@@ -1629,8 +1646,9 @@ void PaletteWindow::RunFlash()
 
 	--m_flashFrames;
 
-	const int keep = m_flashSummon ? -1 : m_selected[player];
-	const int keepTheirs = m_flashSummon ? m_companionSelected[player] : -1;
+	const int flashed = m_flashSummon ? m_companionSelected[player] : m_selected[player];
+	const int keep = m_flashSummon ? -1 : flashed;
+	const int keepTheirs = m_flashSummon ? flashed : -1;
 	const bool on = (m_flashFrames / 8) % 2 == 0;
 
 	const uint8_t lit[3] = {
@@ -1640,19 +1658,7 @@ void PaletteWindow::RunFlash()
 	};
 
 	uint8_t dimmed[LivePalette::kBytes] = {};
-	memcpy(dimmed, m_composed[player], sizeof(dimmed));
-
-	for (int i = 0; i < LivePalette::kColours; ++i)
-	{
-		const uint8_t grey = static_cast<uint8_t>(Luminance(dimmed + i * 4) / 2);
-
-		dimmed[i * 4 + 0] = grey;
-		dimmed[i * 4 + 1] = grey;
-		dimmed[i * 4 + 2] = grey;
-	}
-
-	if (keep >= 0)
-		memcpy(dimmed + keep * 4, lit, 3);
+	DimForFlash(m_composed[player], keep, lit, dimmed);
 
 	PalettePaint::Preview(player, dimmed);
 
@@ -1662,24 +1668,12 @@ void PaletteWindow::RunFlash()
 			PalettePaint::StageCompanion(player, m_companion[player]);
 
 		uint8_t theirs[LivePalette::kBytes] = {};
-		memcpy(theirs, m_companion[player], sizeof(theirs));
-
-		for (int i = 0; i < LivePalette::kColours; ++i)
-		{
-			const uint8_t grey = static_cast<uint8_t>(Luminance(theirs + i * 4) / 2);
-
-			theirs[i * 4 + 0] = grey;
-			theirs[i * 4 + 1] = grey;
-			theirs[i * 4 + 2] = grey;
-		}
-
-		if (keepTheirs >= 0)
-			memcpy(theirs + keepTheirs * 4, lit, 3);
+		DimForFlash(m_companion[player], keepTheirs, lit, theirs);
 
 		PalettePaint::PreviewCompanion(player, theirs);
 	}
 
 	const uint8_t dark[3] = { 40, 40, 40 };
 
-	EffectPaint::PreviewObserved(player, dark, keep, lit);
+	EffectPaint::PreviewObserved(player, dark, flashed, lit);
 }

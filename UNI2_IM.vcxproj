@@ -341,6 +341,7 @@
     <ClCompile Include="src\Core\Harness\HarnessChannel.cpp" />
     <ClCompile Include="src\Core\Harness\CleanFrame.cpp" />
     <ClCompile Include="src\Core\Harness\StageCommands.cpp" />
+    <ClCompile Include="src\Core\Harness\PaletteCommands.cpp" />
     <ClCompile Include="src\Core\Harness\PerfCommands.cpp" />
     <ClCompile Include="src\Core\Input\BackgroundKeyboard.cpp" />
     <ClCompile Include="src\Hooks\ImportPatch.cpp" />
@@ -574,6 +575,7 @@
     <ClInclude Include="src\Core\Harness\HarnessChannel.h" />
     <ClInclude Include="src\Core\Harness\CleanFrame.h" />
     <ClInclude Include="src\Core\Harness\StageCommands.h" />
+    <ClInclude Include="src\Core\Harness\PaletteCommands.h" />
     <ClInclude Include="src\Core\Harness\PerfCommands.h" />
     <ClInclude Include="src\Core\Input\BackgroundKeyboard.h" />
     <ClInclude Include="src\Hooks\ImportPatch.h" />

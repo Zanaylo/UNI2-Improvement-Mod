@@ -15,6 +15,7 @@ namespace EffectOwner
 		Claim,
 		Ambiguous,
 		SoleWanter,
+		Doppel,
 	};
 
 	void OnFrame();
@@ -22,6 +23,8 @@ namespace EffectOwner
 	int PlayerFor(int entry, uint8_t r, uint8_t g, uint8_t b, Route& outRoute);
 
 	bool Claims(int player, int entry);
+
+	int DoppelFor(int entry, uint8_t r, uint8_t g, uint8_t b);
 
 	bool IsMirror();
 

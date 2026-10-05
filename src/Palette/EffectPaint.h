@@ -30,6 +30,7 @@ namespace EffectPaint
 	void SetWear(int player, bool allowed);
 
 	unsigned GetRevision(int player);
+	unsigned GetChanges();
 
 	bool IsEdited(int player, int entry);
 	bool GetEdit(int player, int entry, uint8_t* outRgb);

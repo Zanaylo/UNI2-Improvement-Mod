@@ -41,6 +41,7 @@ namespace PalettePaint
 	bool ReadGameColours(int player, uint8_t* rgba);
 
 	const uint8_t* GetStaged(int player);
+	const uint8_t* GetStagedCompanion(int player);
 
 	unsigned GetRevision(int player);
 
