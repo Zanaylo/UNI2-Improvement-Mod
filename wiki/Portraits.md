@@ -1,7 +1,7 @@
 # Portraits
 
 Give each character another art on every screen that shows it: the character select portrait and its
-card in the grid, the versus screen, the face on the battle gauge, the winner screen and the main menu.
+card in the grid, the versus screen, the face on the battle gauge, the winner screen, the main menu and the Network menu.
 
 Press **F1**, open the **Misc** section of the main window, press **Open misc** and go to the
 **Portraits** tab.

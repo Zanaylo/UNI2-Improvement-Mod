@@ -200,7 +200,7 @@ Written by the [Portraits](Portraits) tab of the Misc window, except `PackUrl`.
 
 | Key | Default | What it does |
 |---|---|---|
-| `chrNNN` | empty | The art character `NNN` wears, such as `chr000=wiki:Profile-hyde.png` or `chr004=game:talk/004_00`. Empty is the game's own. |
+| `chrNNN` | empty | The art character `NNN` wears, such as `chr000=pack:Profile-hyde.png` or `chr004=game:talk/004_00`. Empty is the game's own. |
 | `PackUrl` | the mod's own link | Where **Download the portrait pack** fetches the pack from. A Google Drive share link works as it is. |
 
 ## `[Extras]` and `[Stages]`

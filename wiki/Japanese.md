@@ -136,7 +136,7 @@ Linux では **互換セーフモード** が自動で有効になります。�
 ### ポートレート
 
 **Misc** ウィンドウの **Portraits** タブ。キャラクターごとに、そのキャラを映すすべての画面のアートを
-差し替えます。キャラクター選択の立ち絵とアイコン、VS 画面、対戦中のゲージの顔、勝利画面、メインメニュー。
+差し替えます。キャラクター選択の立ち絵とアイコン、VS 画面、対戦中のゲージの顔、勝利画面、メインメニュー、ネットワークメニュー。
 
 キャラクターごとにリストがあります。**Game's own** はゲーム本来のアート。ほかに Gallery の Sys:Celes
 (エフェクト付き、差分あり)、エフェクトなしの Sys:Celes、旧作の選択画面のアート(UNI、Exe:Late、[st]、
@@ -232,8 +232,11 @@ DLL の隣の `UNI2-IM` フォルダーにある `UNI2_IM.ini` です。全キ�
 - [BBCF-Improvement-Mod](https://github.com/libreofficecalc/BBCF-Improvement-Mod)
 - [Hantei-kun](https://github.com/Zanaylo/Hantei-kun)
 - [undernightinbirth wiki](https://github.com/Fatih120/undernightinbirth)
+- [Under Night In-Birth Wiki](https://inbirth.wiki.gg)：ポートレートパックのキャラクターイラスト
 - [Dear ImGui](https://github.com/ocornut/imgui), [MinHook](https://github.com/TsudaKageyu/minhook)
 
 ## スペシャルサンクス
 
 Pescador Cearense, Eon, Listentothebirds (Rafael), Willyofruit, Sky Leite, Excel, ZateFGC, Yorezordd (Velho fudido), Thiago, Tanasinn [AZ], Licensed Grappler, Anklegator
+
+[Under Night In-Birth Wiki](https://inbirth.wiki.gg) の編集者の皆さん、ポートレートパックの元になったイラストギャラリーを守ってくださり、ありがとうございます。

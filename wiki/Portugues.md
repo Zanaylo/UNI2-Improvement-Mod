@@ -220,8 +220,8 @@ texto livre. Qualquer frase que você escrever é salva e chega no oponente do j
 ### Retratos
 
 Janela **Misc**, aba **Portraits**. Troca a arte de cada personagem em todas as telas que a mostram:
-o retrato e o card do grid na seleção, a tela de VS, o rosto no gauge da luta, a tela de vitória e o
-menu principal.
+o retrato e o card do grid na seleção, a tela de VS, o rosto no gauge da luta, a tela de vitória, o
+menu principal e o menu Network.
 
 Cada personagem tem a sua lista. **Game's own** é a arte do jogo. As outras são a Sys:Celes da
 Gallery (com efeitos e alternativas), a Sys:Celes sem efeitos, a arte de seleção dos jogos antigos
@@ -359,9 +359,13 @@ de memória e as ferramentas de busca usadas para criar o mod.
 - [BBCF-Improvement-Mod](https://github.com/libreofficecalc/BBCF-Improvement-Mod): referência de arquitetura
 - [Hantei-kun](https://github.com/Zanaylo/Hantei-kun): formatos HA6 / CG / PAL
 - [undernightinbirth wiki](https://github.com/Fatih120/undernightinbirth): documentação de modding
+- [Under Night In-Birth Wiki](https://inbirth.wiki.gg): artes dos personagens do pacote de retratos
 - [Dear ImGui](https://github.com/ocornut/imgui), [MinHook](https://github.com/TsudaKageyu/minhook)
 
 ## Agradecimentos especiais
 
 Pescador Cearense, Eon, Listentothebirds (Rafael), Willyofruit, Sky Leite, Excel, ZateFGC, Yorezordd
 (Velho fudido), Thiago, Tanasinn [AZ], Licensed Grappler e Anklegator.
+
+Aos editores da [Under Night In-Birth Wiki](https://inbirth.wiki.gg), por manterem a galeria de artes da qual o pacote de
+retratos foi feito.
