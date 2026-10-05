@@ -17,6 +17,7 @@ namespace PortraitPainter
 		Screen_Versus,
 		Screen_Winner,
 		Screen_Menu,
+		Screen_Network,
 		Screen_Count,
 	};
 

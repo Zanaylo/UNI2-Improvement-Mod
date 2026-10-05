@@ -46,7 +46,7 @@ constexpr unsigned kMostWorkers = 4;
 constexpr int kFullProgress = 100;
 constexpr const char* kSection = "Portraits";
 constexpr const char* kRevisionKey = "PaintRevision";
-constexpr int kPaintRevision = 6;
+constexpr int kPaintRevision = 7;
 
 struct Screen
 {
@@ -60,6 +60,7 @@ constexpr Screen kScreens[] = {
 	{ PortraitPainter::Screen_Versus, "grpdat\\VsScreen", "vs_demo_chr%03d.pat" },
 	{ PortraitPainter::Screen_Winner, "grpdat\\Winner", "win_ch_chr%03d.pat" },
 	{ PortraitPainter::Screen_Menu, "grpdat\\MainMenuCS\\menucha", "menucha_chr%03d.pat" },
+	{ PortraitPainter::Screen_Network, "grpdat\\Network\\new\\net_chr", "net_chr%03d.pat" },
 };
 
 BackgroundJob g_job("PortraitCompose");

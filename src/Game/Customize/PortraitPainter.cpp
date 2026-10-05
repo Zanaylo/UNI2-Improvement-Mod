@@ -35,6 +35,9 @@ constexpr int kEdgeBand = 2;
 constexpr int kTouchPixels = 8;
 constexpr double kFadeShare = 0.08;
 constexpr double kSelectFadeStart = 0.84375;
+constexpr double kNetworkFadeInEnd = 0.309;
+constexpr double kNetworkFadeOutStart = 0.7715;
+constexpr double kNetworkFadeOutEnd = 0.961;
 constexpr int kShadowBlur = 2;
 
 constexpr PortraitFrames::Frame kMainFrames[PortraitPainter::Screen_Count] = {
@@ -42,6 +45,7 @@ constexpr PortraitFrames::Frame kMainFrames[PortraitPainter::Screen_Count] = {
 	PortraitFrames::Frame_Versus,
 	PortraitFrames::Frame_Winner,
 	PortraitFrames::Frame_Menu,
+	PortraitFrames::Frame_Network,
 };
 
 enum Role
@@ -51,6 +55,26 @@ enum Role
 	Role_Shadow,
 	Role_Closeup,
 	Role_Main,
+};
+
+enum Curve
+{
+	Curve_Blended,
+	Curve_Smooth,
+};
+
+struct ColumnFade
+{
+	PortraitPainter::Screen screen;
+	double solid;
+	double clear;
+	Curve curve;
+};
+
+constexpr ColumnFade kColumnFades[] = {
+	{ PortraitPainter::Screen_Select, kSelectFadeStart, 1.0, Curve_Blended },
+	{ PortraitPainter::Screen_Network, kNetworkFadeInEnd, 0.0, Curve_Blended },
+	{ PortraitPainter::Screen_Network, kNetworkFadeOutStart, kNetworkFadeOutEnd, Curve_Smooth },
 };
 
 struct Paint
@@ -78,14 +102,19 @@ std::string Unprefixed(const std::string& name)
 	return StartsWith(name, kWinner) ? name.substr(strlen(kWinner)) : name;
 }
 
+bool IsFigure(const std::string& rest)
+{
+	return rest.empty() || rest == kFigure || rest == kSpecial;
+}
+
 Role ShadowRole(const std::string& rest)
 {
-	return rest == kFigure || rest == kSpecial ? Role_Shadow : Role_Clear;
+	return IsFigure(rest) ? Role_Shadow : Role_Clear;
 }
 
 Role ArtRole(const std::string& rest)
 {
-	if (rest == kFigure || rest == kSpecial || rest == kFace)
+	if (IsFigure(rest) || rest == kFace)
 		return Role_Main;
 
 	return rest == kCloseup ? Role_Closeup : Role_Clear;
@@ -256,20 +285,26 @@ void FadeCuts(DdsImage::Image& painted, const DdsImage::Image& art, const ImageO
 	}
 }
 
-double SelectFadeShare(double across)
+double ClearShare(double across, Curve curve)
 {
 	const double eased = across * across * (3.0 - 2.0 * across);
-	return 1.0 - (across + eased) / 2.0;
+	return curve == Curve_Smooth ? eased : (across + eased) / 2.0;
 }
 
-void FadeRightEdge(DdsImage::Image& image)
+void Fade(DdsImage::Image& image, const ColumnFade& fade)
 {
-	const double start = kSelectFadeStart * image.width;
-	const int first = static_cast<int>(start);
+	const double solid = fade.solid * image.width;
+	const double clear = fade.clear * image.width;
+	const bool towardRight = clear > solid;
+	const int first = towardRight ? static_cast<int>(solid) : 0;
+	const int last = towardRight ? image.width : (std::min)(static_cast<int>(std::ceil(solid)), image.width);
 	std::vector<double> shares;
 
-	for (int x = first; x < image.width; ++x)
-		shares.push_back(SelectFadeShare(Ramp(x + 0.5 - start, image.width - start)));
+	for (int x = first; x < last; ++x)
+		shares.push_back(1.0 - ClearShare(Ramp(x + 0.5 - solid, clear - solid), fade.curve));
+
+	if (shares.empty())
+		return;
 
 	for (int y = 0; y < image.height; ++y)
 	{
@@ -277,6 +312,15 @@ void FadeRightEdge(DdsImage::Image& image)
 
 		for (size_t column = 0; column < shares.size(); ++column)
 			row[column * 4 + 3] = static_cast<uint8_t>(std::lround(row[column * 4 + 3] * shares[column]));
+	}
+}
+
+void FadeColumns(DdsImage::Image& image, PortraitPainter::Screen screen)
+{
+	for (const ColumnFade& fade : kColumnFades)
+	{
+		if (fade.screen == screen)
+			Fade(image, fade);
 	}
 }
 
@@ -316,9 +360,7 @@ void Draw(DdsImage::Image& surface, const Paint& paint, const Paint& main, Portr
 	DdsImage::Image drawn = ImageOps::Blurred(
 		Drawn(figure, frame, rect.width, rect.height, PortraitPainter::kDetail * share), blur);
 
-	if (screen == PortraitPainter::Screen_Select)
-		FadeRightEdge(drawn);
-
+	FadeColumns(drawn, screen);
 	ImageOps::Copy(surface, drawn, rect.x, rect.y);
 }
 

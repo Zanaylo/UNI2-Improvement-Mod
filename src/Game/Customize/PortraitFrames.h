@@ -12,6 +12,7 @@ namespace PortraitFrames
 		Frame_Menu,
 		Frame_GaugeLeft,
 		Frame_GaugeRight,
+		Frame_Network,
 		Frame_Count,
 	};
 

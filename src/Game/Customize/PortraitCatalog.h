@@ -8,7 +8,7 @@ namespace PortraitCatalog
 	enum Source
 	{
 		Source_Game,
-		Source_Wiki,
+		Source_Pack,
 	};
 
 	struct Art
@@ -26,5 +26,5 @@ namespace PortraitCatalog
 
 	const Art* Find(const std::string& id);
 	std::vector<const Art*> Of(int chara);
-	std::vector<const Art*> FromTheWiki();
+	std::vector<const Art*> FromThePack();
 }

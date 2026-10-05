@@ -61,7 +61,7 @@ const std::string& PackUrl()
 
 bool AnyMissing()
 {
-	for (const PortraitCatalog::Art* art : PortraitCatalog::FromTheWiki())
+	for (const PortraitCatalog::Art* art : PortraitCatalog::FromThePack())
 	{
 		if (!PortraitLibrary::IsReady(*art))
 			return true;

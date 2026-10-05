@@ -28,7 +28,8 @@ std::string ReadLocked(int chara)
 	GetPrivateProfileStringA(kSection, PortraitPicks::KeyOf(chara).c_str(), "", value, sizeof(value),
 		Settings::GetIniPath().c_str());
 
-	const std::string id = PortraitCatalog::Find(value) != nullptr ? value : std::string();
+	const PortraitCatalog::Art* const art = PortraitCatalog::Find(value);
+	const std::string id = art != nullptr ? art->id : std::string();
 	g_chosen[chara] = id;
 	return id;
 }
