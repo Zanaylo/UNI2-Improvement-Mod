@@ -194,6 +194,15 @@ anything that crashed.
 |---|---|---|
 | `WineSafeMode` | `-1` | `-1` is automatic: on under Wine/Proton, off on Windows. `1` forces it on, `0` forces it off. On, the mod does not touch presentation or scheduling: no fullscreen refresh change, no power throttling opt-out, no `Sleep` substitution. On Linux, set `0` to test whether one of those three is causing a problem. |
 
+## `[Portraits]`
+
+Written by the [Portraits](Portraits) tab of the Misc window, except `PackUrl`.
+
+| Key | Default | What it does |
+|---|---|---|
+| `chrNNN` | empty | The art character `NNN` wears, such as `chr000=wiki:Profile-hyde.png` or `chr004=game:talk/004_00`. Empty is the game's own. |
+| `PackUrl` | the mod's own link | Where **Download the portrait pack** fetches the pack from. A Google Drive share link works as it is. |
+
 ## `[Extras]` and `[Stages]`
 
 Written by the [Stages](Stages) window. Do not edit them by hand.

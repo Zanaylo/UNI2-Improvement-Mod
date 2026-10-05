@@ -1,8 +1,7 @@
 #include "Game/Stages/BgClear.h"
 
 #include "Core/logger.h"
-#include "Core/utils.h"
-#include "Game/Engine/GameOffsets.h"
+#include "Game/Stages/ExtraStages.h"
 #include "Game/Stages/StageLibrary.h"
 
 #include <Windows.h>
@@ -19,12 +18,11 @@ int g_stage = -1;
 
 void BgClear::Update()
 {
-	const uintptr_t address = RvaToAddress(GameOffsets::kBgPendingNumber);
+	const int number = ExtraStages::DrawnStage();
 
-	if (!IsAddressInGameModule(address))
+	if (number < 0)
 		return;
 
-	const int number = *reinterpret_cast<const int*>(address);
 	const int loaded = StageLibrary::IdForSlot(number);
 	const int stage = loaded < 0 ? number : loaded;
 

@@ -476,19 +476,26 @@ int PatEdit::NextAtlasId(const Layout& layout)
 	return highest + 1;
 }
 
-bool PatEdit::DecodeAtlas(const std::vector<uint8_t>& pat, const Atlas& atlas, DdsImage::Image& out)
+bool PatEdit::AtlasBytes(const std::vector<uint8_t>& pat, const Atlas& atlas, std::vector<uint8_t>& out)
 {
-	if (!atlas.packed)
+	if (atlas.packed)
 	{
-		const std::vector<uint8_t> dds(pat.begin() + atlas.payload,
-			pat.begin() + atlas.payload + atlas.payloadBytes);
-		return DdsImage::Decode(dds, out);
+		Unpack(pat, atlas, out);
+		return !out.empty();
 	}
 
-	std::vector<uint8_t> dds;
-	Unpack(pat, atlas, dds);
+	if (atlas.payload + atlas.payloadBytes > pat.size())
+		return false;
 
-	return DdsImage::Decode(dds, out);
+	out.assign(pat.begin() + atlas.payload, pat.begin() + atlas.payload + atlas.payloadBytes);
+	return true;
+}
+
+bool PatEdit::DecodeAtlas(const std::vector<uint8_t>& pat, const Atlas& atlas, DdsImage::Image& out)
+{
+	std::vector<uint8_t> dds;
+
+	return AtlasBytes(pat, atlas, dds) && DdsImage::Decode(dds, out);
 }
 
 ImageOps::Rect PatEdit::PartRect(const Part& part, int atlasWidth, int atlasHeight)

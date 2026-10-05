@@ -28,6 +28,8 @@ namespace ExtraStages
 	bool HiddenFromRandom(int number);
 
 	int LoadedStage();
+	int PendingStage();
+	int DrawnStage();
 
 	bool Ready();
 	const char* StatusText();

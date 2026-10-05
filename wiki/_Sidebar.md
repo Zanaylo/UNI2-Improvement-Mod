@@ -20,6 +20,7 @@
 [Voices and sound](Voices-and-sound)
 [BGM selector](BGM-selector)
 [Player Card](Player-Card)
+[Portraits](Portraits)
 [Shaders](Shaders)
 [Stages](Stages)
 [Stage models](Stage-models)

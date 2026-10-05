@@ -2,14 +2,14 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstring>
-#include <sstream>
 
 namespace {
 
 constexpr const char* kMarker = "_chr";
+constexpr const char* kKey = "chr%03d";
 constexpr size_t kDigits = 3;
-constexpr const char* kNone = "-";
 
 bool Digits(const std::string& text, size_t at)
 {
@@ -36,38 +36,9 @@ int PortraitPicks::CharaOf(const std::string& key)
 	return Digits(leaf, at) ? std::stoi(leaf.substr(at, kDigits)) : -1;
 }
 
-std::vector<int> PortraitPicks::Parse(const std::string& text)
+std::string PortraitPicks::KeyOf(int chara)
 {
-	std::vector<int> out;
-	std::istringstream stream(text);
-	std::string item;
-
-	while (std::getline(stream, item, ','))
-	{
-		if (item.empty() || !std::all_of(item.begin(), item.end(),
-			[](char letter) { return isdigit(static_cast<unsigned char>(letter)) != 0; }))
-			continue;
-
-		const int chara = std::stoi(item);
-
-		if (std::find(out.begin(), out.end(), chara) == out.end())
-			out.push_back(chara);
-	}
-
-	return out;
-}
-
-std::string PortraitPicks::Joined(std::vector<int> charas)
-{
-	if (charas.empty())
-		return kNone;
-
-	std::sort(charas.begin(), charas.end());
-
-	std::string out;
-
-	for (int chara : charas)
-		out += (out.empty() ? "" : ",") + std::to_string(chara);
-
-	return out;
+	char key[16] = {};
+	snprintf(key, sizeof(key), kKey, chara);
+	return key;
 }

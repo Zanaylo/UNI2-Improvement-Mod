@@ -72,6 +72,7 @@ namespace PatEdit
 	int NextPartId(const Layout& layout);
 	int NextAtlasId(const Layout& layout);
 
+	bool AtlasBytes(const std::vector<uint8_t>& pat, const Atlas& atlas, std::vector<uint8_t>& out);
 	bool DecodeAtlas(const std::vector<uint8_t>& pat, const Atlas& atlas, DdsImage::Image& out);
 
 	ImageOps::Rect PartRect(const Part& part, int atlasWidth, int atlasHeight);

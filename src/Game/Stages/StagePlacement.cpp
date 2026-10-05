@@ -4,7 +4,6 @@
 #include "Core/utils.h"
 #include "Game/Stages/BgCeiling.h"
 #include "Game/Stages/ExtraStages.h"
-#include "Game/Engine/GameOffsets.h"
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StageSettings.h"
 
@@ -163,50 +162,54 @@ bool Recall(int stage, StagePlacement::Place& out)
 	return (read == kPlacementFloats || read == kFloats) && Sane(out);
 }
 
-}
-
-void StagePlacement::Update()
+bool Apply(int stage)
 {
-	ForgetMovedSlots();
-
-	const uintptr_t pending = RvaToAddress(GameOffsets::kBgPendingNumber);
-
-	if (!IsAddressInGameModule(pending))
-		return;
-
-	const int stage = *reinterpret_cast<const int*>(pending);
-
-	if (stage < 0 || stage >= BgCeiling::Numbers())
-		return;
+	if (stage < 0)
+		return false;
 
 	const uintptr_t record = ExtraStages::RecordAt(stage);
 
 	if (record == 0)
-		return;
+		return false;
 
 	if (g_shipped.find(stage) == g_shipped.end())
 	{
 		g_unknown.clear();
 
 		if (!Learn(stage))
-			return;
+			return false;
 
-		Place stored = {};
+		StagePlacement::Place stored = {};
 
 		if (Recall(stage, stored))
 			g_edited[stage] = stored;
 	}
 
-	if (stage != g_stage)
-	{
-		g_stage = stage;
-		Describe(stage);
-	}
-
-	const std::map<int, Place>::const_iterator edit = g_edited.find(stage);
+	const std::map<int, StagePlacement::Place>::const_iterator edit = g_edited.find(stage);
 
 	if (edit != g_edited.end())
 		Write(record, edit->second);
+
+	return true;
+}
+
+}
+
+void StagePlacement::Update()
+{
+	ForgetMovedSlots();
+
+	const int pending = ExtraStages::PendingStage();
+	const int drawn = ExtraStages::DrawnStage();
+
+	if (pending != drawn)
+		Apply(pending);
+
+	if (!Apply(drawn) || drawn == g_stage)
+		return;
+
+	g_stage = drawn;
+	Describe(drawn);
 }
 
 int StagePlacement::Current()

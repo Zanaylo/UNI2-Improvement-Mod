@@ -31,7 +31,8 @@
 #include "Game/Engine/HitboxData.h"
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Engine/SceneWatch.h"
-#include "Game/Customize/PortraitImport.h"
+#include "Game/Customize/PortraitCompose.h"
+#include "Game/Customize/PortraitDownload.h"
 #include "Game/Files/DataSearchPath.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Lobby/NameCensor.h"
@@ -200,7 +201,8 @@ const Task kFrame[] = {
 	[] { StageCards::OnFrame(); },
 	[] { VoiceImport::Update(); },
 	[] { AnnouncerImport::Update(); },
-	[] { PortraitImport::Update(); },
+	[] { PortraitCompose::Update(); },
+	[] { PortraitDownload::Update(); },
 	[] { SoundpackTransfer::Update(); },
 	[] { if (UserMusic::ConsumeChanged()) MusicRefresh::Reindex(); },
 	[] { CharaSounds::Update(); },

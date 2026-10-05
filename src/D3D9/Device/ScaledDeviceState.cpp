@@ -3,6 +3,7 @@
 #include "Core/logger.h"
 #include "D3D9/Device/GameCaller.h"
 #include "D3D9/Device/ScaledTargets.h"
+#include "D3D9/Device/StageDetail.h"
 #include "D3D9/Draw/DrawTrace.h"
 #include "Hooks/GameHook.h"
 
@@ -101,7 +102,13 @@ HRESULT STDMETHODCALLTYPE HookedStretchRect(IDirect3DDevice9* device, IDirect3DS
 
 	DrawTrace::OnStretchRect(source, scaledSource, destination, scaledDestination);
 
-	return g_stretchRectHook.Original()(device, source, scaledSource, destination, scaledDestination, filter);
+	const HRESULT result = g_stretchRectHook.Original()(device, source, scaledSource, destination,
+		scaledDestination, filter);
+
+	if (SUCCEEDED(result) && ScaledTargets::IsScaled(source) && ScaledTargets::IsScaled(destination))
+		StageDetail::OnStageResolved();
+
+	return result;
 }
 
 HRESULT STDMETHODCALLTYPE HookedColorFill(IDirect3DDevice9* device, IDirect3DSurface9* surface,

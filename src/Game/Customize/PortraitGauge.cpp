@@ -1,4 +1,5 @@
-#include "Game/Customize/PortraitArt.h"
+#include "Game/Customize/PortraitPainter.h"
+#include "Game/Customize/PortraitPlacement.h"
 
 #include "Core/Formats/ImageOps.h"
 
@@ -9,15 +10,17 @@
 namespace {
 
 constexpr int kGaugeSide = 256;
-constexpr int kTheirArtRows = 144;
-constexpr int kRegions[2][2] = { { 0, 112 }, { 112, PortraitArt::kGaugeTextRow } };
+constexpr int kGaugeTextRow = 221;
+constexpr int kRegionCount = 2;
+constexpr int kRegions[kRegionCount][2] = { { 0, 112 }, { 112, kGaugeTextRow } };
+constexpr PortraitFrames::Frame kRegionFrames[kRegionCount] = { PortraitFrames::Frame_GaugeLeft,
+	PortraitFrames::Frame_GaugeRight };
 constexpr int kOpaqueEnough = 250;
 constexpr int kColourSlack = 8;
 constexpr int kFewestSamples = 64;
 constexpr int kChannels = 4;
 constexpr int kAlpha = 3;
 constexpr double kFull = 255.0;
-constexpr double kZoom = 1.3;
 
 struct Backdrop
 {
@@ -187,79 +190,6 @@ double BackdropAlpha(const Backdrop& backdrop, int x, int y)
 	return std::clamp(backdrop.base + backdrop.perX * x + backdrop.perY * y, 0.0, kFull) / kFull;
 }
 
-struct Centre
-{
-	double x;
-	double y;
-	bool found;
-};
-
-Centre OpaqueCentre(const DdsImage::Image& image, const Box& box)
-{
-	double x = 0.0;
-	double y = 0.0;
-	double count = 0.0;
-
-	for (int row = box.top; row < box.bottom; ++row)
-	{
-		for (int column = box.left; column < box.right; ++column)
-		{
-			if (PixelAt(image, column, row)[kAlpha] < kOpaqueEnough)
-				continue;
-
-			x += column;
-			y += row;
-			count += 1.0;
-		}
-	}
-
-	return count > 0.0 ? Centre{ x / count, y / count, true } : Centre{ 0.0, 0.0, false };
-}
-
-struct Placed
-{
-	DdsImage::Image art;
-	int left;
-	int top;
-};
-
-Placed ArtFor(const DdsImage::Image& theirs, const DdsImage::Image& ours, const Box& box)
-{
-	const DdsImage::Image crop = ImageOps::Crop(theirs, ImageOps::Rect{ 0, 0, theirs.width, kTheirArtRows });
-	const int width = box.right - box.left;
-	const int height = box.bottom - box.top;
-	const double scale = (std::max)(static_cast<double>(width) / crop.width,
-		static_cast<double>(height) / crop.height) * kZoom;
-
-	Placed placed;
-	placed.art = ImageOps::Resized(crop, static_cast<int>(crop.width * scale + 0.5),
-		static_cast<int>(crop.height * scale + 0.5));
-
-	const Centre theirsCentre = OpaqueCentre(crop, Box{ 0, 0, crop.width, crop.height });
-	const Centre oursCentre = OpaqueCentre(ours, box);
-	const double anchorX = oursCentre.found ? oursCentre.x : box.left + width * 0.5;
-	const double anchorY = oursCentre.found ? oursCentre.y : box.top + height * 0.5;
-	const double fromX = theirsCentre.found ? theirsCentre.x * scale : placed.art.width * 0.5;
-	const double fromY = theirsCentre.found ? theirsCentre.y * scale : placed.art.height * 0.5;
-
-	placed.left = std::clamp(static_cast<int>(anchorX - fromX), box.right - placed.art.width, box.left);
-	placed.top = std::clamp(static_cast<int>(anchorY - fromY), box.bottom - placed.art.height, box.top);
-
-	return placed;
-}
-
-const uint8_t* ArtPixel(const Placed& placed, int x, int y)
-{
-	static const uint8_t kClear[kChannels] = {};
-	const int column = x - placed.left;
-	const int row = y - placed.top;
-
-	if (column < 0 || row < 0 || column >= placed.art.width || row >= placed.art.height)
-		return kClear;
-
-	return PixelAt(placed.art, column, row);
-}
-
 void Compose(const uint8_t* front, const Backdrop& backdrop, double backAlpha, uint8_t* out)
 {
 	const double frontAlpha = front[kAlpha] / kFull;
@@ -280,15 +210,13 @@ void Compose(const uint8_t* front, const Backdrop& backdrop, double backAlpha, u
 	out[kAlpha] = static_cast<uint8_t>(std::clamp(alpha * kFull + 0.5, 0.0, kFull));
 }
 
-void PaintRegion(const DdsImage::Image& theirs, const DdsImage::Image& ours, int top, int bottom,
-	DdsImage::Image& out)
+void PaintRegion(const DdsImage::Image& ours, const DdsImage::Image& art, int top, int bottom, DdsImage::Image& out)
 {
 	Box box = {};
 
 	if (!BoundsOf(ours, top, bottom, box))
 		return;
 
-	const Placed placed = ArtFor(theirs, ours, box);
 	const Backdrop backdrop = BackdropOf(ours, box);
 
 	for (int y = box.top; y < box.bottom; ++y)
@@ -298,23 +226,36 @@ void PaintRegion(const DdsImage::Image& theirs, const DdsImage::Image& ours, int
 			if (PixelAt(ours, x, y)[kAlpha] == 0)
 				continue;
 
-			Compose(ArtPixel(placed, x, y), backdrop, BackdropAlpha(backdrop, x, y),
-				PixelAt(out, x, y));
+			Compose(PixelAt(art, x, y), backdrop, BackdropAlpha(backdrop, x, y), PixelAt(out, x, y));
 		}
 	}
 }
 
+DdsImage::Image ArtLayer(const PortraitPainter::Figure& figure, PortraitFrames::Frame frame, int width, int height)
+{
+	const ImageOps::Affine place = PortraitPlacement::Place(*figure.entry, figure.art->width, figure.frames->baseWidth,
+		figure.frames->frames[frame], 1.0);
+
+	return ImageOps::Mapped(*figure.art, width, height, place);
 }
 
-bool PortraitArt::RepaintGauge(const DdsImage::Image& theirs, const DdsImage::Image& ours, DdsImage::Image& out)
+}
+
+bool PortraitPainter::RepaintGauge(const DdsImage::Image& ours, const Figure& figure, DdsImage::Image& out)
 {
-	if (ours.width != kGaugeSide || ours.height != kGaugeSide || theirs.width <= 0 || theirs.height < kTheirArtRows)
+	if (ours.width != kGaugeSide || ours.height != kGaugeSide || figure.art == nullptr || figure.art->width <= 0 ||
+		figure.entry == nullptr || figure.frames == nullptr)
+	{
 		return false;
+	}
 
 	out = ours;
 
-	for (const int* region : kRegions)
-		PaintRegion(theirs, ours, region[0], region[1], out);
+	for (int region = 0; region < kRegionCount; ++region)
+	{
+		const DdsImage::Image art = ArtLayer(figure, kRegionFrames[region], ours.width, ours.height);
+		PaintRegion(ours, art, kRegions[region][0], kRegions[region][1], out);
+	}
 
 	return true;
 }

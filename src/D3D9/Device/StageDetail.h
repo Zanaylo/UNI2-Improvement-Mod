@@ -26,6 +26,7 @@ namespace StageDetail
 	IDirect3DTexture9* Detailed();
 	IDirect3DTexture9* Snapshot();
 
+	void OnStageResolved();
 	void OnPresent();
 	void OnDeviceLost();
 	bool HoldsDeviceResources();

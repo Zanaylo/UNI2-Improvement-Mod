@@ -318,7 +318,8 @@ void MainWindow::DrawMiscSection()
 	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close misc" : "Open misc"))
 		window->Toggle();
 
-	ImGui::TextWrapped("The old portraits of UNI[st] and the MELTY BLOOD TYPE LUMINA announcers.");
+	ImGui::TextWrapped("Another art for each character on every screen, and the MELTY BLOOD TYPE LUMINA "
+		"announcers.");
 }
 
 void MainWindow::DrawModsSection()

@@ -11,6 +11,7 @@
 namespace {
 
 bool g_reached = false;
+bool g_holding = false;
 
 uint32_t g_lastValidatedObject = 0;
 
@@ -58,6 +59,21 @@ void Write(uint32_t view)
 		g_reached = true;
 }
 
+void Hold()
+{
+	Write(GameOffsets::kCockpitViewHidden);
+	g_holding = true;
+}
+
+void Release()
+{
+	if (!g_holding)
+		return;
+
+	g_holding = false;
+	Write(GameOffsets::kCockpitViewShown);
+}
+
 }
 
 bool BattleCockpit::IsHidden()
@@ -72,7 +88,7 @@ void BattleCockpit::SetHidden(bool hidden, bool persist)
 	if (persist)
 		Settings::SaveInt("Training", "HideHud", g_modVals.hideBattleHud);
 
-	Write(hidden ? GameOffsets::kCockpitViewHidden : GameOffsets::kCockpitViewShown);
+	Update();
 }
 
 bool BattleCockpit::Reached()
@@ -82,11 +98,11 @@ bool BattleCockpit::Reached()
 
 void BattleCockpit::Update()
 {
-	if (!IsHidden())
+	if (IsHidden() && GameState::AllowsTrainingTools())
+	{
+		Hold();
 		return;
+	}
 
-	if (!GameState::IsInMatch())
-		return;
-
-	Write(GameOffsets::kCockpitViewHidden);
+	Release();
 }

@@ -69,12 +69,12 @@ uint8_t Restore(uint8_t filter, int raw, int left, int above, int corner)
 	return static_cast<uint8_t>(raw);
 }
 
-bool Unfilter(const std::vector<uint8_t>& raw, int width, int height, int channels,
+bool Unfilter(const uint8_t* raw, size_t rawSize, int width, int height, int channels,
 	std::vector<uint8_t>& out)
 {
 	const size_t stride = static_cast<size_t>(width) * channels;
 
-	if (stride == 0 || raw.size() < (stride + 1) * static_cast<size_t>(height))
+	if (stride == 0 || rawSize < (stride + 1) * static_cast<size_t>(height))
 		return false;
 
 	out.assign(stride * height, 0);
@@ -99,6 +99,87 @@ bool Unfilter(const std::vector<uint8_t>& raw, int width, int height, int channe
 
 			line[i] = Restore(filter, in[i], left, above, corner);
 		}
+	}
+
+	return true;
+}
+
+struct Pass
+{
+	int x;
+	int y;
+	int stepX;
+	int stepY;
+};
+
+constexpr Pass kAdam7[] = {
+	{ 0, 0, 8, 8 }, { 4, 0, 8, 8 }, { 0, 4, 4, 8 }, { 2, 0, 4, 4 }, { 0, 2, 2, 4 }, { 1, 0, 2, 2 }, { 0, 1, 1, 2 },
+};
+
+int PassSize(int size, int start, int step)
+{
+	return size > start ? (size - start + step - 1) / step : 0;
+}
+
+size_t PassBytes(const Pass& pass, int width, int height, int channels)
+{
+	const int columns = PassSize(width, pass.x, pass.stepX);
+	const int rows = PassSize(height, pass.y, pass.stepY);
+
+	if (columns == 0 || rows == 0)
+		return 0;
+
+	return (static_cast<size_t>(columns) * channels + 1) * rows;
+}
+
+size_t InterlacedBytes(int width, int height, int channels)
+{
+	size_t total = 0;
+
+	for (const Pass& pass : kAdam7)
+		total += PassBytes(pass, width, height, channels);
+
+	return total;
+}
+
+void Scatter(const std::vector<uint8_t>& lines, const Pass& pass, int width, int height, int channels,
+	std::vector<uint8_t>& out)
+{
+	const int columns = PassSize(width, pass.x, pass.stepX);
+	const int rows = PassSize(height, pass.y, pass.stepY);
+
+	for (int row = 0; row < rows; ++row)
+	{
+		for (int column = 0; column < columns; ++column)
+		{
+			const size_t to = (static_cast<size_t>(pass.y + row * pass.stepY) * width + pass.x + column * pass.stepX) * channels;
+			memcpy(&out[to], &lines[(static_cast<size_t>(row) * columns + column) * channels], static_cast<size_t>(channels));
+		}
+	}
+}
+
+bool Deinterlace(const std::vector<uint8_t>& raw, int width, int height, int channels, std::vector<uint8_t>& out)
+{
+	out.assign(static_cast<size_t>(width) * height * channels, 0);
+	size_t at = 0;
+
+	for (const Pass& pass : kAdam7)
+	{
+		const size_t bytes = PassBytes(pass, width, height, channels);
+
+		if (bytes == 0)
+			continue;
+
+		std::vector<uint8_t> lines;
+
+		if (at + bytes > raw.size() || !Unfilter(&raw[at], bytes, PassSize(width, pass.x, pass.stepX),
+			PassSize(height, pass.y, pass.stepY), channels, lines))
+		{
+			return false;
+		}
+
+		Scatter(lines, pass, width, height, channels, out);
+		at += bytes;
 	}
 
 	return true;
@@ -203,6 +284,7 @@ struct Raster
 	int height = 0;
 	int colour = -1;
 	int channels = 0;
+	bool interlaced = false;
 };
 
 bool Parse(const std::vector<uint8_t>& blob, Raster& out)
@@ -231,8 +313,10 @@ bool Parse(const std::vector<uint8_t>& blob, Raster& out)
 
 		if (memcmp(tag, "IHDR", 4) == 0)
 		{
-			if (length < kHeaderBody || blob[body + 8] != 8 || blob[body + 12] != 0)
+			if (length < kHeaderBody || blob[body + 8] != 8 || blob[body + 12] > 1)
 				return false;
+
+			out.interlaced = blob[body + 12] == 1;
 
 			out.width = static_cast<int>(Big32(blob, body));
 			out.height = static_cast<int>(Big32(blob, body + 4));
@@ -259,13 +343,17 @@ bool Parse(const std::vector<uint8_t>& blob, Raster& out)
 	if (out.width <= 0 || out.height <= 0 || out.channels == 0 || stream.size() <= kZlibHeader)
 		return false;
 
-	const size_t expected = (static_cast<size_t>(out.width) * out.channels + 1) * out.height;
+	const size_t expected = out.interlaced ? InterlacedBytes(out.width, out.height, out.channels)
+		: (static_cast<size_t>(out.width) * out.channels + 1) * out.height;
 	std::vector<uint8_t> raw;
 
 	if (!Deflate::Inflate(stream.data() + kZlibHeader, stream.size() - kZlibHeader, raw, expected))
 		return false;
 
-	return Unfilter(raw, out.width, out.height, out.channels, out.lines);
+	if (out.interlaced)
+		return Deinterlace(raw, out.width, out.height, out.channels, out.lines);
+
+	return Unfilter(raw.data(), raw.size(), out.width, out.height, out.channels, out.lines);
 }
 
 }

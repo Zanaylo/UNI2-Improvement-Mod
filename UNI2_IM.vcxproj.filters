@@ -210,10 +210,31 @@
     <ClCompile Include="src\Game\Stages\Mbaa\MbaaBg.cpp">
       <Filter>Game\Stages\Mbaa</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\Customize\PortraitImport.cpp">
+    <ClCompile Include="src\Game\Customize\PortraitCatalog.cpp">
       <Filter>Game\Customize</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\Customize\PortraitArt.cpp">
+    <ClCompile Include="src\Game\Customize\PortraitFrames.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitPlacement.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitPainter.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitLibrary.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitDownload.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitChoices.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitCompose.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitStyles.cpp">
       <Filter>Game\Customize</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\BackgroundJob.cpp">
@@ -325,6 +346,9 @@
       <Filter>Overlay\Panels</Filter>
     </ClCompile>
     <ClCompile Include="src\Web\Http.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Web\ShareLink.cpp">
       <Filter>Web</Filter>
     </ClCompile>
     <ClCompile Include="src\Web\Job.cpp">
@@ -1532,10 +1556,37 @@
     <ClInclude Include="src\Game\Stages\Mbaa\MbaaBg.h">
       <Filter>Game\Stages\Mbaa</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Customize\PortraitImport.h">
+    <ClInclude Include="src\Game\Customize\PortraitCatalog.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Customize\PortraitArt.h">
+    <ClInclude Include="src\Game\Customize\PortraitCatalog.inc">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitFrames.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitFrames.inc">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitPlacement.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitPainter.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitLibrary.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitDownload.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitChoices.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitCompose.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitStyles.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\BackgroundJob.h">
@@ -1689,6 +1740,9 @@
       <Filter>Overlay\Panels</Filter>
     </ClInclude>
     <ClInclude Include="src\Web\Http.h">
+      <Filter>Web</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Web\ShareLink.h">
       <Filter>Web</Filter>
     </ClInclude>
     <ClInclude Include="src\Web\Job.h">

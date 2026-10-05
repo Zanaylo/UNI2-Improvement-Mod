@@ -23,6 +23,7 @@ Training and quality-of-life mod for **UNDER NIGHT IN-BIRTH II Sys:Celes**.
 - [Voices and sound](Voices-and-sound): swap a character's voice, or take one from UNI
 - [BGM selector](BGM-selector)
 - [Player Card](Player-Card)
+- [Portraits](Portraits): another art for each character on select, versus, the gauge and the winner screen
 - [Shaders](Shaders)
 - [Stages](Stages): the two hidden stages, and ports from MBTL and UNI
 

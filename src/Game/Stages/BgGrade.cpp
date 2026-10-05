@@ -7,8 +7,8 @@
 #include "Game/Stages/Bbtag/BbtagStage.h"
 #include "Game/Stages/BgShaderText.h"
 #include "Game/Stages/BgVertexProbe.h"
+#include "Game/Stages/ExtraStages.h"
 #include "Game/Files/FbGameFolder.h"
-#include "Game/Engine/GameOffsets.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StageKick.h"
@@ -836,12 +836,11 @@ void BgGrade::Update()
 	Flips();
 	Assert();
 
-	const uintptr_t address = RvaToAddress(GameOffsets::kBgPendingNumber);
+	const int number = ExtraStages::DrawnStage();
 
-	if (!IsAddressInGameModule(address))
+	if (number < 0)
 		return;
 
-	const int number = *reinterpret_cast<const int*>(address);
 	const int loaded = StageLibrary::IdForSlot(number);
 	const int stage = loaded < 0 ? number : loaded;
 	const int held = g_stage;
@@ -852,7 +851,7 @@ void BgGrade::Update()
 
 	if (stage != g_stage)
 	{
-		LOG("BgGrade: the stage the game is holding changed to %d", number);
+		LOG("BgGrade: the stage the game draws changed to %d", number);
 		g_cache.erase(stage);
 	}
 

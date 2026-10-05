@@ -64,6 +64,53 @@ Taps TapsFor(int from, int to)
 	return to < from ? Shrinking(from, to) : Growing(from, to);
 }
 
+std::vector<Tap> Covered(int from, double begin, double end)
+{
+	std::vector<Tap> out;
+	const double span = end - begin;
+	const int last = std::min(from, static_cast<int>(std::ceil(end)));
+
+	for (int source = std::max(0, static_cast<int>(std::floor(begin))); source < last; ++source)
+	{
+		const double covered = std::min(end, source + 1.0) - std::max(begin, static_cast<double>(source));
+
+		if (covered > 0.0)
+			out.push_back(Tap{ source, static_cast<float>(covered / span) });
+	}
+
+	return out;
+}
+
+std::vector<Tap> Sampled(int from, double centre)
+{
+	if (centre < 0.0 || centre >= from)
+		return std::vector<Tap>();
+
+	const double sample = centre - 0.5;
+	const int left = static_cast<int>(std::floor(sample));
+	const float right = static_cast<float>(sample - left);
+
+	return std::vector<Tap>{ Tap{ std::clamp(left, 0, from - 1), 1.0f - right },
+		Tap{ std::clamp(left + 1, 0, from - 1), right } };
+}
+
+Taps Placed(int from, int to, double scale, double offset)
+{
+	Taps taps(static_cast<size_t>(to));
+
+	for (int target = 0; target < to; ++target)
+	{
+		const double one = (target - offset) / scale;
+		const double other = (target + 1.0 - offset) / scale;
+		const double begin = std::min(one, other);
+		const double end = std::max(one, other);
+
+		taps[static_cast<size_t>(target)] = end - begin > 1.0 ? Covered(from, begin, end) : Sampled(from, (begin + end) * 0.5);
+	}
+
+	return taps;
+}
+
 std::vector<float> Premultiplied(const ImageOps::Image& source)
 {
 	std::vector<float> out(source.pixels.size());
@@ -306,6 +353,53 @@ ImageOps::Image ImageOps::Contained(const Image& source, int width, int height, 
 	return out;
 }
 
+ImageOps::Image ImageOps::Mapped(const Image& source, int width, int height, const Affine& place)
+{
+	Image out = Blank(std::max(width, 0), std::max(height, 0));
+
+	if (out.pixels.empty() || source.width <= 0 || source.height <= 0 || place.scaleX == 0.0 || place.scaleY == 0.0)
+		return out;
+
+	const Taps across = Placed(source.width, width, place.scaleX, place.x);
+	const Taps down = Placed(source.height, height, place.scaleY, place.y);
+
+	for (int y = 0; y < height; ++y)
+	{
+		const std::vector<Tap>& rows = down[static_cast<size_t>(y)];
+
+		if (rows.empty())
+			continue;
+
+		for (int x = 0; x < width; ++x)
+		{
+			const std::vector<Tap>& columns = across[static_cast<size_t>(x)];
+
+			if (columns.empty())
+				continue;
+
+			float sum[kChannels] = {};
+
+			for (const Tap& row : rows)
+			{
+				for (const Tap& column : columns)
+				{
+					const uint8_t* const in = PixelAt(source, column.index, row.index);
+					const float alpha = in[kAlpha] * row.weight * column.weight;
+
+					for (int c = 0; c < kAlpha; ++c)
+						sum[c] += in[c] * alpha / kOpaque;
+
+					sum[kAlpha] += alpha;
+				}
+			}
+
+			Store(sum, PixelAt(out, x, y));
+		}
+	}
+
+	return out;
+}
+
 void ImageOps::Copy(Image& target, const Image& source, int x, int y)
 {
 	for (int row = 0; row < source.height; ++row)
@@ -539,4 +633,48 @@ float ImageOps::OpaqueCentreX(const Image& image, int firstRow, int rowCount, ui
 	}
 
 	return count > 0.0 ? static_cast<float>(sum / count) : image.width * 0.5f;
+}
+
+ImageOps::Image ImageOps::Blurred(const Image& source, int radius)
+{
+	if (radius <= 0 || source.width <= 0 || source.height <= 0)
+		return source;
+
+	const std::vector<float> premultiplied = Premultiplied(source);
+	const float window = static_cast<float>(radius * 2 + 1);
+	std::vector<float> rows(premultiplied.size(), 0.0f);
+
+	for (int y = 0; y < source.height; ++y)
+	{
+		for (int x = 0; x < source.width; ++x)
+		{
+			float* const sum = &rows[(static_cast<size_t>(y) * source.width + x) * kChannels];
+
+			for (int at = std::max(0, x - radius); at <= std::min(source.width - 1, x + radius); ++at)
+			{
+				for (size_t c = 0; c < kChannels; ++c)
+					sum[c] += premultiplied[(static_cast<size_t>(y) * source.width + at) * kChannels + c] / window;
+			}
+		}
+	}
+
+	Image out = Blank(source.width, source.height);
+
+	for (int y = 0; y < source.height; ++y)
+	{
+		for (int x = 0; x < source.width; ++x)
+		{
+			float sum[kChannels] = {};
+
+			for (int at = std::max(0, y - radius); at <= std::min(source.height - 1, y + radius); ++at)
+			{
+				for (size_t c = 0; c < kChannels; ++c)
+					sum[c] += rows[(static_cast<size_t>(at) * source.width + x) * kChannels + c] / window;
+			}
+
+			Store(sum, PixelAt(out, x, y));
+		}
+	}
+
+	return out;
 }

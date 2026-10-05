@@ -13,6 +13,7 @@ constexpr D3DCOLOR kOpaqueBlack = 0xff000000;
 ScratchTarget g_detailed;
 ScratchTarget g_snapshot;
 bool g_ready = false;
+bool g_stageResolved = false;
 bool g_announced = false;
 
 class BoundTarget
@@ -58,8 +59,8 @@ bool IsSceneLayer(IDirect3DSurface9* surface, D3DSURFACE_DESC& outDesc)
 
 bool IsStageComposite(IDirect3DDevice9* device)
 {
-	return ScaledTargets::IsActive() && PretransformedDraws::IsScreenSpace() && !ScaledTargets::BoundIsScaled() &&
-		SamplesScaledTarget(device);
+	return g_stageResolved && ScaledTargets::IsActive() && PretransformedDraws::IsScreenSpace() &&
+		!ScaledTargets::BoundIsScaled() && SamplesScaledTarget(device);
 }
 
 bool AddsDetail(IDirect3DDevice9* device)
@@ -164,14 +165,21 @@ IDirect3DTexture9* StageDetail::Snapshot()
 	return g_snapshot.Texture();
 }
 
+void StageDetail::OnStageResolved()
+{
+	g_stageResolved = true;
+}
+
 void StageDetail::OnPresent()
 {
 	g_ready = false;
+	g_stageResolved = false;
 }
 
 void StageDetail::OnDeviceLost()
 {
 	g_ready = false;
+	g_stageResolved = false;
 	g_detailed.Release();
 	g_snapshot.Release();
 }

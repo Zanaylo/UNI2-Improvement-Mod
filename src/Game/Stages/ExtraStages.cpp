@@ -257,6 +257,23 @@ void Settle()
 	}
 }
 
+int StageNumberAt(uintptr_t rva)
+{
+	const uintptr_t address = RvaToAddress(rva);
+
+	if (!IsAddressInGameModule(address))
+		return -1;
+
+	uint32_t value = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(address), value))
+		return -1;
+
+	const int stage = static_cast<int>(value);
+
+	return stage >= 0 && stage < BgCeiling::Numbers() ? stage : -1;
+}
+
 }
 
 void ExtraStages::OnFrame()
@@ -330,19 +347,19 @@ uintptr_t ExtraStages::RecordAt(int number)
 
 int ExtraStages::LoadedStage()
 {
-	const uintptr_t address = RvaToAddress(GameOffsets::kBgLoadedIndex);
+	return StageNumberAt(GameOffsets::kBgLoadedIndex);
+}
 
-	if (!IsAddressInGameModule(address))
-		return -1;
+int ExtraStages::PendingStage()
+{
+	return StageNumberAt(GameOffsets::kBgPendingNumber);
+}
 
-	uint32_t value = 0;
+int ExtraStages::DrawnStage()
+{
+	const int loaded = LoadedStage();
 
-	if (!TryReadDword(reinterpret_cast<const void*>(address), value))
-		return -1;
-
-	const int stage = static_cast<int>(value);
-
-	return stage >= 0 && stage < BgCeiling::Numbers() ? stage : -1;
+	return loaded >= 0 ? loaded : PendingStage();
 }
 
 void ExtraStages::SetUnlocked(int number, bool unlocked)

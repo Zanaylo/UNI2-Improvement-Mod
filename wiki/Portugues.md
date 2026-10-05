@@ -217,6 +217,32 @@ O mod não traz nenhum áudio.
 Edita o cartão que o jogo mostra para o oponente: as quatro camadas de placa e o título. O título é
 texto livre. Qualquer frase que você escrever é salva e chega no oponente do jeito que você escreveu.
 
+### Retratos
+
+Janela **Misc**, aba **Portraits**. Troca a arte de cada personagem em todas as telas que a mostram:
+o retrato e o card do grid na seleção, a tela de VS, o rosto no gauge da luta, a tela de vitória e o
+menu principal.
+
+Cada personagem tem a sua lista. **Game's own** é a arte do jogo. As outras são a Sys:Celes da
+Gallery (com efeitos e alternativas), a Sys:Celes sem efeitos, a arte de seleção dos jogos antigos
+(UNI, Exe:Late, [st], [cl-r]), a de BBTAG, os retratos de vitória, a arte de história (**Story**) e a
+versão SD (**Chibi**). Cada arte é posicionada pelo rosto, então a cabeça cai onde a do jogo cai em
+todas as telas. Com o mouse em cima de uma lista, a roda passa para a anterior ou a próxima.
+
+A lista **Everyone** aplica o mesmo tipo de arte a todos de uma vez, com **Old Arts** para as artes
+antigas. Quem não tem aquele tipo fica com a arte do jogo: Tsurugi, Uzuki, Kaguya, Kuon, Ogre, Izumi
+e Zohar estrearam no UNI2 e não têm arte antiga. O mod pinta até quatro personagens ao mesmo tempo.
+
+A arte da Gallery vem da sua cópia do jogo. A dos jogos antigos, de BBTAG e as versões sem efeitos
+vêm da galeria do [inbirth.wiki.gg](https://inbirth.wiki.gg/wiki/Gallery), reunidas num pack de uns
+120 MB. **Download the portrait pack** baixa uma vez e guarda em `UNI2-IM\Portraits\library`. Para usar
+outro link, coloque `PackUrl=` na seção `[Portraits]` do ini; link de compartilhamento do Google Drive
+funciona direto.
+
+As telas pintadas ficam em `UNI2-IM\Portraits\screens`, no dobro da resolução do jogo, e ocupam uns
+70 MB por personagem. Uma mudança aparece na próxima vez que cada tela abre. A opção antiga "Old
+portraits", que lia a arte de uma cópia do UNI[st], foi removida.
+
 ### Seletor de BGM
 
 Janela própria, aberta em **Music**. Qualquer tela com música pode receber outra faixa: tema de

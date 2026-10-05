@@ -1,14 +1,17 @@
 #include "Core/Harness/ImportCommands.h"
 
 #include "Game/Audio/AnnouncerImport.h"
-#include "Game/Customize/PortraitImport.h"
-#include "Game/Customize/PortraitLayer.h"
-#include "Game/Customize/PortraitPicks.h"
+#include "Game/Customize/PortraitCatalog.h"
+#include "Game/Customize/PortraitChoices.h"
+#include "Game/Customize/PortraitCompose.h"
+#include "Game/Customize/PortraitDownload.h"
 
 #include <cstdio>
 #include <cstdlib>
 
 namespace {
+
+constexpr const char* kGameArt = "none";
 
 std::string Argument(const std::string& line, const std::string& verb)
 {
@@ -36,37 +39,29 @@ std::string Announcers(const std::string& line, const std::string& verb)
 	return "ok started " + folder;
 }
 
-std::string Portraits(const std::string& line, const std::string& verb)
+std::string Portrait(const std::vector<std::string>& words)
 {
-	const std::string picked = Argument(line, verb);
-	const std::string folder = picked.empty() ? PortraitImport::FindGame() : picked;
+	if (words.size() != 3)
+		return "error portrait <chara> <art id|none>";
 
-	if (!PortraitImport::Begin(folder.c_str()))
-		return "error " + PortraitImport::StatusText();
+	const int chara = atoi(words[1].c_str());
+	const std::string id = words[2] == kGameArt ? std::string() : words[2];
+	const PortraitCatalog::Art* const art = PortraitCatalog::Find(id);
 
-	return "ok started " + folder;
+	if (!id.empty() && (art == nullptr || art->chara != chara))
+		return "error no such art for that character";
+
+	PortraitCompose::Wear(chara, id);
+	return "ok " + words[1] + " " + words[2];
 }
 
-std::string PortraitArt(const std::vector<std::string>& words)
+std::string Worn(const std::vector<std::string>& words)
 {
-	if (!PortraitImport::IsInstalled())
-		return "error the old portraits are not installed";
+	if (words.size() != 2)
+		return "error portraitworn <chara>";
 
-	if (words.size() == 2)
-		PortraitLayer::WearAll(words[1] == "all");
-
-	if (words.size() == 3)
-		PortraitLayer::Wear(atoi(words[1].c_str()), words[2] == "on");
-
-	std::vector<int> worn;
-
-	for (int chara : PortraitLayer::Available())
-	{
-		if (PortraitLayer::IsWorn(chara))
-			worn.push_back(chara);
-	}
-
-	return "ok old " + PortraitPicks::Joined(worn);
+	const std::string id = PortraitChoices::Of(atoi(words[1].c_str()));
+	return "ok " + (id.empty() ? std::string(kGameArt) : id);
 }
 
 }
@@ -88,21 +83,33 @@ bool ImportCommands::Execute(const std::vector<std::string>& words, const std::s
 		return true;
 	}
 
-	if (verb == "portraits")
+	if (verb == "portrait")
 	{
-		reply = Portraits(line, verb);
+		reply = Portrait(words);
 		return true;
 	}
 
-	if (verb == "portraits?")
+	if (verb == "portrait?")
 	{
-		reply = State(PortraitImport::IsBusy(), PortraitImport::Progress(), PortraitImport::StatusText());
+		reply = State(PortraitCompose::IsBusy(), PortraitCompose::Progress(), PortraitCompose::StatusText());
 		return true;
 	}
 
-	if (verb == "portraitart")
+	if (verb == "portraitworn")
 	{
-		reply = PortraitArt(words);
+		reply = Worn(words);
+		return true;
+	}
+
+	if (verb == "portraitfetch")
+	{
+		reply = PortraitDownload::BeginAll() ? "ok started" : "error already downloading";
+		return true;
+	}
+
+	if (verb == "portraitfetch?")
+	{
+		reply = State(PortraitDownload::IsBusy(), PortraitDownload::Progress(), PortraitDownload::StatusText());
 		return true;
 	}
 
