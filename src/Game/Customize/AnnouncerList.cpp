@@ -164,13 +164,20 @@ int AnnouncerList::ShownY(int baseY, int scroll)
 	return fromTop >= 0 && fromTop <= WindowBottom() ? baseY - scroll : kHiddenY;
 }
 
-std::vector<int> AnnouncerList::FreeSaveIds(const std::string& csv, int count)
+std::vector<int> AnnouncerList::SaveIds(const std::string& csv)
 {
-	std::set<int> taken;
+	std::vector<int> ids;
 
 	for (const std::vector<std::string>& row : Rows(csv))
-		taken.insert(atoi(row[kSaveField].c_str()));
+		ids.push_back(atoi(row[kSaveField].c_str()));
 
+	return ids;
+}
+
+std::vector<int> AnnouncerList::FreeSaveIds(const std::string& csv, int count)
+{
+	const std::vector<int> listed = SaveIds(csv);
+	const std::set<int> taken(listed.begin(), listed.end());
 	std::vector<int> free;
 
 	for (int id = kSaveSlots - 1; id >= 0 && static_cast<int>(free.size()) < count; --id)

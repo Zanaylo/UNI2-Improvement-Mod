@@ -4,6 +4,7 @@
 #include "Screens/PatEdit.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <map>
@@ -13,7 +14,7 @@ namespace {
 
 constexpr const char* kSelectFace = "cselface00";
 constexpr const char* kMenuArt = "\x83\x4c\x83\x83\x83\x89\x8a\x47" "00";
-constexpr const char* kMenuThumb = "\x83\x4c\x83\x83\x83\x89\x89\x65" "00";
+constexpr const char* kMenuShadow = "\x83\x4c\x83\x83\x83\x89\x89\x65" "00";
 
 constexpr int kTemplateNumber = 100;
 constexpr const char* kVariants[] = { "", "h", "c", "l" };
@@ -41,7 +42,8 @@ constexpr uint32_t kCardYellow = 0xfffff00au;
 constexpr uint32_t kWashYellow = 0x50ffdc00u;
 constexpr float kDimmed = 0.62f;
 constexpr uint32_t kSystemTint = 0xffff8c8cu;
-constexpr float kThumbFocusY = 0.3f;
+constexpr float kMenuHeadX = 0.683f;
+constexpr float kMenuFadeShare = 0.2f;
 
 enum Kind
 {
@@ -191,6 +193,42 @@ DdsImage::Image CardFor(const AnnouncerArt::Face& face, int kind, const Template
 	return card;
 }
 
+void FadeInFrom(DdsImage::Image& image, double start, double length)
+{
+	if (start <= 0.0 || length <= 0.0)
+		return;
+
+	const int first = static_cast<int>(start);
+	const int last = std::min(image.width, static_cast<int>(std::ceil(start + length)));
+
+	for (int x = first; x < last; ++x)
+	{
+		const double share = std::clamp((x + 0.5 - start) / length, 0.0, 1.0);
+
+		for (int y = 0; y < image.height; ++y)
+		{
+			uint8_t* const alpha = &image.pixels[(static_cast<size_t>(y) * image.width + x) * 4 + 3];
+			*alpha = static_cast<uint8_t>(std::lround(*alpha * share));
+		}
+	}
+}
+
+DdsImage::Image MenuFigure(const DdsImage::Image& portrait, int width, int height)
+{
+	if (portrait.width <= 0 || portrait.height <= 0)
+		return ImageOps::Blank(width, height);
+
+	const double scale = std::max(static_cast<double>(width) / portrait.width,
+		static_cast<double>(height) / portrait.height);
+	const double head = ImageOps::OpaqueCentreX(portrait, 0, static_cast<int>(portrait.height * kHeadShare),
+		kOpaqueEnough);
+	const double left = kMenuHeadX * width - head * scale;
+
+	DdsImage::Image figure = ImageOps::Mapped(portrait, width, height, ImageOps::Affine{ scale, scale, left, 0.0 });
+	FadeInFrom(figure, left, kMenuFadeShare * width);
+	return figure;
+}
+
 std::vector<uint8_t> IconPart(int id, int kind, const AnnouncerArt::Face& face, int cell, int atlasId)
 {
 	PatEdit::Part part;
@@ -304,10 +342,10 @@ bool AnnouncerArt::Menu(const std::vector<uint8_t>& characterPat, const std::vec
 		return false;
 
 	const PatEdit::Part* const art = PatEdit::FindPartNamed(character, kMenuArt);
-	const PatEdit::Part* const thumb = PatEdit::FindPartNamed(character, kMenuThumb);
+	const PatEdit::Part* const shadow = PatEdit::FindPartNamed(character, kMenuShadow);
 	const PatEdit::Part* const systemArt = PatEdit::FindPartNamed(system, kMenuArt);
 
-	if (art == nullptr || thumb == nullptr || systemArt == nullptr || thumb->atlas != art->atlas)
+	if (art == nullptr || shadow == nullptr || systemArt == nullptr || shadow->atlas != art->atlas)
 		return false;
 
 	const PatEdit::Atlas* const target = PatEdit::FindAtlas(character, art->atlas);
@@ -318,15 +356,13 @@ bool AnnouncerArt::Menu(const std::vector<uint8_t>& characterPat, const std::vec
 		return false;
 
 	const ImageOps::Rect artRect = PatEdit::PartRect(*art, canvas.width, canvas.height);
-	const ImageOps::Rect thumbRect = PatEdit::PartRect(*thumb, canvas.width, canvas.height);
+	const ImageOps::Rect shadowRect = PatEdit::PartRect(*shadow, canvas.width, canvas.height);
 
 	ImageOps::Fill(canvas, artRect, kTransparent);
-	ImageOps::Fill(canvas, thumbRect, kTransparent);
+	ImageOps::Fill(canvas, shadowRect, kTransparent);
 
-	ImageOps::Over(canvas, ImageOps::Covering(portrait, artRect.width, artRect.height, 0.5f, 0.0f),
-		artRect.x, artRect.y);
-	ImageOps::Over(canvas, ImageOps::Covering(portrait, thumbRect.width, thumbRect.height, 0.5f,
-		kThumbFocusY), thumbRect.x, thumbRect.y);
+	ImageOps::Over(canvas, MenuFigure(portrait, artRect.width, artRect.height), artRect.x, artRect.y);
+	ImageOps::Over(canvas, MenuFigure(portrait, shadowRect.width, shadowRect.height), shadowRect.x, shadowRect.y);
 
 	PatEdit::Additions additions;
 	additions.replacedAtlases[target->id] = PatEdit::AtlasBlock(target->id, target->name, canvas);

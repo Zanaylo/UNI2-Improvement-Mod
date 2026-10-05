@@ -31,6 +31,7 @@
 #include "Game/Engine/HitboxData.h"
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Engine/SceneWatch.h"
+#include "Game/Customize/AnnouncerKeep.h"
 #include "Game/Customize/PortraitCompose.h"
 #include "Game/Customize/PortraitDownload.h"
 #include "Game/Files/DataSearchPath.h"
@@ -159,6 +160,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: name censor", [] { NameCensor::Install(); } },
 	{ "game hooks: room name censor", [] { RoomNameCensor::Install(); } },
 	{ "game hooks: ir hider", [] { IrHider::Install(); } },
+	{ "game hooks: announcer keep", [] { AnnouncerKeep::Install(); } },
 	{ "game hooks: room stage", [] { RoomStage::Install(); } },
 	{ "game hooks: random stage", [] { RandomStage::Install(); } },
 	{ "game hooks: subtitle watch", [] { SubtitleWatch::Install(); } },

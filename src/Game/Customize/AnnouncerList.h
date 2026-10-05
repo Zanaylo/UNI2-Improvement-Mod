@@ -23,6 +23,7 @@ namespace AnnouncerList
 	int WindowBottom();
 	int RowOfIcon(int baseY);
 	int ShownY(int baseY, int scroll);
+	std::vector<int> SaveIds(const std::string& csv);
 	std::vector<int> FreeSaveIds(const std::string& csv, int count);
 
 	std::string WithRows(const std::string& csv, const std::vector<Entry>& entries);

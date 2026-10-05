@@ -306,6 +306,12 @@
     <ClCompile Include="src\Game\Lobby\IrHider.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Customize\AnnouncerKeep.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\AnnouncerTicks.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Lobby\RoomStage.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
@@ -1711,6 +1717,12 @@
     </ClInclude>
     <ClInclude Include="src\Game\Lobby\IrHider.h">
       <Filter>Game\Lobby</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\AnnouncerKeep.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\AnnouncerTicks.h">
+      <Filter>Game\Customize</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Lobby\RoomStage.h">
       <Filter>Game\Lobby</Filter>

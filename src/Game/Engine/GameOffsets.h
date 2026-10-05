@@ -637,6 +637,10 @@ namespace GameOffsets
 	constexpr uintptr_t kSiteStatsIrHeader = 0x3a8242;
 	constexpr uintptr_t kSiteStatsIrHeaderAlt = 0x3a7d83;
 
+	constexpr uintptr_t kFnCustomizeSanitise = 0x110f20;
+	constexpr uintptr_t kAnnouncerTicked = 0x5ac927;
+	constexpr uintptr_t kAnnouncerExcluded = kStageUnlocks;
+
 	constexpr uintptr_t kFnSetRoomRows = 0x2ea8b0;
 	constexpr uintptr_t kFnRoomMemberWrite = 0x1ecbf0;
 	constexpr uintptr_t kFnRoomMemberRead = 0x1eca50;
