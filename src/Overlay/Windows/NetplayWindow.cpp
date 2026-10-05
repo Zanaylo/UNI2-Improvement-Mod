@@ -3,6 +3,7 @@
 #include "Core/Config/Settings.h"
 #include "Core/Config/interfaces.h"
 #include "Game/Tables/CharaTables.h"
+#include "Game/Lobby/IrHider.h"
 #include "Game/Lobby/NameCensor.h"
 #include "Game/Lobby/RoomNameCensor.h"
 #include "Game/Lobby/OpponentLog.h"
@@ -112,6 +113,8 @@ void NetplayWindow::Draw()
 		DrawPrivacyTab();
 		ImGui::Separator();
 		DrawRoomNamePrivacy();
+		ImGui::Separator();
+		DrawIrPrivacy();
 		ImGui::EndTabItem();
 	}
 
@@ -554,6 +557,28 @@ void NetplayWindow::DrawOpponentsTab()
 	ImGui::EndTable();
 }
 
+namespace {
+
+bool DrawPrivacyStatus(bool available, bool enabled, const char* status)
+{
+	if (!available)
+	{
+		UiText::Warn("%s", status);
+		return false;
+	}
+
+	if (!enabled)
+	{
+		UiText::Muted("%s", status);
+		return false;
+	}
+
+	UiText::Good("%s", status);
+	return true;
+}
+
+}
+
 void NetplayWindow::DrawPrivacyTab()
 {
 	ImGui::TextUnformatted("Other people's names");
@@ -595,19 +620,9 @@ void NetplayWindow::DrawPrivacyTab()
 
 	ImGui::Separator();
 
-	if (!NameCensor::IsAvailable())
-	{
-		UiText::Warn("%s", NameCensor::StatusText());
+	if (!DrawPrivacyStatus(NameCensor::IsAvailable(), NameCensor::IsEnabled(), NameCensor::StatusText()))
 		return;
-	}
 
-	if (!NameCensor::IsEnabled())
-	{
-		UiText::Muted("%s", NameCensor::StatusText());
-		return;
-	}
-
-	UiText::Good("%s", NameCensor::StatusText());
 	ImGui::Text("%d name(s) covered this run.", NameCensor::Count());
 }
 
@@ -626,20 +641,35 @@ void NetplayWindow::DrawRoomNamePrivacy()
 		Settings::SaveInt("Privacy", "CensorRoomNames", rooms ? 1 : 0);
 	}
 
-	if (!RoomNameCensor::IsAvailable())
+	if (!DrawPrivacyStatus(RoomNameCensor::IsAvailable(), RoomNameCensor::IsEnabled(),
+		RoomNameCensor::StatusText()))
 	{
-		UiText::Warn("%s", RoomNameCensor::StatusText());
 		return;
 	}
 
-	if (!RoomNameCensor::IsEnabled())
-	{
-		UiText::Muted("%s", RoomNameCensor::StatusText());
-		return;
-	}
-
-	UiText::Good("%s", RoomNameCensor::StatusText());
 	ImGui::Text("%d room name(s) covered this run.", RoomNameCensor::Count());
+}
+
+void NetplayWindow::DrawIrPrivacy()
+{
+	ImGui::TextUnformatted("IR");
+	UiText::Help("Hides every IR number the game draws: the player card, the online player list, the "
+		"lobby, the player stats and the name plate in a match, including the IR going up or down "
+		"after a ranked match. Only your screen changes, the IR itself is still counted.");
+
+	bool hide = IrHider::IsEnabled();
+
+	if (ImGui::Checkbox("Hide IR", &hide))
+	{
+		IrHider::SetEnabled(hide);
+		g_modVals.hideIr = hide;
+		Settings::SaveInt("Privacy", "HideIr", hide ? 1 : 0);
+	}
+
+	if (!DrawPrivacyStatus(IrHider::IsAvailable(), IrHider::IsEnabled(), IrHider::StatusText()))
+		return;
+
+	ImGui::Text("%ld IR number(s) hidden this run.", IrHider::NumbersHidden());
 }
 
 namespace {

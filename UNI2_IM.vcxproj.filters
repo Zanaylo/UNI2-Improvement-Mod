@@ -300,6 +300,9 @@
     <ClCompile Include="src\Game\Lobby\RoomNameCensor.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Lobby\IrHider.cpp">
+      <Filter>Game\Lobby</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Lobby\RoomStage.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
@@ -1695,6 +1698,9 @@
       <Filter>Game\Lobby</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Lobby\RoomNameCensor.h">
+      <Filter>Game\Lobby</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Lobby\IrHider.h">
       <Filter>Game\Lobby</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Lobby\RoomStage.h">

@@ -383,6 +383,21 @@ bool TryWriteMemory(void* destination, const void* source, size_t size)
 	}
 }
 
+bool WriteCodeBytes(void* destination, const void* source, size_t size)
+{
+	DWORD previous = 0;
+
+	if (VirtualProtect(destination, size, PAGE_EXECUTE_READWRITE, &previous) == 0)
+		return false;
+
+	const bool written = TryWriteMemory(destination, source, size);
+
+	VirtualProtect(destination, size, previous, &previous);
+	FlushInstructionCache(GetCurrentProcess(), destination, size);
+
+	return written;
+}
+
 bool TryReadDword(const void* source, uint32_t& outValue)
 {
 	if ((reinterpret_cast<uintptr_t>(source) & 3) != 0)

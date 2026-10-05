@@ -156,6 +156,7 @@
     <ClCompile Include="src\Core\Formats\Json.cpp" />
     <ClCompile Include="src\Game\Lobby\NameCensor.cpp" />
     <ClCompile Include="src\Game\Lobby\RoomNameCensor.cpp" />
+    <ClCompile Include="src\Game\Lobby\IrHider.cpp" />
     <ClCompile Include="src\Game\Lobby\RoomStage.cpp" />
     <ClCompile Include="src\Network\Steam\SteamFriends.cpp" />
     <ClCompile Include="src\Network\Spectate\SpectateCode.cpp" />
@@ -590,6 +591,7 @@
     <ClInclude Include="src\Core\Formats\Json.h" />
     <ClInclude Include="src\Game\Lobby\NameCensor.h" />
     <ClInclude Include="src\Game\Lobby\RoomNameCensor.h" />
+    <ClInclude Include="src\Game\Lobby\IrHider.h" />
     <ClInclude Include="src\Game\Lobby\RoomStage.h" />
     <ClInclude Include="src\Network\Steam\SteamFriends.h" />
     <ClInclude Include="src\Network\Spectate\SpectateCode.h" />

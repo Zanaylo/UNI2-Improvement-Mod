@@ -35,6 +35,7 @@
 #include "Game/Customize/PortraitDownload.h"
 #include "Game/Files/DataSearchPath.h"
 #include "Game/Files/ModFiles.h"
+#include "Game/Lobby/IrHider.h"
 #include "Game/Lobby/NameCensor.h"
 #include "Game/Lobby/RoomNameCensor.h"
 #include "Game/Lobby/RoomStage.h"
@@ -157,6 +158,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: training hud", [] { ProrationHud::Install(); } },
 	{ "game hooks: name censor", [] { NameCensor::Install(); } },
 	{ "game hooks: room name censor", [] { RoomNameCensor::Install(); } },
+	{ "game hooks: ir hider", [] { IrHider::Install(); } },
 	{ "game hooks: room stage", [] { RoomStage::Install(); } },
 	{ "game hooks: random stage", [] { RandomStage::Install(); } },
 	{ "game hooks: subtitle watch", [] { SubtitleWatch::Install(); } },

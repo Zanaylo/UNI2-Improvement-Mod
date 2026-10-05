@@ -122,16 +122,7 @@ bool TakeText()
 
 bool Poke(void* at, const void* bytes, size_t size)
 {
-	DWORD previous = 0;
-
-	if (VirtualProtect(at, size, PAGE_EXECUTE_READWRITE, &previous) == 0)
-		return false;
-
-	memcpy(at, bytes, size);
-	VirtualProtect(at, size, previous, &previous);
-	FlushInstructionCache(GetCurrentProcess(), at, size);
-
-	return true;
+	return WriteCodeBytes(at, bytes, size);
 }
 
 void Sites(uint32_t wanted, std::vector<uint8_t*>& out)

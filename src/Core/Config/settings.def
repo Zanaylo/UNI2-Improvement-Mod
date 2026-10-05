@@ -190,6 +190,7 @@ SETTING_BOOL(censorNames, "Privacy", "CensorOpponentNames", 0)
 SETTING_STRING(censorNameMask,      "Privacy",  "CensorMask",           "Player")
 SETTING_BOOL(censorOwnName, "Privacy", "CensorMyName", 0)
 SETTING_BOOL(censorRoomNames, "Privacy", "CensorRoomNames", 0)
+SETTING_BOOL(hideIr, "Privacy", "HideIr", 0)
 SETTING_BOOL(subtitles, "Subtitles", "Subtitles", 0)
 SETTING_STRING(subtitlePack,        "Subtitles", "File",                "")
 

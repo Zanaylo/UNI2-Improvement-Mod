@@ -11,6 +11,7 @@
 #include "Game/Battle/KeyboardSeat.h"
 #include "Game/Display/PotatoMode.h"
 #include "Game/Replays/ReplayFiles.h"
+#include "Game/Lobby/IrHider.h"
 #include "Game/Lobby/NameCensor.h"
 #include "Game/Lobby/RoomNameCensor.h"
 #include "Game/Subtitles/SubtitleTable.h"
@@ -517,6 +518,8 @@ void Settings::ApplySettings()
 	NameCensor::SetEnabled(g_modVals.censorNames);
 
 	RoomNameCensor::SetEnabled(g_modVals.censorRoomNames);
+
+	IrHider::SetEnabled(g_modVals.hideIr);
 
 	SubtitleTable::Choose(g_settings.subtitlePack.c_str());
 	SubtitleWatch::SetHoldMs(g_modVals.subtitleHoldMs);

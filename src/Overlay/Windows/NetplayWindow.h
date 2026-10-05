@@ -19,6 +19,7 @@ private:
 	void DrawOpponentsTab();
 	void DrawPrivacyTab();
 	void DrawRoomNamePrivacy();
+	void DrawIrPrivacy();
 	void DrawSpectateTab();
 	void DrawSpectateHost();
 	void DrawSpectateWatch();

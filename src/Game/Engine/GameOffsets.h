@@ -631,6 +631,12 @@ namespace GameOffsets
 	constexpr uintptr_t kFnResolvePersonaName = 0x2fa090;
 	constexpr uintptr_t kFnSetFallbackName = 0x38db0;
 
+	constexpr uintptr_t kFnDrawIrNumber = 0x38e840;
+	constexpr uintptr_t kSiteBattlePlateIr = 0x184ab6;
+	constexpr uintptr_t kSitePlayerCardIrText = 0x20a8e0;
+	constexpr uintptr_t kSiteStatsIrHeader = 0x3a8242;
+	constexpr uintptr_t kSiteStatsIrHeaderAlt = 0x3a7d83;
+
 	constexpr uintptr_t kFnSetRoomRows = 0x2ea8b0;
 	constexpr uintptr_t kFnRoomMemberWrite = 0x1ecbf0;
 	constexpr uintptr_t kFnRoomMemberRead = 0x1eca50;

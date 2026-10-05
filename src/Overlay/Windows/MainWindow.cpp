@@ -299,7 +299,7 @@ void MainWindow::DrawOnlineSection()
 
 	ImGui::TextWrapped("Rollback and ping as the game counts them, who is in the room and everyone "
 		"you have played. The Privacy tab replaces the other player's name everywhere, and room "
-		"names in the room search, for screenshots or streams.");
+		"names in the room search, for screenshots or streams, and can hide IR.");
 
 	if (g_modVals.censorNames)
 		UiText::Good("Opponent names are being replaced with \"%s\".",

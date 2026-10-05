@@ -73,19 +73,7 @@ bool ReadCode(uintptr_t address, uint32_t& out)
 
 bool WriteCode(uintptr_t address, uint32_t value)
 {
-	DWORD previous = 0;
-	if (!VirtualProtect(reinterpret_cast<void*>(address), sizeof(value), PAGE_EXECUTE_READWRITE,
-		&previous))
-	{
-		return false;
-	}
-
-	memcpy(reinterpret_cast<void*>(address), &value, sizeof(value));
-
-	DWORD restored = 0;
-	VirtualProtect(reinterpret_cast<void*>(address), sizeof(value), previous, &restored);
-	FlushInstructionCache(GetCurrentProcess(), reinterpret_cast<void*>(address), sizeof(value));
-	return true;
+	return WriteCodeBytes(reinterpret_cast<void*>(address), &value, sizeof(value));
 }
 
 bool ValidateGlobalWrite(uintptr_t rva, uintptr_t globalRva, uint32_t expected, Site& out)

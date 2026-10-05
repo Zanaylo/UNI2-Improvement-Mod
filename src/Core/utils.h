@@ -42,6 +42,7 @@ bool IsReadableMemory(const void* address, size_t size);
 
 bool TryReadMemory(void* destination, const void* source, size_t size);
 bool TryWriteMemory(void* destination, const void* source, size_t size);
+bool WriteCodeBytes(void* destination, const void* source, size_t size);
 bool TryReadDword(const void* source, uint32_t& outValue);
 
 bool TryWriteDword(void* address, uint32_t value);
