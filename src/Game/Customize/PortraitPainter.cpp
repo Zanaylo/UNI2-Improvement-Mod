@@ -34,6 +34,7 @@ constexpr uint8_t kSolid = 127;
 constexpr int kEdgeBand = 2;
 constexpr int kTouchPixels = 8;
 constexpr double kFadeShare = 0.08;
+constexpr double kSelectFadeStart = 0.84375;
 constexpr int kShadowBlur = 2;
 
 constexpr PortraitFrames::Frame kMainFrames[PortraitPainter::Screen_Count] = {
@@ -174,8 +175,7 @@ int DetailOf(const std::vector<Paint>& paints, int atlas)
 
 ImageOps::Affine PlaceOn(const PortraitPainter::Figure& figure, PortraitFrames::Frame frame, double zoom)
 {
-	return PortraitPlacement::Place(*figure.entry, figure.art->width, figure.frames->baseWidth,
-		figure.frames->frames[frame], zoom);
+	return PortraitPlacement::Place(*figure.entry, figure.art->width, *figure.frames, frame, zoom);
 }
 
 bool Solid(const DdsImage::Image& image, int x, int y)
@@ -256,6 +256,30 @@ void FadeCuts(DdsImage::Image& painted, const DdsImage::Image& art, const ImageO
 	}
 }
 
+double SelectFadeShare(double across)
+{
+	const double eased = across * across * (3.0 - 2.0 * across);
+	return 1.0 - (across + eased) / 2.0;
+}
+
+void FadeRightEdge(DdsImage::Image& image)
+{
+	const double start = kSelectFadeStart * image.width;
+	const int first = static_cast<int>(start);
+	std::vector<double> shares;
+
+	for (int x = first; x < image.width; ++x)
+		shares.push_back(SelectFadeShare(Ramp(x + 0.5 - start, image.width - start)));
+
+	for (int y = 0; y < image.height; ++y)
+	{
+		uint8_t* const row = &image.pixels[(static_cast<size_t>(y) * image.width + first) * 4];
+
+		for (size_t column = 0; column < shares.size(); ++column)
+			row[column * 4 + 3] = static_cast<uint8_t>(std::lround(row[column * 4 + 3] * shares[column]));
+	}
+}
+
 DdsImage::Image Drawn(const PortraitPainter::Figure& figure, PortraitFrames::Frame frame, int width, int height,
 	double zoom)
 {
@@ -288,10 +312,14 @@ void Draw(DdsImage::Image& surface, const Paint& paint, const Paint& main, Portr
 	const double share = paint.role == Role_Shadow ? static_cast<double>(paint.rect.width) / main.rect.width : 1.0;
 	const PortraitFrames::Frame frame = paint.role == Role_Closeup ? PortraitFrames::Frame_Closeup : kMainFrames[screen];
 
-	const DdsImage::Image drawn = Drawn(figure, frame, rect.width, rect.height, PortraitPainter::kDetail * share);
 	const int blur = paint.role == Role_Shadow ? kShadowBlur * PortraitPainter::kDetail : 0;
+	DdsImage::Image drawn = ImageOps::Blurred(
+		Drawn(figure, frame, rect.width, rect.height, PortraitPainter::kDetail * share), blur);
 
-	ImageOps::Copy(surface, ImageOps::Blurred(drawn, blur), rect.x, rect.y);
+	if (screen == PortraitPainter::Screen_Select)
+		FadeRightEdge(drawn);
+
+	ImageOps::Copy(surface, drawn, rect.x, rect.y);
 }
 
 std::vector<uint8_t> Rebuilt(const std::vector<uint8_t>& pat, const PatEdit::Layout& layout,

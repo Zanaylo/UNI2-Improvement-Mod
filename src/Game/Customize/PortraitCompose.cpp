@@ -1,6 +1,7 @@
 #include "Game/Customize/PortraitCompose.h"
 
 #include "Core/BackgroundJob.h"
+#include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Customize/PortraitCatalog.h"
@@ -43,6 +44,9 @@ constexpr int kFirstChara = 0;
 constexpr int kLastChara = 27;
 constexpr unsigned kMostWorkers = 4;
 constexpr int kFullProgress = 100;
+constexpr const char* kSection = "Portraits";
+constexpr const char* kRevisionKey = "PaintRevision";
+constexpr int kPaintRevision = 6;
 
 struct Screen
 {
@@ -63,6 +67,8 @@ std::mutex g_lock;
 std::set<int> g_pending;
 bool g_cardsPending = false;
 volatile long g_queued = 0;
+bool g_revisionChecked = false;
+bool g_revisionPending = false;
 
 std::string Numbered(const char* pattern, int chara)
 {
@@ -356,6 +362,59 @@ void StartPending()
 	InterlockedExchange(&g_queued, 1);
 }
 
+std::set<int> WornCharas()
+{
+	std::set<int> charas;
+
+	for (int chara = kFirstChara; chara <= kLastChara; ++chara)
+	{
+		if (!PortraitChoices::Of(chara).empty())
+			charas.insert(chara);
+	}
+
+	return charas;
+}
+
+void SaveRevision()
+{
+	Settings::SaveInt(kSection, kRevisionKey, kPaintRevision);
+}
+
+void RepaintOutdated()
+{
+	g_revisionChecked = true;
+
+	if (static_cast<int>(GetPrivateProfileIntA(kSection, kRevisionKey, 0, Settings::GetIniPath().c_str())) == kPaintRevision)
+		return;
+
+	const std::set<int> worn = WornCharas();
+
+	if (worn.empty())
+	{
+		SaveRevision();
+		return;
+	}
+
+	LOG("PortraitCompose: repainting %d fighter(s) painted by an older revision", static_cast<int>(worn.size()));
+
+	std::lock_guard<std::mutex> hold(g_lock);
+	g_pending.insert(worn.begin(), worn.end());
+	g_cardsPending = true;
+	g_revisionPending = true;
+	InterlockedExchange(&g_queued, 1);
+}
+
+void Finished()
+{
+	ModFiles::Rescan();
+
+	if (!g_revisionPending)
+		return;
+
+	g_revisionPending = false;
+	SaveRevision();
+}
+
 }
 
 std::string PortraitCompose::Folder()
@@ -392,8 +451,11 @@ void PortraitCompose::Refresh()
 
 void PortraitCompose::Update()
 {
+	if (!g_revisionChecked)
+		RepaintOutdated();
+
 	if (g_job.ConsumeFinished())
-		ModFiles::Rescan();
+		Finished();
 
 	if (g_queued != 0)
 		StartPending();

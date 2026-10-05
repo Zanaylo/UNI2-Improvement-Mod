@@ -237,6 +237,9 @@
     <ClCompile Include="src\Game\Customize\PortraitStyles.cpp">
       <Filter>Game\Customize</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Customize\PortraitTweaks.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\BackgroundJob.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1574,6 +1577,9 @@
     <ClInclude Include="src\Game\Customize\PortraitFrames.inc">
       <Filter>Game\Customize</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitTweaks.inc">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Customize\PortraitPlacement.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>
@@ -1593,6 +1599,9 @@
       <Filter>Game\Customize</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Customize\PortraitStyles.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\PortraitTweaks.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\BackgroundJob.h">

@@ -135,6 +135,7 @@
     <ClCompile Include="src\Game\Customize\PortraitChoices.cpp" />
     <ClCompile Include="src\Game\Customize\PortraitCompose.cpp" />
     <ClCompile Include="src\Game\Customize\PortraitStyles.cpp" />
+    <ClCompile Include="src\Game\Customize\PortraitTweaks.cpp" />
     <ClCompile Include="src\Core\BackgroundJob.cpp" />
     <ClCompile Include="src\Game\Audio\AnnouncerRoster.cpp" />
     <ClCompile Include="src\Core\Harness\ImportCommands.cpp" />
@@ -549,6 +550,7 @@
     <ClInclude Include="src\Game\Customize\PortraitCatalog.inc" />
     <ClInclude Include="src\Game\Customize\PortraitFrames.h" />
     <ClInclude Include="src\Game\Customize\PortraitFrames.inc" />
+    <ClInclude Include="src\Game\Customize\PortraitTweaks.inc" />
     <ClInclude Include="src\Game\Customize\PortraitPlacement.h" />
     <ClInclude Include="src\Game\Customize\PortraitPainter.h" />
     <ClInclude Include="src\Game\Customize\PortraitLibrary.h" />
@@ -556,6 +558,7 @@
     <ClInclude Include="src\Game\Customize\PortraitChoices.h" />
     <ClInclude Include="src\Game\Customize\PortraitCompose.h" />
     <ClInclude Include="src\Game\Customize\PortraitStyles.h" />
+    <ClInclude Include="src\Game\Customize\PortraitTweaks.h" />
     <ClInclude Include="src\Core\BackgroundJob.h" />
     <ClInclude Include="src\Game\Audio\AnnouncerRoster.h" />
     <ClInclude Include="src\Core\Harness\ImportCommands.h" />

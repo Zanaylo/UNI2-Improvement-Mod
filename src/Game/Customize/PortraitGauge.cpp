@@ -233,8 +233,7 @@ void PaintRegion(const DdsImage::Image& ours, const DdsImage::Image& art, int to
 
 DdsImage::Image ArtLayer(const PortraitPainter::Figure& figure, PortraitFrames::Frame frame, int width, int height)
 {
-	const ImageOps::Affine place = PortraitPlacement::Place(*figure.entry, figure.art->width, figure.frames->baseWidth,
-		figure.frames->frames[frame], 1.0);
+	const ImageOps::Affine place = PortraitPlacement::Place(*figure.entry, figure.art->width, *figure.frames, frame, 1.0);
 
 	return ImageOps::Mapped(*figure.art, width, height, place);
 }
