@@ -70,6 +70,7 @@ const char* const kDefaultIniLines[] = {
 	"GroupByPart = 1",
 	"FlashEntry = 1",
 	"FilterJunk = 1",
+	"ExtendedSlots = 1",
 	"",
 	"[Netplay]",
 	"RoomRosterFix = 0",

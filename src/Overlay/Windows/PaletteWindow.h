@@ -27,6 +27,7 @@ private:
 	void DrawPicker(int player);
 	void DrawEffects(int player);
 	void DrawFiles(int player);
+	void DrawColourSlot(int player);
 
 	void PullBaseline(int player, bool force);
 	void ComposeCompanion(int player);

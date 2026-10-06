@@ -1,12 +1,17 @@
 #include "Palette/PaletteChoice.h"
 
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/Config/Settings.h"
 #include "Core/utils.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/MemoryMap.h"
+#include "Game/Engine/SceneWatch.h"
+#include "Game/Menus/ColourPicker.h"
 #include "Game/Tables/PartColourTable.h"
+#include "Palette/ColourSlots.h"
 #include "Palette/EffectPaint.h"
+#include "Palette/NetworkPick.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteFile.h"
 #include "Palette/PaletteLibrary.h"
@@ -31,15 +36,14 @@ struct Player
 	bool tried = false;
 	bool dressedHere = false;
 	unsigned generation = 0;
+	unsigned pick = 0;
+	bool fromSlot = false;
+	bool inBattle = false;
+	bool freshMatch = false;
 	char worn[PaletteFile::kNameLength + 8] = {};
 };
 
 Player g_players[PaletteChoice::kPlayers] = {};
-
-std::string PathFor(int chara, const char* file)
-{
-	return GetModPalettePath(PaletteManager::GetCharaName(chara)) + "\\" + file;
-}
 
 int WornIndex(int player, int chara)
 {
@@ -98,7 +102,7 @@ bool PaletteChoice::Apply(int player, int chara, const char* file)
 	PaletteFile::Info info = {};
 	bool hasEffects = false;
 
-	if (!PaletteFile::Load(PathFor(chara, file), colours, info, effects, &hasEffects))
+	if (!PaletteFile::Load(PaletteLibrary::PathOf(chara, file), colours, info, effects, &hasEffects))
 		return false;
 
 	PalettePaint::Stage(player, colours);
@@ -106,7 +110,7 @@ bool PaletteChoice::Apply(int player, int chara, const char* file)
 	uint8_t theirs[PaletteFile::kBytes] = {};
 	PaletteFile::Info theirInfo = {};
 
-	if (PaletteFile::Load(PathFor(chara, PaletteFile::CompanionOf(file).c_str()), theirs, theirInfo))
+	if (PaletteFile::Load(PaletteLibrary::PathOf(chara, PaletteFile::CompanionOf(file).c_str()), theirs, theirInfo))
 		PalettePaint::StageCompanion(player, theirs);
 	else
 		PalettePaint::ClearCompanion(player);
@@ -202,12 +206,16 @@ void PaletteChoice::NoteWorn(int player, const char* file)
 		return;
 
 	strncpy_s(g_players[player].worn, file != nullptr ? file : "", _TRUNCATE);
+	g_players[player].fromSlot = false;
 }
 
 void PaletteChoice::NoteBare(int player)
 {
-	if (player >= 0 && player < kPlayers)
-		g_players[player].worn[0] = '\0';
+	if (player < 0 || player >= kPlayers)
+		return;
+
+	g_players[player].worn[0] = '\0';
+	g_players[player].fromSlot = false;
 }
 
 unsigned PaletteChoice::GetGeneration(int player)
@@ -217,6 +225,16 @@ unsigned PaletteChoice::GetGeneration(int player)
 
 namespace {
 
+bool Put(int player, int chara, const char* file)
+{
+	if (!PaletteChoice::Apply(player, chara, file))
+		return false;
+
+	++g_players[player].generation;
+	g_players[player].dressedHere = true;
+	return true;
+}
+
 void Dress(int player, int chara)
 {
 	char file[sizeof(g_remembered)] = {};
@@ -225,16 +243,65 @@ void Dress(int player, int chara)
 	if (file[0] == 0)
 		return;
 
-	if (!PaletteChoice::Apply(player, chara, file))
+	if (!Put(player, chara, file))
 	{
 		LOG("palettes: p%d's remembered '%s' could not be read", player, file);
 		PaletteChoice::Forget(chara);
 		return;
 	}
 
-	++g_players[player].generation;
-	g_players[player].dressedHere = true;
 	LOG("palettes: p%d is wearing '%s' again", player, file);
+}
+
+std::string SlotFile(int player, int chara)
+{
+	const int colour = PaletteMemory::GetSelectColour(player);
+
+	if (PaletteControl::IsOnline())
+		return NetworkPick::FileFor(chara, colour);
+
+	const int extended = ColourPicker::ExtendedFor(player, chara);
+
+	if (extended != ColourSlots::kNoExtended)
+		return ColourSlots::ExtendedFile(chara, extended);
+
+	return ColourSlots::BoundFile(chara, colour);
+}
+
+void DressFromSlot(int player, int chara, const std::string& file)
+{
+	if (PalettePaint::IsStaged(player) && file == PaletteChoice::WornFile(player))
+	{
+		g_players[player].fromSlot = true;
+		return;
+	}
+
+	if (!Put(player, chara, file.c_str()))
+	{
+		LOG("palettes: p%d's colour slot holds '%s', which could not be read", player, file.c_str());
+		return;
+	}
+
+	g_players[player].fromSlot = true;
+	LOG("palettes: p%d is wearing '%s' from its colour slot", player, file.c_str());
+}
+
+void TakeOff(int player)
+{
+	PalettePaint::Clear(player);
+	EffectPaint::Clear(player);
+	PaletteChoice::NoteBare(player);
+
+	++g_players[player].generation;
+}
+
+void WearThePick(int player)
+{
+	if (!PalettePaint::IsStaged(player))
+		return;
+
+	TakeOff(player);
+	LOG("palettes: p%d starts in the game colour picked at character select", player);
 }
 
 void Undress(int player, int chara)
@@ -245,11 +312,32 @@ void Undress(int player, int chara)
 	entry.tried = false;
 	entry.dressedHere = false;
 
-	PalettePaint::Clear(player);
-	EffectPaint::Clear(player);
-	PaletteChoice::NoteBare(player);
+	TakeOff(player);
+}
 
-	++entry.generation;
+void WatchBattle()
+{
+	const bool inBattle = SceneWatch::Current() == GameOffsets::kSceneBattle;
+
+	for (Player& entry : g_players)
+	{
+		if (inBattle && !entry.inBattle)
+			entry.freshMatch = true;
+
+		entry.inBattle = inBattle;
+	}
+}
+
+void StartFromThePick(Player& entry)
+{
+	const unsigned picks = ColourPicker::Picks();
+
+	if (!entry.inBattle || (entry.pick == picks && !entry.freshMatch))
+		return;
+
+	entry.pick = picks;
+	entry.freshMatch = false;
+	entry.tried = false;
 }
 
 void Follow(int player)
@@ -266,6 +354,8 @@ void Follow(int player)
 	if (chara != entry.chara)
 		Undress(player, chara);
 
+	StartFromThePick(entry);
+
 	const bool mine = PaletteControl::CanEdit(player);
 
 	if (entry.dressedHere && !mine)
@@ -279,6 +369,23 @@ void Follow(int player)
 		return;
 
 	entry.tried = true;
+
+	const std::string slotted = SlotFile(player, chara);
+
+	if (!slotted.empty())
+	{
+		DressFromSlot(player, chara, slotted);
+		return;
+	}
+
+	if (g_modVals.paletteExtendedSlots)
+	{
+		WearThePick(player);
+		return;
+	}
+
+	if (entry.fromSlot)
+		TakeOff(player);
 
 	if (PalettePaint::IsStaged(player))
 		return;
@@ -314,6 +421,8 @@ bool DistinctSides()
 void PaletteChoice::OnFrame()
 {
 	static bool s_undecided = false;
+
+	WatchBattle();
 
 	if (!DistinctSides())
 	{

@@ -285,6 +285,7 @@ namespace GameOffsets
 	constexpr uintptr_t kPlayerDataPaletteTableAlt = 0x768;
 	constexpr uintptr_t kPaletteTableFirst = 0x58;
 	constexpr uintptr_t kPaletteTableCurrent = 0x4;
+	constexpr int kPaletteWrapperTexture = 0xc;
 	constexpr int kPaletteSlots = 45;
 
 	constexpr uintptr_t kPlayerDataPaletteSlot = 0x7b0;
@@ -619,6 +620,8 @@ namespace GameOffsets
 	constexpr uint32_t kSceneBattle = 1;
 	constexpr uint32_t kSceneMenu = 3;
 	constexpr uint32_t kSceneCharaSelect = 24;
+	constexpr uint32_t kSceneNetwork = 49;
+	constexpr uint32_t kSceneMainMenu = 5;
 	constexpr uint32_t kSceneReplayList = 46;
 
 	constexpr uintptr_t kReplayListLoaded = 0x44488c5;
@@ -693,6 +696,8 @@ namespace GameOffsets
 
 	constexpr uintptr_t kBattleMode = 0x5a5978;
 	constexpr uintptr_t kSubMode = 0x5a597c;
+	constexpr uint32_t kBattleModeNetworkMenu = 0;
+	constexpr int32_t kSubModeNone = -1;
 
 	constexpr uintptr_t kVersionString = 0x55cdb4;
 
@@ -1043,4 +1048,39 @@ namespace GameOffsets
 
 	constexpr int kColourFreeBelow = 10;
 	constexpr int kColourUnlockBitCount = 32;
+
+	constexpr uintptr_t kFnColourPickerInput = 0x24e610;
+	constexpr uintptr_t kFnColourPickerList = 0x24eba0;
+	constexpr int kColourPickerListCapacity = 64;
+	constexpr int kColourPickerConfirmed = 0xff;
+	constexpr int kColourPickerCancelled = -1;
+
+	constexpr uintptr_t kCharaSelectSides = 0x776c78;
+	constexpr uintptr_t kCharaSelectSideStride = 0x40;
+	constexpr uintptr_t kCharaSelectSideChara = 0x0;
+	constexpr uintptr_t kCharaSelectSideColour = 0x4;
+	constexpr int kCharaSelectRandom = 99;
+
+	constexpr uintptr_t kCharaSelectScreen = 0x776be4;
+	constexpr uintptr_t kColourSelectStride = 0x38;
+	constexpr uintptr_t kColourSelectAltMode = 0xd4;
+
+	constexpr uintptr_t kFnColourWindowDraw = 0x244420;
+	constexpr uintptr_t kColourWindowSide = 0x0;
+	constexpr uintptr_t kColourWindowChara = 0x4;
+	constexpr uintptr_t kColourWindowColour = 0x8;
+	constexpr uintptr_t kColourWindowIndex = 0xe4;
+	constexpr uintptr_t kColourWindowCount = 0xe8;
+
+	constexpr uintptr_t kFnMenuText = 0x4a7450;
+
+	constexpr uintptr_t kColourNameTable = 0x85d4e4;
+	constexpr uintptr_t kColourNameTableIndex = 0x874704;
+	constexpr uintptr_t kColourNameCharaStride = 0x8d0;
+	constexpr uintptr_t kColourNameStride = 0x30;
+	constexpr uintptr_t kColourNameSwatch = 0x4;
+	constexpr uintptr_t kColourNameSwatchStride = 0x4;
+	constexpr int kColourNameSwatches = 3;
+
+	constexpr uintptr_t kPlayerDataSelectColour = 0x10;
 }

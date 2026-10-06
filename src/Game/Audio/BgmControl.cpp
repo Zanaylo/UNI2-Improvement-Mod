@@ -596,6 +596,15 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 	return true;
 }
 
+void KeepPlaying()
+{
+	if (ReadGlobal(GameOffsets::kBgmPlayer) == 0 || ReadGlobal(GameOffsets::kBgmState) == State_Playing)
+		return;
+
+	LOG("BgmControl: the menu chooser stopped %d while it was playing, so it starts again", g_playing);
+	SelfStart();
+}
+
 void __fastcall HookedMenuBgm(void* self, void* unused, int scene)
 {
 	const uint32_t stream = ReadGlobal(GameOffsets::kBgmPlayer);
@@ -604,6 +613,7 @@ void __fastcall HookedMenuBgm(void* self, void* unused, int scene)
 
 	const bool holding = g_modVals.keepMenuMusic && stream != 0 && before >= 0 &&
 		state != State_Playing;
+	const bool wasPlaying = stream != 0 && state == State_Playing;
 
 	LOG("BgmControl: menu chooser in, scene %d, remembered %d, current %d, state %u, stream %08X, "
 		"holding %d", scene, static_cast<int>(ReadGlobal(GameOffsets::kMenuBgmRemembered)), before,
@@ -621,6 +631,12 @@ void __fastcall HookedMenuBgm(void* self, void* unused, int scene)
 
 	LOG("BgmControl: menu chooser out, current %d, state %u, stream %08X", now,
 		ReadGlobal(GameOffsets::kBgmState), kept);
+
+	if (wasPlaying)
+	{
+		KeepPlaying();
+		return;
+	}
 
 	if (!holding || kept == 0 || now != before)
 		return;

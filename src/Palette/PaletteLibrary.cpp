@@ -15,10 +15,16 @@ struct Shelf
 	int chara;
 	int count;
 	std::string names[PaletteLibrary::kMaxFiles];
+	uint64_t created[PaletteLibrary::kMaxFiles];
 };
 
-Shelf g_shelves[kSlots] = { { -1, 0, {} }, { -1, 0, {} } };
+Shelf g_shelves[kSlots] = { { -1, 0, {}, {} }, { -1, 0, {}, {} } };
 int g_next = 0;
+
+uint64_t TimeOf(const FILETIME& time)
+{
+	return static_cast<uint64_t>(time.dwHighDateTime) << 32 | time.dwLowDateTime;
+}
 
 void Fill(Shelf& shelf, int chara)
 {
@@ -49,7 +55,9 @@ void Fill(Shelf& shelf, int chara)
 		if (shelf.count >= PaletteLibrary::kMaxFiles)
 			break;
 
-		shelf.names[shelf.count++] = found.cFileName;
+		shelf.names[shelf.count] = found.cFileName;
+		shelf.created[shelf.count] = TimeOf(found.ftCreationTime);
+		++shelf.count;
 	}
 	while (FindNextFileA(search, &found));
 
@@ -78,6 +86,21 @@ std::string PaletteLibrary::FolderFor(int chara)
 	return GetModPalettePath(PaletteManager::GetCharaName(chara));
 }
 
+std::string PaletteLibrary::PathOf(int chara, const char* file)
+{
+	return FolderFor(chara) + "\\" + file;
+}
+
+bool PaletteLibrary::LoadColours(int chara, const char* file, uint8_t* rgba)
+{
+	if (file == nullptr || file[0] == '\0' || rgba == nullptr)
+		return false;
+
+	PaletteFile::Info info = {};
+
+	return PaletteFile::Load(PathOf(chara, file), rgba, info);
+}
+
 void PaletteLibrary::Rescan(int chara)
 {
 	Fill(ShelfFor(chara), chara);
@@ -96,4 +119,14 @@ const char* PaletteLibrary::GetName(int chara, int index)
 	const Shelf& shelf = ShelfFor(chara);
 
 	return index < shelf.count ? shelf.names[index].c_str() : "";
+}
+
+uint64_t PaletteLibrary::GetCreated(int chara, int index)
+{
+	if (chara < 0)
+		return 0;
+
+	const Shelf& shelf = ShelfFor(chara);
+
+	return index >= 0 && index < shelf.count ? shelf.created[index] : 0;
 }

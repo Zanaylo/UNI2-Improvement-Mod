@@ -26,6 +26,9 @@ namespace PalettePaint
 	void Preview(int player, const uint8_t* colours);
 	void EndPreview(int player);
 
+	void StageSelect(int side, const uint8_t* colours);
+	void ClearSelect(int side);
+
 	void StageRemote(int player, const uint8_t* colours);
 	void ClearRemote(int player);
 	bool HasRemote(int player);

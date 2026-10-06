@@ -42,6 +42,9 @@
 #include "Game/Lobby/RoomStage.h"
 #include "Game/Menus/BattleCockpit.h"
 #include "Game/Menus/CharaSelectProbe.h"
+#include "Game/Menus/ColourPicker.h"
+#include "Game/Menus/ColourPreview.h"
+#include "Game/Menus/ColourWindow.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Patches/PatchPacks.h"
 #include "Game/Replays/ReplayFiles.h"
@@ -162,6 +165,8 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: ir hider", [] { IrHider::Install(); } },
 	{ "game hooks: announcer keep", [] { AnnouncerKeep::Install(); } },
 	{ "game hooks: room stage", [] { RoomStage::Install(); } },
+	{ "game hooks: colour picker", [] { ColourPicker::Install(); } },
+	{ "game hooks: colour window", [] { ColourWindow::Install(); } },
 	{ "game hooks: random stage", [] { RandomStage::Install(); } },
 	{ "game hooks: subtitle watch", [] { SubtitleWatch::Install(); } },
 	{ "game hooks: subtitle text", [] { SubtitleText::Install(); } },
@@ -253,6 +258,7 @@ const Task kPalette[] = {
 	[] { PaletteControl::OnFrame(); },
 	[] { PaletteSeat::OnFrame(); },
 	[] { PalettePaint::OnFrame(); },
+	[] { ColourPreview::OnFrame(); },
 	[] { EffectOwner::OnFrame(); },
 	[] { PaletteChoice::OnFrame(); },
 	[] { PaletteTexture::OnFrame(); },

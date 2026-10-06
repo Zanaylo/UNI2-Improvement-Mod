@@ -1230,6 +1230,14 @@ bool PaletteTexture::HasBackup(int index, unsigned row)
 	return g_backup[index][row].taken;
 }
 
+void PaletteTexture::DropBackup(int index, unsigned row)
+{
+	if (!HasBackup(index, row))
+		return;
+
+	g_backup[index][row].taken = false;
+}
+
 bool PaletteTexture::Restore(int index, unsigned row)
 {
 	if (!HasBackup(index, row))

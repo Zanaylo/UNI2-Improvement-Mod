@@ -196,6 +196,7 @@
     <ClCompile Include="src\Game\Audio\AudioFile.cpp" />
     <ClCompile Include="src\Game\Audio\OggWriter.cpp" />
     <ClCompile Include="src\Game\Audio\MusicRefresh.cpp" />
+    <ClCompile Include="src\Core\HexText.cpp" />
     <ClCompile Include="src\Core\FileIndex.cpp" />
     <ClCompile Include="src\Game\Battle\BalanceRules.cpp" />
     <ClCompile Include="src\Game\Battle\ScreenShake.cpp" />
@@ -316,6 +317,8 @@
     <ClCompile Include="src\Network\Steam\SteamInterfaces.cpp" />
     <ClCompile Include="src\Network\RollbackStats.cpp" />
     <ClCompile Include="src\Network\RoomRoster.cpp" />
+    <ClCompile Include="src\Network\LobbyPaletteCodec.cpp" />
+    <ClCompile Include="src\Network\LobbyPalettes.cpp" />
     <ClCompile Include="src\Network\ModPresence.cpp" />
     <ClCompile Include="src\Network\PlayerCount.cpp" />
     <ClCompile Include="src\Network\RoomPing.cpp" />
@@ -396,6 +399,11 @@
     <ClCompile Include="src\Palette\PaletteSeat.cpp" />
     <ClCompile Include="src\Palette\PaletteControl.cpp" />
     <ClCompile Include="src\Palette\PaletteChoice.cpp" />
+    <ClCompile Include="src\Palette\PaletteSignature.cpp" />
+    <ClCompile Include="src\Palette\ColourSlotMemory.cpp" />
+    <ClCompile Include="src\Palette\ColourSlots.cpp" />
+    <ClCompile Include="src\Palette\NetworkPick.cpp" />
+    <ClCompile Include="src\Palette\ColourSlotStep.cpp" />
     <ClCompile Include="src\Palette\EffectOwner.cpp" />
     <ClCompile Include="src\Palette\PlayerSides.cpp" />
     <ClCompile Include="src\Palette\EffectPaint.cpp" />
@@ -425,6 +433,10 @@
     <ClCompile Include="src\Game\Engine\SaveData.cpp" />
     <ClCompile Include="src\Game\Engine\SceneWatch.cpp" />
     <ClCompile Include="src\Game\Menus\CharaSelectProbe.cpp" />
+    <ClCompile Include="src\Game\Menus\ColourPicker.cpp" />
+    <ClCompile Include="src\Game\Menus\ColourWindow.cpp" />
+    <ClCompile Include="src\Game\Menus\LobbyAvatar.cpp" />
+    <ClCompile Include="src\Game\Menus\ColourPreview.cpp" />
     <ClCompile Include="src\Game\Menus\CharaSelectState.cpp" />
     <ClCompile Include="src\Screens\CharaGrid.cpp" />
     <ClCompile Include="src\Screens\PatFile.cpp" />
@@ -636,6 +648,7 @@
     <ClInclude Include="src\Game\Audio\AudioFile.h" />
     <ClInclude Include="src\Game\Audio\OggWriter.h" />
     <ClInclude Include="src\Game\Audio\MusicRefresh.h" />
+    <ClInclude Include="src\Core\HexText.h" />
     <ClInclude Include="src\Core\FileIndex.h" />
     <ClInclude Include="src\Game\Battle\BalanceRules.h" />
     <ClInclude Include="src\Game\Battle\ScreenShake.h" />
@@ -756,6 +769,8 @@
     <ClInclude Include="src\Network\Steam\SteamInterfaces.h" />
     <ClInclude Include="src\Network\RollbackStats.h" />
     <ClInclude Include="src\Network\RoomRoster.h" />
+    <ClInclude Include="src\Network\LobbyPaletteCodec.h" />
+    <ClInclude Include="src\Network\LobbyPalettes.h" />
     <ClInclude Include="src\Network\ModPresence.h" />
     <ClInclude Include="src\Network\PlayerCount.h" />
     <ClInclude Include="src\Network\RoomPing.h" />
@@ -815,6 +830,10 @@
     <ClInclude Include="src\Game\Engine\SaveData.h" />
     <ClInclude Include="src\Game\Engine\SceneWatch.h" />
     <ClInclude Include="src\Game\Menus\CharaSelectProbe.h" />
+    <ClInclude Include="src\Game\Menus\ColourPicker.h" />
+    <ClInclude Include="src\Game\Menus\ColourWindow.h" />
+    <ClInclude Include="src\Game\Menus\LobbyAvatar.h" />
+    <ClInclude Include="src\Game\Menus\ColourPreview.h" />
     <ClInclude Include="src\Game\Menus\CharaSelectState.h" />
     <ClInclude Include="src\Screens\CharaGrid.h" />
     <ClInclude Include="src\Screens\PatFile.h" />
@@ -848,6 +867,11 @@
     <ClInclude Include="src\Palette\PaletteSeat.h" />
     <ClInclude Include="src\Palette\PaletteControl.h" />
     <ClInclude Include="src\Palette\PaletteChoice.h" />
+    <ClInclude Include="src\Palette\PaletteSignature.h" />
+    <ClInclude Include="src\Palette\ColourSlotMemory.h" />
+    <ClInclude Include="src\Palette\ColourSlots.h" />
+    <ClInclude Include="src\Palette\NetworkPick.h" />
+    <ClInclude Include="src\Palette\ColourSlotStep.h" />
     <ClInclude Include="src\Palette\EffectOwner.h" />
     <ClInclude Include="src\Palette\PlayerSides.h" />
     <ClInclude Include="src\Palette\EffectPaint.h" />

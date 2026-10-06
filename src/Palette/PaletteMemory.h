@@ -47,6 +47,7 @@ namespace PaletteMemory
 	int FindLoadForPlayer(int player);
 
 	int GetCharaNumber(int player);
+	int GetSelectColour(int player);
 
 	int GetPlayerSlot(int player);
 	bool SetPlayerSlot(int player, int slot);

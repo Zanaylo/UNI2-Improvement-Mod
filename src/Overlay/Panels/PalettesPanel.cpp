@@ -11,6 +11,7 @@
 #include "Core/info.h"
 #include "Core/utils.h"
 #include "Game/Engine/GameState.h"
+#include "Game/Menus/ColourPicker.h"
 #include "Game/Tables/GameTables.h"
 #include "Network/PaletteShare.h"
 #include "Overlay/Framework/WindowManager.h"
@@ -190,6 +191,17 @@ void DrawPaletteOptions()
 	{
 		ImGui::SetTooltip("Hides the colours this character's sprites never use, and the green that "
 			"fills unused slots. Colours the game's own colour screen offers are always kept.");
+	}
+
+	if (ImGui::Checkbox("Extended colour slots", &g_modVals.paletteExtendedSlots))
+		Settings::SaveInt("Palette", "ExtendedSlots", g_modVals.paletteExtendedSlots ? 1 : 0);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("At character select, pressing right past the game's last colour reaches "
+			"one extra slot per saved palette that has no colour of its own (EX 1, EX 2...).\n"
+			"Players without the mod see the game's first colour.\nPicker: %s",
+			ColourPicker::StatusText());
 	}
 
 	if (ImGui::Checkbox("See the other player's colours", &g_modVals.showOnlinePalettes))

@@ -9,15 +9,13 @@
 #include "Palette/PaletteDrawProbe.h"
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteMemory.h"
+#include "Palette/PaletteSignature.h"
 #include "Palette/PaletteTexture.h"
 #include "Palette/PaletteTrace.h"
 
 #include <cstring>
 
 namespace {
-
-constexpr int kSignatureFirstEntry = 2;
-constexpr int kSignatureEntries = 16;
 
 constexpr unsigned kRowsChecked = 4;
 
@@ -37,7 +35,7 @@ int g_identifyIn = 0;
 
 struct Catalogue
 {
-	uint8_t signature[GameOffsets::kPaletteSlots][kSignatureEntries * 3];
+	uint8_t signature[GameOffsets::kPaletteSlots][PaletteSignature::kBytes];
 	bool valid[GameOffsets::kPaletteSlots];
 	int chara;
 	int count;
@@ -51,17 +49,6 @@ bool g_coloursEverMatched = false;
 int g_comparisons = 0;
 
 int g_loggedAmbiguous[2] = {};
-
-void TakeSignature(const uint8_t* palette, uint8_t* out)
-{
-	for (int i = 0; i < kSignatureEntries; ++i)
-	{
-		const int entry = kSignatureFirstEntry + i;
-		out[i * 3 + 0] = palette[entry * 4 + 0];
-		out[i * 3 + 1] = palette[entry * 4 + 1];
-		out[i * 3 + 2] = palette[entry * 4 + 2];
-	}
-}
 
 void RefreshCatalogue(int player)
 {
@@ -97,7 +84,7 @@ void RefreshCatalogue(int player)
 		if (!PaletteMemory::ReadPaletteAtTable(table, i, palette))
 			continue;
 
-		TakeSignature(palette, catalogue.signature[i]);
+		PaletteSignature::Take(palette, catalogue.signature[i]);
 		catalogue.valid[i] = true;
 		++catalogue.count;
 	}
@@ -129,8 +116,8 @@ bool RowIsTellable(const uint8_t* row)
 
 bool RowMatchesCatalogue(const uint8_t* row, const Catalogue& catalogue, int& outPalette)
 {
-	uint8_t signature[kSignatureEntries * 3] = {};
-	TakeSignature(row, signature);
+	uint8_t signature[PaletteSignature::kBytes] = {};
+	PaletteSignature::Take(row, signature);
 
 	for (int i = 0; i < GameOffsets::kPaletteSlots; ++i)
 	{

@@ -14,10 +14,16 @@ constexpr int kMaxLogged = 48;
 uint32_t g_raw = SceneWatch::kNone;
 uint32_t g_settled = SceneWatch::kNone;
 uint32_t g_first = SceneWatch::kNone;
+uint32_t g_hub = SceneWatch::kNone;
 uint32_t g_candidate = SceneWatch::kNone;
 unsigned g_held = 0;
 int g_logged = 0;
 char g_status[96] = "not read yet";
+
+bool IsHub(uint32_t scene)
+{
+	return scene == GameOffsets::kSceneMainMenu || scene == GameOffsets::kSceneNetwork;
+}
 
 }
 
@@ -49,6 +55,9 @@ void SceneWatch::OnFrame()
 	if (g_first == SceneWatch::kNone)
 		g_first = scene;
 
+	if (IsHub(scene))
+		g_hub = scene;
+
 	sprintf_s(g_status, "scene %u", scene);
 
 	if (g_logged >= kMaxLogged)
@@ -71,6 +80,11 @@ uint32_t SceneWatch::First()
 uint32_t SceneWatch::Raw()
 {
 	return g_raw;
+}
+
+uint32_t SceneWatch::LastHub()
+{
+	return g_hub;
 }
 
 unsigned SceneWatch::HeldFrames()

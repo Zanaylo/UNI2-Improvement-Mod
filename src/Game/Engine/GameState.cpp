@@ -3,6 +3,7 @@
 #include "Core/utils.h"
 #include "Game/Engine/CharaTracker.h"
 #include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/SceneWatch.h"
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Engine/OnlineState.h"
 
@@ -40,6 +41,23 @@ int GameState::GetTrainingFlag()
 		return -1;
 
 	return static_cast<int>(value);
+}
+
+bool GameState::IsNetworkSelection()
+{
+	uint32_t mode = 0;
+	uint32_t sub = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kBattleMode)), mode) ||
+		!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kSubMode)), sub))
+	{
+		return false;
+	}
+
+	const bool networkMenu = mode == GameOffsets::kBattleModeNetworkMenu &&
+		static_cast<int32_t>(sub) == GameOffsets::kSubModeNone;
+
+	return networkMenu || SceneWatch::LastHub() == GameOffsets::kSceneNetwork;
 }
 
 bool GameState::IsTrainingBattle()

@@ -12,6 +12,7 @@ namespace SceneWatch
 	uint32_t First();
 	uint32_t Raw();
 	unsigned HeldFrames();
+	uint32_t LastHub();
 
 	const char* StatusText();
 }

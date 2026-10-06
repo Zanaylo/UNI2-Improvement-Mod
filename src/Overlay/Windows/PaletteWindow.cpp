@@ -15,6 +15,7 @@
 #include "Game/Tables/UsedEntryTable.h"
 #include "Overlay/Widgets/ComboNav.h"
 #include "Network/PaletteShare.h"
+#include "Palette/ColourSlots.h"
 #include "Palette/EffectOwner.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteChoice.h"
@@ -50,6 +51,34 @@ constexpr const char* kPartNames[LivePalette::kParts] = {
 int SheetSetFor(bool summon)
 {
 	return summon ? BasePals::kSummonSet : BasePals::kCharacterSet;
+}
+
+void ColourSlotLabel(int chara, int colour, char* out, size_t size)
+{
+	const char* const holder = ColourSlots::BoundFile(chara, colour);
+	const bool stock = colour < ColourSlots::kStockColours;
+	const int number = stock ? colour + 1 : colour - ColourSlots::kStockColours + 1;
+
+	if (holder[0] == '\0')
+	{
+		sprintf_s(out, size, stock ? "Colour %d" : "Custom %d", number);
+		return;
+	}
+
+	sprintf_s(out, size, stock ? "Colour %d - %s" : "Custom %d - %s", number, holder);
+}
+
+void ExtendedLabel(int chara, const char* file, char* out, size_t size)
+{
+	const int extended = ColourSlots::ExtendedOf(chara, file);
+
+	if (extended == ColourSlots::kNoExtended)
+	{
+		strncpy_s(out, size, "Extended", _TRUNCATE);
+		return;
+	}
+
+	sprintf_s(out, size, "Extended, EX %d of %d", extended, ColourSlots::ExtendedCount(chara));
 }
 
 constexpr const char* kPictureExtension = ".png";
@@ -976,6 +1005,8 @@ void PaletteWindow::DrawFiles(int player)
 	if (ImGui::Button("Rescan"))
 		RefreshFiles(player);
 
+	DrawColourSlot(player);
+
 	const bool importing = m_pngImportDialog[player].IsRunning();
 
 	ImGui::BeginDisabled(importing);
@@ -1058,6 +1089,68 @@ void PaletteWindow::Undo(int player)
 		Apply(player);
 	else
 		Refresh(player);
+}
+
+void PaletteWindow::DrawColourSlot(int player)
+{
+	ImGui::TextUnformatted("Colour slot");
+
+	const int chara = m_chara[player];
+
+	if (m_chosen[player] < 0 || m_chosen[player] >= m_fileCount[player])
+	{
+		ImGui::TextDisabled("Save or pick a palette to give it a slot.");
+		return;
+	}
+
+	const char* const file = m_files[player][m_chosen[player]].c_str();
+	const int bound = ColourSlots::ColourOf(chara, file);
+
+	char current[160] = {};
+
+	if (bound == ColourSlots::kNoColour)
+		ExtendedLabel(chara, file, current, sizeof(current));
+	else
+		ColourSlotLabel(chara, bound, current, sizeof(current));
+
+	Ui::SetItemWidth(170.0f);
+
+	if (ImGui::BeginCombo("##slot", current))
+	{
+		char label[160] = {};
+		ExtendedLabel(chara, file, label, sizeof(label));
+
+		const bool extended = bound == ColourSlots::kNoColour;
+
+		if (ImGui::Selectable(label, extended))
+			ColourSlots::Release(chara, file);
+
+		ComboNav::KeepSelectedInView(extended);
+
+		for (int colour = 0; colour < ColourSlots::kGameColours; ++colour)
+		{
+			const bool selected = colour == bound;
+
+			ColourSlotLabel(chara, colour, label, sizeof(label));
+			ImGui::PushID(colour);
+
+			if (ImGui::Selectable(label, selected))
+				ColourSlots::Bind(chara, colour, file);
+
+			ComboNav::KeepSelectedInView(selected);
+			ImGui::PopID();
+		}
+
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Picking this colour at character select puts this palette on.\n"
+			"A palette with no colour is an extended slot: keep pressing right past the game's last "
+			"colour to reach it.\nPlayers without the mod see the game's colour - the first one for an "
+			"extended slot.\nChanging palette during a match still wins until the next match.");
+	}
 }
 
 void PaletteWindow::RefreshFiles(int player)

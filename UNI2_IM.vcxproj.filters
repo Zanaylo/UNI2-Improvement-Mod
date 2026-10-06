@@ -420,6 +420,9 @@
     <ClCompile Include="src\Game\Audio\MusicRefresh.cpp">
       <Filter>Game\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\HexText.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\FileIndex.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -780,6 +783,12 @@
     <ClCompile Include="src\Network\RoomRoster.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="src\Network\LobbyPaletteCodec.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\LobbyPalettes.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network\ModPresence.cpp">
       <Filter>Network</Filter>
     </ClCompile>
@@ -1020,6 +1029,21 @@
     <ClCompile Include="src\Palette\PaletteChoice.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
+    <ClCompile Include="src\Palette\PaletteSignature.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\ColourSlotMemory.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\ColourSlots.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\NetworkPick.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\ColourSlotStep.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
     <ClCompile Include="src\Palette\EffectOwner.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
@@ -1105,6 +1129,18 @@
       <Filter>Game\Engine</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Menus\CharaSelectProbe.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\ColourPicker.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\ColourWindow.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\LobbyAvatar.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\ColourPreview.cpp">
       <Filter>Game\Menus</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Menus\CharaSelectState.cpp">
@@ -1835,6 +1871,9 @@
     <ClInclude Include="src\Game\Audio\MusicRefresh.h">
       <Filter>Game\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\HexText.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\FileIndex.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -2195,6 +2234,12 @@
     <ClInclude Include="src\Network\RoomRoster.h">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="src\Network\LobbyPaletteCodec.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\LobbyPalettes.h">
+      <Filter>Network</Filter>
+    </ClInclude>
     <ClInclude Include="src\Network\ModPresence.h">
       <Filter>Network</Filter>
     </ClInclude>
@@ -2372,6 +2417,18 @@
     <ClInclude Include="src\Game\Menus\CharaSelectProbe.h">
       <Filter>Game\Menus</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Menus\ColourPicker.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Menus\ColourWindow.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Menus\LobbyAvatar.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Menus\ColourPreview.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Menus\CharaSelectState.h">
       <Filter>Game\Menus</Filter>
     </ClInclude>
@@ -2469,6 +2526,21 @@
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\PaletteChoice.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteSignature.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\ColourSlotMemory.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\ColourSlots.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\NetworkPick.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\ColourSlotStep.h">
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\EffectOwner.h">

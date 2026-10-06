@@ -4,9 +4,12 @@
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Engine/MemoryMap.h"
+#include "Game/Menus/LobbyAvatar.h"
+#include "Network/LobbyPalettes.h"
 #include "Palette/PaletteOwnerProbe.h"
 #include "Palette/PalettePaint.h"
 #include "Palette/PaletteSeat.h"
+#include "Palette/PaletteSignature.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -143,6 +146,41 @@ std::string RunFill(const Words& words)
 	return "ok";
 }
 
+std::string RunLobbyFake(const Words& words)
+{
+	uint8_t rgb[3] = {};
+	uint8_t shown[PalettePaint::kBytes] = {};
+	LobbyPaletteCodec::Entry entry = {};
+
+	if (words.size() < 4 || !ParseRgb(words[3], rgb))
+		return "error palette lobby fake <rrggbb>";
+
+	if (!PalettePaint::ReadGameColours(0, shown))
+		return "error no avatar colours to sign";
+
+	PaletteSignature::Take(shown, entry.signature);
+	Fill(entry.rgba, rgb);
+
+	LobbyPalettes::InjectForTest(entry);
+	return "ok";
+}
+
+std::string RunLobby(const Words& words)
+{
+	const std::string action = words.size() >= 3 ? words[2] : std::string();
+
+	if (action == "fake")
+		return RunLobbyFake(words);
+
+	if (action == "clear")
+	{
+		LobbyPalettes::ClearTest();
+		return "ok";
+	}
+
+	return "ok members " + std::to_string(LobbyPalettes::Count()) + " | avatar wears " + LobbyAvatar::StatusText();
+}
+
 std::string RunLife(const Words& words)
 {
 	int player = 0;
@@ -183,8 +221,10 @@ bool PaletteCommands::Execute(const Words& words, std::string& reply)
 		reply = RunFill(words);
 	else if (verb == "life")
 		reply = RunLife(words);
+	else if (verb == "lobby")
+		reply = RunLobby(words);
 	else
-		reply = "error palette probe|rows|state|fill|life";
+		reply = "error palette probe|rows|state|fill|life|lobby";
 
 	return true;
 }

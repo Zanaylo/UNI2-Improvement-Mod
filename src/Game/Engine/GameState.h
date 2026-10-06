@@ -12,6 +12,8 @@ namespace GameState
 
 	bool IsSingleMode();
 
+	bool IsNetworkSelection();
+
 	bool IsBattleTicking();
 
 	bool AllowsTrainingTools();

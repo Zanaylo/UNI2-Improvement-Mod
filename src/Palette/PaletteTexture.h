@@ -113,6 +113,7 @@ namespace PaletteTexture
 	bool Restore(int index, unsigned row);
 	int RestoreAll(int index);
 	bool HasBackup(int index, unsigned row);
+	void DropBackup(int index, unsigned row);
 
 	bool WriteRowKeepingAlpha(int index, unsigned row, const uint8_t* colors);
 

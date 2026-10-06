@@ -1,6 +1,7 @@
 #include "Network/NetWorker.h"
 
 #include "Core/ThreadRole.h"
+#include "Network/LobbyPalettes.h"
 #include "Network/MatchKind.h"
 #include "Network/ModChannel.h"
 #include "Network/ModPresence.h"
@@ -59,6 +60,11 @@ void Presence(const NetLink::Snapshot& snapshot)
 	ModPresence::Tick(snapshot);
 }
 
+void RoomPalettes(const NetLink::Snapshot& snapshot)
+{
+	LobbyPalettes::Tick(snapshot);
+}
+
 void Ping(const NetLink::Snapshot& snapshot)
 {
 	RoomPing::Tick(snapshot);
@@ -90,6 +96,7 @@ constexpr NamedJob kJobs[] = {
 	{ "mod channel", &Channel },
 	{ "link measure", &Measure },
 	{ "room presence", &Presence },
+	{ "room palettes", &RoomPalettes },
 	{ "room ping", &Ping },
 	{ "match kind", &Kind },
 	{ "player count", &Players },

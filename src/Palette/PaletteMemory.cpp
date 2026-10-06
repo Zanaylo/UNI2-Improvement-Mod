@@ -631,6 +631,17 @@ int PaletteMemory::GetCharaNumber(int player)
 	return CharaNumber(player);
 }
 
+int PaletteMemory::GetSelectColour(int player)
+{
+	void* const chara = PlayerData(player);
+	uint32_t value = 0;
+
+	if (chara == nullptr || !MemoryMap::ReadStructDword(chara, GameOffsets::kPlayerDataSelectColour, value))
+		return -1;
+
+	return static_cast<int>(value & 0xff);
+}
+
 int PaletteMemory::GetPlayerSlot(int player)
 {
 	return GetPlayerSlotForChara(PlayerData(player));

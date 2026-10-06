@@ -6,6 +6,7 @@
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Engine/MemoryMap.h"
+#include "Game/Engine/SceneWatch.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteSeat.h"
@@ -27,6 +28,9 @@ struct Player
 
 	uint8_t remote[PalettePaint::kBytes];
 	bool hasRemote;
+
+	uint8_t select[PalettePaint::kBytes];
+	bool hasSelect;
 
 	uint8_t companion[PalettePaint::kBytes];
 	uint8_t previewCompanion[PalettePaint::kBytes];
@@ -58,6 +62,7 @@ Player g_players[PalettePaint::kPlayers] = {};
 unsigned g_pass = 0;
 unsigned g_paintedPass = ~0u;
 bool g_allowed = false;
+bool g_atPreview = false;
 
 unsigned g_changes = 0;
 unsigned g_shownChanges = 0;
@@ -78,8 +83,6 @@ void RepaintIfChanged()
 	FrameStepper::RequestRepaint();
 }
 
-int g_innerOffset = -1;
-
 int ResolveAt(uintptr_t named, int offset)
 {
 	uintptr_t inner = 0;
@@ -88,32 +91,6 @@ int ResolveAt(uintptr_t named, int offset)
 		return -1;
 
 	return PaletteTexture::FindByPointer(inner);
-}
-
-int LearnInnerOffset(uintptr_t named)
-{
-	int learned = -1;
-	int index = -1;
-
-	for (int offset = 4; offset <= 0x200; offset += 4)
-	{
-		const int at = ResolveAt(named, offset);
-
-		if (at < 0)
-			continue;
-
-		if (learned >= 0)
-			return -1;
-
-		learned = offset;
-		index = at;
-	}
-
-	if (learned < 0)
-		return -1;
-
-	g_innerOffset = learned;
-	return index;
 }
 
 int ResolveNamed(uintptr_t named)
@@ -126,10 +103,7 @@ int ResolveNamed(uintptr_t named)
 	if (direct >= 0)
 		return direct;
 
-	if (g_innerOffset > 0)
-		return ResolveAt(named, g_innerOffset);
-
-	return LearnInnerOffset(named);
+	return ResolveAt(named, GameOffsets::kPaletteWrapperTexture);
 }
 
 int ResolveOwners(uintptr_t owner, int* out, int max)
@@ -158,6 +132,11 @@ int ResolveOwners(uintptr_t owner, int* out, int max)
 	return found;
 }
 
+bool IsPreviewScene(uint32_t scene)
+{
+	return scene == GameOffsets::kSceneCharaSelect || scene == GameOffsets::kSceneNetwork;
+}
+
 bool AnyPainted(const Player& entry)
 {
 	for (int slot = 0; slot < entry.count; ++slot)
@@ -167,6 +146,32 @@ bool AnyPainted(const Player& entry)
 	}
 
 	return false;
+}
+
+void NoticeUploads(Player& entry)
+{
+	for (int slot = 0; slot < entry.count; ++slot)
+	{
+		for (unsigned row = 0; row < PalettePaint::kRows; ++row)
+		{
+			const uint32_t bit = 1u << row;
+
+			if ((entry.painted[slot] & bit) == 0)
+				continue;
+
+			uint8_t current[PalettePaint::kBytes] = {};
+
+			if (!PaletteTexture::ReadRow(entry.indices[slot], row, current) ||
+				memcmp(current, entry.lastNative[slot][row], PalettePaint::kBytes) == 0)
+			{
+				continue;
+			}
+
+			PaletteTexture::DropBackup(entry.indices[slot], row);
+			entry.painted[slot] &= ~bit;
+			entry.haveAlpha[slot] &= ~bit;
+		}
+	}
 }
 
 void Release(Player& entry)
@@ -207,9 +212,26 @@ bool CacheAlpha(Player& entry, int slot, unsigned row)
 	return true;
 }
 
-void PaintSlot(Player& entry, int slot, const uint8_t* source, const uint8_t* companion)
+uint32_t RowsFor(const Player& entry, int player)
 {
-	const uint32_t drawn = entry.rows != 0 ? entry.rows : 3u;
+	if (g_atPreview)
+		return 1u << player;
+
+	return entry.rows != 0 ? entry.rows : 3u;
+}
+
+int GameRowOf(int player)
+{
+	if (g_atPreview)
+		return player;
+
+	const int side = PaletteSeat::GetSideByOwner(g_players[player].owner);
+
+	return side >= 0 ? side : PlayerSides::ScreenSideOf(player);
+}
+
+void PaintSlot(Player& entry, int slot, const uint8_t* source, const uint8_t* companion, uint32_t drawn)
+{
 
 	uint8_t native[PalettePaint::kRows][PalettePaint::kBytes] = {};
 	const uint8_t* ready[PalettePaint::kRows] = {};
@@ -277,6 +299,9 @@ void PaintSlot(Player& entry, int slot, const uint8_t* source, const uint8_t* co
 
 const uint8_t* SourceFor(const Player& entry)
 {
+	if (g_atPreview)
+		return entry.hasSelect ? entry.select : nullptr;
+
 	if (entry.previewing)
 		return entry.preview;
 
@@ -298,6 +323,9 @@ void LogLatch(int player, uintptr_t owner, uintptr_t was)
 
 uintptr_t OwnerFor(int player)
 {
+	if (g_atPreview)
+		return PaletteSeat::GetOwner(player);
+
 	void* const chara = MemoryMap::GetCharaSlot(player);
 	uint32_t table = 0;
 
@@ -472,6 +500,27 @@ const uint8_t* PalettePaint::GetRemote(int player)
 	return g_players[player].remote;
 }
 
+void PalettePaint::StageSelect(int side, const uint8_t* colours)
+{
+	if (side < 0 || side >= kPlayers || colours == nullptr)
+		return;
+
+	Player& entry = g_players[side];
+
+	memcpy(entry.select, colours, kBytes);
+	entry.hasSelect = true;
+	NoteChange();
+}
+
+void PalettePaint::ClearSelect(int side)
+{
+	if (side < 0 || side >= kPlayers || !g_players[side].hasSelect)
+		return;
+
+	g_players[side].hasSelect = false;
+	NoteChange();
+}
+
 bool PalettePaint::IsStaged(int player)
 {
 	return player >= 0 && player < kPlayers && g_players[player].staged;
@@ -524,7 +573,8 @@ void PalettePaint::OnFrame()
 		EffectPaint::Forget();
 	}
 
-	g_allowed = inMatch || g_modVals.paletteOutOfMatch;
+	g_atPreview = IsPreviewScene(SceneWatch::Current());
+	g_allowed = g_atPreview || inMatch || g_modVals.paletteOutOfMatch;
 
 	if (!g_allowed)
 	{
@@ -537,6 +587,9 @@ void PalettePaint::OnFrame()
 	for (int player = 0; player < kPlayers; ++player)
 	{
 		Player& entry = g_players[player];
+
+		if (g_atPreview)
+			NoticeUploads(entry);
 
 		Follow(entry, player);
 
@@ -572,7 +625,7 @@ void PalettePaint::OnFrame()
 			Release(entry);
 		}
 
-		if (!entry.staged && !entry.previewing && !entry.hasRemote && AnyPainted(entry))
+		if (SourceFor(entry) == nullptr && AnyPainted(entry))
 			Release(entry);
 
 		for (int slot = 0; slot < count; ++slot)
@@ -591,21 +644,13 @@ bool PalettePaint::ReadGameColours(int player, uint8_t* rgba)
 		return false;
 
 	const int index = g_players[player].index;
+	const int row = GameRowOf(player);
 
-	if (index < 0)
+	if (index < 0 || row < 0)
 		return false;
 
-	int side = PaletteSeat::GetSideByOwner(g_players[player].owner);
-
-	if (side < 0)
-		side = PlayerSides::ScreenSideOf(player);
-
-	if (side < 0)
-		return false;
-
-	return PaletteTexture::ReadPristineRowAsRgba(index, static_cast<unsigned>(side), rgba);
+	return PaletteTexture::ReadPristineRowAsRgba(index, static_cast<unsigned>(row), rgba);
 }
-
 
 void PalettePaint::OnDraw()
 {
@@ -636,11 +681,13 @@ void PalettePaint::OnDraw()
 
 		const uint8_t* companion = nullptr;
 
-		if (entry.hasCompanion)
+		if (entry.hasCompanion && !g_atPreview)
 			companion = entry.previewing ? entry.previewCompanion : entry.companion;
 
+		const uint32_t rows = RowsFor(entry, player);
+
 		for (int slot = 0; slot < entry.count; ++slot)
-			PaintSlot(entry, slot, source, companion);
+			PaintSlot(entry, slot, source, companion, rows);
 	}
 }
 
@@ -688,5 +735,5 @@ uintptr_t PalettePaint::GetOwner(int player)
 
 int PalettePaint::GetInnerOffset()
 {
-	return g_innerOffset;
+	return GameOffsets::kPaletteWrapperTexture;
 }

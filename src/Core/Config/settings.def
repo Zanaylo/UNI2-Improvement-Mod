@@ -95,6 +95,7 @@ SETTING_INT(showlegacypalettes,     "Palette",  "ShowLegacyTab",        0)
 SETTING_BOOL(paletteGroupByPart, "Palette", "GroupByPart", 1)
 SETTING_BOOL(paletteFlashEntry, "Palette", "FlashEntry", 1)
 SETTING_BOOL(paletteFilterJunk, "Palette", "FilterJunk", 1)
+SETTING_BOOL(paletteExtendedSlots, "Palette", "ExtendedSlots", 1)
 SETTING_INT(stageFlatColour,        "Video",    "FlatStage",            0)
 SETTING_INT(stageFlatColourValue,   "Video",    "FlatStageColour",      0x00ff00)
 
