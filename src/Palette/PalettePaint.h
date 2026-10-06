@@ -39,6 +39,8 @@ namespace PalettePaint
 
 	void OnDraw();
 
+	bool IsAtPreview();
+
 	bool IsPainting(int player);
 
 	bool ReadGameColours(int player, uint8_t* rgba);

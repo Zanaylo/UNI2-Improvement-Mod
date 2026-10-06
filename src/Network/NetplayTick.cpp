@@ -19,6 +19,7 @@
 #include "Network/RoomPing.h"
 #include "Network/RoomRoster.h"
 #include "Network/Spectate/Spectate.h"
+#include "Network/Spectate/SpectateViewer.h"
 #include "Network/Steam/SteamInterfaces.h"
 #include "Network/Steam/SteamWatch.h"
 
@@ -31,7 +32,7 @@ int g_frame = 0;
 
 bool PeerVerified(uint64_t id)
 {
-	return ModHandshake::HeardFrom(id) || ModPresence::PeerHasMod(id);
+	return ModHandshake::HeardFrom(id) || ModPresence::PeerHasMod(id) || SpectateViewer::Host() == id;
 }
 
 void WriteHeader()

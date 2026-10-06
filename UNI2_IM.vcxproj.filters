@@ -1041,6 +1041,18 @@
     <ClCompile Include="src\Palette\NetworkPick.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
+    <ClCompile Include="src\Palette\EffectBlock.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\SelectLayer.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\RoomPalette.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteCycle.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
     <ClCompile Include="src\Palette\ColourSlotStep.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
@@ -1441,6 +1453,9 @@
       <Filter>Overlay\Panels</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Panels\PalettesPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\NetworkPalettePanel.cpp">
       <Filter>Overlay\Panels</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Panels\ReplayPanel.cpp">
@@ -2540,6 +2555,18 @@
     <ClInclude Include="src\Palette\NetworkPick.h">
       <Filter>Palette</Filter>
     </ClInclude>
+    <ClInclude Include="src\Palette\EffectBlock.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\SelectLayer.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\RoomPalette.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteCycle.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
     <ClInclude Include="src\Palette\ColourSlotStep.h">
       <Filter>Palette</Filter>
     </ClInclude>
@@ -2982,6 +3009,9 @@
       <Filter>Overlay\Panels</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Panels\PalettesPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\NetworkPalettePanel.h">
       <Filter>Overlay\Panels</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Panels\ReplayPanel.h">

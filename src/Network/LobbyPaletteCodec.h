@@ -11,6 +11,8 @@ namespace LobbyPaletteCodec
 	constexpr int kRgbBytes = kColours * 3;
 	constexpr int kHeaderBytes = 16;
 	constexpr int kTextBytes = kHeaderBytes + (PaletteSignature::kBytes + 1 + kRgbBytes) * 2 + 1;
+	constexpr int kEffectEntryBytes = 4;
+	constexpr int kEffectTextBytes = kHeaderBytes + kColours * kEffectEntryBytes * 2 + 1;
 
 	struct Entry
 	{
@@ -22,4 +24,7 @@ namespace LobbyPaletteCodec
 
 	bool Encode(int chara, int colour, const uint8_t* signature, const uint8_t* rgba, char* out, int size);
 	bool Decode(const char* text, Entry& out);
+
+	bool EncodeEffects(const uint8_t* block, char* out, int size);
+	bool DecodeEffects(const char* text, uint8_t* block);
 }

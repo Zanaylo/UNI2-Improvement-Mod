@@ -403,6 +403,10 @@
     <ClCompile Include="src\Palette\ColourSlotMemory.cpp" />
     <ClCompile Include="src\Palette\ColourSlots.cpp" />
     <ClCompile Include="src\Palette\NetworkPick.cpp" />
+    <ClCompile Include="src\Palette\EffectBlock.cpp" />
+    <ClCompile Include="src\Palette\SelectLayer.cpp" />
+    <ClCompile Include="src\Palette\RoomPalette.cpp" />
+    <ClCompile Include="src\Palette\PaletteCycle.cpp" />
     <ClCompile Include="src\Palette\ColourSlotStep.cpp" />
     <ClCompile Include="src\Palette\EffectOwner.cpp" />
     <ClCompile Include="src\Palette\PlayerSides.cpp" />
@@ -537,6 +541,7 @@
     <ClCompile Include="src\Core\ThreadRole.cpp" />
     <ClCompile Include="src\Overlay\Panels\ConfigPanel.cpp" />
     <ClCompile Include="src\Overlay\Panels\PalettesPanel.cpp" />
+    <ClCompile Include="src\Overlay\Panels\NetworkPalettePanel.cpp" />
     <ClCompile Include="src\Overlay\Panels\ReplayPanel.cpp" />
     <ClCompile Include="src\Overlay\Panels\TrainingPanel.cpp" />
     <ClCompile Include="src\Overlay\Windows\DebugWindowMeter.cpp" />
@@ -871,6 +876,10 @@
     <ClInclude Include="src\Palette\ColourSlotMemory.h" />
     <ClInclude Include="src\Palette\ColourSlots.h" />
     <ClInclude Include="src\Palette\NetworkPick.h" />
+    <ClInclude Include="src\Palette\EffectBlock.h" />
+    <ClInclude Include="src\Palette\SelectLayer.h" />
+    <ClInclude Include="src\Palette\RoomPalette.h" />
+    <ClInclude Include="src\Palette\PaletteCycle.h" />
     <ClInclude Include="src\Palette\ColourSlotStep.h" />
     <ClInclude Include="src\Palette\EffectOwner.h" />
     <ClInclude Include="src\Palette\PlayerSides.h" />
@@ -1019,6 +1028,7 @@
     <ClInclude Include="src\Core\ThreadRole.h" />
     <ClInclude Include="src\Overlay\Panels\ConfigPanel.h" />
     <ClInclude Include="src\Overlay\Panels\PalettesPanel.h" />
+    <ClInclude Include="src\Overlay\Panels\NetworkPalettePanel.h" />
     <ClInclude Include="src\Overlay\Panels\ReplayPanel.h" />
     <ClInclude Include="src\Overlay\Panels\TrainingPanel.h" />
     <ClInclude Include="src\Training\Meter\MeterTrace.h" />

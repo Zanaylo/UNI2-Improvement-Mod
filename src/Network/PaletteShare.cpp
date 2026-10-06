@@ -29,6 +29,7 @@ constexpr uint32_t kMagic = ModChannel::kMagic;
 constexpr uint16_t kVersionOne = 1;
 constexpr uint16_t kVersionTwo = 2;
 constexpr uint16_t kVersionThree = 3;
+constexpr uint16_t kVersionRequest = 4;
 constexpr uint16_t kKindPalette = ModChannel::kKindPalette;
 
 #pragma pack(push, 1)
@@ -65,6 +66,13 @@ struct PacketV3
 	uint8_t hasEffect;
 	uint8_t effectColors[PaletteFile::kBytes];
 };
+
+struct PacketRequest
+{
+	uint32_t magic;
+	uint16_t version;
+	uint16_t kind;
+};
 #pragma pack(pop)
 
 constexpr int kSendDelayFrames = 120;
@@ -75,6 +83,10 @@ constexpr int kResendsKnown = 3;
 constexpr int kSettleFrames = 30;
 
 constexpr DWORD kSendTtlMs = 30000;
+
+constexpr int kAsks = 3;
+constexpr int kAskers = 8;
+constexpr DWORD kAnswerSpacingMs = 2000;
 
 bool g_inMatch = false;
 int g_frames = 0;
@@ -100,6 +112,22 @@ struct Remote
 };
 
 Remote g_remote[2] = {};
+
+struct Relay
+{
+	bool valid;
+	PacketV3 packet;
+};
+
+Relay g_relay = {};
+
+struct Answered
+{
+	uint64_t id;
+	DWORD at;
+};
+
+Answered g_answered[kAskers] = {};
 
 int g_statusStamp = -1;
 
@@ -215,6 +243,53 @@ void WornName(int player, char* out, int size)
 		out[length - suffix] = 0;
 }
 
+void Stamp(PacketV3& packet, int chara, int side)
+{
+	packet.magic = kMagic;
+	packet.version = kVersionThree;
+	packet.kind = kKindPalette;
+	packet.chara = chara;
+	packet.side = static_cast<int8_t>(side);
+}
+
+bool BuildOwn(int own, PacketV3& packet)
+{
+	const uint8_t* colors = PalettePaint::GetStaged(own);
+	uint8_t original[PaletteFile::kBytes] = {};
+	char name[PaletteFile::kNameLength] = {};
+	const bool bare = colors == nullptr;
+
+	if (bare && !g_everSent)
+	{
+		PaletteTrace::Note("send skipped, p%d has never worn one of ours", own);
+		return false;
+	}
+
+	if (bare && !PalettePaint::ReadGameColours(own, original))
+	{
+		PaletteTrace::Note("send skipped, p%d has no palette and no original to fall back on", own);
+		return false;
+	}
+
+	if (bare)
+		colors = original;
+	else
+		WornName(own, name, sizeof(name));
+
+	const bool hasEffects = !bare && EffectPaint::GetEditedCount(own) > 0;
+
+	packet = {};
+	Stamp(packet, PaletteMemory::GetCharaNumber(own), own);
+	strncpy_s(packet.name, name, _TRUNCATE);
+	memcpy(packet.colors, colors, sizeof(packet.colors));
+	packet.hasEffect = hasEffects ? 1 : 0;
+
+	if (hasEffects)
+		EffectPaint::GetBlock(own, packet.effectColors);
+
+	return true;
+}
+
 void SendOurs()
 {
 	if (!g_modVals.sharePalettes)
@@ -231,56 +306,10 @@ void SendOurs()
 		return;
 	}
 
-	const uint8_t* colors = PalettePaint::GetStaged(own);
-
-	uint8_t original[PaletteFile::kBytes] = {};
-
-	char name[PaletteFile::kNameLength] = {};
-
-	const bool bare = colors == nullptr;
-
-	if (bare)
-	{
-
-		if (!g_everSent)
-		{
-			PaletteTrace::Note("send skipped, p%d has never worn one of ours", own);
-			return;
-		}
-
-		if (!PalettePaint::ReadGameColours(own, original))
-		{
-			PaletteTrace::Note("send skipped, p%d has no palette and no original to fall back on",
-				own);
-			return;
-		}
-
-		colors = original;
-	}
-	else
-	{
-		WornName(own, name, sizeof(name));
-	}
-
-	uint8_t effects[EffectPaint::kBlockBytes] = {};
-	const bool hasEffects = !bare && EffectPaint::GetEditedCount(own) > 0;
-
-	if (hasEffects)
-		EffectPaint::GetBlock(own, effects);
-
 	PacketV3 packet = {};
-	packet.magic = kMagic;
-	packet.version = kVersionThree;
-	packet.kind = kKindPalette;
-	packet.chara = PaletteMemory::GetCharaNumber(own);
-	packet.side = static_cast<int8_t>(own);
-	strncpy_s(packet.name, name, _TRUNCATE);
-	memcpy(packet.colors, colors, sizeof(packet.colors));
 
-	packet.hasEffect = hasEffects ? 1 : 0;
-
-	if (hasEffects)
-		memcpy(packet.effectColors, effects, sizeof(packet.effectColors));
+	if (!BuildOwn(own, packet))
+		return;
 
 	if (!ModChannel::SendToPeer(&packet, sizeof(packet), kSendTtlMs, "palette"))
 	{
@@ -296,6 +325,76 @@ void SendOurs()
 		packet.chara, own, packet.hasEffect ? "effects" : "no effects", g_sent, Resends());
 
 	LOG("PaletteShare: queued '%s' for character %d on side %d", packet.name, packet.chara, own);
+}
+
+bool AnsweredLately(uint64_t id, DWORD now)
+{
+	Answered* oldest = &g_answered[0];
+
+	for (Answered& entry : g_answered)
+	{
+		if (entry.id == id && now - entry.at < kAnswerSpacingMs)
+			return true;
+
+		if (entry.id == id)
+		{
+			entry.at = now;
+			return false;
+		}
+
+		if (now - entry.at > now - oldest->at)
+			oldest = &entry;
+	}
+
+	oldest->id = id;
+	oldest->at = now;
+	return false;
+}
+
+void AnswerSpectator(uint64_t from)
+{
+	const int own = OwnPlayer();
+
+	if (from == 0 || !g_inMatch || own < 0 || !g_modVals.sharePalettes || AnsweredLately(from, GetTickCount()))
+		return;
+
+	PacketV3 packet = {};
+	const bool ours = BuildOwn(own, packet) &&
+		ModChannel::SendTo(from, &packet, sizeof(packet), kSendTtlMs, "palette for a spectator");
+	const bool theirs = g_relay.valid &&
+		ModChannel::SendTo(from, &g_relay.packet, sizeof(g_relay.packet), kSendTtlMs, "opponent palette for a spectator");
+
+	PaletteTrace::Note("spectator %llu asked, sent ours %d and the opponent's %d", (unsigned long long)from,
+		ours ? 1 : 0, theirs ? 1 : 0);
+}
+
+void KeepForRelay(const PacketV3& packet, int side)
+{
+	g_relay.packet = packet;
+	Stamp(g_relay.packet, packet.chara, side);
+	g_relay.valid = true;
+}
+
+bool HasBothSides()
+{
+	return g_remote[0].valid && g_remote[1].valid;
+}
+
+void AskTheHost()
+{
+	if (!g_modVals.showOnlinePalettes || HasBothSides() || g_sent >= kAsks ||
+		g_frames < kSendDelayFrames + g_sent * kResendFrames)
+	{
+		return;
+	}
+
+	++g_sent;
+
+	const PacketRequest request = { kMagic, kVersionRequest, kKindPalette };
+	const bool queued = ModChannel::SendToPeer(&request, sizeof(request), kSendTtlMs, "palette request");
+
+	PaletteTrace::Note("asked the host for both palettes, %s, ask %d of %d", queued ? "queued" : "not queued", g_sent,
+		kAsks);
 }
 
 void PlaceForeign(int side, int chara, const char* name, const uint8_t* colors,
@@ -392,16 +491,16 @@ void HandlePacket(const uint8_t* data, int size, uint64_t from)
 	if (!ReadHeader(data, size, version))
 		return;
 
+	if (version == kVersionRequest)
+	{
+		AnswerSpectator(from);
+		return;
+	}
+
 	if (from == 0 || from != NetLink::Peer())
 	{
 		PaletteTrace::Note("a packet from %llu is not the opponent's, dropped",
 			(unsigned long long)from);
-		return;
-	}
-
-	if (!g_modVals.showOnlinePalettes)
-	{
-		PaletteTrace::Note("a packet arrived but ShowOnlinePalettes is off");
 		return;
 	}
 
@@ -425,6 +524,14 @@ void HandlePacket(const uint8_t* data, int size, uint64_t from)
 	if (side < 0 || side == own)
 		return;
 
+	KeepForRelay(packet, side);
+
+	if (!g_modVals.showOnlinePalettes)
+	{
+		PaletteTrace::Note("a packet arrived but ShowOnlinePalettes is off");
+		return;
+	}
+
 	PlaceForeign(side, incoming.chara, incoming.name, incoming.colors, incoming.effects);
 }
 
@@ -447,6 +554,7 @@ void DropStaleForeign()
 			side, g_remote[side].name);
 
 		g_remote[side] = {};
+		g_relay.valid = false;
 	}
 }
 
@@ -459,6 +567,8 @@ void ForgetForeign()
 
 		g_remote[side] = {};
 	}
+
+	g_relay.valid = false;
 }
 
 }
@@ -547,6 +657,13 @@ void PaletteShare::OnFrame()
 	{
 		g_sideLogged = true;
 		LOG("PaletteShare: peer is up and [0x597940] reads %d", GetOwnSide());
+	}
+
+	if (PaletteControl::IsSpectating())
+	{
+		AskTheHost();
+		UpdateStatus();
+		return;
 	}
 
 	const int own = OwnPlayer();

@@ -15,7 +15,9 @@
 #include "D3D9/Device/DeviceHooks.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Battle/GameRestart.h"
+#include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/OnlineState.h"
+#include "Game/Engine/SceneWatch.h"
 #include "Hooks/InputProbe.h"
 #include "Overlay/Hud/FrameMeterHud.h"
 #include "Overlay/Hud/NotificationBar.h"
@@ -23,7 +25,9 @@
 #include "Overlay/Windows/HitboxOverlay.h"
 #include "D3D9/Device/GraphicsWrapper.h"
 #include "Overlay/Widgets/OverlayFont.h"
+#include "Palette/NetworkPick.h"
 #include "Palette/PaletteChoice.h"
+#include "Palette/RoomPalette.h"
 #include "Training/Meter/FrameMeter.h"
 #include "Training/FrameStepper.h"
 #include "Training/Meter/InputLagMeter.h"
@@ -59,6 +63,27 @@ void RestartFromHotkey()
 	}
 
 	NotificationBar::Add("Restarting the game.");
+}
+
+void StepNetworkPalette(int steps)
+{
+	NetworkPick::Pick pick = {};
+
+	if (!RoomPalette::Step(steps) || !NetworkPick::Recall(pick))
+		return;
+
+	NotificationBar::Add("Network palette: %s", pick.file[0] != '\0' ? pick.file : "the game colour");
+}
+
+void StepPalette(int steps)
+{
+	if (SceneWatch::Current() == GameOffsets::kSceneNetwork)
+	{
+		StepNetworkPalette(steps);
+		return;
+	}
+
+	PaletteChoice::Step(PaletteChoice::LocalPlayer(), steps);
 }
 
 bool IsFocusEvidence(UINT message)
@@ -575,10 +600,10 @@ void WindowManager::HandleHotkeys()
 		FrameMeterHud::Toggle();
 
 	if (Hotkeys::Pressed(Hotkeys::Action_NextPalette))
-		PaletteChoice::Step(PaletteChoice::LocalPlayer(), 1);
+		StepPalette(1);
 
 	if (Hotkeys::Pressed(Hotkeys::Action_PreviousPalette))
-		PaletteChoice::Step(PaletteChoice::LocalPlayer(), -1);
+		StepPalette(-1);
 
 	if (Hotkeys::Pressed(Hotkeys::Action_HideHud))
 		BattleCockpit::SetHidden(!BattleCockpit::IsHidden());

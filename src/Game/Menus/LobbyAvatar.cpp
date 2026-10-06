@@ -8,6 +8,7 @@
 #include "Palette/PaletteLibrary.h"
 #include "Palette/PalettePaint.h"
 #include "Palette/PaletteSignature.h"
+#include "Palette/SelectLayer.h"
 
 #include <cstdio>
 #include <cstring>
@@ -28,6 +29,7 @@ struct Own
 	bool loaded;
 	bool shared;
 	uint8_t colours[PalettePaint::kBytes];
+	uint8_t effects[PalettePaint::kBytes];
 };
 
 struct Candidate
@@ -35,9 +37,10 @@ struct Candidate
 	uint64_t id;
 	uint8_t signature[PaletteSignature::kBytes];
 	uint8_t colours[PalettePaint::kBytes];
+	uint8_t effects[PalettePaint::kBytes];
 };
 
-Own g_own = { { kNoCharacter, kNoColour, "", false, {} }, "", false, false, {} };
+Own g_own = { { kNoCharacter, kNoColour, "", false, {} }, "", false, false, {}, {} };
 unsigned g_ownRevision = 0;
 
 Candidate g_candidates[kCandidates] = {};
@@ -63,11 +66,13 @@ bool IsUsable(const Own& own)
 void Publish()
 {
 	char text[LobbyPaletteCodec::kTextBytes] = {};
+	char effects[LobbyPaletteCodec::kEffectTextBytes] = {};
 	const bool share = g_own.shared && IsUsable(g_own) &&
 		LobbyPaletteCodec::Encode(g_own.pick.chara, g_own.pick.colour, g_own.pick.signature, g_own.colours, text,
-			sizeof(text));
+			sizeof(text)) &&
+		LobbyPaletteCodec::EncodeEffects(g_own.effects, effects, sizeof(effects));
 
-	LobbyPalettes::SetOwn(share ? text : "");
+	LobbyPalettes::SetOwn(share ? text : "", share ? effects : "");
 }
 
 bool SamePick(const NetworkPick::Pick& pick, const std::string& file, bool shared)
@@ -91,7 +96,7 @@ void RefreshOwn()
 	g_own.pick = pick;
 	g_own.shared = shared;
 	strncpy_s(g_own.file, file.c_str(), _TRUNCATE);
-	g_own.loaded = PaletteLibrary::LoadColours(pick.chara, g_own.file, g_own.colours);
+	g_own.loaded = PaletteLibrary::LoadWithEffects(pick.chara, g_own.file, g_own.colours, g_own.effects);
 	++g_ownRevision;
 
 	if (g_own.loaded && !pick.hasSignature)
@@ -109,6 +114,7 @@ int GatherOwn()
 	own.id = kOwnId;
 	memcpy(own.signature, g_own.pick.signature, PaletteSignature::kBytes);
 	memcpy(own.colours, g_own.colours, PalettePaint::kBytes);
+	memcpy(own.effects, g_own.effects, PalettePaint::kBytes);
 	return 1;
 }
 
@@ -128,6 +134,7 @@ int GatherMembers(int count)
 		candidate.id = member.id;
 		memcpy(candidate.signature, member.entry.signature, PaletteSignature::kBytes);
 		memcpy(candidate.colours, member.entry.rgba, PalettePaint::kBytes);
+		memcpy(candidate.effects, member.effects, PalettePaint::kBytes);
 		++count;
 	}
 
@@ -149,7 +156,7 @@ void WearNothing(int side)
 		return;
 
 	seat.staged = false;
-	PalettePaint::ClearSelect(side);
+	SelectLayer::Clear(side);
 	LOG("lobby avatar: p%d wears the game's colours", side + 1);
 }
 
@@ -163,7 +170,7 @@ void Wear(int side, const Candidate& candidate)
 		sprintf_s(seat.status, "member %llu", static_cast<unsigned long long>(candidate.id));
 
 	seat.staged = true;
-	PalettePaint::StageSelect(side, candidate.colours);
+	SelectLayer::Stage(side, candidate.colours, candidate.effects);
 	LOG("lobby avatar: p%d wears %s", side + 1, seat.status);
 }
 
@@ -242,7 +249,7 @@ void LobbyAvatar::Forget()
 			continue;
 
 		seat.staged = false;
-		PalettePaint::ClearSelect(side);
+		SelectLayer::Clear(side);
 	}
 
 	strncpy_s(g_status, "not in a room", _TRUNCATE);

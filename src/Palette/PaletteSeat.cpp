@@ -40,6 +40,16 @@ bool IsLive(const PaletteSeat::Seat& seat)
 	return seat.texture != 0 && g_frame - seat.lastSeenFrame <= kLiveFrames;
 }
 
+bool DrewSideLately(const PaletteSeat::Seat& seat, int side)
+{
+	return (seat.rows & (1u << side)) != 0 && g_frame - seat.lastSeenOnSide[side] <= kLiveFrames;
+}
+
+bool Serves(const PaletteSeat::Seat& seat, int side)
+{
+	return seat.side == side || DrewSideLately(seat, side);
+}
+
 const PaletteSeat::Seat* Busiest(int side, bool liveOnly)
 {
 	const PaletteSeat::Seat* best = nullptr;
@@ -48,7 +58,7 @@ const PaletteSeat::Seat* Busiest(int side, bool liveOnly)
 	{
 		const PaletteSeat::Seat& seat = g_seats[i];
 
-		if (seat.side != side || seat.texture == 0)
+		if (!Serves(seat, side) || seat.texture == 0)
 			continue;
 
 		if (liveOnly && !IsLive(seat))
@@ -233,6 +243,7 @@ void PaletteSeat::OnDraw(uintptr_t owner, uintptr_t texture, int row)
 	}
 
 	entry.side = side;
+	entry.lastSeenOnSide[side] = g_frame;
 
 	if (row < 32)
 		entry.rows |= 1u << row;

@@ -6,6 +6,8 @@
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Menus/LobbyAvatar.h"
 #include "Network/LobbyPalettes.h"
+#include "Palette/EffectOwner.h"
+#include "Palette/EffectPaint.h"
 #include "Palette/PaletteOwnerProbe.h"
 #include "Palette/PalettePaint.h"
 #include "Palette/PaletteSeat.h"
@@ -158,10 +160,13 @@ std::string RunLobbyFake(const Words& words)
 	if (!PalettePaint::ReadGameColours(0, shown))
 		return "error no avatar colours to sign";
 
+	uint8_t effects[LobbyPaletteCodec::kRgbaBytes] = {};
+
 	PaletteSignature::Take(shown, entry.signature);
 	Fill(entry.rgba, rgb);
+	Fill(effects, rgb);
 
-	LobbyPalettes::InjectForTest(entry);
+	LobbyPalettes::InjectForTest(entry, effects);
 	return "ok";
 }
 
@@ -179,6 +184,39 @@ std::string RunLobby(const Words& words)
 	}
 
 	return "ok members " + std::to_string(LobbyPalettes::Count()) + " | avatar wears " + LobbyAvatar::StatusText();
+}
+
+std::string RunEffects(const Words& words)
+{
+	if (words.size() >= 3 && words[2] == "reset")
+	{
+		EffectPaint::ResetCounts();
+		EffectOwner::ResetCounts();
+		return "ok";
+	}
+
+	char text[160] = {};
+	sprintf_s(text, "ok tints %d bad %d unowned %d passed %d | ", EffectPaint::GetTintCalls(),
+		EffectPaint::GetBadIndex(), EffectPaint::GetUnowned(), EffectPaint::GetPassedThrough());
+
+	std::string reply = text;
+	reply += EffectOwner::Describe();
+
+	for (int i = 0; i < EffectPaint::GetSeenCallCount(); ++i)
+	{
+		EffectPaint::Call call = {};
+
+		if (!EffectPaint::GetSeenCall(i, call))
+			continue;
+
+		sprintf_s(text, " | entry %d rgb %02x%02x%02x calls %d swapped %d route %d player %d palette %08x",
+			call.entry, call.rgb[0], call.rgb[1], call.rgb[2], call.calls, call.substituted, call.route, call.answer,
+			static_cast<unsigned>(call.palette));
+		reply += text;
+	}
+
+
+	return reply;
 }
 
 std::string RunLife(const Words& words)
@@ -223,8 +261,10 @@ bool PaletteCommands::Execute(const Words& words, std::string& reply)
 		reply = RunLife(words);
 	else if (verb == "lobby")
 		reply = RunLobby(words);
+	else if (verb == "effects")
+		reply = RunEffects(words);
 	else
-		reply = "error palette probe|rows|state|fill|life|lobby";
+		reply = "error palette probe|rows|state|fill|life|lobby|effects";
 
 	return true;
 }

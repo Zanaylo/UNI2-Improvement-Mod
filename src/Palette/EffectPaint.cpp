@@ -51,11 +51,23 @@ constexpr int kMaxSeenCalls = 24;
 EffectPaint::Call g_seen[kMaxSeenCalls] = {};
 int g_seenCount = 0;
 
+uintptr_t g_tintRequest = 0;
+
+uintptr_t g_tintPalette = 0;
+
+void TakeTintPalette()
+{
+	uint32_t palette = 0;
+	const void* const field = reinterpret_cast<const void*>(g_tintRequest + GameOffsets::kTintRequestPalette);
+
+	g_tintPalette = g_tintRequest != 0 && TryReadMemory(&palette, field, sizeof(palette)) ? palette : 0;
+}
+
 void NoteCall(int entry, uint8_t r, uint8_t g, uint8_t b, int route, int answer, bool substituted)
 {
 	for (int i = 0; i < g_seenCount; ++i)
 	{
-		if (g_seen[i].entry != entry)
+		if (g_seen[i].entry != entry || g_seen[i].palette != g_tintPalette)
 			continue;
 
 		++g_seen[i].calls;
@@ -81,6 +93,7 @@ void NoteCall(int entry, uint8_t r, uint8_t g, uint8_t b, int route, int answer,
 	row.substituted = substituted ? 1 : 0;
 	row.route = route;
 	row.answer = answer;
+	row.palette = g_tintPalette;
 }
 
 uintptr_t g_tintCaller = 0;
@@ -95,6 +108,9 @@ struct Entry
 
 	uint8_t remote[3];
 	bool hasRemote;
+
+	uint8_t select[3];
+	bool selected;
 };
 
 struct Player
@@ -168,8 +184,17 @@ void Observe(Player& player, int index, uint8_t r, uint8_t g, uint8_t b)
 	++player.observedCount;
 }
 
+const uint8_t* SelectedColour(const Player& player, int index)
+{
+	const Entry& entry = player.entries[index];
+
+	return entry.selected ? entry.select : nullptr;
+}
+
 const uint8_t* WantedIgnoringWear(const Player& player, int index)
 {
+	if (PalettePaint::IsAtPreview())
+		return SelectedColour(player, index);
 
 	if (player.previewing)
 		return index == player.previewExcept ? player.previewExceptRgb : player.previewRgb;
@@ -180,8 +205,16 @@ const uint8_t* WantedIgnoringWear(const Player& player, int index)
 	return player.entries[index].edited ? player.entries[index].edit : nullptr;
 }
 
+bool Wears(const Player& player)
+{
+	return player.wear || PalettePaint::IsAtPreview();
+}
+
 int SoleWanter(int entry)
 {
+	if (PalettePaint::IsAtPreview())
+		return -1;
+
 	const bool wants[EffectPaint::kPlayers] = {
 		g_players[0].wear && WantedIgnoringWear(g_players[0], entry) != nullptr,
 		g_players[1].wear && WantedIgnoringWear(g_players[1], entry) != nullptr,
@@ -251,6 +284,14 @@ void NoteDrawn(int entry, uint8_t r, uint8_t g, uint8_t b)
 
 int Owner(int entry, uint8_t r, uint8_t g, uint8_t b, EffectOwner::Route& outRoute)
 {
+	const int drawn = EffectOwner::PlayerForPalette(g_tintPalette);
+
+	if (drawn >= 0)
+	{
+		outRoute = EffectOwner::Route::Draw;
+		return drawn;
+	}
+
 	const int owner = EffectOwner::PlayerFor(entry, r, g, b, outRoute);
 
 	if (owner >= 0)
@@ -269,7 +310,8 @@ int Owner(int entry, uint8_t r, uint8_t g, uint8_t b, EffectOwner::Route& outRou
 
 bool PaintsAsDoppel(int player)
 {
-	return player >= 0 && player < EffectPaint::kPlayers && !g_players[player].previewing;
+	return player >= 0 && player < EffectPaint::kPlayers && !g_players[player].previewing &&
+		!PalettePaint::IsAtPreview();
 }
 
 void PaintDoppel(const Tint& tint, int player, int entry, uint8_t r, uint8_t g, uint8_t b)
@@ -303,6 +345,7 @@ void __fastcall Detour(void* self, void* edx, const char* name, const float* val
 	}
 
 	++g_tintCalls;
+	TakeTintPalette();
 
 	const int entry = ReadEntry(values);
 
@@ -348,7 +391,7 @@ void __fastcall Detour(void* self, void* edx, const char* name, const float* val
 
 	Observe(g_players[player], entry, r, g, b);
 
-	if (!g_players[player].wear)
+	if (!Wears(g_players[player]))
 	{
 		++g_suppressedByWear;
 		NoteCall(entry, r, g, b, static_cast<int>(route), player, false);
@@ -372,6 +415,15 @@ void __fastcall Detour(void* self, void* edx, const char* name, const float* val
 	Replace(tint, rgb);
 }
 
+__declspec(naked) void __fastcall CaptureRequest(void*, void*, const char*, const float*, int)
+{
+	__asm
+	{
+		mov g_tintRequest, edi
+		jmp Detour
+	}
+}
+
 bool Valid(int player, int entry)
 {
 	return player >= 0 && player < EffectPaint::kPlayers
@@ -387,7 +439,7 @@ bool EffectPaint::Install()
 
 	void* const target = reinterpret_cast<void*>(CodeSignatures::Address(GameOffsets::kFnSetEffectFloatParam));
 
-	if (target == nullptr || !g_tintHook.Install(target, &Detour))
+	if (target == nullptr || !g_tintHook.Install(target, &CaptureRequest))
 		return false;
 
 	g_tintCaller = RvaToAddress(GameOffsets::kEffectTintCallSite);
@@ -485,6 +537,34 @@ void EffectPaint::SetBlock(int player, const uint8_t* block)
 	}
 
 	++g_players[player].revision;
+	NoteChange();
+}
+
+void EffectPaint::StageSelect(int side, const uint8_t* block)
+{
+	if (side < 0 || side >= kPlayers || block == nullptr)
+		return;
+
+	for (int entry = 1; entry < kColours; ++entry)
+	{
+		Entry& at = g_players[side].entries[entry];
+		at.selected = block[entry * 4 + 3] == 255;
+
+		if (at.selected)
+			memcpy(at.select, block + entry * 4, 3);
+	}
+
+	NoteChange();
+}
+
+void EffectPaint::ClearSelect(int side)
+{
+	if (side < 0 || side >= kPlayers)
+		return;
+
+	for (Entry& entry : g_players[side].entries)
+		entry.selected = false;
+
 	NoteChange();
 }
 

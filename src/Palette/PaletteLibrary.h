@@ -10,7 +10,7 @@ namespace PaletteLibrary
 	std::string FolderFor(int chara);
 	std::string PathOf(int chara, const char* file);
 
-	bool LoadColours(int chara, const char* file, uint8_t* rgba);
+	bool LoadWithEffects(int chara, const char* file, uint8_t* rgba, uint8_t* effects, bool* outHasEffects = nullptr);
 
 	void Rescan(int chara);
 

@@ -17,6 +17,7 @@ namespace PaletteSeat
 		uint32_t rows;
 		int draws;
 		int lastSeenFrame;
+		int lastSeenOnSide[kSides];
 	};
 
 	void OnDraw(uintptr_t owner, uintptr_t texture, int row);

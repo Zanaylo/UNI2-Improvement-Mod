@@ -13,6 +13,7 @@ constexpr int kChannels = 3;
 constexpr uint8_t kOpaque = 0xff;
 constexpr char kSeparator = ':';
 constexpr int kSignatureDigits = PaletteSignature::kBytes * 2;
+constexpr int kEffectEntryDigits = LobbyPaletteCodec::kEffectEntryBytes * 2;
 
 bool IsPick(int chara, int colour)
 {
@@ -43,6 +44,37 @@ bool DecodeSignature(const char* text, uint8_t* signature)
 	memcpy(digits, text, kSignatureDigits);
 
 	return HexText::Decode(digits, signature, PaletteSignature::kBytes);
+}
+
+bool IsFlagged(const uint8_t* block, int entry)
+{
+	return block[entry * 4 + 3] == kOpaque;
+}
+
+char* EncodeEffect(const uint8_t* block, int entry, char* at)
+{
+	const uint8_t packed[LobbyPaletteCodec::kEffectEntryBytes] = {
+		static_cast<uint8_t>(entry), block[entry * 4 + 0], block[entry * 4 + 1], block[entry * 4 + 2],
+	};
+
+	HexText::Encode(packed, LobbyPaletteCodec::kEffectEntryBytes, at);
+	return at + kEffectEntryDigits;
+}
+
+bool DecodeEffect(const char* text, uint8_t* block)
+{
+	char digits[kEffectEntryDigits + 1] = {};
+	memcpy(digits, text, kEffectEntryDigits);
+
+	uint8_t packed[LobbyPaletteCodec::kEffectEntryBytes] = {};
+
+	if (!HexText::Decode(digits, packed, LobbyPaletteCodec::kEffectEntryBytes) || packed[0] == 0)
+		return false;
+
+	uint8_t* const entry = block + packed[0] * 4;
+	memcpy(entry, packed + 1, kChannels);
+	entry[3] = kOpaque;
+	return true;
 }
 
 }
@@ -100,5 +132,56 @@ bool LobbyPaletteCodec::Decode(const char* text, Entry& out)
 	UnpackRgb(rgb, out.rgba);
 	out.chara = chara;
 	out.colour = colour;
+	return true;
+}
+
+bool LobbyPaletteCodec::EncodeEffects(const uint8_t* block, char* out, int size)
+{
+	if (block == nullptr || out == nullptr || size < kEffectTextBytes)
+		return false;
+
+	const int header = sprintf_s(out, size, "%d:", kVersion);
+
+	if (header <= 0)
+		return false;
+
+	char* at = out + header;
+
+	for (int entry = 1; entry < kColours; ++entry)
+	{
+		if (IsFlagged(block, entry))
+			at = EncodeEffect(block, entry, at);
+	}
+
+	*at = '\0';
+	return true;
+}
+
+bool LobbyPaletteCodec::DecodeEffects(const char* text, uint8_t* block)
+{
+	if (text == nullptr || block == nullptr)
+		return false;
+
+	int version = 0;
+	int consumed = 0;
+
+	if (sscanf_s(text, "%d:%n", &version, &consumed) != 1 || consumed == 0 || version != kVersion)
+		return false;
+
+	const char* const list = text + consumed;
+	const size_t length = strlen(list);
+
+	if (length % kEffectEntryDigits != 0)
+		return false;
+
+	uint8_t decoded[kRgbaBytes] = {};
+
+	for (size_t at = 0; at < length; at += kEffectEntryDigits)
+	{
+		if (!DecodeEffect(list + at, decoded))
+			return false;
+	}
+
+	memcpy(block, decoded, kRgbaBytes);
 	return true;
 }

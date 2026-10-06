@@ -7,7 +7,7 @@
 #include "Game/Engine/Camera.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Engine/MemoryMap.h"
-#include "Game/Tables/PartColourTable.h"
+#include "Palette/EffectBlock.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteDrawProbe.h"
 #include "Palette/PaletteFile.h"
@@ -587,16 +587,11 @@ bool PaletteManager::Apply(int player, int index)
 	PaletteDrawProbe::SyncEffectSides(GetCharaNumber(0), g_applied[0],
 		GetCharaNumber(1), g_applied[1]);
 
-	uint8_t autoEffect[PaletteFile::kBytes] = {};
-	const uint8_t* effectColors = entry.hasEffect ? entry.effectColors : nullptr;
+	uint8_t effects[PaletteFile::kBytes] = {};
+	const bool hasEffects = EffectBlock::Compose(folder->chara, entry.colors,
+		entry.hasEffect ? entry.effectColors : nullptr, effects);
 
-	if (effectColors == nullptr &&
-		PartColourTable::BuildAutoEffectBlock(folder->chara, entry.colors, autoEffect))
-	{
-		effectColors = autoEffect;
-	}
-
-	ApplyEffectColours(player, effectColors);
+	ApplyEffectColours(player, hasEffects ? effects : nullptr);
 
 	if (!g_suppressRemember)
 		g_handEdited[player] = false;

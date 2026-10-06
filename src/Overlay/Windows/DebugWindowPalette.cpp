@@ -201,7 +201,7 @@ void DebugWindow::DrawPaletteOwnerSection()
 		ImGui::TableHeadersRow();
 
 		static const char* const kRoutes[] = { "-", "worn", "stock", "claim", "ambig", "sole",
-			"doppel" };
+			"doppel", "draw" };
 
 		for (int i = 0; i < seen; ++i)
 		{

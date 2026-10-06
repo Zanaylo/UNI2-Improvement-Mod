@@ -22,6 +22,9 @@ namespace EffectPaint
 	void GetBlock(int player, uint8_t* block);
 	void SetBlock(int player, const uint8_t* block);
 
+	void StageSelect(int side, const uint8_t* block);
+	void ClearSelect(int side);
+
 	void SetRemote(int player, const uint8_t* block);
 	void ClearRemote(int player);
 	bool HasRemote(int player);
@@ -58,6 +61,7 @@ namespace EffectPaint
 		int substituted;
 		int route;
 		int answer;
+		uintptr_t palette;
 	};
 
 	int GetSeenCallCount();

@@ -8,11 +8,11 @@
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Engine/SceneWatch.h"
 #include "Game/Menus/ColourPicker.h"
-#include "Game/Tables/PartColourTable.h"
 #include "Palette/ColourSlots.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/NetworkPick.h"
 #include "Palette/PaletteControl.h"
+#include "Palette/PaletteCycle.h"
 #include "Palette/PaletteFile.h"
 #include "Palette/PaletteLibrary.h"
 #include "Palette/PaletteManager.h"
@@ -44,22 +44,6 @@ struct Player
 };
 
 Player g_players[PaletteChoice::kPlayers] = {};
-
-int WornIndex(int player, int chara)
-{
-	const char* const worn = PaletteChoice::WornFile(player);
-
-	if (worn[0] == '\0')
-		return -1;
-
-	for (int i = 0; i < PaletteLibrary::GetCount(chara); ++i)
-	{
-		if (strcmp(PaletteLibrary::GetName(chara, i), worn) == 0)
-			return i;
-	}
-
-	return -1;
-}
 
 }
 
@@ -99,10 +83,9 @@ bool PaletteChoice::Apply(int player, int chara, const char* file)
 
 	uint8_t colours[PaletteFile::kBytes] = {};
 	uint8_t effects[PaletteFile::kBytes] = {};
-	PaletteFile::Info info = {};
 	bool hasEffects = false;
 
-	if (!PaletteFile::Load(PaletteLibrary::PathOf(chara, file), colours, info, effects, &hasEffects))
+	if (!PaletteLibrary::LoadWithEffects(chara, file, colours, effects, &hasEffects))
 		return false;
 
 	PalettePaint::Stage(player, colours);
@@ -114,9 +97,6 @@ bool PaletteChoice::Apply(int player, int chara, const char* file)
 		PalettePaint::StageCompanion(player, theirs);
 	else
 		PalettePaint::ClearCompanion(player);
-
-	if (!hasEffects)
-		hasEffects = PartColourTable::BuildAutoEffectBlock(chara, colours, effects);
 
 	EffectPaint::SetBlock(player, hasEffects ? effects : nullptr);
 
@@ -180,19 +160,15 @@ bool PaletteChoice::Step(int player, int steps)
 	if (count <= 0)
 		return false;
 
-	const int slots = count + 1;
-	int target = (WornIndex(player, chara) + 1 + steps) % slots;
+	const int target = PaletteCycle::Step(PaletteCycle::IndexOf(chara, WornFile(player)), steps, count);
 
-	if (target < 0)
-		target += slots;
-
-	if (target == 0)
+	if (target == PaletteCycle::kNone)
 	{
 		Bare(player);
 		return true;
 	}
 
-	return Wear(player, PaletteLibrary::GetName(chara, target - 1));
+	return Wear(player, PaletteLibrary::GetName(chara, target));
 }
 
 const char* PaletteChoice::WornFile(int player)

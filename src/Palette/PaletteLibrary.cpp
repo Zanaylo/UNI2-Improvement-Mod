@@ -1,6 +1,7 @@
 #include "Palette/PaletteLibrary.h"
 
 #include "Core/utils.h"
+#include "Palette/EffectBlock.h"
 #include "Palette/PaletteFile.h"
 #include "Palette/PaletteManager.h"
 
@@ -91,14 +92,24 @@ std::string PaletteLibrary::PathOf(int chara, const char* file)
 	return FolderFor(chara) + "\\" + file;
 }
 
-bool PaletteLibrary::LoadColours(int chara, const char* file, uint8_t* rgba)
+bool PaletteLibrary::LoadWithEffects(int chara, const char* file, uint8_t* rgba, uint8_t* effects, bool* outHasEffects)
 {
-	if (file == nullptr || file[0] == '\0' || rgba == nullptr)
+	if (file == nullptr || file[0] == '\0' || rgba == nullptr || effects == nullptr)
 		return false;
 
 	PaletteFile::Info info = {};
+	uint8_t page[PaletteFile::kBytes] = {};
+	bool hasPage = false;
 
-	return PaletteFile::Load(PathOf(chara, file), rgba, info);
+	if (!PaletteFile::Load(PathOf(chara, file), rgba, info, page, &hasPage))
+		return false;
+
+	const bool hasEffects = EffectBlock::Compose(chara, rgba, hasPage ? page : nullptr, effects);
+
+	if (outHasEffects != nullptr)
+		*outHasEffects = hasEffects;
+
+	return true;
 }
 
 void PaletteLibrary::Rescan(int chara)

@@ -18,6 +18,7 @@ protected:
 private:
 	static constexpr int kUndoDepth = 32;
 
+	void DrawPlayerTabs();
 	void DrawPlayer(int player);
 	void DrawParts(int player);
 	void DrawGrid(int player, const unsigned char* entries, int count);

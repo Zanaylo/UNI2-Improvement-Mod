@@ -691,6 +691,11 @@ void PalettePaint::OnDraw()
 	}
 }
 
+bool PalettePaint::IsAtPreview()
+{
+	return g_atPreview;
+}
+
 bool PalettePaint::IsPainting(int player)
 {
 	return player >= 0 && player < kPlayers && g_players[player].painting

@@ -9,6 +9,7 @@
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteLibrary.h"
 #include "Palette/PalettePaint.h"
+#include "Palette/SelectLayer.h"
 
 #include <cstring>
 #include <string>
@@ -24,11 +25,12 @@ struct Shown
 	char file[kFileLength];
 	bool loaded;
 	uint8_t colours[PalettePaint::kBytes];
+	uint8_t effects[PalettePaint::kBytes];
 };
 
 Shown g_shown[ColourPicker::kSides] = {
-	{ kNoCharacter, "", false, {} },
-	{ kNoCharacter, "", false, {} },
+	{ kNoCharacter, "", false, {}, {} },
+	{ kNoCharacter, "", false, {}, {} },
 };
 
 std::string WantedAtSelect(int side, int& chara)
@@ -55,12 +57,12 @@ void Show(int side, int chara, const std::string& file)
 
 	shown.chara = chara;
 	strncpy_s(shown.file, file.c_str(), _TRUNCATE);
-	shown.loaded = PaletteLibrary::LoadColours(shown.chara, shown.file, shown.colours);
+	shown.loaded = PaletteLibrary::LoadWithEffects(shown.chara, shown.file, shown.colours, shown.effects);
 
 	if (shown.loaded)
-		PalettePaint::StageSelect(side, shown.colours);
+		SelectLayer::Stage(side, shown.colours, shown.effects);
 	else
-		PalettePaint::ClearSelect(side);
+		SelectLayer::Clear(side);
 }
 
 void Forget(int side)
@@ -74,7 +76,7 @@ void Forget(int side)
 	shown.file[0] = '\0';
 	shown.loaded = false;
 
-	PalettePaint::ClearSelect(side);
+	SelectLayer::Clear(side);
 }
 
 void ShowAtSelect(int side)

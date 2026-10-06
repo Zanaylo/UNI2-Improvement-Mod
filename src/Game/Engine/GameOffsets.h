@@ -285,6 +285,8 @@ namespace GameOffsets
 	constexpr uintptr_t kPlayerDataPaletteTableAlt = 0x768;
 	constexpr uintptr_t kPaletteTableFirst = 0x58;
 	constexpr uintptr_t kPaletteTableCurrent = 0x4;
+	constexpr uintptr_t kTintRequestPalette = 0x2c;
+	constexpr uintptr_t kTintPaletteBeforeTable = 0x400;
 	constexpr int kPaletteWrapperTexture = 0xc;
 	constexpr int kPaletteSlots = 45;
 

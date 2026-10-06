@@ -4,6 +4,8 @@
 #include "Core/Config/interfaces.h"
 #include "Core/utils.h"
 #include "Game/Customize/BasePals.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/SceneWatch.h"
 #include "Game/Tables/CharaTables.h"
 #include "Game/Customize/ColorPartTable.h"
 #include "Game/Tables/EffectTable.h"
@@ -13,9 +15,11 @@
 #include "Game/Customize/PngPalette.h"
 #include "Game/Customize/StockPalettes.h"
 #include "Game/Tables/UsedEntryTable.h"
+#include "Overlay/Panels/NetworkPalettePanel.h"
 #include "Overlay/Widgets/ComboNav.h"
 #include "Network/PaletteShare.h"
 #include "Palette/ColourSlots.h"
+#include "Palette/EffectBlock.h"
 #include "Palette/EffectOwner.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteChoice.h"
@@ -198,6 +202,16 @@ void PaletteWindow::BeforeDraw()
 
 void PaletteWindow::Draw()
 {
+	if (SceneWatch::Current() == GameOffsets::kSceneNetwork)
+		NetworkPalettePanel::Draw();
+	else
+		DrawPlayerTabs();
+
+	RunFlash();
+}
+
+void PaletteWindow::DrawPlayerTabs()
+{
 	if (ImGui::BeginTabBar("##players"))
 	{
 		for (int player = 0; player < 2; ++player)
@@ -220,8 +234,6 @@ void PaletteWindow::Draw()
 
 		ImGui::EndTabBar();
 	}
-
-	RunFlash();
 }
 
 void PaletteWindow::DrawPlayer(int player)
@@ -1285,11 +1297,12 @@ bool PaletteWindow::Load(int player, const char* name)
 {
 	uint8_t colours[PaletteFile::kBytes] = {};
 	uint8_t effects[PaletteFile::kBytes] = {};
+	uint8_t page[PaletteFile::kBytes] = {};
 	PaletteFile::Info info = {};
-	bool hasEffects = false;
+	bool hasPage = false;
 
-	if (!PaletteFile::Load(PaletteLibrary::FolderFor(m_chara[player]) + "\\" + name, colours, info, effects,
-		&hasEffects))
+	if (!PaletteFile::Load(PaletteLibrary::FolderFor(m_chara[player]) + "\\" + name, colours, info, page,
+		&hasPage))
 	{
 		return false;
 	}
@@ -1297,8 +1310,7 @@ bool PaletteWindow::Load(int player, const char* name)
 	strncpy_s(m_creator[player], info.creator, _TRUNCATE);
 	strncpy_s(m_description[player], info.description, _TRUNCATE);
 
-	if (!hasEffects)
-		hasEffects = PartColourTable::BuildAutoEffectBlock(m_chara[player], colours, effects);
+	const bool hasEffects = EffectBlock::Compose(m_chara[player], colours, hasPage ? page : nullptr, effects);
 
 	ApplyImportedColours(player, colours, hasEffects ? effects : nullptr);
 
@@ -1385,7 +1397,7 @@ void PaletteWindow::CompleteImportPng(int player, const std::string& path)
 	}
 
 	uint8_t effects[PaletteFile::kBytes] = {};
-	const bool haveEffects = PartColourTable::BuildAutoEffectBlock(m_chara[player], colours, effects);
+	const bool haveEffects = EffectBlock::Compose(m_chara[player], colours, nullptr, effects);
 
 	ApplyImportedColours(player, colours, haveEffects ? effects : nullptr);
 

@@ -3,6 +3,8 @@
 #include "Game/Tables/EffectTable.h"
 #include "Game/Tables/PartColourTable.h"
 #include "Game/Customize/StockPalettes.h"
+#include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/MemoryMap.h"
 #include "Palette/PaletteMemory.h"
 #include "Palette/PalettePaint.h"
 #include "Palette/PaletteSeat.h"
@@ -25,6 +27,8 @@ constexpr int kTolerance = 1;
 
 constexpr uint32_t kDoppelRows = 0xc;
 
+constexpr int kNoCharacter = -1;
+
 struct Entry
 {
 	uint8_t worn[kPlayers][3];
@@ -42,6 +46,7 @@ int g_wornStale[kPlayers] = {};
 bool g_mirror = false;
 
 int g_chara[kPlayers] = { -1, -1 };
+uintptr_t g_tintPalette[kPlayers] = {};
 int g_stockRows[kPlayers] = {};
 int g_claimCount[kPlayers] = {};
 
@@ -298,6 +303,29 @@ bool IsAnyWorn(int entry, uint8_t r, uint8_t g, uint8_t b)
 	return false;
 }
 
+uintptr_t TintPaletteOf(int player)
+{
+	void* const chara = MemoryMap::GetCharaSlot(player);
+	uint32_t table = 0;
+
+	if (chara == nullptr || !MemoryMap::ReadStructDword(chara, GameOffsets::kPlayerDataPaletteTable, table) ||
+		table <= GameOffsets::kTintPaletteBeforeTable)
+	{
+		return 0;
+	}
+
+	return table - GameOffsets::kTintPaletteBeforeTable;
+}
+
+void TakeTintPalettes(bool atPreview)
+{
+	for (int player = 0; player < kPlayers; ++player)
+		g_tintPalette[player] = atPreview ? 0 : TintPaletteOf(player);
+
+	if (g_tintPalette[0] == g_tintPalette[1])
+		g_tintPalette[1] = 0;
+}
+
 bool IsDoppelColour(int player, int entry, uint8_t r, uint8_t g, uint8_t b)
 {
 	return g_doppelOk[player] && Same(g_entries[entry].doppel[player], r, g, b);
@@ -307,9 +335,13 @@ bool IsDoppelColour(int player, int entry, uint8_t r, uint8_t g, uint8_t b)
 
 void EffectOwner::OnFrame()
 {
+	const bool atPreview = PalettePaint::IsAtPreview();
+
+	TakeTintPalettes(atPreview);
+
 	for (int player = 0; player < kPlayers; ++player)
 	{
-		const int chara = PaletteMemory::GetCharaNumber(player);
+		const int chara = atPreview ? kNoCharacter : PaletteMemory::GetCharaNumber(player);
 
 		if (chara == g_chara[player])
 			continue;
@@ -336,7 +368,7 @@ void EffectOwner::OnFrame()
 	{
 		index[player] = PalettePaint::GetIndex(player);
 
-		side[player] = PaletteSeat::GetSideByOwner(PalettePaint::GetOwner(player));
+		side[player] = atPreview ? player : PaletteSeat::GetSideByOwner(PalettePaint::GetOwner(player));
 
 		if (side[player] < 0)
 			side[player] = PlayerSides::ScreenSideOf(player);
@@ -392,6 +424,20 @@ int EffectOwner::PlayerFor(int entry, uint8_t r, uint8_t g, uint8_t b, Route& ou
 	Count(decided.route);
 
 	return decided.player;
+}
+
+int EffectOwner::PlayerForPalette(uintptr_t palette)
+{
+	if (palette == 0)
+		return -1;
+
+	for (int player = 0; player < kPlayers; ++player)
+	{
+		if (g_tintPalette[player] == palette)
+			return player;
+	}
+
+	return -1;
 }
 
 bool EffectOwner::Claims(int player, int entry)
