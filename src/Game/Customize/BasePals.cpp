@@ -10,6 +10,8 @@ namespace {
 
 constexpr int kMaxChara = 128;
 constexpr int kMaxSets = 4;
+constexpr int kMaxRevisions = 4;
+constexpr int kCurrentRevision = 0;
 
 struct Entry
 {
@@ -18,21 +20,28 @@ struct Entry
 	bool looked;
 };
 
-Entry g_entries[kMaxChara][kMaxSets] = {};
+Entry g_entries[kMaxChara][kMaxSets][kMaxRevisions] = {};
 
-bool ResourceName(int chara, int set, char* out, int size)
+bool ResourceName(int chara, int set, int revision, char* out, int size)
 {
-	if (set == BasePals::kCharacterSet)
-		return sprintf_s(out, size, "CHR%03d", chara) > 0;
+	const int written = set == BasePals::kCharacterSet
+		? sprintf_s(out, size, "CHR%03d", chara)
+		: sprintf_s(out, size, "CHR%03d_P%d", chara, set);
 
-	return sprintf_s(out, size, "CHR%03d_P%d", chara, set) > 0;
+	if (written <= 0)
+		return false;
+
+	if (revision == kCurrentRevision)
+		return true;
+
+	return sprintf_s(out + written, size - written, "_V%d", revision) > 0;
 }
 
-bool Lookup(int chara, int set, const uint8_t*& outData, size_t& outSize)
+bool Lookup(int chara, int set, int revision, const uint8_t*& outData, size_t& outSize)
 {
-	char name[16] = {};
+	char name[24] = {};
 
-	if (!ResourceName(chara, set, name, sizeof(name)))
+	if (!ResourceName(chara, set, revision, name, sizeof(name)))
 		return false;
 
 	const HMODULE module = GetModModuleHandle();
@@ -61,9 +70,7 @@ bool Lookup(int chara, int set, const uint8_t*& outData, size_t& outSize)
 	return true;
 }
 
-}
-
-bool BasePals::Get(int chara, int set, const uint8_t*& outData, size_t& outSize)
+bool Find(int chara, int set, int revision, const uint8_t*& outData, size_t& outSize)
 {
 	outData = nullptr;
 	outSize = 0;
@@ -74,12 +81,12 @@ bool BasePals::Get(int chara, int set, const uint8_t*& outData, size_t& outSize)
 	if (set < 0 || set >= kMaxSets)
 		return false;
 
-	Entry& entry = g_entries[chara][set];
+	Entry& entry = g_entries[chara][set][revision];
 
 	if (!entry.looked)
 	{
 		entry.looked = true;
-		Lookup(chara, set, entry.data, entry.size);
+		Lookup(chara, set, revision, entry.data, entry.size);
 	}
 
 	if (entry.data == nullptr)
@@ -88,6 +95,28 @@ bool BasePals::Get(int chara, int set, const uint8_t*& outData, size_t& outSize)
 	outData = entry.data;
 	outSize = entry.size;
 	return true;
+}
+
+}
+
+bool BasePals::Get(int chara, int set, const uint8_t*& outData, size_t& outSize)
+{
+	return Find(chara, set, kCurrentRevision, outData, outSize);
+}
+
+std::vector<PngPalette::Sheet> BasePals::Revisions(int chara, int set)
+{
+	std::vector<PngPalette::Sheet> sheets;
+
+	for (int revision = kCurrentRevision; revision < kMaxRevisions; ++revision)
+	{
+		PngPalette::Sheet sheet = {};
+
+		if (Find(chara, set, revision, sheet.data, sheet.size))
+			sheets.push_back(sheet);
+	}
+
+	return sheets;
 }
 
 bool BasePals::Has(int chara, int set)

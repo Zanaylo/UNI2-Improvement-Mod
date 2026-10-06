@@ -343,24 +343,25 @@ std::vector<uint8_t> InteriorDepth(const std::vector<uint8_t>& indices, int widt
 	return depth;
 }
 
-bool ReadFromSheet(const std::vector<uint8_t>& image, const uint8_t* sheetPng, size_t sheetSize,
-	uint8_t* outRgba, std::string& outError)
+struct DecodedImage
 {
-	if (sheetPng == nullptr)
-		return false;
-
 	int width = 0;
 	int height = 0;
 	std::vector<uint8_t> bgra;
+};
 
-	if (!PngImage::Decode(image, width, height, bgra))
-		return false;
+bool ReadFromSheet(const DecodedImage& image, const PngPalette::Sheet& sheet, uint8_t* outRgba,
+	std::string& outError)
+{
+	const int width = image.width;
+	const int height = image.height;
+	const std::vector<uint8_t>& bgra = image.bgra;
 
 	int sheetWidth = 0;
 	int sheetHeight = 0;
 	std::vector<uint8_t> indices;
 
-	if (!PngImage::DecodeIndices(std::vector<uint8_t>(sheetPng, sheetPng + sheetSize), sheetWidth,
+	if (!PngImage::DecodeIndices(std::vector<uint8_t>(sheet.data, sheet.data + sheet.size), sheetWidth,
 		sheetHeight, indices))
 	{
 		return false;
@@ -406,7 +407,7 @@ bool ReadFromSheet(const std::vector<uint8_t>& image, const uint8_t* sheetPng, s
 
 	std::sort(keys.begin(), keys.end());
 
-	if (!ReadPalette(sheetPng, sheetSize, outRgba))
+	if (!ReadPalette(sheet.data, sheet.size, outRgba))
 		return false;
 
 	uint64_t agreeing = 0;
@@ -449,10 +450,35 @@ bool ReadFromSheet(const std::vector<uint8_t>& image, const uint8_t* sheetPng, s
 	return true;
 }
 
+bool ReadFromAnySheet(const std::vector<uint8_t>& data, const std::vector<PngPalette::Sheet>& sheets,
+	uint8_t* outRgba, std::string& outError)
+{
+	if (sheets.empty())
+		return false;
+
+	DecodedImage image;
+
+	if (!PngImage::Decode(data, image.width, image.height, image.bgra))
+		return false;
+
+	for (const PngPalette::Sheet& sheet : sheets)
+	{
+		std::string sheetError;
+
+		if (ReadFromSheet(image, sheet, outRgba, sheetError))
+			return true;
+
+		if (!sheetError.empty())
+			outError = sheetError;
+	}
+
+	return false;
 }
 
-bool PngPalette::Read(const std::string& path, const uint8_t* sheetPng, size_t sheetSize,
-	uint8_t* outRgba, std::string& outError)
+}
+
+bool PngPalette::Read(const std::string& path, const std::vector<Sheet>& sheets, uint8_t* outRgba,
+	std::string& outError)
 {
 	std::vector<uint8_t> data;
 	if (!ReadFile(path, data))
@@ -467,7 +493,7 @@ bool PngPalette::Read(const std::string& path, const uint8_t* sheetPng, size_t s
 		return false;
 	}
 
-	if (ReadFromSheet(data, sheetPng, sheetSize, outRgba, outError))
+	if (ReadFromAnySheet(data, sheets, outRgba, outError))
 		return true;
 
 	if (!outError.empty())
@@ -476,7 +502,7 @@ bool PngPalette::Read(const std::string& path, const uint8_t* sheetPng, size_t s
 	if (ReadPalette(data.data(), data.size(), outRgba))
 		return true;
 
-	outError = sheetPng == nullptr
+	outError = sheets.empty()
 		? "this PNG has no palette. Save it as an indexed 8-bit image, not RGB"
 		: "this PNG has no palette and is not this character's reference sheet";
 	return false;

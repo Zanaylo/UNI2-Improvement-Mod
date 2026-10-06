@@ -35,6 +35,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <vector>
 
 namespace {
 
@@ -1361,12 +1362,10 @@ void PaletteWindow::CompleteImportPng(int player, const std::string& path)
 {
 	uint8_t colours[PaletteFile::kBytes] = {};
 	std::string error;
-	const uint8_t* sheet = nullptr;
-	size_t sheetSize = 0;
+	const std::vector<PngPalette::Sheet> sheets =
+		BasePals::Revisions(m_chara[player], SheetSetFor(m_importIntoSummon[player]));
 
-	BasePals::Get(m_chara[player], SheetSetFor(m_importIntoSummon[player]), sheet, sheetSize);
-
-	if (!PngPalette::Read(path, sheet, sheetSize, colours, error))
+	if (!PngPalette::Read(path, sheets, colours, error))
 	{
 		sprintf_s(m_status[player], "%s", error.c_str());
 		return;

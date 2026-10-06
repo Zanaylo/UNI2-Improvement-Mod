@@ -3,10 +3,17 @@
 #include <cstdint>
 #include <cstddef>
 #include <string>
+#include <vector>
 
 namespace PngPalette
 {
-	bool Read(const std::string& path, const uint8_t* sheetPng, size_t sheetSize, uint8_t* outRgba,
+	struct Sheet
+	{
+		const uint8_t* data;
+		size_t size;
+	};
+
+	bool Read(const std::string& path, const std::vector<Sheet>& sheets, uint8_t* outRgba,
 		std::string& outError);
 	bool Write(const std::string& path, const uint8_t* rgba, std::string& outError);
 
