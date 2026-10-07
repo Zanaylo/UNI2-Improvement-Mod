@@ -316,6 +316,9 @@
     <ClCompile Include="src\Game\Lobby\OpponentLog.cpp" />
     <ClCompile Include="src\Network\Steam\SteamInterfaces.cpp" />
     <ClCompile Include="src\Network\RollbackStats.cpp" />
+    <ClCompile Include="src\Network\SaveStatePatch.cpp" />
+    <ClCompile Include="src\Network\SaveStatePool.cpp" />
+    <ClCompile Include="src\Hooks\IndirectCall.cpp" />
     <ClCompile Include="src\Network\RoomRoster.cpp" />
     <ClCompile Include="src\Network\LobbyPaletteCodec.cpp" />
     <ClCompile Include="src\Network\LobbyPalettes.cpp" />
@@ -773,6 +776,9 @@
     <ClInclude Include="src\Game\Lobby\OpponentLog.h" />
     <ClInclude Include="src\Network\Steam\SteamInterfaces.h" />
     <ClInclude Include="src\Network\RollbackStats.h" />
+    <ClInclude Include="src\Network\SaveStatePatch.h" />
+    <ClInclude Include="src\Network\SaveStatePool.h" />
+    <ClInclude Include="src\Hooks\IndirectCall.h" />
     <ClInclude Include="src\Network\RoomRoster.h" />
     <ClInclude Include="src\Network\LobbyPaletteCodec.h" />
     <ClInclude Include="src\Network\LobbyPalettes.h" />

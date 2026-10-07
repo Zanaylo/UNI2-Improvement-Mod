@@ -70,6 +70,7 @@
 #include "Network/ModChannel.h"
 #include "Network/NetplayTick.h"
 #include "Network/PaletteShare.h"
+#include "Network/SaveStatePatch.h"
 #include "Overlay/Hud/FrameMeterHud.h"
 #include "Overlay/Hud/GrdPopupHud.h"
 #include "Overlay/Hud/HealthReadout.h"
@@ -178,6 +179,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: bgm control", [] { BgmControl::Initialize(); } },
 	{ "game hooks: pump wait", [] { PumpWait::Apply(); } },
 	{ "game hooks: keyboard seat saved", [] { KeyboardSeat::ApplySaved(); } },
+	{ "game hooks: save state pool", [] { SaveStatePatch::Install(); } },
 };
 
 const Task kPresentBegin[] = {

@@ -888,6 +888,11 @@ namespace GameOffsets
 	constexpr uintptr_t kGgpoEndpointRemoteBehind = 0x89c;
 	constexpr uintptr_t kFnGgpoUdpLog = 0xa0e10;
 	constexpr uintptr_t kFnGgpoProtocolLog = 0xa2270;
+	constexpr uintptr_t kFnGgpoFreeBuffer = 0x1c0f50;
+	constexpr uintptr_t kFnGgpoSaveState = 0x1c0f80;
+	constexpr uintptr_t kGgpoFreeBufferFreeCall = 0x06;
+	constexpr uintptr_t kGgpoSaveStateMallocCall = 0x1a;
+	constexpr size_t kGgpoSaveStateBytes = 0x100000;
 	constexpr uintptr_t kGgpoSyncPlayers = 0x59c;
 	constexpr uintptr_t kGgpoSyncInputSize = 0x5a0;
 	constexpr uintptr_t kGgpoLastConfirmedFrame = 0x5a8;

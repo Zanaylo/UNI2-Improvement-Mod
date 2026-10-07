@@ -78,6 +78,7 @@ const char* const kDefaultIniLines[] = {
 	"NetLog = 0",
 	"CaptureGgpoLog = 0",
 	"SharePalettes = 1",
+	"SaveStatePool = 1",
 	"",
 	"[Video]",
 	"FlatStage = 0",
