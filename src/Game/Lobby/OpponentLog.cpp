@@ -15,6 +15,7 @@
 namespace {
 
 constexpr DWORD kSettleMs = 4000;
+constexpr const char* kEmptyMark = "-";
 
 OpponentLog::Entry g_entries[OpponentLog::kMaxEntries] = {};
 int g_count = 0;
@@ -70,6 +71,16 @@ OpponentLog::Entry* Insert(uint64_t steamId)
 	return &entry;
 }
 
+const char* FieldOrEmptyMark(const char* field)
+{
+	return field[0] != '\0' ? field : kEmptyMark;
+}
+
+bool IsEmptyMark(const char* field)
+{
+	return strcmp(field, kEmptyMark) == 0;
+}
+
 void SanitiseName(char* name)
 {
 	for (char* cursor = name; *cursor != '\0'; ++cursor)
@@ -95,13 +106,15 @@ void Load()
 		int right = -1;
 		int lastPing = -1;
 		int bestPing = -1;
+		int wins = 0;
+		int losses = 0;
 		char stamp[OpponentLog::kStampBytes] = {};
 		char name[OpponentLog::kNameBytes] = {};
 
-		const int parsed = sscanf_s(line, "%llu\t%d\t%d\t%d\t%d\t%d\t%19[^\t]\t%63[^\n]",
+		const int parsed = sscanf_s(line, "%llu\t%d\t%d\t%d\t%d\t%d\t%19[^\t]\t%63[^\t\n]\t%d\t%d",
 			&steamId, &encounters, &left, &right, &lastPing, &bestPing,
 			stamp, static_cast<unsigned>(sizeof(stamp)),
-			name, static_cast<unsigned>(sizeof(name)));
+			name, static_cast<unsigned>(sizeof(name)), &wins, &losses);
 
 		if (parsed < 7 || steamId == 0)
 			continue;
@@ -116,7 +129,9 @@ void Load()
 		entry->lastPing = lastPing;
 		entry->bestPing = bestPing;
 		strncpy_s(entry->lastSeen, stamp, _TRUNCATE);
-		strncpy_s(entry->name, name, _TRUNCATE);
+		strncpy_s(entry->name, IsEmptyMark(name) ? "" : name, _TRUNCATE);
+		entry->wins = wins;
+		entry->losses = losses;
 	}
 
 	fclose(file);
@@ -220,15 +235,33 @@ void OpponentLog::Save()
 	{
 		const Entry& entry = g_entries[i];
 
-		fprintf(file, "%llu\t%d\t%d\t%d\t%d\t%d\t%s\t%s\n",
+		fprintf(file, "%llu\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%d\t%d\n",
 			static_cast<unsigned long long>(entry.steamId), entry.encounters,
 			entry.lastCharaLeft, entry.lastCharaRight, entry.lastPing, entry.bestPing,
-			entry.lastSeen[0] != '\0' ? entry.lastSeen : "-",
-			entry.name);
+			FieldOrEmptyMark(entry.lastSeen), FieldOrEmptyMark(entry.name), entry.wins, entry.losses);
 	}
 
 	fclose(file);
 	g_dirty = false;
+}
+
+void OpponentLog::RecordGame(uint64_t steamId, bool won)
+{
+	Entry* entry = FindMutable(steamId);
+
+	if (entry == nullptr)
+		return;
+
+	if (won)
+		++entry->wins;
+	else
+		++entry->losses;
+
+	g_dirty = true;
+	Save();
+
+	LOG("OpponentLog: game %s against %llu, %d-%d", won ? "won" : "lost",
+		static_cast<unsigned long long>(steamId), entry->wins, entry->losses);
 }
 
 int OpponentLog::Count()

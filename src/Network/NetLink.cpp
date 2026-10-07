@@ -28,7 +28,7 @@ struct Window
 	int64_t modSum;
 	int64_t modMax;
 	int startFrame;
-	int startRollbacks;
+	int startSaved;
 	int maxPending;
 	int hitches;
 };
@@ -200,6 +200,9 @@ NetLink::Snapshot Read(const NetLink::Snapshot& previous)
 	out.netplayActive = ReadByte(RvaToAddress(GameOffsets::kNetplayActive)) != 0;
 	out.netplayFrame = static_cast<int>(ReadDword(RvaToAddress(GameOffsets::kNetplayFrame)));
 	out.rollbacks = static_cast<int>(ReadDword(RvaToAddress(GameOffsets::kRollbackCount)));
+	out.savedFrames = static_cast<int>(ReadDword(RvaToAddress(GameOffsets::kGgpoSavedFrames)));
+	out.pacePending = static_cast<int>(ReadDword(RvaToAddress(GameOffsets::kTimeSyncPendingStalls)));
+	out.paceLevel = static_cast<int>(ReadDword(RvaToAddress(GameOffsets::kTimeSyncLevel)));
 
 	return out;
 }
@@ -300,7 +303,7 @@ void ResetWindow(const NetLink::Snapshot& snapshot)
 	g_window = {};
 	g_window.start = snapshot.tick;
 	g_window.startFrame = snapshot.netplayFrame;
-	g_window.startRollbacks = snapshot.rollbacks;
+	g_window.startSaved = snapshot.savedFrames;
 }
 
 void Summarise(const NetLink::Snapshot& snapshot)
@@ -318,14 +321,15 @@ void Summarise(const NetLink::Snapshot& snapshot)
 		const NetLink::Endpoint& peer = snapshot.peer;
 
 		const int frames = snapshot.netplayFrame - g_window.startFrame;
-		const int rollbacks = snapshot.rollbacks - g_window.startRollbacks;
+		const int resimulated = snapshot.savedFrames - g_window.startSaved - frames;
 
-		char netplay[48] = {};
+		char netplay[80] = {};
 
-		if (frames < 0 || rollbacks < 0)
+		if (frames < 0 || resimulated < 0)
 			strncpy_s(netplay, "netplay counters reset", _TRUNCATE);
 		else
-			_snprintf_s(netplay, _TRUNCATE, "netplay +%d rb +%d", frames, rollbacks);
+			_snprintf_s(netplay, _TRUNCATE, "netplay +%d resim +%d pace %d/%d", frames, resimulated,
+				snapshot.pacePending, snapshot.paceLevel);
 
 		char ping[16] = {};
 		char kbps[16] = {};

@@ -8,8 +8,8 @@ namespace RollbackStats
 	struct Sample
 	{
 		int frame;
-		int rollbacks;
-		float rollbacksPerSecond;
+		int resimulated;
+		float resimulatedPerSecond;
 		int ping;
 		int localFramesBehind;
 		int remoteFramesBehind;
@@ -24,8 +24,8 @@ namespace RollbackStats
 	bool HasSession();
 
 	int GetFrame();
-	int GetRollbackTotal();
-	float GetRollbacksPerSecond();
+	int GetResimulatedTotal();
+	float GetResimulatedPerSecond();
 
 	const Sample& GetLatest();
 

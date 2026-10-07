@@ -119,6 +119,8 @@ XInput's names: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`,
 | `PowerThrottlingOptOut` | `1` | Opts the game out of EcoQoS and of the background timer limit. The other half of the same fix. |
 | `PumpWait` | `0` | Waits on the frame thread's message instead of the clock, and puts the engine's other short sleeps on a high resolution timer. No CPU cost, no game code patched. |
 | `PumpWaitAllInput` | `0` | Wakes that wait on every message, not only the handshake. Lowers window message latency, but uses more CPU the more you move the mouse. |
+| `DisplaySync` | `0` | Times every frame to reach the screen just before it refreshes, so with vsync off no frame is shown twice or skipped. Needs a 60 Hz or 120 Hz screen and the main monitor; on any other rate it stays out of the way. |
+| `DisplaySyncLeadMs` | `8.0` | How long before each refresh a frame is finished, 1 to 15 ms. Lower is less input lag; raise it if motion still stutters. |
 | `DisplayTuning` | `1` | Lets the mod choose the fullscreen display settings below. Off keeps exactly what the game asked for. |
 | `FullscreenRefreshHz` | `0` | 0 keeps the desktop's mode. If the game's vsync is on and the rate is not a multiple of 60, 0 picks the highest listed multiple of 60 at or below the desktop rate. Exclusive fullscreen only. |
 | `ExtraBackBuffer` | `0` | Adds a second back buffer. Only helps in exclusive fullscreen with the game's vsync on, and adds up to one frame of input latency. Ignored in windowed mode and with vsync off. |

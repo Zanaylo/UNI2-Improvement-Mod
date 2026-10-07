@@ -43,6 +43,9 @@ namespace NetLink
 		bool netplayActive;
 		int netplayFrame;
 		int rollbacks;
+		int savedFrames;
+		int pacePending;
+		int paceLevel;
 		bool presentSeen;
 	};
 

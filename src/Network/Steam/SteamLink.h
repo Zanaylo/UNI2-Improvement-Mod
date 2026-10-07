@@ -32,6 +32,7 @@ namespace SteamLink
 
 	void Measure(uint64_t peer);
 	void Take(Sample& out);
+	bool IsWanted();
 
 	const char* AvailabilityName(int availability);
 }

@@ -45,6 +45,9 @@ void Measure(const NetLink::Snapshot& snapshot)
 	if (now - g_measuredAt < kMeasureMs || !NetLink::InSession(snapshot))
 		return;
 
+	if (!NetLog::IsEnabled() && !SteamLink::IsWanted())
+		return;
+
 	g_measuredAt = now;
 	SteamLink::Measure(snapshot.hasPeer ? snapshot.peer.id : snapshot.lastPeer);
 }

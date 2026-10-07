@@ -24,6 +24,7 @@
 #include "Game/Battle/GameRestart.h"
 #include "Game/Battle/KeyboardSeat.h"
 #include "Game/Battle/ScreenShake.h"
+#include "Game/Display/DisplaySync.h"
 #include "Game/Display/PotatoMode.h"
 #include "Game/Display/PumpWait.h"
 #include "Game/Engine/Camera.h"
@@ -67,10 +68,15 @@
 #include "Game/Subtitles/SubtitleText.h"
 #include "Game/Subtitles/SubtitleWatch.h"
 #include "Hooks/InputProbe.h"
+#include "Network/BackgroundUpload.h"
 #include "Network/ModChannel.h"
 #include "Network/NetplayTick.h"
 #include "Network/PaletteShare.h"
+#include "Network/RoundLog.h"
+#include "Network/GameResults.h"
+#include "Network/RoundTripSmoothing.h"
 #include "Network/SaveStatePatch.h"
+#include "Network/TimeSyncPatch.h"
 #include "Overlay/Hud/FrameMeterHud.h"
 #include "Overlay/Hud/GrdPopupHud.h"
 #include "Overlay/Hud/HealthReadout.h"
@@ -180,9 +186,12 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: pump wait", [] { PumpWait::Apply(); } },
 	{ "game hooks: keyboard seat saved", [] { KeyboardSeat::ApplySaved(); } },
 	{ "game hooks: save state pool", [] { SaveStatePatch::Install(); } },
+	{ "game hooks: time sync", [] { TimeSyncPatch::Install(); } },
+	{ "game hooks: round trip smoothing", [] { RoundTripSmoothing::Install(); } },
 };
 
 const Task kPresentBegin[] = {
+	[] { DisplaySync::OnFrame(); },
 	[] { SceneWatch::OnFrame(); },
 	[] { if (!ScreenDirector::kOnHold) CharaSelectProbe::OnFrame(); },
 	[] { MemoryMap::InvalidateEffectSlotCache(); },
@@ -192,6 +201,10 @@ const Task kPresentBegin[] = {
 
 const Task kFrame[] = {
 	[] { NetplayTick::Update(); },
+	[] { RoundTripSmoothing::OnFrame(); },
+	[] { RoundLog::OnFrame(); },
+	[] { GameResults::OnFrame(); },
+	[] { BackgroundUpload::OnFrame(); },
 	[] { GamePatches::Update(); },
 	[] { DataSearchPath::Assert(); },
 	[] { ModFiles::OnFrame(); },

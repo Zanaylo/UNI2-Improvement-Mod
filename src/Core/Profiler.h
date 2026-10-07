@@ -45,6 +45,20 @@ namespace Profiler
 		int samples;
 	};
 
+	struct SessionStats
+	{
+		int frames;
+		double meanMs;
+		double p99Ms;
+		double maxMs;
+		int slowFrames;
+		int ticks;
+	};
+
+	SessionStats GetSessionStats();
+	double GetSessionSectionMeanMs(Section section);
+	double GetSessionSectionWorstMs(Section section);
+
 	void SetEnabled(bool enabled);
 	bool IsEnabled();
 

@@ -12,6 +12,7 @@
 #include "D3D9/Device/PresentTuning.h"
 #include "D3D9/Device/ScaledTargets.h"
 #include "Game/Engine/Camera.h"
+#include "Game/Display/DisplaySync.h"
 #include "Game/Display/EngineQuality.h"
 #include "Game/Display/Improvements.h"
 #include "Game/Display/InternalResolution.h"
@@ -32,6 +33,8 @@ namespace {
 constexpr float kHistogramHeight = 110.0f;
 constexpr float kDefaultWidth = 780.0f;
 constexpr float kDefaultHeight = 600.0f;
+constexpr float kDisplaySyncLeadMinMs = 1.0f;
+constexpr float kDisplaySyncLeadMaxMs = 15.0f;
 
 const ImVec4 kGoodColour = ImVec4(0.45f, 0.80f, 0.50f, 1.0f);
 const ImVec4 kWarnColour = ImVec4(0.95f, 0.55f, 0.45f, 1.0f);
@@ -72,6 +75,14 @@ const Option kOptions[] = {
 		"alt-tab that sleep can grow to 15 ms.\n\n"
 		"This wakes the input thread as soon as the game needs it. It costs no CPU and does not "
 		"patch game code.",
+	},
+	{
+		&g_modVals.displaySync,
+		"DisplaySync",
+		"Line frames up with the screen",
+		"Smoother motion with vsync off, without adding input lag.",
+		"Times every frame to reach the screen just before it refreshes, so no frame is shown twice "
+		"or skipped. Needs a 60 Hz or 120 Hz screen. Game default: off.",
 	},
 };
 
@@ -535,6 +546,13 @@ bool PerformanceWindow::DrawOptions()
 		ImGui::PopID();
 	}
 
+	if (g_modVals.displaySync)
+	{
+		ImGui::Indent();
+		Muted("%s", DisplaySync::GetStatusText());
+		ImGui::Unindent();
+	}
+
 	return changed;
 }
 
@@ -659,6 +677,22 @@ bool PerformanceWindow::DrawAdvanced()
 	Help("The input thread normally handles one message per millisecond. This handles them as fast "
 		"as they come, so the window and overlay respond faster, but moving the mouse uses more "
 		"CPU. Needs \"Wake the input thread right away\" on.");
+
+	ImGui::BeginDisabled(!g_modVals.displaySync);
+
+	ImGui::SliderFloat("Frame lead", &g_modVals.displaySyncLeadMs, kDisplaySyncLeadMinMs, kDisplaySyncLeadMaxMs,
+		"%.1f ms");
+
+	if (ImGui::IsItemDeactivatedAfterEdit())
+	{
+		Settings::SaveFloat("Video", "DisplaySyncLeadMs", g_modVals.displaySyncLeadMs);
+		changed = true;
+	}
+
+	Help("How early a frame is ready before the screen refreshes. Lower means less input lag; raise it "
+		"if motion still stutters. Default: 8 ms. Needs \"Line frames up with the screen\" on.");
+
+	ImGui::EndDisabled();
 
 	return changed;
 }

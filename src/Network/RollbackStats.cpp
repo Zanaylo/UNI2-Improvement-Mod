@@ -1,5 +1,6 @@
 #include "Network/RollbackStats.h"
 
+#include "Core/Boot/Modules.h"
 #include "Core/Profiler.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -29,18 +30,21 @@ bool g_wasActive = false;
 LARGE_INTEGER g_frequency = {};
 LARGE_INTEGER g_lastTick = {};
 LARGE_INTEGER g_rateAnchor = {};
-int g_rateAnchorRollbacks = 0;
-float g_rollbacksPerSecond = 0.0f;
+int g_rateAnchorResimulated = 0;
+float g_resimulatedPerSecond = 0.0f;
+int g_baseSaved = 0;
+int g_baseFrame = 0;
 
 char g_status[128] = "no netplay";
 
 constexpr float kSlowFrameMs = 20.0f;
 constexpr int kSummaryBytes = 1024;
+constexpr int kSlowestTasks = 12;
 
 bool g_profilerLent = false;
 int g_slowFrames = 0;
 float g_worstFrameMs = 0.0f;
-float g_peakRollbacksPerSecond = 0.0f;
+float g_peakResimulatedPerSecond = 0.0f;
 
 bool ReadByteAt(uintptr_t rva, uint8_t& out)
 {
@@ -89,18 +93,23 @@ void OnNetplayStarted()
 {
 	g_startCount = 0;
 	g_startArmed = true;
-	g_rateAnchorRollbacks = 0;
+	g_rateAnchorResimulated = 0;
 	g_slowFrames = 0;
 	g_worstFrameMs = 0.0f;
-	g_peakRollbacksPerSecond = 0.0f;
+	g_peakResimulatedPerSecond = 0.0f;
 	QueryPerformanceCounter(&g_rateAnchor);
+	ReadIntAt(GameOffsets::kGgpoSavedFrames, g_baseSaved);
+	ReadIntAt(GameOffsets::kNetplayFrame, g_baseFrame);
 
 	g_profilerLent = !Profiler::IsEnabled();
 
 	if (g_profilerLent)
 		Profiler::SetEnabled(true);
 
-	LOG("RollbackStats: netplay started, capturing the first %d frames",
+	Profiler::Reset();
+	Modules::ResetTaskTimes();
+
+	LOG("RollbackStats: netplay started, profiling the whole match, the start graph keeps the first %d frames",
 		RollbackStats::kStartSamples);
 }
 
@@ -109,19 +118,32 @@ void OnNetplayEnded()
 	char summary[kSummaryBytes] = {};
 	Profiler::BuildSummary(summary, sizeof(summary));
 
-	LOG("RollbackStats: netplay ended after %d frames and %d rollbacks, peak %.1f rollbacks per "
-		"second, %d frame(s) over %.0f ms, worst %.1f ms, last ping %d ms", g_latest.frame,
-		g_latest.rollbacks, g_peakRollbacksPerSecond, g_slowFrames, kSlowFrameMs, g_worstFrameMs,
-		g_latest.ping);
+	LOG("RollbackStats: netplay ended after %d frames, %d frame(s) re-simulated (%.2f per frame), peak %.1f "
+		"re-simulated per second, %d frame(s) over %.0f ms, worst %.1f ms, last ping %d ms", g_latest.frame,
+		g_latest.resimulated, g_latest.frame > 0 ? static_cast<double>(g_latest.resimulated) / g_latest.frame : 0.0,
+		g_peakResimulatedPerSecond, g_slowFrames, kSlowFrameMs, g_worstFrameMs, g_latest.ping);
 
 	LOG_RAW("%s", summary);
 	Profiler::DumpToLog();
+	LOG("RollbackStats: slowest mod tasks this match %s", Modules::SlowestTasks(kSlowestTasks).c_str());
 
 	if (!g_profilerLent)
 		return;
 
 	g_profilerLent = false;
 	Profiler::SetEnabled(false);
+}
+
+int ResimulatedSince(int frame)
+{
+	int saved = 0;
+
+	if (!ReadIntAt(GameOffsets::kGgpoSavedFrames, saved))
+		return g_latest.resimulated;
+
+	const int resimulated = (saved - g_baseSaved) - (frame - g_baseFrame);
+
+	return resimulated < g_latest.resimulated ? g_latest.resimulated : resimulated;
 }
 
 void Track(const RollbackStats::Sample& sample)
@@ -132,8 +154,8 @@ void Track(const RollbackStats::Sample& sample)
 	if (sample.frameMs > g_worstFrameMs)
 		g_worstFrameMs = sample.frameMs;
 
-	if (sample.rollbacksPerSecond > g_peakRollbacksPerSecond)
-		g_peakRollbacksPerSecond = sample.rollbacksPerSecond;
+	if (sample.resimulatedPerSecond > g_peakResimulatedPerSecond)
+		g_peakResimulatedPerSecond = sample.resimulatedPerSecond;
 }
 
 }
@@ -160,7 +182,7 @@ void RollbackStats::Update()
 	if (!g_active)
 	{
 		strncpy_s(g_status, "no netplay", _TRUNCATE);
-		g_rollbacksPerSecond = 0.0f;
+		g_resimulatedPerSecond = 0.0f;
 		g_lastTick = now;
 		return;
 	}
@@ -168,18 +190,18 @@ void RollbackStats::Update()
 	Sample sample = {};
 
 	ReadIntAt(GameOffsets::kNetplayFrame, sample.frame);
-	ReadIntAt(GameOffsets::kRollbackCount, sample.rollbacks);
+	sample.resimulated = ResimulatedSince(sample.frame);
 
 	const float sinceAnchor = ElapsedSeconds(g_rateAnchor, now);
 	if (sinceAnchor >= 0.5f)
 	{
-		g_rollbacksPerSecond =
-			static_cast<float>(sample.rollbacks - g_rateAnchorRollbacks) / sinceAnchor;
+		g_resimulatedPerSecond =
+			static_cast<float>(sample.resimulated - g_rateAnchorResimulated) / sinceAnchor;
 		g_rateAnchor = now;
-		g_rateAnchorRollbacks = sample.rollbacks;
+		g_rateAnchorResimulated = sample.resimulated;
 	}
 
-	sample.rollbacksPerSecond = g_rollbacksPerSecond;
+	sample.resimulatedPerSecond = g_resimulatedPerSecond;
 
 	if (g_lastTick.QuadPart != 0)
 		sample.frameMs = ElapsedSeconds(g_lastTick, now) * 1000.0f;
@@ -196,11 +218,11 @@ void RollbackStats::Update()
 		sample.sendQueue = link.peer.pending;
 		sample.kbpsSent = link.peer.kbps;
 
-		sprintf_s(g_status, "frame %d, %d rollbacks, %d ms", sample.frame, sample.rollbacks, sample.ping);
+		sprintf_s(g_status, "frame %d, %d re-simulated, %d ms", sample.frame, sample.resimulated, sample.ping);
 	}
 	else
 	{
-		sprintf_s(g_status, "frame %d, %d rollbacks, no peer", sample.frame, sample.rollbacks);
+		sprintf_s(g_status, "frame %d, %d re-simulated, no peer", sample.frame, sample.resimulated);
 	}
 
 	Track(sample);
@@ -225,14 +247,14 @@ int RollbackStats::GetFrame()
 	return g_latest.frame;
 }
 
-int RollbackStats::GetRollbackTotal()
+int RollbackStats::GetResimulatedTotal()
 {
-	return g_latest.rollbacks;
+	return g_latest.resimulated;
 }
 
-float RollbackStats::GetRollbacksPerSecond()
+float RollbackStats::GetResimulatedPerSecond()
 {
-	return g_rollbacksPerSecond;
+	return g_resimulatedPerSecond;
 }
 
 const RollbackStats::Sample& RollbackStats::GetLatest()

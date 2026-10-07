@@ -1,6 +1,7 @@
 #include "Core/Profiler.h"
 
 #include "Core/Config/interfaces.h"
+#include "Core/SampleTotals.h"
 #include "Core/logger.h"
 #include "D3D9/Device/DeviceHooks.h"
 #include "D3D9/Device/PresentTuning.h"
@@ -19,6 +20,7 @@ constexpr int kWindowFrames = 240;
 constexpr double kSlowFrameMs = 20.0;
 constexpr double kBucketMs = 1.0;
 constexpr double kSmoothing = 0.1;
+constexpr double kSessionPercentile = 0.99;
 
 const char* const kSectionNames[Profiler::Section_COUNT] = {
 	"Present/OnlineState",
@@ -46,6 +48,10 @@ double g_ticksToMs = 0.0;
 int64_t g_pending[Profiler::Section_COUNT] = {};
 int64_t g_pendingBlock = 0;
 double g_sectionMs[Profiler::Section_COUNT] = {};
+
+SampleTotals g_sessionPresent(kSlowFrameMs);
+SampleTotals g_sessionSections[Profiler::Section_COUNT];
+int g_sessionTicks = 0;
 
 double g_presentSamples[kWindowFrames] = {};
 int g_presentCount = 0;
@@ -201,6 +207,7 @@ void Profiler::EndPresentFrame()
 	{
 		const double frameMs = static_cast<double>(g_pending[i]) * toMs;
 		g_sectionMs[i] += (frameMs - g_sectionMs[i]) * kSmoothing;
+		g_sessionSections[i].Add(frameMs);
 		g_pending[i] = 0;
 	}
 
@@ -210,6 +217,7 @@ void Profiler::EndPresentFrame()
 	{
 		const double intervalMs = static_cast<double>(now - g_lastPresent) * toMs;
 		PushSample(g_presentSamples, g_presentCount, g_presentCursor, intervalMs);
+		g_sessionPresent.Add(intervalMs);
 
 		int bucket = static_cast<int>(intervalMs / kBucketMs);
 		if (bucket < 0)
@@ -246,6 +254,7 @@ void Profiler::EndTickFrame()
 		return;
 
 	const int64_t now = Now();
+	++g_sessionTicks;
 
 	if (g_lastTick != 0)
 	{
@@ -270,6 +279,37 @@ double Profiler::GetSectionMs(Section section)
 		return 0.0;
 
 	return g_sectionMs[section];
+}
+
+Profiler::SessionStats Profiler::GetSessionStats()
+{
+	const int p99Bucket = Histogram::PercentileBucket(g_histogram, kHistogramBuckets, kSessionPercentile);
+	const bool beyondHistogram = p99Bucket < 0 || p99Bucket == kHistogramBuckets - 1;
+
+	SessionStats stats = {};
+	stats.frames = g_sessionPresent.Count();
+	stats.meanMs = g_sessionPresent.Mean();
+	stats.maxMs = g_sessionPresent.Max();
+	stats.p99Ms = beyondHistogram ? stats.maxMs : (p99Bucket + 1) * kBucketMs;
+	stats.slowFrames = g_sessionPresent.Slow();
+	stats.ticks = g_sessionTicks;
+	return stats;
+}
+
+double Profiler::GetSessionSectionMeanMs(Section section)
+{
+	if (section < 0 || section >= Section_COUNT)
+		return 0.0;
+
+	return g_sessionSections[section].Mean();
+}
+
+double Profiler::GetSessionSectionWorstMs(Section section)
+{
+	if (section < 0 || section >= Section_COUNT)
+		return 0.0;
+
+	return g_sessionSections[section].Max();
 }
 
 Profiler::Stats Profiler::GetPresentStats()
@@ -350,7 +390,11 @@ void Profiler::Reset()
 	{
 		g_pending[i] = 0;
 		g_sectionMs[i] = 0.0;
+		g_sessionSections[i].Clear();
 	}
+
+	g_sessionPresent.Clear();
+	g_sessionTicks = 0;
 
 	for (int i = 0; i < kHistogramBuckets; ++i)
 		g_histogram[i] = 0;
@@ -490,7 +534,7 @@ void Profiler::BuildSummary(char* out, size_t size)
 	snprintf(out, size,
 		"display    %ux%u %s, %u Hz, %u back buffer(s), interval 0x%08lx\n"
 		"tuning     %s\n"
-		"options    timer=%d throttling=%d displayTuning=%d extraBuffer=%d pumpWait=%d(%s)\n"
+		"options    timer=%d throttling=%d displayTuning=%d extraBuffer=%d pumpWait=%d(%s) displaySync=%d(%.1f ms)\n"
 		"interval   median %.2f ms, mean %.2f ms, sd %.2f ms, |off target| %.2f ms, on target %.0f%%\n"
 		"           p99 %.2f ms, worst %.2f ms, over 20 ms %d of %d, presenting %.1f fps\n"
 		"modes      %s%.2f / %.2f ms, %.2f ms apart\n"
@@ -503,6 +547,7 @@ void Profiler::BuildSummary(char* out, size_t size)
 		g_modVals.timerResolution ? 1 : 0, g_modVals.powerThrottlingOptOut ? 1 : 0,
 		g_modVals.displayTuning ? 1 : 0, g_modVals.extraBackBuffer ? 1 : 0,
 		g_modVals.pumpWait ? 1 : 0, g_modVals.pumpWaitAllInput ? "all input" : "handshake",
+		g_modVals.displaySync ? 1 : 0, g_modVals.displaySyncLeadMs,
 		frame.medianMs, frame.averageMs, frame.stddevMs, frame.madMs, frame.onTargetPercent,
 		frame.p99Ms, frame.maxMs, frame.slowFrames, frame.samples, GetPresentedFps(),
 		bimodal ? "" : "single cluster, ", firstMs, secondMs, separationMs,
@@ -549,16 +594,25 @@ bool Profiler::ExportCsv(const char* path)
 
 void Profiler::DumpToLog()
 {
+	const SessionStats session = GetSessionStats();
 	const Stats present = GetPresentStats();
 	const Stats tick = GetTickStats();
 
-	LOG("Profiler present: avg %.2fms median %.2fms p99 %.2fms max %.2fms slow %d/%d",
-		present.averageMs, present.medianMs, present.p99Ms, present.maxMs, present.slowFrames,
-		present.samples);
+	LOG("Profiler whole run: %d frames, avg %.2fms p99 <= %.0fms max %.2fms, %d over %.0fms, %d ticks, %.2f per frame",
+		session.frames, session.meanMs, session.p99Ms, session.maxMs, session.slowFrames, kSlowFrameMs, session.ticks,
+		session.frames > 0 ? static_cast<double>(session.ticks) / session.frames : 0.0);
 
-	LOG("Profiler tick: avg %.2fms median %.2fms p99 %.2fms max %.2fms slow %d/%d",
-		tick.averageMs, tick.medianMs, tick.p99Ms, tick.maxMs, tick.slowFrames, tick.samples);
+	LOG("Profiler last %d frames: avg %.2fms median %.2fms p99 %.2fms max %.2fms slow %d",
+		present.samples, present.averageMs, present.medianMs, present.p99Ms, present.maxMs, present.slowFrames);
+
+	LOG("Profiler last %d ticks: avg %.2fms median %.2fms p99 %.2fms max %.2fms",
+		tick.samples, tick.averageMs, tick.medianMs, tick.p99Ms, tick.maxMs);
 
 	for (int i = 0; i < Section_COUNT; ++i)
-		LOG("Profiler %-24s %.3fms", GetSectionName(static_cast<Section>(i)), g_sectionMs[i]);
+	{
+		const Section section = static_cast<Section>(i);
+
+		LOG("Profiler %-24s avg %.3fms worst %.2fms", GetSectionName(section), GetSessionSectionMeanMs(section),
+			GetSessionSectionWorstMs(section));
+	}
 }

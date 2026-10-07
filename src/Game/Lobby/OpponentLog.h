@@ -18,11 +18,15 @@ namespace OpponentLog
 		int lastPing;
 		int bestPing;
 		char lastSeen[kStampBytes];
+		int wins;
+		int losses;
 	};
 
 	bool Initialize();
 	void Update();
 	void Save();
+
+	void RecordGame(uint64_t steamId, bool won);
 
 	int Count();
 	const Entry* Get(int index);

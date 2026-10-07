@@ -1,5 +1,6 @@
 #include "Network/Steam/SteamLink.h"
 
+#include "Core/utils.h"
 #include "Network/NetLog.h"
 
 #include <Windows.h>
@@ -9,6 +10,9 @@
 namespace {
 
 constexpr int kIdentitySteamId = 16;
+constexpr DWORD kWantedMs = 3000;
+
+volatile LONG g_takenAt = 0;
 
 #pragma pack(push, 8)
 struct P2PSessionState
@@ -237,9 +241,16 @@ void SteamLink::Measure(uint64_t peer)
 
 void SteamLink::Take(Sample& out)
 {
+	InterlockedExchange(&g_takenAt, static_cast<LONG>(NonZeroTick()));
 	AcquireSRWLockShared(&g_lock);
 	out = g_sample;
 	ReleaseSRWLockShared(&g_lock);
+}
+
+bool SteamLink::IsWanted()
+{
+	const DWORD takenAt = static_cast<DWORD>(g_takenAt);
+	return takenAt != 0 && GetTickCount() - takenAt < kWantedMs;
 }
 
 const char* SteamLink::AvailabilityName(int availability)

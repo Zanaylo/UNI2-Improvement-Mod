@@ -786,6 +786,54 @@
     <ClCompile Include="src\Network\SaveStatePool.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="src\Network\TimeSyncPatch.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\TimeSyncTuning.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\NetcodeChoice.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\BackgroundUpload.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\BattleProgress.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\UploadChain.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\UploadLedger.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoundTripFilter.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoundTripSmoothing.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoundEvents.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoundLog.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\GameWinner.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\GameResults.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SideReadout.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\InputDelay.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\InputDelayRule.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
     <ClCompile Include="src\Hooks\IndirectCall.cpp">
       <Filter>Hooks</Filter>
     </ClCompile>
@@ -1053,6 +1101,9 @@
     <ClCompile Include="src\Palette\EffectBlock.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
+    <ClCompile Include="src\Palette\IconEntryVote.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
     <ClCompile Include="src\Palette\SelectLayer.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
@@ -1156,6 +1207,12 @@
       <Filter>Game\Menus</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Menus\ColourWindow.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\ColourIconEntries.cpp">
+      <Filter>Game\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Menus\ColourNameTable.cpp">
       <Filter>Game\Menus</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Menus\LobbyAvatar.cpp">
@@ -1305,6 +1362,15 @@
     <ClCompile Include="src\Core\Profiler.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\CodeFingerprint.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\StateTimer.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\SampleTotals.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Boot\ProcessTuning.cpp">
       <Filter>Core\Boot</Filter>
     </ClCompile>
@@ -1415,6 +1481,21 @@
     </ClCompile>
     <ClCompile Include="src\Game\Display\PumpWait.cpp">
       <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\DisplaySync.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\PhaseLock.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\PhaseStats.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\VblankClock.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\MeasuredCode.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Files\DataArchive.cpp">
       <Filter>Game\Files</Filter>
@@ -2261,6 +2342,54 @@
     <ClInclude Include="src\Network\SaveStatePool.h">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="src\Network\TimeSyncPatch.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\TimeSyncTuning.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\NetcodeChoice.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\BackgroundUpload.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\BattleProgress.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\UploadChain.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\UploadLedger.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoundTripFilter.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoundTripSmoothing.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoundEvents.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoundLog.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\GameWinner.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\GameResults.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SideReadout.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\InputDelay.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\InputDelayRule.h">
+      <Filter>Network</Filter>
+    </ClInclude>
     <ClInclude Include="src\Hooks\IndirectCall.h">
       <Filter>Hooks</Filter>
     </ClInclude>
@@ -2456,6 +2585,12 @@
     <ClInclude Include="src\Game\Menus\ColourWindow.h">
       <Filter>Game\Menus</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Menus\ColourIconEntries.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Menus\ColourNameTable.h">
+      <Filter>Game\Menus</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Menus\LobbyAvatar.h">
       <Filter>Game\Menus</Filter>
     </ClInclude>
@@ -2574,6 +2709,9 @@
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\EffectBlock.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\IconEntryVote.h">
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\SelectLayer.h">
@@ -2750,6 +2888,15 @@
     <ClInclude Include="src\Core\Profiler.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\CodeFingerprint.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\StateTimer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\SampleTotals.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Config\default_ini.h">
       <Filter>Core\Config</Filter>
     </ClInclude>
@@ -2911,6 +3058,21 @@
     </ClInclude>
     <ClInclude Include="src\Game\Display\PumpWait.h">
       <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\DisplaySync.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\PhaseLock.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\PhaseStats.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\VblankClock.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\MeasuredCode.h">
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Files\DataArchive.h">
       <Filter>Game\Files</Filter>

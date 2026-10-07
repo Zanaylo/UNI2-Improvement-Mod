@@ -1,15 +1,13 @@
 #include "Game/Menus/ColourWindow.h"
 
 #include "Core/logger.h"
-#include "Core/utils.h"
-#include "Game/Customize/ColorPartTable.h"
-#include "Game/Customize/LivePalette.h"
 #include "Game/Engine/GameOffsets.h"
+#include "Game/Menus/ColourIconEntries.h"
+#include "Game/Menus/ColourNameTable.h"
 #include "Game/Menus/ColourPicker.h"
 #include "Game/Menus/ColourPreview.h"
 #include "Hooks/GameHook.h"
 #include "Palette/ColourSlotStep.h"
-#include "Palette/ColourSlots.h"
 #include "Palette/PaletteFile.h"
 
 #include <cstdio>
@@ -24,7 +22,6 @@ typedef int(__thiscall* MenuTextFn)(void* font, int flags, int x, int y, const c
 constexpr int kNameLength = 24;
 constexpr int kRgb = 3;
 constexpr int kRgbaStride = 4;
-constexpr int kNoTable = -1;
 
 struct Swatches
 {
@@ -59,60 +56,22 @@ void Label(const ColourPicker::Shown& shown)
 	sprintf_s(g_label, "EX%02d  %s", shown.extended, name);
 }
 
-uint8_t* TableEntry(int chara, int colour)
-{
-	if (colour < 0 || colour >= ColourSlots::kStockColours)
-		return nullptr;
-
-	const int* const index = reinterpret_cast<const int*>(
-		RvaToAddress(GameOffsets::kColourNameTableIndex) + static_cast<uintptr_t>(chara) * sizeof(int));
-
-	if (*index <= kNoTable)
-		return nullptr;
-
-	return reinterpret_cast<uint8_t*>(RvaToAddress(GameOffsets::kColourNameTable) +
-		static_cast<uintptr_t>(*index) * GameOffsets::kColourNameCharaStride +
-		static_cast<uintptr_t>(colour) * GameOffsets::kColourNameStride);
-}
-
-int SampleEntries(int chara, int* out)
-{
-	ColorPartTable::Load();
-
-	int found = 0;
-
-	for (int part = 0; part < LivePalette::kParts && found < GameOffsets::kColourNameSwatches; ++part)
-	{
-		if (ColorPartTable::GetSampleCount(chara, part) <= 0)
-			continue;
-
-		out[found++] = ColorPartTable::GetSamples(chara, part)[0];
-	}
-
-	return found;
-}
-
-uint8_t* SwatchAt(uint8_t* entry, int swatch)
-{
-	return entry + GameOffsets::kColourNameSwatch + swatch * GameOffsets::kColourNameSwatchStride;
-}
-
 Swatches PaintSwatches(int side, int chara, int colour)
 {
-	Swatches swatches = { TableEntry(chara, colour), {}, false };
+	Swatches swatches = { ColourNameTable::Entry(chara, colour), {}, false };
 	const uint8_t* const colours = ColourPreview::Colours(side);
 
 	int entries[GameOffsets::kColourNameSwatches] = {};
 
 	if (swatches.entry == nullptr || colours == nullptr ||
-		SampleEntries(chara, entries) < GameOffsets::kColourNameSwatches)
+		!ColourIconEntries::Find(chara, entries))
 	{
 		return swatches;
 	}
 
 	for (int swatch = 0; swatch < GameOffsets::kColourNameSwatches; ++swatch)
 	{
-		uint8_t* const target = SwatchAt(swatches.entry, swatch);
+		uint8_t* const target = ColourNameTable::Swatch(swatches.entry, swatch);
 
 		memcpy(swatches.saved[swatch], target, kRgb);
 		memcpy(target, colours + entries[swatch] * kRgbaStride, kRgb);
@@ -128,7 +87,7 @@ void RestoreSwatches(const Swatches& swatches)
 		return;
 
 	for (int swatch = 0; swatch < GameOffsets::kColourNameSwatches; ++swatch)
-		memcpy(SwatchAt(swatches.entry, swatch), swatches.saved[swatch], kRgb);
+		memcpy(ColourNameTable::Swatch(swatches.entry, swatch), swatches.saved[swatch], kRgb);
 }
 
 void DrawExtended(void* window, const ColourPicker::Shown& shown, int gameCount)

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Network/NetcodeChoice.h"
 #include "Overlay/Framework/IWindow.h"
 
 class NetplayWindow : public IWindow
@@ -13,7 +14,13 @@ protected:
 
 private:
 	void DrawRollbackTab();
+	void DrawMeasuredPings();
 	void DrawStartCapture();
+	void DrawReplayUpload();
+	void DrawNetcodeTab();
+	void DrawInputDelay();
+	bool DrawNetcodeOptions();
+	void DrawNetcodeStatus();
 	void DrawNetworkLogTab();
 	void DrawRoomTab();
 	void DrawOpponentsTab();
@@ -24,5 +31,6 @@ private:
 	void DrawSpectateHost();
 	void DrawSpectateWatch();
 
-	char m_spectateCode[32] = {};
+	NetcodeChoice::Values m_netcode = {};
+	bool m_netcodeRead = false;
 };
