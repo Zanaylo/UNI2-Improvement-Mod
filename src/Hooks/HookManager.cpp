@@ -47,7 +47,7 @@ uintptr_t ScanRange(uintptr_t start, size_t size, const char* pattern, const cha
 }
 
 constexpr int kMaxJmpHops = 8;
-constexpr int kMaxRecords = 96;
+constexpr int kMaxRecords = 256;
 
 constexpr size_t kStubBytes = 16;
 constexpr uint8_t kPushEax = 0x50;

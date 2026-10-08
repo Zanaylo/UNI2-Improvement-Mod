@@ -22,6 +22,7 @@ namespace NetGate
 		DWORD queuedAt;
 		DWORD ttlMs;
 		int size;
+		bool direct;
 	};
 
 	using PeerVerifier = bool(*)(uint64_t id);

@@ -22,7 +22,9 @@
 #include "Network/NetWorker.h"
 #include "Network/RoomPing.h"
 #include "Network/RoomRoster.h"
+#include "Network/RoomWatch/RoomWatchViewer.h"
 #include "Network/RoundTripSmoothing.h"
+#include "Network/SpectatorCatchUp.h"
 #include "Network/TimeSyncTuning.h"
 #include "Network/Steam/SteamLink.h"
 #include "Network/Steam/SteamWatch.h"
@@ -144,6 +146,10 @@ void NetplayWindow::Draw()
 		DrawRollbackTab();
 		ImGui::Separator();
 		DrawReplayUpload();
+		ImGui::Separator();
+		DrawSpectatorCatchUp();
+		ImGui::Separator();
+		DrawRoomWatch();
 		ImGui::EndTabItem();
 	}
 
@@ -317,6 +323,62 @@ void NetplayWindow::DrawReplayUpload()
 
 	if (pending > 0)
 		ImGui::Text("%d upload(s) still running.", pending);
+}
+
+void NetplayWindow::DrawSpectatorCatchUp()
+{
+	ImGui::TextUnformatted("Watching a room match");
+	UiText::Help("If your game falls behind while you watch (an alt-tab, a hitch), it runs faster for a moment "
+		"to catch up instead of losing the connection. Needs the game's vsync off. Game default: off.");
+
+	bool catchUp = g_modVals.spectatorCatchUp;
+
+	if (ImGui::Checkbox("Catch up when watching falls behind", &catchUp))
+	{
+		g_modVals.spectatorCatchUp = catchUp;
+		Settings::SaveInt(kNetplaySection, "SpectatorCatchUp", catchUp ? 1 : 0);
+	}
+
+	if (SpectatorCatchUp::IsCatchingUp())
+		UiText::Muted("Catching up now.");
+
+	ImGui::Spacing();
+	ImGui::TextUnformatted("Playing a versus match");
+	UiText::Help("If your game falls behind the opponent's, it runs the late frames faster to catch up, "
+		"so the opponent does not have to slow down for you. Needs the game's vsync off. Game default: off, "
+		"the player ahead waits instead.");
+
+	bool versus = g_modVals.versusCatchUp;
+
+	if (ImGui::Checkbox("Run late frames to catch up in versus", &versus))
+	{
+		g_modVals.versusCatchUp = versus;
+		Settings::SaveInt(kNetplaySection, "VersusCatchUp", versus ? 1 : 0);
+	}
+}
+
+void NetplayWindow::DrawRoomWatch()
+{
+	ImGui::TextUnformatted("Joining a room match in progress");
+	UiText::Help("Adds 'Watch Match in Progress' to the room menu, so you can watch a match after it started; "
+		"your game fast-forwards to the players. The first player needs the mod with this on too. "
+		"Game default: you can only watch from the start.");
+
+	bool share = g_modVals.joinInProgress;
+
+	if (ImGui::Checkbox("Join room matches in progress", &share))
+	{
+		g_modVals.joinInProgress = share;
+		Settings::SaveInt(kNetplaySection, "JoinInProgress", share ? 1 : 0);
+	}
+
+	if (!ModPresence::InRoom())
+		return;
+
+	if (RoomWatchViewer::IsBusy() && ImGui::Button("Stop watching"))
+		RoomWatchViewer::Leave();
+
+	UiText::Muted("%s", RoomWatchViewer::StatusText());
 }
 
 void NetplayWindow::DrawNetcodeTab()

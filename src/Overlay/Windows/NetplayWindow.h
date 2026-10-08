@@ -17,6 +17,8 @@ private:
 	void DrawMeasuredPings();
 	void DrawStartCapture();
 	void DrawReplayUpload();
+	void DrawSpectatorCatchUp();
+	void DrawRoomWatch();
 	void DrawNetcodeTab();
 	void DrawInputDelay();
 	bool DrawNetcodeOptions();

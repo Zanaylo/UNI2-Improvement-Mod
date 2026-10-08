@@ -1,12 +1,13 @@
 #pragma once
 
+#include "Game/Battle/MatchBlock.h"
 #include "Game/Engine/GameOffsets.h"
 
 #include <cstdint>
 
 namespace SpectateMatch
 {
-	constexpr int kBlockSlots = 12;
+	constexpr int kBlockSlots = MatchBlock::kSlots;
 	constexpr int kStageNameBytes = 64;
 	constexpr int kPatchBytes = 24;
 

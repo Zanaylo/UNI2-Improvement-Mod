@@ -20,6 +20,9 @@
 #include "D3D9/Draw/DrawTrace.h"
 #include "D3D9/Draw/TargetDump.h"
 #include "D3D9/Post/PostChain.h"
+#include "Core/Boot/BackgroundPriority.h"
+#include "Game/Display/DisplaySync.h"
+#include "Network/SpectatorCatchUp.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Stages/BgGrade.h"
 #include "Game/Stages/BgClear.h"
@@ -445,6 +448,11 @@ void RetryOverlay(IDirect3DDevice9* device)
 	manager.Initialize(window, device);
 }
 
+bool IsFastForwardingUnseen()
+{
+	return BackgroundPriority::IsRaised() && SpectatorCatchUp::IsCatchingUp();
+}
+
 void ReportModWork(const LARGE_INTEGER& start)
 {
 	static LARGE_INTEGER frequency = {};
@@ -576,6 +584,15 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	DrawTrace::OnPresentEnd();
 	CleanFrame::OnPresent();
 
+	if (device == g_device && IsFastForwardingUnseen())
+	{
+		Profiler::EndPresentFrame();
+		return D3D_OK;
+	}
+
+	if (device == g_device)
+		DisplaySync::OnPresenting();
+
 	{
 		Profiler::Scope scope(Profiler::Section_PresentDevice);
 		result = g_presentHook.Original()(device, sourceRect, destRect, destWindowOverride, dirtyRegion);
@@ -583,6 +600,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	if (device == g_device)
 	{
+		DisplaySync::OnPresented();
+
 		if (result == D3DERR_DEVICELOST)
 			InterlockedExchange(&g_deviceLost, 1);
 

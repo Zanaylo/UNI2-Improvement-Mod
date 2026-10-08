@@ -40,6 +40,14 @@ bool LinkBusy(const NetLink::Snapshot& snapshot)
 	return snapshot.hasPeer && snapshot.peer.pending > NetGate::kBusyPendingFrames;
 }
 
+bool IsForTheMatchPeer(const NetGate::Request& request, const NetLink::Snapshot& snapshot)
+{
+	if (request.direct)
+		return false;
+
+	return request.toPeer || (snapshot.hasPeer && request.to == snapshot.peer.id);
+}
+
 NetGate::Verdict JudgePeer(const NetGate::Request& request, const NetLink::Snapshot& snapshot, DWORD now,
 	const char*& why)
 {
@@ -107,7 +115,7 @@ NetGate::Verdict NetGate::Judge(const Request& request, const NetLink::Snapshot&
 	if (now - request.queuedAt > request.ttlMs)
 		return Drop(why, "it waited too long");
 
-	if (request.toPeer || (snapshot.hasPeer && request.to == snapshot.peer.id))
+	if (IsForTheMatchPeer(request, snapshot))
 		return JudgePeer(request, snapshot, now, why);
 
 	return JudgeDirect(request, snapshot, now, why);
@@ -115,7 +123,7 @@ NetGate::Verdict NetGate::Judge(const Request& request, const NetLink::Snapshot&
 
 void NetGate::NoteSent(const Request& request, DWORD now)
 {
-	if (request.toPeer || request.to == g_budgetPeer)
+	if (!request.direct && (request.toPeer || request.to == g_budgetPeer))
 	{
 		g_lastPeerSend = now;
 		InterlockedExchangeAdd(&g_peerBytes, request.size);

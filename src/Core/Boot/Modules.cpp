@@ -71,6 +71,8 @@
 #include "Network/BackgroundUpload.h"
 #include "Network/ModChannel.h"
 #include "Network/NetplayTick.h"
+#include "Core/Boot/BackgroundPriority.h"
+#include "Game/Lobby/WatchInProgressItem.h"
 #include "Network/PaletteShare.h"
 #include "Network/RoundLog.h"
 #include "Network/GameResults.h"
@@ -201,6 +203,8 @@ const Task kPresentBegin[] = {
 
 const Task kFrame[] = {
 	[] { NetplayTick::Update(); },
+	[] { BackgroundPriority::Update(); },
+	[] { WatchInProgressItem::OnFrame(); },
 	[] { RoundTripSmoothing::OnFrame(); },
 	[] { RoundLog::OnFrame(); },
 	[] { GameResults::OnFrame(); },

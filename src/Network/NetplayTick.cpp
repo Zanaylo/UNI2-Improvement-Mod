@@ -18,8 +18,12 @@
 #include "Network/RollbackStats.h"
 #include "Network/RoomPing.h"
 #include "Network/RoomRoster.h"
+#include "Network/RoomWatch/RoomWatch.h"
+#include "Network/RoomTrace.h"
 #include "Network/Spectate/Spectate.h"
 #include "Network/Spectate/SpectateViewer.h"
+#include "Network/SpectatorCatchUp.h"
+#include "Network/VersusCatchUp.h"
 #include "Network/Steam/SteamInterfaces.h"
 #include "Network/Steam/SteamWatch.h"
 
@@ -79,6 +83,7 @@ bool NetplayTick::Initialize()
 	OpponentLog::Initialize();
 	ModHandshake::Initialize();
 	Spectate::Initialize();
+	RoomWatch::Initialize();
 	GgpoLogCapture::SetEnabled(g_modVals.netLogGgpo);
 
 	PublishPick();
@@ -104,6 +109,10 @@ void NetplayTick::Update()
 	PublishPick();
 	ModHandshake::Update();
 	Spectate::Update();
+	RoomWatch::Update();
+	SpectatorCatchUp::Update();
+	VersusCatchUp::Update();
+	RoomTrace::Update();
 	RollbackStats::Update();
 	OnlinePatch::Update();
 	OpponentLog::Update();

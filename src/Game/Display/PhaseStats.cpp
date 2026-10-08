@@ -21,10 +21,16 @@ void PhaseStats::Add(int64_t errorTicks)
 		m_worstAbs = absError;
 }
 
+void PhaseStats::AddLate()
+{
+	++m_late;
+}
+
 void PhaseStats::Clear()
 {
 	m_samples = 0;
 	m_locked = 0;
+	m_late = 0;
 	m_absTotal = 0;
 	m_worstAbs = 0;
 }
@@ -32,6 +38,16 @@ void PhaseStats::Clear()
 int PhaseStats::Samples() const
 {
 	return m_samples;
+}
+
+int PhaseStats::Late() const
+{
+	return m_late;
+}
+
+int PhaseStats::Frames() const
+{
+	return m_samples + m_late;
 }
 
 int PhaseStats::Locked() const

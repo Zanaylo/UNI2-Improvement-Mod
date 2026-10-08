@@ -75,7 +75,7 @@ uint16_t KindOf(const uint8_t* data, int size)
 	return header.magic == ModChannel::kMagic ? header.kind : 0;
 }
 
-bool Enqueue(bool toPeer, uint64_t to, const void* data, int size, DWORD ttlMs, const char* label)
+bool Enqueue(bool toPeer, bool direct, uint64_t to, const void* data, int size, DWORD ttlMs, const char* label)
 {
 	if (to == 0 || data == nullptr || size <= 0 || size > ModChannel::kMaxBytes)
 		return false;
@@ -91,7 +91,7 @@ bool Enqueue(bool toPeer, uint64_t to, const void* data, int size, DWORD ttlMs, 
 		slot.inFlight = false;
 		slot.holdLogged = false;
 		slot.refusedLogged = false;
-		slot.request = { toPeer, to, GetTickCount(), ttlMs, size };
+		slot.request = { toPeer, to, GetTickCount(), ttlMs, size, direct };
 		strncpy_s(slot.label, label != nullptr ? label : "?", _TRUNCATE);
 		memcpy(slot.data, data, static_cast<size_t>(size));
 
@@ -253,12 +253,17 @@ void ModChannel::Register(uint16_t kind, Handler handler)
 
 bool ModChannel::SendToPeer(const void* data, int size, DWORD ttlMs, const char* label)
 {
-	return Enqueue(true, NetLink::Peer(), data, size, ttlMs, label);
+	return Enqueue(true, false, NetLink::Peer(), data, size, ttlMs, label);
 }
 
 bool ModChannel::SendTo(uint64_t to, const void* data, int size, DWORD ttlMs, const char* label)
 {
-	return Enqueue(false, to, data, size, ttlMs, label);
+	return Enqueue(false, false, to, data, size, ttlMs, label);
+}
+
+bool ModChannel::SendDirectTo(uint64_t to, const void* data, int size, DWORD ttlMs, const char* label)
+{
+	return Enqueue(false, true, to, data, size, ttlMs, label);
 }
 
 void ModChannel::Flush(const NetLink::Snapshot& snapshot)

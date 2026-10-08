@@ -109,6 +109,9 @@
     <Filter Include="Network">
       <UniqueIdentifier>{1e8e57b2-909b-2a85-3983-a93f378eb6b5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Network\RoomWatch">
+      <UniqueIdentifier>{7ee66cc2-6321-1e2f-e207-a5b80fb75137}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Network\Spectate">
       <UniqueIdentifier>{a47ead35-3d25-9258-00d7-2f38bd51d6e2}</UniqueIdentifier>
     </Filter>
@@ -324,6 +327,33 @@
     <ClCompile Include="src\Network\Spectate\SpectateRelay.cpp">
       <Filter>Network\Spectate</Filter>
     </ClCompile>
+    <ClCompile Include="src\Network\ConfirmedInputLog.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomWatch\HistoryPlan.cpp">
+      <Filter>Network\RoomWatch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomWatch\SpectatorSides.cpp">
+      <Filter>Network\RoomWatch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomWatch\InputStore.cpp">
+      <Filter>Network\RoomWatch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomWatch\RoomWatch.cpp">
+      <Filter>Network\RoomWatch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectatorStore.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomWatch\RoomWatchHost.cpp">
+      <Filter>Network\RoomWatch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomWatch\RoomWatchInbox.cpp">
+      <Filter>Network\RoomWatch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomWatch\RoomWatchViewer.cpp">
+      <Filter>Network\RoomWatch</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network\Spectate\SpectateMatch.cpp">
       <Filter>Network\Spectate</Filter>
     </ClCompile>
@@ -427,6 +457,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Battle\BalanceRules.cpp">
+      <Filter>Game\Battle</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Battle\MatchBlock.cpp">
       <Filter>Game\Battle</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Battle\ScreenShake.cpp">
@@ -774,6 +807,12 @@
     <ClCompile Include="src\Game\Lobby\OpponentLog.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Lobby\WatchInProgressItem.cpp">
+      <Filter>Game\Lobby</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Lobby\WatchItemRule.cpp">
+      <Filter>Game\Lobby</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network\Steam\SteamInterfaces.cpp">
       <Filter>Network\Steam</Filter>
     </ClCompile>
@@ -808,6 +847,27 @@
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\RoundTripFilter.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\CatchUpRule.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectatorBacklog.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\SpectatorCatchUp.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\RoomTrace.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\FieldWatch.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\VersusCatchUp.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\FrameGapCatchUp.cpp">
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\RoundTripSmoothing.cpp">
@@ -1374,6 +1434,12 @@
     <ClCompile Include="src\Core\Boot\ProcessTuning.cpp">
       <Filter>Core\Boot</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Boot\BackgroundPriority.cpp">
+      <Filter>Core\Boot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Boot\BackgroundBoost.cpp">
+      <Filter>Core\Boot</Filter>
+    </ClCompile>
     <ClCompile Include="src\D3D9\Device\PresentTuning.cpp">
       <Filter>D3D9\Device</Filter>
     </ClCompile>
@@ -1482,16 +1548,28 @@
     <ClCompile Include="src\Game\Display\PumpWait.cpp">
       <Filter>Game\Display</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Display\FrameWaitSkip.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Display\DisplaySync.cpp">
       <Filter>Game\Display</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\Display\PhaseLock.cpp">
+    <ClCompile Include="src\Game\Display\DelayBias.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\DisplayGrid.cpp">
       <Filter>Game\Display</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Display\PhaseStats.cpp">
       <Filter>Game\Display</Filter>
     </ClCompile>
-    <ClCompile Include="src\Game\Display\VblankClock.cpp">
+    <ClCompile Include="src\Game\Display\PresentPlanner.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\RecentWorst.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\ScanlineClock.cpp">
       <Filter>Game\Display</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\MeasuredCode.cpp">
@@ -1880,6 +1958,36 @@
     <ClInclude Include="src\Network\Spectate\SpectateRelay.h">
       <Filter>Network\Spectate</Filter>
     </ClInclude>
+    <ClInclude Include="src\Network\ConfirmedInputLog.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\HistoryPlan.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\SpectatorSides.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\InputStore.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\RoomWatch.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectatorStore.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\RoomWatchHost.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\RoomWatchInbox.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\RoomWatchViewer.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\RoomWatchWire.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
     <ClInclude Include="src\Network\Spectate\SpectateMatch.h">
       <Filter>Network\Spectate</Filter>
     </ClInclude>
@@ -1983,6 +2091,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Battle\BalanceRules.h">
+      <Filter>Game\Battle</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Battle\MatchBlock.h">
       <Filter>Game\Battle</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Battle\ScreenShake.h">
@@ -2330,6 +2441,12 @@
     <ClInclude Include="src\Game\Lobby\OpponentLog.h">
       <Filter>Game\Lobby</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Lobby\WatchInProgressItem.h">
+      <Filter>Game\Lobby</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Lobby\WatchItemRule.h">
+      <Filter>Game\Lobby</Filter>
+    </ClInclude>
     <ClInclude Include="src\Network\Steam\SteamInterfaces.h">
       <Filter>Network\Steam</Filter>
     </ClInclude>
@@ -2364,6 +2481,27 @@
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\RoundTripFilter.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\CatchUpRule.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectatorBacklog.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\SpectatorCatchUp.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomTrace.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\FieldWatch.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\VersusCatchUp.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\FrameGapCatchUp.h">
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\RoundTripSmoothing.h">
@@ -2903,6 +3041,12 @@
     <ClInclude Include="src\Core\Boot\ProcessTuning.h">
       <Filter>Core\Boot</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Boot\BackgroundPriority.h">
+      <Filter>Core\Boot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Boot\BackgroundBoost.h">
+      <Filter>Core\Boot</Filter>
+    </ClInclude>
     <ClInclude Include="src\D3D9\Device\PresentTuning.h">
       <Filter>D3D9\Device</Filter>
     </ClInclude>
@@ -3059,16 +3203,28 @@
     <ClInclude Include="src\Game\Display\PumpWait.h">
       <Filter>Game\Display</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Display\FrameWaitSkip.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Display\DisplaySync.h">
       <Filter>Game\Display</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Display\PhaseLock.h">
+    <ClInclude Include="src\Game\Display\DelayBias.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\DisplayGrid.h">
       <Filter>Game\Display</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Display\PhaseStats.h">
       <Filter>Game\Display</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Display\VblankClock.h">
+    <ClInclude Include="src\Game\Display\PresentPlanner.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\RecentWorst.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\ScanlineClock.h">
       <Filter>Game\Display</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\MeasuredCode.h">

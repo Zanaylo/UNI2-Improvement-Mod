@@ -35,6 +35,8 @@ constexpr float kDefaultWidth = 780.0f;
 constexpr float kDefaultHeight = 600.0f;
 constexpr float kDisplaySyncLeadMinMs = 1.0f;
 constexpr float kDisplaySyncLeadMaxMs = 15.0f;
+constexpr float kDisplaySyncBiasMinMs = 0.0f;
+constexpr float kDisplaySyncBiasMaxMs = 12.0f;
 
 const ImVec4 kGoodColour = ImVec4(0.45f, 0.80f, 0.50f, 1.0f);
 const ImVec4 kWarnColour = ImVec4(0.95f, 0.55f, 0.45f, 1.0f);
@@ -67,6 +69,15 @@ const Option kOptions[] = {
 		"game on the fast cores and keeps the 1 ms timer above.",
 	},
 	{
+		&g_modVals.backgroundFullSpeed,
+		"BackgroundFullSpeed",
+		"Keep online matches at full speed in the background",
+		"Watching or playing online, the game keeps 60 fps while you are in another window.",
+		"While you are in a room or a match and the game is not the active window, it gets a higher "
+		"CPU and GPU priority, and when you watch a match and fall behind it skips showing the frames it "
+		"runs to catch up. Everything goes back to normal when you return. Game default: off.",
+	},
+	{
 		&g_modVals.pumpWait,
 		"PumpWait",
 		"Wake the input thread right away",
@@ -93,6 +104,17 @@ using UiText::Warn;
 void SaveVideo(const char* key, int value)
 {
 	Settings::SaveInt("Video", key, value);
+}
+
+bool MillisecondsSlider(const char* label, const char* key, float* value, float min, float max)
+{
+	ImGui::SliderFloat(label, value, min, max, "%.1f ms");
+
+	if (!ImGui::IsItemDeactivatedAfterEdit())
+		return false;
+
+	Settings::SaveFloat("Video", key, *value);
+	return true;
 }
 
 void DeltaText(double now, double before)
@@ -680,17 +702,18 @@ bool PerformanceWindow::DrawAdvanced()
 
 	ImGui::BeginDisabled(!g_modVals.displaySync);
 
-	ImGui::SliderFloat("Frame lead", &g_modVals.displaySyncLeadMs, kDisplaySyncLeadMinMs, kDisplaySyncLeadMaxMs,
-		"%.1f ms");
-
-	if (ImGui::IsItemDeactivatedAfterEdit())
-	{
-		Settings::SaveFloat("Video", "DisplaySyncLeadMs", g_modVals.displaySyncLeadMs);
-		changed = true;
-	}
+	changed = MillisecondsSlider("Frame lead", "DisplaySyncLeadMs", &g_modVals.displaySyncLeadMs,
+		kDisplaySyncLeadMinMs, kDisplaySyncLeadMaxMs) || changed;
 
 	Help("How early a frame is ready before the screen refreshes. Lower means less input lag; raise it "
 		"if motion still stutters. Default: 8 ms. Needs \"Line frames up with the screen\" on.");
+
+	changed = MillisecondsSlider("Read input later", "DisplaySyncDelayBiasMs", &g_modVals.displaySyncDelayBiasMs,
+		kDisplaySyncBiasMinMs, kDisplaySyncBiasMaxMs) || changed;
+
+	Help("Waits after each frame before the game reads your buttons, so they are read closer to when "
+		"the next frame is shown. Less input lag. When the game needs the time the mod waits less, so "
+		"no frame comes late. Default: 0 ms. Needs \"Line frames up with the screen\" on.");
 
 	ImGui::EndDisabled();
 

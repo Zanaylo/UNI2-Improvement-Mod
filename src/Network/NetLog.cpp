@@ -1,6 +1,7 @@
 #include "Network/NetLog.h"
 
 #include "Core/info.h"
+#include "Core/logger.h"
 #include "Core/utils.h"
 
 #include <Windows.h>
@@ -262,7 +263,7 @@ bool NetLog::IsEnabled()
 
 void NetLog::SetEnabled(bool enabled)
 {
-	InterlockedExchange(&g_enabled, enabled ? 1 : 0);
+	InterlockedExchange(&g_enabled, enabled || UNI2_IM_FORCE_LOGGING ? 1 : 0);
 }
 
 void NetLog::Write(const char* format, ...)

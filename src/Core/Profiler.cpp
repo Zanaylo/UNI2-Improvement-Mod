@@ -534,7 +534,7 @@ void Profiler::BuildSummary(char* out, size_t size)
 	snprintf(out, size,
 		"display    %ux%u %s, %u Hz, %u back buffer(s), interval 0x%08lx\n"
 		"tuning     %s\n"
-		"options    timer=%d throttling=%d displayTuning=%d extraBuffer=%d pumpWait=%d(%s) displaySync=%d(%.1f ms)\n"
+		"options    timer=%d throttling=%d displayTuning=%d extraBuffer=%d pumpWait=%d(%s) displaySync=%d(lead %.1f ms, bias %.1f ms)\n"
 		"interval   median %.2f ms, mean %.2f ms, sd %.2f ms, |off target| %.2f ms, on target %.0f%%\n"
 		"           p99 %.2f ms, worst %.2f ms, over 20 ms %d of %d, presenting %.1f fps\n"
 		"modes      %s%.2f / %.2f ms, %.2f ms apart\n"
@@ -547,7 +547,7 @@ void Profiler::BuildSummary(char* out, size_t size)
 		g_modVals.timerResolution ? 1 : 0, g_modVals.powerThrottlingOptOut ? 1 : 0,
 		g_modVals.displayTuning ? 1 : 0, g_modVals.extraBackBuffer ? 1 : 0,
 		g_modVals.pumpWait ? 1 : 0, g_modVals.pumpWaitAllInput ? "all input" : "handshake",
-		g_modVals.displaySync ? 1 : 0, g_modVals.displaySyncLeadMs,
+		g_modVals.displaySync ? 1 : 0, g_modVals.displaySyncLeadMs, g_modVals.displaySyncDelayBiasMs,
 		frame.medianMs, frame.averageMs, frame.stddevMs, frame.madMs, frame.onTargetPercent,
 		frame.p99Ms, frame.maxMs, frame.slowFrames, frame.samples, GetPresentedFps(),
 		bimodal ? "" : "single cluster, ", firstMs, secondMs, separationMs,

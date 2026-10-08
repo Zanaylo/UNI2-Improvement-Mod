@@ -2,6 +2,7 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Battle/MatchBlock.h"
 #include "Game/Stages/BgCeiling.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Patches/GamePatches.h"
@@ -17,18 +18,11 @@
 namespace {
 
 typedef void(__cdecl* MatchSetupFn)();
-typedef void(__fastcall* ApplyBlockFn)(int32_t*);
 
-constexpr int kSides = 2;
-constexpr int kSlotsPerSide = 3;
-constexpr int kStageSlot = 6;
-constexpr int kBgmSlot = 7;
-constexpr int kRuleSlot = 8;
+constexpr int kStageSlot = MatchBlock::kStageSlot;
+constexpr int kSlotsPerSide = MatchBlock::kSlotsPerSide;
 constexpr int kFallbackStage = 1;
 
-constexpr uintptr_t kRules[] = {
-	GameOffsets::kBattleRuleA, GameOffsets::kBattleRuleB, GameOffsets::kBattleRuleC, GameOffsets::kBattleRuleD,
-};
 
 int32_t ReadInt(uintptr_t rva)
 {
@@ -61,23 +55,6 @@ bool WriteBlock(const void* in, uintptr_t rva, size_t size)
 	return TryWriteMemory(reinterpret_cast<void*>(RvaToAddress(rva)), in, size);
 }
 
-void CaptureBlock(int32_t* block)
-{
-	for (int side = 0; side < kSides; ++side)
-	{
-		const int base = side * kSlotsPerSide;
-
-		block[base] = ReadInt(GameOffsets::kBattleCharaRecord + side * GameOffsets::kBattleCharaRecordStride);
-		block[base + 1] = ReadInt(GameOffsets::kBattleCharaColor + side * GameOffsets::kBattleCharaSlotStride);
-		block[base + 2] = ReadInt(GameOffsets::kBattleCharaExtra + side * GameOffsets::kBattleCharaSlotStride);
-	}
-
-	block[kStageSlot] = ReadInt(GameOffsets::kBgPendingNumber);
-	block[kBgmSlot] = ReadInt(GameOffsets::kBattleBgm);
-
-	for (int i = 0; i < static_cast<int>(sizeof(kRules) / sizeof(kRules[0])); ++i)
-		block[kRuleSlot + i] = ReadInt(kRules[i]);
-}
 
 int PlayableStage(int stage)
 {
@@ -127,12 +104,11 @@ int HostStage()
 	return ownShown ? own : ReadInt(GameOffsets::kBgPendingNumber);
 }
 
-bool RunSetup(int32_t* block)
+bool RunRankSetup()
 {
 	__try
 	{
 		reinterpret_cast<MatchSetupFn>(CodeSignatures::Address(GameOffsets::kFnRankMatchSetup))();
-		reinterpret_cast<ApplyBlockFn>(CodeSignatures::Address(GameOffsets::kFnApplyMatchBlock))(block);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
@@ -140,6 +116,14 @@ bool RunSetup(int32_t* block)
 	}
 
 	return true;
+}
+
+bool RunSetup(const int32_t* values)
+{
+	MatchBlock::Block block = {};
+	memcpy(block.values, values, sizeof(block.values));
+
+	return RunRankSetup() && MatchBlock::Apply(block);
 }
 
 }
@@ -154,7 +138,8 @@ bool SpectateMatch::Capture(Snapshot& out)
 		return false;
 	}
 
-	CaptureBlock(out.block);
+	const MatchBlock::Block block = MatchBlock::Capture();
+	memcpy(out.block, block.values, sizeof(out.block));
 
 	out.localSide = ReadInt(GameOffsets::kMatchLocalSide);
 	out.remoteSide = ReadInt(GameOffsets::kMatchRemoteSide);
