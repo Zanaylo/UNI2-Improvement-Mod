@@ -25,7 +25,8 @@ bool ForHost(uint8_t type)
 bool ForViewer(uint8_t type)
 {
 	return type == RoomWatchWire::Type_Accepted || type == RoomWatchWire::Type_Added ||
-		type == RoomWatchWire::Type_History || type == RoomWatchWire::Type_Leave;
+		type == RoomWatchWire::Type_History || type == RoomWatchWire::Type_Leave ||
+		type == RoomWatchWire::Type_Available;
 }
 
 void Queue(const uint8_t* data, int size, uint64_t from)

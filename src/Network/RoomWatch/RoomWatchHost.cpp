@@ -13,6 +13,7 @@
 #include "Network/NetLog.h"
 #include "Network/RoomWatch/HistoryPlan.h"
 #include "Network/RoomWatch/RoomWatchWire.h"
+#include "Network/Steam/SteamInterfaces.h"
 
 #include <Windows.h>
 
@@ -33,6 +34,8 @@ constexpr DWORD kRewindAfterMs = 2000;
 constexpr DWORD kStallMs = 15000;
 constexpr DWORD kMessageTtlMs = 5000;
 constexpr DWORD kHistoryTtlMs = 3000;
+constexpr DWORD kAnnounceEveryMs = 2000;
+constexpr DWORD kAnnounceTtlMs = 2000;
 constexpr int kJoinSyncTimeoutMs = 60000;
 constexpr int kNoEndpoint = -1;
 constexpr int kAddFailed = -1;
@@ -54,9 +57,11 @@ struct Watcher
 
 ConfirmedInputLog g_log(kLogFrames);
 std::vector<Watcher> g_watchers;
+std::vector<uint64_t> g_announced;
 uint32_t g_session = 0;
 bool g_hosting = false;
 DWORD g_streamedAt = 0;
+DWORD g_announcedAt = 0;
 uint8_t g_batch[sizeof(RoomWatchWire::History) + RoomWatchWire::kMostFramesPerBatch * RoomWatchWire::kInputBytes] = {};
 
 int ReadInt(uintptr_t address)
@@ -127,16 +132,57 @@ Watcher* Find(uint64_t id)
 	return nullptr;
 }
 
+bool MayAnnounceTo(const ModPresence::Member& member, uint64_t own, uint64_t opponent)
+{
+	return member.hasMod && member.id != 0 && member.id != own && member.id != opponent && Find(member.id) == nullptr;
+}
+
+void Announce(DWORD now)
+{
+	if (g_announcedAt != 0 && now - g_announcedAt < kAnnounceEveryMs)
+		return;
+
+	g_announcedAt = now;
+	g_announced.clear();
+
+	const uint64_t own = SteamInterfaces::GetOwnSteamId();
+	const uint64_t opponent = NetLink::Peer();
+	const RoomWatchWire::Message available = RoomWatchWire::Make(RoomWatchWire::Type_Available, 0);
+	ModPresence::Member member = {};
+
+	for (int i = 0; ModPresence::MemberAt(i, member); ++i)
+	{
+		if (!MayAnnounceTo(member, own, opponent))
+			continue;
+
+		Send(member.id, &available, sizeof(available), kAnnounceTtlMs, "room watch available");
+		g_announced.push_back(member.id);
+	}
+}
+
+void Withdraw(const RoomWatchWire::Message& leave)
+{
+	for (uint64_t member : g_announced)
+	{
+		if (Find(member) == nullptr)
+			Send(member, &leave, sizeof(leave), kMessageTtlMs, "room watch withdrawn");
+	}
+
+	g_announced.clear();
+	g_announcedAt = 0;
+}
+
 void StopHosting(const char* why)
 {
 	if (!g_hosting && g_watchers.empty())
 		return;
 
+	const RoomWatchWire::Message leave = RoomWatchWire::Make(RoomWatchWire::Type_Leave, 0);
+
 	for (const Watcher& watcher : g_watchers)
-	{
-		const RoomWatchWire::Message leave = RoomWatchWire::Make(RoomWatchWire::Type_Leave, 0);
 		Send(watcher.id, &leave, sizeof(leave), kMessageTtlMs, "room watch leave");
-	}
+
+	Withdraw(leave);
 
 	NetLog::Write("room watch host: %s, %d watcher(s) released", why, static_cast<int>(g_watchers.size()));
 	g_watchers.clear();
@@ -426,9 +472,12 @@ void RoomWatchHost::Update()
 		NetLog::Write("room watch host: keeping this match's inputs so room members can join it in progress");
 	}
 
+	const DWORD now = GetTickCount();
+
 	g_log.Capture(link.session);
 	SettleEndpoints(link.session);
-	Stream(GetTickCount());
+	Stream(now);
+	Announce(now);
 }
 
 void RoomWatchHost::Receive(uint8_t type, const uint8_t* data, int size, uint64_t from)

@@ -167,6 +167,7 @@
     <ClCompile Include="src\Network\ConfirmedInputLog.cpp" />
     <ClCompile Include="src\Network\RoomWatch\HistoryPlan.cpp" />
     <ClCompile Include="src\Network\RoomWatch\SpectatorSides.cpp" />
+    <ClCompile Include="src\Network\RoomWatch\WatchOffers.cpp" />
     <ClCompile Include="src\Network\RoomWatch\InputStore.cpp" />
     <ClCompile Include="src\Network\RoomWatch\RoomWatch.cpp" />
     <ClCompile Include="src\Network\SpectatorStore.cpp" />
@@ -679,6 +680,7 @@
     <ClInclude Include="src\Network\ConfirmedInputLog.h" />
     <ClInclude Include="src\Network\RoomWatch\HistoryPlan.h" />
     <ClInclude Include="src\Network\RoomWatch\SpectatorSides.h" />
+    <ClInclude Include="src\Network\RoomWatch\WatchOffers.h" />
     <ClInclude Include="src\Network\RoomWatch\InputStore.h" />
     <ClInclude Include="src\Network\RoomWatch\RoomWatch.h" />
     <ClInclude Include="src\Network\SpectatorStore.h" />

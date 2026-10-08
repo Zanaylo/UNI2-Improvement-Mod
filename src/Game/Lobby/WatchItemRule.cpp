@@ -2,7 +2,7 @@
 
 bool WatchItemRule::ShouldOffer(const Room& room)
 {
-	return room.enabled && room.inRoom && room.onRoomScreen && room.roomIdle && !room.seated && room.otherModMembers &&
+	return room.enabled && room.inRoom && room.onRoomScreen && room.roomIdle && !room.seated && room.matchOnOffer &&
 		!room.watching;
 }
 

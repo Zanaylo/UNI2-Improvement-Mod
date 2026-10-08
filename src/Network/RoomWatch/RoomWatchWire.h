@@ -21,7 +21,8 @@ namespace RoomWatchWire
 		Type_Added,
 		Type_History,
 		Type_Ack,
-		Type_Leave
+		Type_Leave,
+		Type_Available
 	};
 
 #pragma pack(push, 1)

@@ -9,7 +9,7 @@ namespace WatchItemRule
 		bool onRoomScreen;
 		bool roomIdle;
 		bool seated;
-		bool otherModMembers;
+		bool matchOnOffer;
 		bool watching;
 	};
 

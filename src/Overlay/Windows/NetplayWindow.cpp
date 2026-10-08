@@ -360,8 +360,8 @@ void NetplayWindow::DrawSpectatorCatchUp()
 void NetplayWindow::DrawRoomWatch()
 {
 	ImGui::TextUnformatted("Joining a room match in progress");
-	UiText::Help("Adds 'Watch Match in Progress' to the room menu, so you can watch a match after it started; "
-		"your game fast-forwards to the players. The first player needs the mod with this on too. "
+	UiText::Help("Adds 'Watch Match in Progress' to the room menu while a match you can watch is running; "
+		"your game fast-forwards to the players. The first player needs mod 0.7.5 or newer with this on too. "
 		"Game default: you can only watch from the start.");
 
 	bool share = g_modVals.joinInProgress;

@@ -535,7 +535,7 @@ const unsigned char kPart10_0[] = { 16, 17, 18, 19, 20, 21, 23, 24 };
 const unsigned char kPart10_1[] = { 32, 33, 34, 80, 81, 82, 83, 85, 86, 87, 88, 90, 91, 92, 93, 94, 95 };
 const unsigned char kPart10_2[] = { 96, 97, 98, 99, 100 };
 const unsigned char kPart10_3[] = { 128, 129, 130, 131, 132 };
-const unsigned char kPart10_4[] = { 1, 2, 3, 4, 5, 6, 26, 27, 28, 29, 30, 31, 144, 145, 146, 147, 148, 150, 151, 152, 153, 154 };
+const unsigned char kPart10_4[] = { 1, 2, 3, 4, 5, 6, 26, 27, 28, 29, 30, 31, 42, 43, 44, 144, 145, 146, 147, 148, 150, 151, 152, 153, 154 };
 const unsigned char kPart11_0[] = { 16, 17, 18, 19, 20, 31, 32 };
 const unsigned char kPart11_1[] = { 176, 177, 178, 179, 180, 240, 241, 242, 243, 244, 245, 247, 248, 249, 251, 252 };
 const unsigned char kPart11_2[] = { 144, 145, 146, 147, 148 };
@@ -706,7 +706,7 @@ const Part kParts10[] = {
 	{ "Hairpin", kPart10_1, 17 },
 	{ "Part 3", kPart10_2, 5 },
 	{ "Part 4", kPart10_3, 5 },
-	{ "Skin", kPart10_4, 22 },
+	{ "Skin", kPart10_4, 25 },
 };
 const Part kParts11[] = {
 	{ "Hair", kPart11_0, 7 },

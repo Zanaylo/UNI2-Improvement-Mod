@@ -336,6 +336,9 @@
     <ClCompile Include="src\Network\RoomWatch\SpectatorSides.cpp">
       <Filter>Network\RoomWatch</Filter>
     </ClCompile>
+    <ClCompile Include="src\Network\RoomWatch\WatchOffers.cpp">
+      <Filter>Network\RoomWatch</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network\RoomWatch\InputStore.cpp">
       <Filter>Network\RoomWatch</Filter>
     </ClCompile>
@@ -1965,6 +1968,9 @@
       <Filter>Network\RoomWatch</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\RoomWatch\SpectatorSides.h">
+      <Filter>Network\RoomWatch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\RoomWatch\WatchOffers.h">
       <Filter>Network\RoomWatch</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\RoomWatch\InputStore.h">

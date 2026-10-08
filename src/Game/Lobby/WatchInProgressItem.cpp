@@ -7,7 +7,6 @@
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Lobby/WatchItemRule.h"
 #include "Hooks/GameHook.h"
-#include "Network/ModPresence.h"
 #include "Network/NetLink.h"
 #include "Network/NetLog.h"
 #include "Network/RoomWatch/RoomWatchViewer.h"
@@ -24,7 +23,6 @@ typedef void(__fastcall* FirstItemFn)(void*, void*, int);
 
 constexpr const char* kLabel = "Watch Match in Progress";
 constexpr const char* kExpectedFirstLabel = "<GR_MS_Network_ViewMemberList>";
-constexpr int kLeastModMembers = 2;
 constexpr uint8_t kHiddenFlag = 1;
 constexpr uint8_t kShownFlag = 0;
 constexpr int kClosing = 1;
@@ -116,7 +114,7 @@ WatchItemRule::Room ReadRoom()
 	room.onRoomScreen = ReadGameInt(GameOffsets::kSceneId) == static_cast<int>(GameOffsets::kSceneNetwork);
 	room.roomIdle = ReadGameInt(GameOffsets::kRoomTaskState) == GameOffsets::kRoomTaskIdle;
 	room.seated = IsSeated();
-	room.otherModMembers = ModPresence::ModCount() >= kLeastModMembers;
+	room.matchOnOffer = RoomWatchViewer::MatchOnOffer();
 	room.watching = RoomWatchViewer::IsBusy();
 
 	return room;

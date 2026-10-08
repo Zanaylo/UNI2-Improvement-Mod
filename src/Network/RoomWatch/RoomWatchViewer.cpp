@@ -11,6 +11,7 @@
 #include "Network/NetLog.h"
 #include "Network/RoomWatch/RoomWatchWire.h"
 #include "Network/RoomWatch/SpectatorSides.h"
+#include "Network/RoomWatch/WatchOffers.h"
 #include "Network/SpectatorStore.h"
 #include "Network/Steam/SteamInterfaces.h"
 
@@ -55,6 +56,7 @@ bool g_endpointAdded = false;
 bool g_setupFinished = false;
 int g_ownRemoteSide = 0;
 RoomWatchWire::Accepted g_accepted = {};
+WatchOffers g_offers;
 char g_status[192] = "not watching";
 
 int ReadGameInt(uintptr_t rva)
@@ -502,11 +504,20 @@ void RoomWatchViewer::Receive(uint8_t type, const uint8_t* data, int size, uint6
 		OnHistory(from, data, size);
 		return;
 	case RoomWatchWire::Type_Leave:
+		g_offers.Forget(from);
 		OnHostLeft(from);
+		return;
+	case RoomWatchWire::Type_Available:
+		g_offers.Note(from, GetTickCount());
 		return;
 	default:
 		return;
 	}
+}
+
+bool RoomWatchViewer::MatchOnOffer()
+{
+	return g_offers.AnyFresh(GetTickCount());
 }
 
 bool RoomWatchViewer::WatchInProgress()
