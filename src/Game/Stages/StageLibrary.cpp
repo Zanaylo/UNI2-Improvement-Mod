@@ -1,5 +1,6 @@
 #include "Game/Stages/StageLibrary.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -132,7 +133,7 @@ bool Section(const char* section, std::vector<std::string>& out)
 
 	for (;;)
 	{
-		const DWORD read = GetPrivateProfileSectionA(section, buffer.data(),
+		const DWORD read = Ini::GetSection(section, buffer.data(),
 			static_cast<DWORD>(buffer.size()), Settings::GetIniPath().c_str());
 
 		if (read < buffer.size() - 2)

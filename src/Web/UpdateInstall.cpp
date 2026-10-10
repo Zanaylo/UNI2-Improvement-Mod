@@ -1,5 +1,6 @@
 #include "Web/UpdateInstall.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/info.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -317,6 +318,7 @@ void UpdateInstall::OnFrame()
 	}
 
 	LOG("UpdateInstall: handing over to " UNI2_IM_UPDATER_EXE " and closing the game");
+	Ini::Flush();
 	ExitProcess(0);
 }
 

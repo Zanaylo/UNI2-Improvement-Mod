@@ -1,5 +1,6 @@
 #include "Game/Files/ModPacks.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/FileIndex.h"
 #include "Core/Config/Settings.h"
 #include "Core/Formats/ZipArchive.h"
@@ -38,7 +39,7 @@ std::string Read(const std::string& path, const char* key, const char* fallback)
 {
 	char value[192] = {};
 
-	GetPrivateProfileStringA("Mod", key, fallback, value, sizeof(value), path.c_str());
+	Ini::GetString("Mod", key, fallback, value, sizeof(value), path.c_str());
 
 	return value;
 }
@@ -72,7 +73,7 @@ std::vector<std::string> Stored(const char* key)
 {
 	std::vector<char> value(kListBytes, 0);
 
-	GetPrivateProfileStringA(kSection, key, "", value.data(), kListBytes,
+	Ini::GetString(kSection, key, "", value.data(), kListBytes,
 		Settings::GetIniPath().c_str());
 
 	return Split(value.data());

@@ -1,5 +1,6 @@
 #include "Game/Audio/UserMusic.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/AudioFile.h"
@@ -256,7 +257,7 @@ double ReadLoopPoint(const std::string& slotName)
 {
 	char text[32] = {};
 
-	GetPrivateProfileStringA("Loops", slotName.c_str(), "0", text, sizeof(text),
+	Ini::GetString("Loops", slotName.c_str(), "0", text, sizeof(text),
 		LoopsIniPath().c_str());
 
 	const double seconds = atof(text);
@@ -541,7 +542,7 @@ void UserMusic::SetLoopPoint(const std::string& slotName, double seconds)
 	char text[32] = {};
 	sprintf_s(text, "%.3f", clamped);
 
-	WritePrivateProfileStringA("Loops", slotName.c_str(), text, LoopsIniPath().c_str());
+	Ini::Write("Loops", slotName.c_str(), text, LoopsIniPath().c_str());
 
 	{
 		std::lock_guard<std::mutex> guard(g_lock);

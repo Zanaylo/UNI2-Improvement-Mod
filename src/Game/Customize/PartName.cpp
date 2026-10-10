@@ -1,5 +1,6 @@
 #include "Game/Customize/PartName.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 
 #include <Windows.h>
@@ -32,7 +33,7 @@ void PartName::Get(int chara, int entry, char* out, int size)
 	if (!KeyFor(chara, entry, key, sizeof(key)))
 		return;
 
-	GetPrivateProfileStringA(kSection, key, "", out, size, Settings::GetIniPath().c_str());
+	Ini::GetString(kSection, key, "", out, size, Settings::GetIniPath().c_str());
 }
 
 void PartName::Set(int chara, int entry, const char* name)

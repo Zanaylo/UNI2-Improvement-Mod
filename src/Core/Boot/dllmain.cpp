@@ -1,5 +1,6 @@
 ﻿#include "Core/Boot/Compat.h"
 #include "Core/Boot/Modules.h"
+#include "Core/Config/IniStore.h"
 #include "Game/Engine/CodeSignatures.h"
 #include "Core/DpiScaling.h"
 #include "Core/Harness/Harness.h"
@@ -71,7 +72,7 @@ HRESULT WINAPI HookedDirectInput8Create(HINSTANCE hinst, DWORD version, REFIID r
 std::string ReadWrapperPathFromIni()
 {
 	char buffer[MAX_PATH] = {};
-	GetPrivateProfileStringA("Mod", "DinputDllWrapper", "", buffer, sizeof(buffer),
+	Ini::GetString("Mod", "DinputDllWrapper", "", buffer, sizeof(buffer),
 		Settings::GetIniPath().c_str());
 
 	return std::string(buffer);
@@ -354,6 +355,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 	}
 	case DLL_PROCESS_DETACH:
 	{
+		Ini::FlushOnExit();
+
 		if (reserved != nullptr)
 		{
 			CloseLogger();

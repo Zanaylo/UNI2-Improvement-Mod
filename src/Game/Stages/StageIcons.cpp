@@ -1,5 +1,6 @@
 #include "Game/Stages/StageIcons.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -158,7 +159,7 @@ uint32_t StoredStamp()
 {
 	char stored[16] = {};
 
-	GetPrivateProfileStringA(kSection, kStampKey, "", stored, sizeof(stored), Settings::GetIniPath().c_str());
+	Ini::GetString(kSection, kStampKey, "", stored, sizeof(stored), Settings::GetIniPath().c_str());
 
 	return static_cast<uint32_t>(strtoul(stored, nullptr, 16));
 }

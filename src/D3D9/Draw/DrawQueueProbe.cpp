@@ -29,7 +29,7 @@ void DrawQueueProbe::Arm()
 		return;
 	}
 
-	DrawQueue::SetEnabled(true);
+	DrawQueue::Want(DrawQueue::User_Probe, true);
 
 	LOG_RAW("draw queue probe: wide or bottom-band 2D commands, with the queuing call site");
 	InterlockedExchange(&g_left, kProbedCommands);

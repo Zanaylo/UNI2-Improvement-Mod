@@ -194,6 +194,7 @@ void Report(const char* kind, EXCEPTION_POINTERS* pointers)
 	else
 		LOG("Crash dump could not be written to %s (error %lu)", g_dumpPath, GetLastError());
 
+	FlushLogger();
 	PruneDumps();
 }
 
@@ -321,5 +322,6 @@ void WriteHangDump(const char* reason)
 	const bool written = RequestDump("hang", nullptr);
 
 	LOG("Hang dump %s %s: %s", written ? "written to" : "could not be written to", g_dumpPath, reason);
+	FlushLogger();
 	PruneDumps();
 }

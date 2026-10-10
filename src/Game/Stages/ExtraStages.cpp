@@ -1,5 +1,6 @@
 #include "Game/Stages/ExtraStages.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/Formats/TextEncoding.h"
 #include "Core/logger.h"
@@ -177,7 +178,7 @@ void Discover()
 {
 	char saved[256] = {};
 
-	GetPrivateProfileStringA("Extras", "UnlockedStages", "", saved, sizeof(saved),
+	Ini::GetString("Extras", "UnlockedStages", "", saved, sizeof(saved),
 		Settings::GetIniPath().c_str());
 
 	for (int number = 0; number < BgCeiling::Numbers(); ++number)

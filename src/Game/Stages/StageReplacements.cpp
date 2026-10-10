@@ -1,5 +1,6 @@
 #include "Game/Stages/StageReplacements.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -33,7 +34,7 @@ std::string Key(int number)
 
 bool Remembered(int number)
 {
-	return GetPrivateProfileIntA(kSection, Key(number).c_str(), 0, Settings::GetIniPath().c_str()) != 0;
+	return Ini::GetInt(kSection, Key(number).c_str(), 0, Settings::GetIniPath().c_str()) != 0;
 }
 
 bool Read(int number, Replacement& out)

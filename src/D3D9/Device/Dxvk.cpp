@@ -1,5 +1,6 @@
 #include "D3D9/Device/Dxvk.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -74,7 +75,7 @@ void Read()
 	if (g_read)
 		return;
 
-	g_enabled = GetPrivateProfileIntA(kSection, "Enabled", 0, Settings::GetIniPath().c_str()) != 0;
+	g_enabled = Ini::GetInt(kSection, "Enabled", 0, Settings::GetIniPath().c_str()) != 0;
 	g_read = true;
 }
 

@@ -1,5 +1,6 @@
 #include "Palette/PaletteBinder.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/Config/Settings.h"
@@ -50,7 +51,7 @@ void LoadSignatures()
 		sprintf_s(key, "%d", chara);
 
 		char text[kSignatureBytes * 2 + 2] = {};
-		GetPrivateProfileStringA("PaletteSignatures", key, "", text, sizeof(text),
+		Ini::GetString("PaletteSignatures", key, "", text, sizeof(text),
 			Settings::GetIniPath().c_str());
 
 		if (strlen(text) != kSignatureBytes * 2)
@@ -91,7 +92,7 @@ void LearnSignature(int chara, const uint8_t* palette)
 
 	char key[16] = {};
 	sprintf_s(key, "%d", chara);
-	WritePrivateProfileStringA("PaletteSignatures", key, text, Settings::GetIniPath().c_str());
+	Ini::Write("PaletteSignatures", key, text, Settings::GetIniPath().c_str());
 
 	LOG("binder: learned the colours of %s", PaletteManager::GetCharaName(chara));
 }

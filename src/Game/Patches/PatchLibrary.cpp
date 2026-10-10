@@ -1,5 +1,6 @@
 #include "Game/Patches/PatchLibrary.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Tables/CharaTables.h"
@@ -297,7 +298,7 @@ std::string ReadText(const std::string& section, const char* key, const char* fa
 {
 	char value[512] = {};
 
-	GetPrivateProfileStringA(section.c_str(), key, fallback, value, sizeof(value),
+	Ini::GetString(section.c_str(), key, fallback, value, sizeof(value),
 		ManifestPath().c_str());
 
 	return value;
@@ -305,14 +306,14 @@ std::string ReadText(const std::string& section, const char* key, const char* fa
 
 void WriteText(const std::string& section, const char* key, const std::string& value)
 {
-	WritePrivateProfileStringA(section.c_str(), key, value.c_str(), ManifestPath().c_str());
+	Ini::Write(section.c_str(), key, value.c_str(), ManifestPath().c_str());
 }
 
 bool ReadFlag(const char* key, bool fallback)
 {
 	char value[8] = {};
 
-	GetPrivateProfileStringA("Patches", key, fallback ? "1" : "0", value, sizeof(value),
+	Ini::GetString("Patches", key, fallback ? "1" : "0", value, sizeof(value),
 		ManifestPath().c_str());
 
 	return atoi(value) != 0;
@@ -320,7 +321,7 @@ bool ReadFlag(const char* key, bool fallback)
 
 void WriteFlag(const char* key, bool value)
 {
-	WritePrivateProfileStringA("Patches", key, value ? "1" : "0", ManifestPath().c_str());
+	Ini::Write("Patches", key, value ? "1" : "0", ManifestPath().c_str());
 }
 
 SYSTEMTIME ParseDate(const std::string& text)
@@ -357,7 +358,7 @@ int ReadNumber(const std::string& section, const char* key)
 {
 	char value[16] = {};
 
-	GetPrivateProfileStringA(section.c_str(), key, "0", value, sizeof(value),
+	Ini::GetString(section.c_str(), key, "0", value, sizeof(value),
 		ManifestPath().c_str());
 
 	return atoi(value);
@@ -412,7 +413,7 @@ void WriteAll()
 
 	char text[16] = {};
 	sprintf_s(text, "%d", static_cast<int>(g_patches.size()));
-	WritePrivateProfileStringA("Patches", "Count", text, ManifestPath().c_str());
+	Ini::Write("Patches", "Count", text, ManifestPath().c_str());
 }
 
 void Summarise()
@@ -474,7 +475,7 @@ void PatchLibrary::Load()
 	g_loaded = true;
 
 	char countText[16] = {};
-	GetPrivateProfileStringA("Patches", "Count", "0", countText, sizeof(countText),
+	Ini::GetString("Patches", "Count", "0", countText, sizeof(countText),
 		ManifestPath().c_str());
 
 	int count = atoi(countText);
@@ -635,7 +636,7 @@ bool PatchLibrary::Remove(int index)
 
 	g_patches.erase(g_patches.begin() + index);
 
-	WritePrivateProfileStringA(SectionFor(static_cast<int>(g_patches.size())).c_str(), nullptr,
+	Ini::Write(SectionFor(static_cast<int>(g_patches.size())).c_str(), nullptr,
 		nullptr, ManifestPath().c_str());
 
 	WriteAll();
@@ -732,7 +733,7 @@ int PatchLibrary::Newest(const SYSTEMTIME& when)
 
 void PatchLibrary::RememberActive(const char* id)
 {
-	WritePrivateProfileStringA("Patches", "Active", id, ManifestPath().c_str());
+	Ini::Write("Patches", "Active", id, ManifestPath().c_str());
 }
 
 std::string PatchLibrary::RememberedActive()

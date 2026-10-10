@@ -1,5 +1,6 @@
 #include "Game/Audio/SoundPacks.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/FileIndex.h"
 #include "Core/Config/Settings.h"
 #include "Core/Formats/ZipArchive.h"
@@ -95,7 +96,7 @@ std::string ReadIni(const std::string& path, const char* section, const char* ke
 	const char* fallback)
 {
 	char value[256] = {};
-	GetPrivateProfileStringA(section, key, fallback, value, sizeof(value), path.c_str());
+	Ini::GetString(section, key, fallback, value, sizeof(value), path.c_str());
 	return value;
 }
 

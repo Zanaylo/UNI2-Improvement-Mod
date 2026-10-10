@@ -1,5 +1,6 @@
 #include "D3D9/Device/DgVoodoo.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -99,7 +100,7 @@ int Clamp(int value, int low, int high)
 
 int ReadInt(const char* key, int fallback)
 {
-	return static_cast<int>(GetPrivateProfileIntA(kSection, key, fallback,
+	return static_cast<int>(Ini::GetInt(kSection, key, fallback,
 		Settings::GetIniPath().c_str()));
 }
 

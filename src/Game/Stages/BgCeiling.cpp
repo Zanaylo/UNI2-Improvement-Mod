@@ -1,5 +1,6 @@
 #include "Game/Stages/BgCeiling.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -491,7 +492,7 @@ bool Wanted()
 {
 	char stored[16] = {};
 
-	GetPrivateProfileStringA(kSection, kKey, "1", stored, sizeof(stored),
+	Ini::GetString(kSection, kKey, "1", stored, sizeof(stored),
 		Settings::GetIniPath().c_str());
 
 	return stored[0] != '0';

@@ -1,5 +1,7 @@
 #include "D3D9/Draw/QuadRenderer.h"
 
+#include "D3D9/Draw/ColourAlpha.h"
+
 #include <cmath>
 #include <vector>
 
@@ -26,6 +28,7 @@ IDirect3DStateBlock9* g_stateBlock = nullptr;
 IDirect3DTexture9* g_white = nullptr;
 bool g_openedScene = false;
 int g_blend = QuadRenderer::Blend_Normal;
+int g_opacity = ColourAlpha::kOpaque;
 
 std::vector<Vertex> g_batch;
 IDirect3DTexture9* g_batchTexture = nullptr;
@@ -91,10 +94,10 @@ void PushQuadCorners(IDirect3DTexture9* texture, float x, float y, float width, 
 	const float right = left + width;
 	const float bottom = top + height;
 
-	const Vertex topLeft     = { left,  top,    0.0f, 1.0f, colours.topLeft,     u0, v0 };
-	const Vertex topRight    = { right, top,    0.0f, 1.0f, colours.topRight,    u1, v0 };
-	const Vertex bottomLeft  = { left,  bottom, 0.0f, 1.0f, colours.bottomLeft,  u0, v1 };
-	const Vertex bottomRight = { right, bottom, 0.0f, 1.0f, colours.bottomRight, u1, v1 };
+	const Vertex topLeft     = { left,  top,    0.0f, 1.0f, ColourAlpha::Faded(colours.topLeft, g_opacity),     u0, v0 };
+	const Vertex topRight    = { right, top,    0.0f, 1.0f, ColourAlpha::Faded(colours.topRight, g_opacity),    u1, v0 };
+	const Vertex bottomLeft  = { left,  bottom, 0.0f, 1.0f, ColourAlpha::Faded(colours.bottomLeft, g_opacity),  u0, v1 };
+	const Vertex bottomRight = { right, bottom, 0.0f, 1.0f, ColourAlpha::Faded(colours.bottomRight, g_opacity), u1, v1 };
 
 	g_batch.push_back(topLeft);
 	g_batch.push_back(topRight);
@@ -143,6 +146,7 @@ void PushQuadRotated(IDirect3DTexture9* texture, float x, float y, float width, 
 	const float cornerU[4] = { u0, u1, u0, u1 };
 	const float cornerV[4] = { v0, v0, v1, v1 };
 
+	const uint32_t faded = ColourAlpha::Faded(color, g_opacity);
 	Vertex corners[4] = {};
 
 	for (int i = 0; i < 4; ++i)
@@ -151,7 +155,7 @@ void PushQuadRotated(IDirect3DTexture9* texture, float x, float y, float width, 
 		corners[i].y = centreY + cornerX[i] * sine + cornerY[i] * cosine;
 		corners[i].z = 0.0f;
 		corners[i].rhw = 1.0f;
-		corners[i].color = color;
+		corners[i].color = faded;
 		corners[i].u = cornerU[i];
 		corners[i].v = cornerV[i];
 	}
@@ -196,6 +200,7 @@ bool QuadRenderer::Begin(IDirect3DDevice9* device)
 	g_batch.clear();
 	g_batchTexture = g_white;
 	g_blend = Blend_Normal;
+	g_opacity = ColourAlpha::kOpaque;
 
 	device->SetVertexShader(nullptr);
 	device->SetPixelShader(nullptr);
@@ -232,6 +237,16 @@ bool QuadRenderer::Begin(IDirect3DDevice9* device)
 	device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 
 	return true;
+}
+
+void QuadRenderer::SetOpacity(int percent)
+{
+	g_opacity = percent;
+}
+
+int QuadRenderer::GetOpacity()
+{
+	return g_opacity;
 }
 
 void QuadRenderer::SetBlend(int blend)

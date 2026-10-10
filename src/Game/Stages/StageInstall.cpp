@@ -1,5 +1,6 @@
 #include "Game/Stages/StageInstall.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/utils.h"
 #include "Game/Files/SteamLibrary.h"
 #include "Game/Stages/Bbtag/BbtagInstall.h"
@@ -40,7 +41,7 @@ std::string RecordPath()
 std::string Recorded(const char* section, const std::string& key)
 {
 	char buffer[kRecordLength] = {};
-	GetPrivateProfileStringA(section, key.c_str(), "", buffer, sizeof(buffer), RecordPath().c_str());
+	Ini::GetString(section, key.c_str(), "", buffer, sizeof(buffer), RecordPath().c_str());
 
 	return buffer;
 }
@@ -48,7 +49,7 @@ std::string Recorded(const char* section, const std::string& key)
 void Record(const char* section, const std::string& key, const char* value)
 {
 	CreateDirectoryTree(GetModRootPath(kExportFolder));
-	WritePrivateProfileStringA(section, key.c_str(), value, RecordPath().c_str());
+	Ini::Write(section, key.c_str(), value, RecordPath().c_str());
 }
 
 bool IsFile(const std::string& path)
@@ -164,7 +165,7 @@ bool BackUp(FbGameFolder::Game game, const StageInstall::Target& target, std::st
 
 	std::vector<uint8_t> scene;
 
-	if (!ReadWholeFile(GamePath(game, target, kSceneSuffix), scene) || !BbtagInstall::Loadable(game, scene))
+	if (!ReadWholeFile(GamePath(game, target, kSceneSuffix), scene) || !BbtagInstall::Loadable(scene))
 	{
 		report = " " + target.stem + " was not a working stage, so no backup was made. Verify the game files in"
 			" Steam to get it back.";
@@ -244,7 +245,7 @@ std::string StageInstall::ModelOf(FbGameFolder::Game game, const Target& target)
 	if (ReadWholeFile(backup, scene))
 		return BbtagInstall::ModelName(scene);
 
-	if (ReadWholeFile(GamePath(game, target, kSceneSuffix), scene) && BbtagInstall::Loadable(game, scene))
+	if (ReadWholeFile(GamePath(game, target, kSceneSuffix), scene) && BbtagInstall::Loadable(scene))
 		return BbtagInstall::ModelName(scene);
 
 	return Bare(target.stem);

@@ -357,8 +357,8 @@ int Physical(int logical)
 
 bool Append(GameVector& page, const TrainingMenu::ItemSpec& spec)
 {
-	const int count = spec.choiceCount < TrainingMenu::kMaxChoices ? spec.choiceCount
-		: TrainingMenu::kMaxChoices;
+	const int wanted = spec.action ? 0 : spec.choiceCount;
+	const int count = wanted < TrainingMenu::kMaxChoices ? wanted : TrainingMenu::kMaxChoices;
 
 	MenuItem choices[TrainingMenu::kMaxChoices] = {};
 	MenuItem* pointers[TrainingMenu::kMaxChoices] = {};
@@ -375,7 +375,7 @@ bool Append(GameVector& page, const TrainingMenu::ItemSpec& spec)
 	item.word = spec.word;
 	item.info = spec.info;
 	item.id = spec.id;
-	item.type = GameOffsets::kMenuItemTypeList;
+	item.type = spec.action ? GameOffsets::kMenuItemTypeAction : GameOffsets::kMenuItemTypeList;
 	item.current = spec.value >= 0 && spec.value < count ? spec.value : 0;
 	item.choicesBegin = pointers;
 	item.choicesEnd = pointers + count;
@@ -474,6 +474,38 @@ int Player(void* menu)
 	return Field<int>(menu, GameOffsets::kTrainingMenuPlayer);
 }
 
+int SelectedId(void* menu)
+{
+	const int page = Field<int>(menu, GameOffsets::kTrainingMenuPage);
+	const int cursor = Field<int>(menu, GameOffsets::kTrainingMenuCursor);
+
+	if (page < 0 || page >= GameOffsets::kTrainingMenuPageCount)
+		return TrainingMenu::kNoValue;
+
+	const GameVector& rows = SelectableRows(menu)[page];
+	const GameVector& items = Pages(menu)[page];
+
+	if (cursor < 0 || cursor >= rows.Count())
+		return TrainingMenu::kNoValue;
+
+	const int index = *reinterpret_cast<const int*>(rows.begin + cursor);
+
+	if (index < 0 || index >= items.Count() || items.begin[index] == nullptr)
+		return TrainingMenu::kNoValue;
+
+	return static_cast<const MenuItem*>(items.begin[index])->id;
+}
+
+bool ConfirmedOwnRow(void* menu)
+{
+	if (!Owns(menu) || !g_extra.shown || Field<int>(menu, GameOffsets::kTrainingMenuWindowActive) == 0)
+		return false;
+
+	MenuInput::State input = {};
+
+	return MenuInput::Read(Player(menu), input) && input.confirm && g_client->OnConfirm(SelectedId(menu));
+}
+
 bool HoldForModal(void* menu)
 {
 	TrainingMenu::IModal* const modal = g_modal.load();
@@ -546,7 +578,7 @@ void __fastcall HookedUpdate(void* menu, void* unused)
 
 	g_menu = menu;
 
-	if (!HoldForModal(menu))
+	if (!HoldForModal(menu) && !ConfirmedOwnRow(menu))
 	{
 		ClampCursor(menu);
 		g_client->BeforeUpdate();

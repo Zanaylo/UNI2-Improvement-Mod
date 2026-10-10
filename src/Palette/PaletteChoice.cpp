@@ -1,5 +1,6 @@
 #include "Palette/PaletteChoice.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/Config/Settings.h"
@@ -54,7 +55,7 @@ const char* PaletteChoice::Remembered(int chara)
 	if (chara < 0)
 		return g_remembered;
 
-	GetPrivateProfileStringA(kSection, PaletteManager::GetCharaName(chara), "", g_remembered,
+	Ini::GetString(kSection, PaletteManager::GetCharaName(chara), "", g_remembered,
 		sizeof(g_remembered), Settings::GetIniPath().c_str());
 
 	return g_remembered;

@@ -1,5 +1,6 @@
 #include "Palette/NetworkPick.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/HexText.h"
 #include "Palette/ColourSlots.h"
@@ -38,12 +39,12 @@ void Load()
 
 	const std::string path = Settings::GetIniPath();
 
-	g_pick.chara = static_cast<int>(GetPrivateProfileIntA(kSection, kCharaKey, kNone, path.c_str()));
-	g_pick.colour = static_cast<int>(GetPrivateProfileIntA(kSection, kColourKey, kNone, path.c_str()));
-	GetPrivateProfileStringA(kSection, kFileKey, "", g_pick.file, sizeof(g_pick.file), path.c_str());
+	g_pick.chara = static_cast<int>(Ini::GetInt(kSection, kCharaKey, kNone, path.c_str()));
+	g_pick.colour = static_cast<int>(Ini::GetInt(kSection, kColourKey, kNone, path.c_str()));
+	Ini::GetString(kSection, kFileKey, "", g_pick.file, sizeof(g_pick.file), path.c_str());
 
 	char digits[kSignatureDigits + 1] = {};
-	GetPrivateProfileStringA(kSection, kSignatureKey, "", digits, sizeof(digits), path.c_str());
+	Ini::GetString(kSection, kSignatureKey, "", digits, sizeof(digits), path.c_str());
 	g_pick.hasSignature = HexText::Decode(digits, g_pick.signature, PaletteSignature::kBytes);
 
 	g_loaded = true;

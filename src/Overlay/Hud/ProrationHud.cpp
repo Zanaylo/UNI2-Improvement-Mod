@@ -2,6 +2,7 @@
 
 #include "Core/Config/Settings.h"
 #include "Core/Config/interfaces.h"
+#include "Game/Display/HudOpacity.h"
 #include "Game/Engine/ComboLedger.h"
 #include "Game/Engine/GameDraw.h"
 #include "Game/Engine/GameState.h"
@@ -121,6 +122,7 @@ public:
 		if (TrainingMenu::IsActive() || !GameDraw::IsReady())
 			return;
 
+		HudOpacity::Scope scope(HudLayers::Element_Mod);
 		DrawPanel(ComboLedger::Current(), layer);
 	}
 };

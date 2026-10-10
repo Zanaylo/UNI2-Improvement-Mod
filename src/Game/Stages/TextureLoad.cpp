@@ -1,5 +1,7 @@
 #include "Game/Stages/TextureLoad.h"
 
+#include "Core/Profiler.h"
+#include "Core/SpikeWatch.h"
 #include "Core/logger.h"
 #include "Game/Stages/BgMipmaps.h"
 #include "Game/Stages/StageCapture.h"
@@ -20,6 +22,7 @@ HRESULT WINAPI HookedCreateTexture(void* device, const void* source, UINT bytes,
 	UINT height, UINT levels, DWORD usage, DWORD format, DWORD pool, DWORD filter,
 	DWORD mipFilter, DWORD colourKey, void* info, void* palette, IDirect3DTexture9** texture)
 {
+	const int64_t timed = Profiler::Now();
 	UINT wantedLevels = levels;
 	const bool baked = BgMipmaps::FromFile(source, bytes, wantedLevels);
 
@@ -35,6 +38,8 @@ HRESULT WINAPI HookedCreateTexture(void* device, const void* source, UINT bytes,
 		result = g_createTextureHook.Original()(device, source, bytes, width, height, levels, usage,
 			format, pool, filter, mipFilter, colourKey, info, palette, texture);
 	}
+
+	SpikeWatch::Add(SpikeReport::Cost_TextureLoad, Profiler::Now() - timed, bytes);
 
 	if (FAILED(result) || texture == nullptr || *texture == nullptr)
 		return result;

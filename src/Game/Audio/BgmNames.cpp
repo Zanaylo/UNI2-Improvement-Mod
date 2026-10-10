@@ -1,5 +1,6 @@
 ﻿#include "Game/Audio/BgmNames.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
 #include "Game/Audio/BgmTable.h"
@@ -36,7 +37,7 @@ bool ReadSection(const char* section, const std::string& path, std::string& out)
 {
 	out.assign(8192, '\0');
 
-	const DWORD written = GetPrivateProfileSectionA(section, &out[0],
+	const DWORD written = Ini::GetSection(section, &out[0],
 		static_cast<DWORD>(out.size()), path.c_str());
 
 	if (written == 0)

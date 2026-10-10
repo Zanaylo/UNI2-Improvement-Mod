@@ -1,6 +1,7 @@
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Windows/PaletteEditorWindow.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -237,7 +238,7 @@ void PaletteEditorWindow::LoadCreator()
 
 	m_creatorLoaded = true;
 
-	GetPrivateProfileStringA("Palette", "Creator", "", m_creator, sizeof(m_creator),
+	Ini::GetString("Palette", "Creator", "", m_creator, sizeof(m_creator),
 		Settings::GetIniPath().c_str());
 }
 

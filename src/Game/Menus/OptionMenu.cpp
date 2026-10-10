@@ -1,14 +1,16 @@
-#include "Game/Menus/OptionMenu.h"
+﻿#include "Game/Menus/OptionMenu.h"
 
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Engine/CodeSignatures.h"
-#include "Game/Engine/GameDraw.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Menus/MenuInput.h"
 #include "Hooks/GameHook.h"
 
+#include <Windows.h>
+
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -49,24 +51,24 @@ constexpr int kActions = 3;
 const char* const kConfirmWord = "<GR_NM_Confirm>";
 const char* const kConfirmInfo = "Apply the settings above.";
 
-constexpr int kTitleLeft = 512;
-constexpr int kTitleWidth = 256;
-constexpr int kTitleInset = 2;
-constexpr int kTitleBarHeight = 32;
 constexpr int kTitleOffset = 0x10;
-constexpr int kTitleFont = 1;
-constexpr int kTitleScale = 100;
-constexpr int kTitleCentreX = 640;
-constexpr uint32_t kTitleBar = 0xFFE6E6E6;
-constexpr uint32_t kTitleText = 0xFF141414;
+constexpr DWORD kTitleFreshMs = 100;
 
 AddRowFn g_addRow = nullptr;
 AddChoiceFn g_addChoice = nullptr;
 UpdateFn g_baseUpdate = nullptr;
 
+constexpr int kMaxClients = 2;
+
+OptionMenu::IClient* g_clients[kMaxClients] = {};
+int g_clientCount = 0;
+bool g_hooked = false;
 OptionMenu::IClient* g_client = nullptr;
+std::atomic<int> g_titleTop{ 0 };
+std::atomic<DWORD> g_titleNotedAt{ 0 };
 bool g_buildingDisplay = false;
 void* g_tab = nullptr;
+int g_panelHeight = 0;
 
 char g_status[160] = "the options screen is not where this game version expects it";
 
@@ -101,19 +103,41 @@ int& RowValue(uint8_t* row)
 	return Field<int>(row, GameOffsets::kOptionRowValue);
 }
 
-int ClientRows()
+int RowsOf(const OptionMenu::IClient* client)
 {
-	return (std::min)(g_client->RowCount(), OptionMenu::kMaxRows - kActions);
+	return (std::min)(client->RowCount(), OptionMenu::kMaxRows - kActions);
 }
 
-int EntryRow()
+int ClientRows()
 {
-	return GameOffsets::kOptionDisplayRows;
+	return RowsOf(g_client);
+}
+
+int EntryRow(int client)
+{
+	return GameOffsets::kOptionDisplayRows + client;
+}
+
+int MostClientRows()
+{
+	int most = 0;
+
+	for (int client = 0; client < g_clientCount; ++client)
+		most = (std::max)(most, RowsOf(g_clients[client]));
+
+	return most;
 }
 
 int AllocatedRows()
 {
-	return (std::max)(GameOffsets::kOptionDisplayRows + 1, ClientRows() + kActions);
+	return (std::max)(EntryRow(g_clientCount), MostClientRows() + kActions);
+}
+
+int EnteredClient(int cursor)
+{
+	const int client = cursor - EntryRow(0);
+
+	return client >= 0 && client < g_clientCount ? client : -1;
 }
 
 int SettingY(int index)
@@ -124,6 +148,17 @@ int SettingY(int index)
 int ActionY(int settings, int action)
 {
 	return SettingY(settings) + GameOffsets::kOptionActionGap + action * GameOffsets::kOptionRowSpacing;
+}
+
+int LowestFittingRowY()
+{
+	return ActionY(GameOffsets::kOptionDisplayResetRow, 2);
+}
+
+void FitPanel(void* component, int lowestRowY)
+{
+	Field<int>(component, GameOffsets::kOptionPanelHeight) =
+		g_panelHeight + (std::max)(0, lowestRowY - LowestFittingRowY());
 }
 
 void Place(uint8_t* row, int y)
@@ -185,8 +220,10 @@ void FillClientRow(void* component, int index)
 	RowValue(row) = (std::min)((std::max)(g_client->Current(index), 0), spec.choiceCount - 1);
 }
 
-void EnterTab(void* component)
+void EnterTab(void* component, OptionMenu::IClient* client)
 {
+	g_client = client;
+
 	SavedRow reset;
 	SavedRow back;
 
@@ -203,6 +240,7 @@ void EnterTab(void* component)
 	Fill(component, rows, kConfirmWord, kConfirmInfo, ActionY(rows, 0));
 	Fill(component, rows + 1, reset.word, reset.info, ActionY(rows, 1));
 	Fill(component, rows + 2, back.word, back.info, ActionY(rows, 2));
+	FitPanel(component, ActionY(rows, 2));
 
 	char* const title = &Field<char>(component, GameOffsets::kOptionTitle);
 	strncpy_s(title, GameOffsets::kOptionTitleSize, g_client->Title(), _TRUNCATE);
@@ -249,13 +287,19 @@ int __fastcall HookedBuild(void* self, void* unused)
 	const int result = g_buildHook.Original()(self, unused);
 	g_buildingDisplay = false;
 
-	if (RowCount(self) < EntryRow() + 1)
+	if (RowCount(self) < EntryRow(g_clientCount))
 		return result;
 
 	const int settings = GameOffsets::kOptionDisplayResetRow;
 
-	RowCount(self) = EntryRow() + 1;
-	Fill(self, EntryRow(), g_client->EntryWord(), g_client->EntryInfo(), ActionY(settings, 2));
+	g_panelHeight = Field<int>(self, GameOffsets::kOptionPanelHeight);
+	RowCount(self) = EntryRow(g_clientCount);
+
+	for (int client = 0; client < g_clientCount; ++client)
+	{
+		const OptionMenu::IClient* const entry = g_clients[client];
+		Fill(self, EntryRow(client), entry->EntryWord(), entry->EntryInfo(), ActionY(settings, 2 + client));
+	}
 
 	for (int action = 0; action < 2; ++action)
 	{
@@ -264,6 +308,8 @@ int __fastcall HookedBuild(void* self, void* unused)
 		if (row != nullptr)
 			Place(row, ActionY(settings, action));
 	}
+
+	FitPanel(self, ActionY(settings, 1 + g_clientCount));
 
 	sprintf_s(g_status, "the display page carries the mod's entry");
 	return result;
@@ -295,9 +341,10 @@ int __fastcall HookedUpdate(void* self, void* unused)
 		return UpdateTab(self);
 
 	const int result = g_updateHook.Original()(self, unused);
+	const int client = EnteredClient(Cursor(self));
 
-	if (result != -1 && Cursor(self) == EntryRow() && ConfirmPressed())
-		EnterTab(self);
+	if (result != -1 && client >= 0 && ConfirmPressed())
+		EnterTab(self, g_clients[client]);
 
 	return result;
 }
@@ -332,26 +379,22 @@ uint32_t __fastcall HookedColour(void* self, void* unused, int row, int value, u
 	return GameOffsets::kOptionChangedColour;
 }
 
-void DrawTitle(void* self)
+void NoteTitle(void* self)
 {
-	const int layer = Field<int>(self, GameOffsets::kOptionLayer) + 1;
 	const float open = Field<float>(self, GameOffsets::kOptionOpenScale);
 	const int height = Field<int>(self, GameOffsets::kOptionPanelHeight);
-	const int top = Field<int>(self, GameOffsets::kOptionPanelCentreY) - static_cast<int>(height * open) / 2 +
-		kTitleOffset;
-	const GameDraw::Style style = { kTitleFont, kTitleScale };
-	const int textTop = top + (kTitleBarHeight - GameDraw::LineHeight(style)) / 2;
 
-	GameDraw::Text(GameDraw::Align_Centre, kTitleCentreX, textTop, g_client->Title(), kTitleText, layer, style);
-	GameDraw::Fill(kTitleLeft, top + kTitleInset, kTitleWidth, kTitleBarHeight - kTitleInset * 2, kTitleBar, layer);
+	g_titleTop.store(Field<int>(self, GameOffsets::kOptionPanelCentreY) - static_cast<int>(height * open) / 2 +
+		kTitleOffset);
+	g_titleNotedAt.store(GetTickCount());
 }
 
 int __fastcall HookedDraw(void* self, void* unused)
 {
 	const int result = g_drawHook.Original()(self, unused);
 
-	if (self == g_tab && GameDraw::IsReady())
-		DrawTitle(self);
+	if (self == g_tab)
+		NoteTitle(self);
 
 	return result;
 }
@@ -368,10 +411,13 @@ Fn Resolve(uintptr_t rva)
 
 bool OptionMenu::Install(IClient* client)
 {
-	if (client == nullptr)
+	if (client == nullptr || g_clientCount >= kMaxClients)
 		return false;
 
-	g_client = client;
+	g_clients[g_clientCount++] = client;
+
+	if (g_hooked)
+		return true;
 	g_addRow = Resolve<AddRowFn>(GameOffsets::kFnOptionRowAdd);
 	g_addChoice = Resolve<AddChoiceFn>(GameOffsets::kFnOptionChoiceAdd);
 	g_baseUpdate = Resolve<UpdateFn>(GameOffsets::kFnOptionBaseUpdate);
@@ -395,8 +441,21 @@ bool OptionMenu::Install(IClient* client)
 		return false;
 	}
 
+	g_hooked = true;
 	sprintf_s(g_status, "waiting for the display page");
 	LOG("OptionMenu: hooked, %s", g_status);
+	return true;
+}
+
+bool OptionMenu::ShownTitle(TitleView& out)
+{
+	OptionMenu::IClient* const client = g_client;
+
+	if (client == nullptr || g_tab == nullptr || GetTickCount() - g_titleNotedAt.load() > kTitleFreshMs)
+		return false;
+
+	out.top = g_titleTop.load();
+	out.text = client->Title();
 	return true;
 }
 

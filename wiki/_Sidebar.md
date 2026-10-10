@@ -28,6 +28,7 @@
 **The rest**
 
 [Overlay](Overlay)
+[HUD opacity](HUD-opacity)
 [Performance](Performance)
 [POTATO MODE](POTATO-MODE)
 [Improvements](Improvements)

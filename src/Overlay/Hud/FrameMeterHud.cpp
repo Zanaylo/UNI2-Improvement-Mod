@@ -3,6 +3,7 @@
 #include "Core/Config/interfaces.h"
 #include "Core/Config/Settings.h"
 #include "D3D9/Device/DeviceHooks.h"
+#include "D3D9/Draw/ColourAlpha.h"
 #include "D3D9/Draw/GameFont.h"
 #include "D3D9/Draw/QuadRenderer.h"
 #include "Game/Engine/GameState.h"
@@ -170,14 +171,7 @@ bool DragMeter(const D3DVIEWPORT9& viewport, float x, float y, float width, floa
 
 uint32_t Fade(uint32_t color)
 {
-	int opacity = g_modVals.frameMeterOpacity;
-	if (opacity >= 100)
-		return color;
-	if (opacity < 0)
-		opacity = 0;
-
-	const uint32_t a = ((color >> 24) & 0xff) * static_cast<uint32_t>(opacity) / 100u;
-	return (a << 24) | (color & 0x00ffffff);
+	return ColourAlpha::Faded(color, g_modVals.frameMeterOpacity);
 }
 
 void DrawShadowedText(const char* text, float x, float y, float scale, uint32_t color)

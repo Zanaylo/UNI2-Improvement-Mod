@@ -1,5 +1,6 @@
 #include "Game/Stages/StageFields.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Stages/StageArchive.h"
@@ -86,7 +87,7 @@ void Drop(std::string& note, const char* key)
 std::vector<Original> Originals(int id)
 {
 	std::vector<char> buffer(kSectionBytes);
-	const DWORD length = GetPrivateProfileSectionA(kSection, buffer.data(), kSectionBytes,
+	const DWORD length = Ini::GetSection(kSection, buffer.data(), kSectionBytes,
 		StageSettings::PathOf(id).c_str());
 
 	std::vector<Original> out;

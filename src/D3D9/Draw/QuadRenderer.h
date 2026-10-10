@@ -18,6 +18,9 @@ namespace QuadRenderer
 
 	void SetBlend(int blend);
 
+	void SetOpacity(int percent);
+	int GetOpacity();
+
 	void OnDeviceLost();
 
 	bool HoldsDeviceResources();

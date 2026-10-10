@@ -1,5 +1,6 @@
 #include "Overlay/Windows/PaletteWindow.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/Config/interfaces.h"
 #include "Core/utils.h"
@@ -890,7 +891,7 @@ void PaletteWindow::LoadCreator()
 
 	for (int player = 0; player < 2; ++player)
 	{
-		GetPrivateProfileStringA("Palette", "Creator", "", m_creator[player],
+		Ini::GetString("Palette", "Creator", "", m_creator[player],
 			sizeof(m_creator[player]), Settings::GetIniPath().c_str());
 	}
 }

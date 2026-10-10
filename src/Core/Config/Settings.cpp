@@ -1,5 +1,6 @@
 ﻿#include "Core/Config/Settings.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Profiler.h"
 #include "Core/Config/default_ini.h"
 #include "Core/Config/interfaces.h"
@@ -32,11 +33,6 @@ const char* const kIniFileName = "UNI2_IM.ini";
 
 constexpr int kSettingsRevision = 5;
 
-void FlushIniCache(const std::string& path)
-{
-	WritePrivateProfileStringA(nullptr, nullptr, nullptr, path.c_str());
-}
-
 int ClampRange(int value, int lowest, int highest)
 {
 	if (value < lowest)
@@ -51,7 +47,7 @@ int ClampRange(int value, int lowest, int highest)
 std::string ReadIniString(const char* section, const char* key, const char* defaultValue, const std::string& path)
 {
 	char buffer[512] = {};
-	GetPrivateProfileStringA(section, key, defaultValue, buffer, sizeof(buffer), path.c_str());
+	Ini::GetString(section, key, defaultValue, buffer, sizeof(buffer), path.c_str());
 
 	std::string value(buffer);
 	value.erase(0, value.find_first_not_of(" \t"));
@@ -76,7 +72,7 @@ float ReadIniFloat(const char* section, const char* key, float defaultValue, con
 
 int ReadIniInt(const char* section, const char* key, int defaultValue, const std::string& path)
 {
-	return static_cast<int>(GetPrivateProfileIntA(section, key, defaultValue, path.c_str()));
+	return static_cast<int>(Ini::GetInt(section, key, defaultValue, path.c_str()));
 }
 
 bool WriteShippedIni(const std::string& path)
@@ -196,7 +192,7 @@ const char* const kMissingMarker = "\x01";
 bool KeyExists(const char* section, const char* key, const std::string& path)
 {
 	char buffer[8] = {};
-	GetPrivateProfileStringA(section, key, kMissingMarker, buffer, sizeof(buffer), path.c_str());
+	Ini::GetString(section, key, kMissingMarker, buffer, sizeof(buffer), path.c_str());
 
 	return strcmp(buffer, kMissingMarker) != 0;
 }
@@ -208,7 +204,7 @@ bool AddMissingKey(const char* section, const char* key, const char* value, cons
 
 	EnsureSectionHeader(section, path);
 
-	if (!WritePrivateProfileStringA(section, key, value, path.c_str()))
+	if (!Ini::Write(section, key, value, path.c_str()))
 	{
 		LOG("Could not add [%s] %s to the ini (error %lu)", section, key, GetLastError());
 		return false;
@@ -233,9 +229,6 @@ int CompleteIniFile(const std::string& path)
 #undef SETTING_FLOAT
 #undef SETTING_INT
 
-	if (added > 0)
-		FlushIniCache(path);
-
 	return added;
 }
 
@@ -243,37 +236,36 @@ void MigrateIni(int from, const std::string& path)
 {
 	if (from < 2)
 	{
-		WritePrivateProfileStringA("Netplay", "Diagnostics", "0", path.c_str());
+		Ini::Write("Netplay", "Diagnostics", "0", path.c_str());
 		LOG("Settings: [Netplay] Diagnostics was turned off - it reaches into the netcode and is "
 			"a diagnostic, not a feature");
 	}
 
 	if (from < 3)
 	{
-		WritePrivateProfileStringA("Netplay", "RoomRosterFix", "0", path.c_str());
-		WritePrivateProfileStringA("Netplay", "RepublishPingLocation", "0", path.c_str());
-		WritePrivateProfileStringA("Netplay", "SafeOnline", nullptr, path.c_str());
-		WritePrivateProfileStringA("Netplay", "Diagnostics", nullptr, path.c_str());
+		Ini::Write("Netplay", "RoomRosterFix", "0", path.c_str());
+		Ini::Write("Netplay", "RepublishPingLocation", "0", path.c_str());
+		Ini::Write("Netplay", "SafeOnline", nullptr, path.c_str());
+		Ini::Write("Netplay", "Diagnostics", nullptr, path.c_str());
 		LOG("Settings: RoomRosterFix and RepublishPingLocation are off, they write into the game's own room state");
 	}
 
 	if (from < 4)
 	{
-		WritePrivateProfileStringA("Netplay", "NetLog", "0", path.c_str());
-		WritePrivateProfileStringA("Netplay", "CaptureGgpoLog", "0", path.c_str());
+		Ini::Write("Netplay", "NetLog", "0", path.c_str());
+		Ini::Write("Netplay", "CaptureGgpoLog", "0", path.c_str());
 		LOG("Settings: the network log is off unless you turn it on, it is for a report");
 	}
 
 	if (from < 5 && ReadIniString("Keybinds", "RestartGame", "", path).empty())
 	{
-		WritePrivateProfileStringA("Keybinds", "RestartGame", "Ctrl+F5", path.c_str());
+		Ini::Write("Keybinds", "RestartGame", "Ctrl+F5", path.c_str());
 		LOG("Settings: Ctrl+F5 now restarts the game, as in MBTL IM");
 	}
 
 	char revision[16] = {};
 	sprintf_s(revision, "%d", kSettingsRevision);
-	WritePrivateProfileStringA("Mod", "SettingsRevision", revision, path.c_str());
-	FlushIniCache(path);
+	Ini::Write("Mod", "SettingsRevision", revision, path.c_str());
 
 	LOG("Settings: brought the ini up from revision %d to %d", from, kSettingsRevision);
 }
@@ -284,17 +276,15 @@ void WriteDefaultIni(const std::string& path)
 		return;
 
 #define SETTING_STRING(member, section, key, defaultValue) \
-	WritePrivateProfileStringA(section, key, defaultValue, path.c_str());
+	Ini::Write(section, key, defaultValue, path.c_str());
 #define SETTING_FLOAT(member, section, key, defaultValue) \
-	{ char buf[64] = {}; sprintf_s(buf, "%g", defaultValue); WritePrivateProfileStringA(section, key, buf, path.c_str()); }
+	{ char buf[64] = {}; sprintf_s(buf, "%g", defaultValue); Ini::Write(section, key, buf, path.c_str()); }
 #define SETTING_INT(member, section, key, defaultValue) \
-	{ char buf[64] = {}; sprintf_s(buf, "%d", defaultValue); WritePrivateProfileStringA(section, key, buf, path.c_str()); }
+	{ char buf[64] = {}; sprintf_s(buf, "%d", defaultValue); Ini::Write(section, key, buf, path.c_str()); }
 #include "Core/Config/settings.def"
 #undef SETTING_STRING
 #undef SETTING_FLOAT
 #undef SETTING_INT
-
-	FlushIniCache(path);
 }
 
 }
@@ -311,10 +301,8 @@ void Settings::SaveInt(const char* section, const char* key, int value)
 
 	const std::string path = GetIniPath();
 
-	if (!WritePrivateProfileStringA(section, key, buffer, path.c_str()))
+	if (!Ini::Write(section, key, buffer, path.c_str()))
 		LOG("Could not write %s/%s to the ini (error %lu)", section, key, GetLastError());
-
-	FlushIniCache(path);
 }
 
 namespace {
@@ -349,10 +337,8 @@ void Settings::SaveString(const char* section, const char* key, const char* valu
 {
 	const std::string path = GetIniPath();
 
-	if (!WritePrivateProfileStringA(section, key, value, path.c_str()))
+	if (!Ini::Write(section, key, value, path.c_str()))
 		LOG("Could not write %s/%s to the ini (error %lu)", section, key, GetLastError());
-
-	FlushIniCache(path);
 }
 
 void Settings::SaveFloat(const char* section, const char* key, float value)
@@ -362,10 +348,8 @@ void Settings::SaveFloat(const char* section, const char* key, float value)
 
 	const std::string path = GetIniPath();
 
-	if (!WritePrivateProfileStringA(section, key, buffer, path.c_str()))
+	if (!Ini::Write(section, key, buffer, path.c_str()))
 		LOG("Could not write %s/%s to the ini (error %lu)", section, key, GetLastError());
-
-	FlushIniCache(path);
 }
 
 bool Settings::LoadSettingsFile()

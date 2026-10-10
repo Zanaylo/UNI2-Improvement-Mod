@@ -1,5 +1,6 @@
 #include "Palette/PaletteManager.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/Config/Settings.h"
@@ -143,7 +144,7 @@ void LoadChoices()
 	g_choicesLoaded = true;
 
 	char text[1024] = {};
-	GetPrivateProfileStringA("Palette", "Chosen", "", text, sizeof(text),
+	Ini::GetString("Palette", "Chosen", "", text, sizeof(text),
 		Settings::GetIniPath().c_str());
 
 	const char* at = text;

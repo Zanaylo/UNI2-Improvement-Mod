@@ -22,6 +22,7 @@ namespace TrainingMenu
 		const char* const* choices;
 		int choiceCount;
 		int value;
+		bool action;
 	};
 
 	class IClient
@@ -37,6 +38,7 @@ namespace TrainingMenu
 		virtual void AfterUpdate() = 0;
 
 		virtual bool OnOpenPicker(int id) = 0;
+		virtual bool OnConfirm(int id) = 0;
 	};
 
 	class IModal

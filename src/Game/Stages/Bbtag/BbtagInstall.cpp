@@ -8,20 +8,12 @@
 namespace {
 
 constexpr const char* kModelExtension = ".MUA";
-constexpr const char* kSharedEntries[] = { "mdl.pac", "scr.pac" };
-constexpr const char* kBbcfEntries[] = { "mot.pac", "cammot.pac" };
+constexpr const char* kRequiredEntries[] = { "mdl.pac", "scr.pac", "mot.pac", "cammot.pac" };
 
 bool Holds(const std::vector<std::string>& names, const char* wanted)
 {
 	return std::any_of(names.begin(), names.end(),
 		[wanted](const std::string& name) { return _stricmp(name.c_str(), wanted) == 0; });
-}
-
-template <size_t N>
-bool HoldsAll(const std::vector<std::string>& names, const char* const (&wanted)[N])
-{
-	return std::all_of(std::begin(wanted), std::end(wanted),
-		[&names](const char* one) { return Holds(names, one); });
 }
 
 std::string Leaf(const std::string& path)
@@ -52,12 +44,10 @@ std::string BbtagInstall::ModelName(const std::vector<uint8_t>& scene)
 	return std::string();
 }
 
-bool BbtagInstall::Loadable(FbGameFolder::Game game, const std::vector<uint8_t>& scene)
+bool BbtagInstall::Loadable(const std::vector<uint8_t>& scene)
 {
 	const std::vector<std::string> names = BbtagPac::Names(scene);
 
-	if (!HoldsAll(names, kSharedEntries))
-		return false;
-
-	return game != FbGameFolder::Game_BBCF || HoldsAll(names, kBbcfEntries);
+	return std::all_of(std::begin(kRequiredEntries), std::end(kRequiredEntries),
+		[&names](const char* one) { return Holds(names, one); });
 }

@@ -1,5 +1,6 @@
 #include "Game/Audio/BgmRules.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
@@ -28,20 +29,20 @@ void SectionName(int index, char* out, size_t size)
 
 int ReadInt(const char* section, const char* key, int fallback, const std::string& path)
 {
-	return static_cast<int>(GetPrivateProfileIntA(section, key, fallback, path.c_str()));
+	return static_cast<int>(Ini::GetInt(section, key, fallback, path.c_str()));
 }
 
 void WriteInt(const char* section, const char* key, int value, const std::string& path)
 {
 	char buffer[24] = {};
 	sprintf_s(buffer, "%d", value);
-	WritePrivateProfileStringA(section, key, buffer, path.c_str());
+	Ini::Write(section, key, buffer, path.c_str());
 }
 
 int ReadRef(const char* section, const char* key, const std::string& path)
 {
 	char buffer[64] = {};
-	GetPrivateProfileStringA(section, key, "", buffer, sizeof(buffer), path.c_str());
+	Ini::GetString(section, key, "", buffer, sizeof(buffer), path.c_str());
 	return BgmLibrary::ParseRef(buffer);
 }
 
@@ -49,7 +50,7 @@ void WriteRef(const char* section, const char* key, int value, const std::string
 {
 	char buffer[64] = {};
 	BgmLibrary::FormatRef(value, buffer, sizeof(buffer));
-	WritePrivateProfileStringA(section, key, buffer, path.c_str());
+	Ini::Write(section, key, buffer, path.c_str());
 }
 
 bool IsValidBgm(int id)
@@ -179,7 +180,7 @@ void BgmRules::Save()
 
 		if (i >= g_count)
 		{
-			WritePrivateProfileStringA(section, nullptr, nullptr, path.c_str());
+			Ini::Write(section, nullptr, nullptr, path.c_str());
 			continue;
 		}
 

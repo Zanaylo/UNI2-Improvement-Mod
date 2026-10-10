@@ -71,6 +71,8 @@ XInput's names: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`,
 | `StepRepeatIntervalMs` | `90` | Time between repeated steps. |
 | `RecordFrameCounterRva` | `0` | Advanced. Memory address of the recorder's frame counter. 0 turns it off. |
 | `ShowProration` | `1` | Shows the combo timer and move count proration under Damage info, offline training only. |
+| `InputHistoryBehind` | `0` | Draws the Training input list behind the characters instead of over them. Also in F1, Config, Hud. |
+| `InputHistoryRows` | `16` | How many inputs the Training input list shows, 16 to 48. More rows are drawn smaller so the list keeps the same height. Also in F1, Config, Hud. |
 
 ## `[FrameMeter]`
 
@@ -84,6 +86,21 @@ XInput's names: `A`, `B`, `X`, `Y`, `LB`, `RB`, `LT`, `RT`, `L3`, `R3`, `Start`,
 | `AttributeRow` | `1` | The thin row under each bar that names every active invincibility. |
 | `Opacity` | `100` | How solid the meter looks, in percent. |
 | `MouseDrag` | `1` | Lets you drag the meter with the mouse. |
+
+## `[HudOpacity]`
+
+How solid each part of the screen is during a fight, in percent: `100` is the game as it is, `0` is
+gone. Also in the game's menu under Option, Display, Improvement Mod - HUD Opacity. See
+[HUD opacity](HUD-opacity).
+
+| Key | Default | What it does |
+|---|---|---|
+| `Menus` | `100` | The Training menu, the pause menu and the Command List. Never below `10`. |
+| `BattleHud` | `100` | Health, timer, EXS and GRD gauges and the combo counter. |
+| `InputHistory` | `100` | The input list in Training. |
+| `DamageInfo` | `100` | The Damage info box in Training. |
+| `FrameInfo` | `100` | The two Frame info boxes in Training. |
+| `ModHud` | `100` | The frame meter, GRD popups, health values and proration of this mod. The frame meter's own `Opacity` still applies on top. |
 
 ## `[Palette]`
 
@@ -190,6 +207,7 @@ restores them. Change the other keys only if you want to push one further than t
 | `MemoryDebug` | `0` | Loads the Memory debug window, opened with Ctrl+F1. |
 | `Profiler` | `0` | Frame interval and per-section timing, shown in the Performance window's Metrics tab. |
 | `MeterTrace` | `0` | The frame meter's diagnostic capture and its CSV. |
+| `SpikeReportMs` | `25` | With logging on, every frame that takes at least this many milliseconds is written to the log with what took the time: the game's file reads, texture loads, shader and buffer creation, the wait inside Present, the game's own update and the mod's slowest task. `0` turns it off. |
 
 `Logging = 1` turns logging on. Nothing is written without it. If someone reports the mod does
 nothing, ask for the log first: it shows startup, every hook the mod installed and where, and

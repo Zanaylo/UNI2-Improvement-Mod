@@ -2,6 +2,7 @@
 
 #include "Core/ThreadRole.h"
 #include "Core/Profiler.h"
+#include "Core/SpikeWatch.h"
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -86,6 +87,15 @@ void SampleObservers()
 	StateRecorder::SampleFromGameThread();
 }
 
+void RunGameUpdate(void* outputByte, void* unused)
+{
+	Profiler::Scope scope(Profiler::Section_TickGame);
+	const int64_t began = Profiler::Now();
+
+	g_frameUpdateHook.Original()(outputByte, unused);
+	SpikeWatch::Add(SpikeReport::Cost_GameUpdate, Profiler::Now() - began);
+}
+
 void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 {
 	ThreadRole::Mark(ThreadRole::Role_Game);
@@ -154,10 +164,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 			++g_suppressedFrames;
 		}
 
-		{
-			Profiler::Scope scope(Profiler::Section_TickGame);
-			g_frameUpdateHook.Original()(outputByte, unused);
-		}
+		RunGameUpdate(outputByte, unused);
 
 		if (advancing)
 		{
@@ -179,10 +186,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 			g_steppedSinceLastPresent = true;
 			++g_suppressedFrames;
 
-			{
-				Profiler::Scope scope(Profiler::Section_TickGame);
-				g_frameUpdateHook.Original()(outputByte, unused);
-			}
+			RunGameUpdate(outputByte, unused);
 
 			Profiler::EndTickFrame();
 			return;
@@ -207,10 +211,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 	PlayerControl::OnFrameUpdate();
 	KeyboardSeat::OnFrameUpdate();
 
-	{
-		Profiler::Scope scope(Profiler::Section_TickGame);
-		g_frameUpdateHook.Original()(outputByte, unused);
-	}
+	RunGameUpdate(outputByte, unused);
 
 	SampleObservers();
 	Profiler::EndTickFrame();

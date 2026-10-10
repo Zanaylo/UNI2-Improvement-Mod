@@ -12,6 +12,8 @@
 #include "Overlay/Hud/HealthReadout.h"
 #include "Overlay/Hud/ProrationHud.h"
 #include "Overlay/Native/GuideScreen.h"
+#include "Overlay/Native/HudOpacityItems.h"
+#include "Overlay/Native/OptionScreen.h"
 #include "Overlay/Windows/HitboxOverlay.h"
 
 #include <atomic>
@@ -27,6 +29,11 @@ const TrainingMenu::PageSpec kPage = { "Improvement Mod", "Settings added by UNI
 
 GuideScreen g_frameMeterGuide(&FrameMeterLegend::Get);
 GuideScreen g_hitboxGuide(&HitboxLegend::Get);
+OptionScreen g_hudOpacityScreen(HudOpacityItems::Client());
+
+const TrainingMenu::ItemSpec kHudOpacityItem = { 0x1008, "HUD Opacity",
+	"How see-through the menus, the HUD and the Training displays are. Confirm to change them.",
+	nullptr, 0, 0, true };
 
 struct Binding
 {
@@ -78,11 +85,14 @@ public:
 
 	int ItemCount() const override
 	{
-		return OnlineState::IsOnline() ? 0 : kBindingCount;
+		return OnlineState::IsOnline() ? 0 : kBindingCount + 1;
 	}
 
 	TrainingMenu::ItemSpec Item(int index) const override
 	{
+		if (index >= kBindingCount)
+			return kHudOpacityItem;
+
 		const Binding& binding = kBindings[index];
 
 		return { binding.id, binding.word, binding.info, kShowChoices, kShowChoiceCount,
@@ -116,18 +126,28 @@ public:
 	{
 		for (const Binding& binding : kBindings)
 		{
-			if (binding.id != id)
-				continue;
-
-			if (binding.guide == nullptr)
-				return true;
-
-			binding.guide->Open();
-			TrainingMenu::OpenModal(binding.guide);
-			return true;
+			if (binding.id == id)
+				return Open(binding.guide);
 		}
 
 		return false;
+	}
+
+	bool OnConfirm(int id) override
+	{
+		return id == kHudOpacityItem.id && Open(&g_hudOpacityScreen);
+	}
+
+private:
+	template <typename Screen>
+	static bool Open(Screen* screen)
+	{
+		if (screen == nullptr)
+			return true;
+
+		screen->Open();
+		TrainingMenu::OpenModal(screen);
+		return true;
 	}
 };
 
@@ -163,6 +183,8 @@ void TrainingMenuItems::OnFrame()
 
 void TrainingMenuItems::Render(IDirect3DDevice9* device)
 {
+	g_hudOpacityScreen.Render(device);
+
 	for (const Binding& binding : kBindings)
 	{
 		if (binding.guide != nullptr)

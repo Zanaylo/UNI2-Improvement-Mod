@@ -29,7 +29,14 @@ namespace OptionMenu
 		virtual void Apply(int index, int value) = 0;
 	};
 
+	struct TitleView
+	{
+		int top;
+		const char* text;
+	};
+
 	bool Install(IClient* client);
+	bool ShownTitle(TitleView& out);
 
 	const char* StatusText();
 }

@@ -1,6 +1,7 @@
 #include "Core/Harness/HarnessChannel.h"
 
 #include "Core/Config/keycodes.h"
+#include "Core/Harness/DrawCommands.h"
 #include "Core/Harness/FrameGrab.h"
 #include "Core/Harness/Harness.h"
 #include "Core/Harness/InjectedKeys.h"
@@ -191,6 +192,9 @@ std::string Execute(const std::string& line)
 		return reply;
 
 	if (PaletteCommands::Execute(words, reply))
+		return reply;
+
+	if (DrawCommands::Execute(words, reply))
 		return reply;
 
 	return "error unknown command " + verb;

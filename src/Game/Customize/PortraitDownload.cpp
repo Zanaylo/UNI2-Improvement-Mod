@@ -1,6 +1,7 @@
 #include "Game/Customize/PortraitDownload.h"
 
 #include "Core/BackgroundJob.h"
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/Formats/ZipArchive.h"
 #include "Core/logger.h"
@@ -49,7 +50,7 @@ public:
 std::string ReadPackUrl()
 {
 	char url[kUrlBytes] = {};
-	GetPrivateProfileStringA(kSection, kPackKey, kDefaultPackUrl, url, sizeof(url), Settings::GetIniPath().c_str());
+	Ini::GetString(kSection, kPackKey, kDefaultPackUrl, url, sizeof(url), Settings::GetIniPath().c_str());
 	return ShareLink::Direct(url);
 }
 

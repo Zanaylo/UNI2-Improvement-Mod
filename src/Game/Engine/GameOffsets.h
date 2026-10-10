@@ -445,6 +445,17 @@ namespace GameOffsets
 
 	constexpr uintptr_t kInputDisplayOption = 0x87aa1c;
 
+	constexpr uintptr_t kFnInputHistoryDraw = 0x1a6730;
+	constexpr uintptr_t kInputHistoryHead = 0x04;
+	constexpr uintptr_t kInputHistoryEntries = 0x0c;
+	constexpr uintptr_t kInputHistoryRightSide = 0xcc;
+	constexpr uintptr_t kInputHistoryTop = 0xd0;
+	constexpr uintptr_t kInputHistoryRows = 0xd4;
+	constexpr uintptr_t kInputHistoryWideCounts = 0xd8;
+	constexpr size_t kInputHistoryBlockSize = 0xe0;
+	constexpr int kInputHistoryRowPitch = 0x1c;
+	constexpr int kInputHistoryLayer = 0x1cc;
+
 	constexpr uintptr_t kFnFetchPad = 0x2035d0;
 	constexpr size_t kPadInputSize = 0x3c;
 
@@ -486,6 +497,7 @@ namespace GameOffsets
 	constexpr int kTrainingMenuPageCount = 7;
 	constexpr int kTrainingMenuFirstPageDelta = 0x64;
 	constexpr int kMenuItemTypeTitle = -1;
+	constexpr int kMenuItemTypeAction = 0;
 	constexpr int kMenuItemTypeList = 1;
 	constexpr uint32_t kMenuItemDefaultColour = 0xffffffffu;
 
@@ -1125,6 +1137,7 @@ namespace GameOffsets
 
 	constexpr uintptr_t kCardTitleText = 0x5be2a0;
 	constexpr size_t kCardTitleTextBytes = 0x40;
+	constexpr size_t kReplayTitleBytes = 0x20;
 
 	constexpr uintptr_t kCardPlateFrame = 0x5be3b8;
 	constexpr uintptr_t kCardPlatePanel = 0x5be3bc;

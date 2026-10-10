@@ -1,5 +1,6 @@
 #include "Game/Audio/AnnouncerRoster.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Game/Customize/AnnouncerList.h"
 #include "Game/Files/DataArchive.h"
@@ -106,7 +107,7 @@ void Load()
 	g_capacity = ComputeCapacity();
 
 	char buffer[1024] = {};
-	GetPrivateProfileStringA(kSection, kKey, "", buffer, sizeof(buffer), Settings::GetIniPath().c_str());
+	Ini::GetString(kSection, kKey, "", buffer, sizeof(buffer), Settings::GetIniPath().c_str());
 
 	g_chosen = buffer[0] != '\0' ? Split(buffer) : Defaults(g_capacity);
 }

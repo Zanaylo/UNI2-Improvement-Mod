@@ -1183,12 +1183,7 @@ bool BbtagExport::Package(const Result& result, FbGameFolder::Game game, const s
 	scene.push_back(PacWriter::Entry{ kModelFolder, Folder({ File{ modelFile, result.bare } }) });
 	scene.push_back(PacWriter::Entry{ kScriptFolder, Folder(result.scripts) });
 	scene.push_back(PacWriter::Entry{ kMotionFolder, Folder(result.motions) });
-
-	if (game == FbGameFolder::Game_BBCF)
-	{
-		const File camera = { IntroCamera::FileName(model), IntroCamera::Still(model) };
-		scene.push_back(PacWriter::Entry{ kCameraFolder, Folder({ camera }) });
-	}
+	scene.push_back(PacWriter::Entry{ kCameraFolder, Folder({ File{ IntroCamera::FileName(model), IntroCamera::Still(model) } }) });
 
 	Archives plain;
 	PacWriter::Build(scene, plain.scene);

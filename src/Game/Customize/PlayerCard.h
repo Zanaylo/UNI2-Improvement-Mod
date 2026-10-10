@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Game/Engine/GameOffsets.h"
+
 #include <string>
 
 namespace PlayerCard
@@ -14,7 +16,7 @@ namespace PlayerCard
 	};
 
 	constexpr int kLayerCount = static_cast<int>(PlateLayer::Count);
-	constexpr size_t kTitleMaxBytes = 0x3f;
+	constexpr size_t kTitleMaxBytes = GameOffsets::kReplayTitleBytes - 1;
 
 	bool IsAvailable();
 

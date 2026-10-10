@@ -1,5 +1,6 @@
 #include "Game/Stages/StageSettings.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -65,7 +66,7 @@ bool Exists(const std::string& folder)
 std::vector<Line> SectionLines(const char* section)
 {
 	std::vector<char> buffer(kSectionBytes);
-	const DWORD length = GetPrivateProfileSectionA(section, buffer.data(), kSectionBytes,
+	const DWORD length = Ini::GetSection(section, buffer.data(), kSectionBytes,
 		Settings::GetIniPath().c_str());
 
 	std::vector<Line> out;
@@ -219,7 +220,7 @@ std::string StageSettings::Read(int number, const char* section, const char* key
 {
 	char value[kValueBytes] = {};
 
-	GetPrivateProfileStringA(section, key, "", value, sizeof(value), PathOf(number).c_str());
+	Ini::GetString(section, key, "", value, sizeof(value), PathOf(number).c_str());
 
 	return value;
 }
@@ -235,7 +236,7 @@ bool StageSettings::Write(int number, const char* section, const char* key,
 			return false;
 	}
 
-	return WritePrivateProfileStringA(section, key, value.empty() ? nullptr : value.c_str(),
+	return Ini::Write(section, key, value.empty() ? nullptr : value.c_str(),
 		PathOf(number).c_str()) != 0;
 }
 

@@ -3,6 +3,7 @@
 #include "Core/Boot/Modules.h"
 
 #include "Core/Profiler.h"
+#include "Core/SpikeWatch.h"
 #include "Core/Boot/crashdump.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Harness/CleanFrame.h"
@@ -521,6 +522,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			InterlockedExchange(&g_deviceLost, 0);
 
 		Profiler::EndPresentFrame();
+		SpikeWatch::OnPresent();
 		return lost;
 	}
 
@@ -587,6 +589,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	if (device == g_device && IsFastForwardingUnseen())
 	{
 		Profiler::EndPresentFrame();
+		SpikeWatch::OnPresent();
 		return D3D_OK;
 	}
 
@@ -595,7 +598,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	{
 		Profiler::Scope scope(Profiler::Section_PresentDevice);
+		const int64_t presentStart = Profiler::Now();
 		result = g_presentHook.Original()(device, sourceRect, destRect, destWindowOverride, dirtyRegion);
+		SpikeWatch::Add(SpikeReport::Cost_PresentWait, Profiler::Now() - presentStart);
 	}
 
 	if (device == g_device)
@@ -606,6 +611,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 			InterlockedExchange(&g_deviceLost, 1);
 
 		Profiler::EndPresentFrame();
+		SpikeWatch::OnPresent();
 	}
 
 	return result;
@@ -689,6 +695,7 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 	HookVTableEntry(vtable, kDrawIndexedPrimitiveIndex, g_drawIndexedPrimitiveHook, &HookedDrawIndexedPrimitive);
 	HookVTableEntry(vtable, kDrawPrimitiveUPIndex, g_drawPrimitiveUPHook, &HookedDrawPrimitiveUP);
 	HookVTableEntry(vtable, kDrawIndexedPrimitiveUPIndex, g_drawIndexedPrimitiveUPHook, &HookedDrawIndexedPrimitiveUP);
+	SpikeWatch::AttachDevice(vtable);
 
 	if (!reset || !present)
 	{

@@ -1,5 +1,6 @@
 #include "Game/Audio/BgmCatalog.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
@@ -162,9 +163,9 @@ void BgmCatalog::Load()
 	const std::string path = IniPath();
 
 	g_refused.clear();
-	g_shuffle = GetPrivateProfileIntA("Shuffle", "Enabled", 0, path.c_str()) != 0;
+	g_shuffle = Ini::GetInt("Shuffle", "Enabled", 0, path.c_str()) != 0;
 
-	const int count = static_cast<int>(GetPrivateProfileIntA("Shuffle", "Refused", 0,
+	const int count = static_cast<int>(Ini::GetInt("Shuffle", "Refused", 0,
 		path.c_str()));
 
 	for (int i = 0; i < count && i < kMaxRefused; ++i)
@@ -173,7 +174,7 @@ void BgmCatalog::Load()
 		sprintf_s(key, "Off%d", i);
 
 		char value[64] = {};
-		GetPrivateProfileStringA("Shuffle", key, "", value, sizeof(value), path.c_str());
+		Ini::GetString("Shuffle", key, "", value, sizeof(value), path.c_str());
 
 		if (value[0] == 0)
 			continue;
@@ -194,12 +195,12 @@ void BgmCatalog::Save()
 {
 	const std::string path = IniPath();
 
-	WritePrivateProfileStringA("Shuffle", nullptr, nullptr, path.c_str());
-	WritePrivateProfileStringA("Shuffle", "Enabled", g_shuffle ? "1" : "0", path.c_str());
+	Ini::Write("Shuffle", nullptr, nullptr, path.c_str());
+	Ini::Write("Shuffle", "Enabled", g_shuffle ? "1" : "0", path.c_str());
 
 	char count[24] = {};
 	sprintf_s(count, "%d", static_cast<int>(g_refused.size()));
-	WritePrivateProfileStringA("Shuffle", "Refused", count, path.c_str());
+	Ini::Write("Shuffle", "Refused", count, path.c_str());
 
 	int index = 0;
 
@@ -207,7 +208,7 @@ void BgmCatalog::Save()
 	{
 		char key[24] = {};
 		sprintf_s(key, "Off%d", index);
-		WritePrivateProfileStringA("Shuffle", key, ref.c_str(), path.c_str());
+		Ini::Write("Shuffle", key, ref.c_str(), path.c_str());
 		++index;
 	}
 }

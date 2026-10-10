@@ -37,6 +37,7 @@ namespace GameArt
 	constexpr Sprite kDot = { Sheet_PageBar, 480, 496, 16, 16 };
 	constexpr Sprite kDotCurrent = { Sheet_PageBar, 496, 496, 16, 16 };
 	constexpr Sprite kTitleIcon = { Sheet_Titles, 16, 33, 31, 30 };
+	constexpr Sprite kGearIcon = { Sheet_Titles, 0, 192, 32, 32 };
 	constexpr Sprite kScrollTrack = { Sheet_Scrollbar, 2, 1, 12, 62 };
 	constexpr Sprite kScrollThumb = { Sheet_Scrollbar, 19, 3, 10, 58 };
 

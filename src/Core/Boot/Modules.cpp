@@ -6,6 +6,7 @@
 #include "Core/Harness/InjectedKeys.h"
 #include "Core/Input/BackgroundKeyboard.h"
 #include "Core/Profiler.h"
+#include "Core/SpikeWatch.h"
 #include "Core/logger.h"
 #include "D3D9/Device/SceneScale.h"
 #include "D3D9/Post/SceneUpscale.h"
@@ -25,6 +26,8 @@
 #include "Game/Battle/KeyboardSeat.h"
 #include "Game/Battle/ScreenShake.h"
 #include "Game/Display/DisplaySync.h"
+#include "Game/Display/HudOpacity.h"
+#include "Game/Display/InputHistoryView.h"
 #include "Game/Display/PotatoMode.h"
 #include "Game/Display/PumpWait.h"
 #include "Game/Engine/Camera.h"
@@ -84,6 +87,8 @@
 #include "Overlay/Hud/HealthReadout.h"
 #include "Overlay/Hud/ProrationHud.h"
 #include "Overlay/Native/DisplaySettingsItems.h"
+#include "Overlay/Native/HudOpacityItems.h"
+#include "Overlay/Native/OptionTitle.h"
 #include "Overlay/Native/TrainingMenuItems.h"
 #include "Palette/EffectOwner.h"
 #include "Palette/EffectPaint.h"
@@ -155,6 +160,7 @@ struct NamedStep
 };
 
 const NamedStep kGameHooks[] = {
+	{ "game hooks: spike watch", [] { SpikeWatch::Install(); } },
 	{ "game hooks: chara tracker", [] { CharaTracker::Install(); } },
 	{ "game hooks: frame stepper", [] { FrameStepper::Initialize(); } },
 	{ "game hooks: player control", [] { PlayerControl::Initialize(); } },
@@ -168,6 +174,8 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: screen shake", [] { ScreenShake::Install(); } },
 	{ "game hooks: training menu", [] { TrainingMenuItems::Install(); } },
 	{ "game hooks: option menu", [] { DisplaySettingsItems::Install(); } },
+	{ "game hooks: hud opacity", [] { if (HudOpacity::Install()) HudOpacityItems::Install(); } },
+	{ "game hooks: input history", [] { InputHistoryView::Install(); } },
 	{ "game hooks: training hud", [] { ProrationHud::Install(); } },
 	{ "game hooks: name censor", [] { NameCensor::Install(); } },
 	{ "game hooks: room name censor", [] { RoomNameCensor::Install(); } },
@@ -239,6 +247,8 @@ const Task kFrame[] = {
 	[] { TrainingSave::OnFrame(); },
 	[] { TrainingMenuItems::OnFrame(); },
 	[] { DisplaySettingsItems::OnFrame(); },
+	[] { HudOpacity::OnFrame(); },
+	[] { InputHistoryView::OnFrame(); },
 	[] { if (SoundPacks::ConsumeScanRequest()) SoundPacks::Scan(); },
 	[] { if (SoundPacks::ConsumeChanged()) ModFiles::Rescan(); },
 };
@@ -248,10 +258,11 @@ const Task kReplay[] = {
 };
 
 const Task kHud[] = {
-	[](IDirect3DDevice9* device) { FrameMeterHud::Render(device); },
-	[](IDirect3DDevice9* device) { GrdPopupHud::Render(device); },
-	[](IDirect3DDevice9* device) { HealthReadout::Render(device); },
-	[](IDirect3DDevice9* device) { TrainingMenuItems::Render(device); },
+	[](IDirect3DDevice9* device) { HudOpacity::Scope scope(HudLayers::Element_Mod); FrameMeterHud::Render(device); },
+	[](IDirect3DDevice9* device) { HudOpacity::Scope scope(HudLayers::Element_Mod); GrdPopupHud::Render(device); },
+	[](IDirect3DDevice9* device) { HudOpacity::Scope scope(HudLayers::Element_Mod); HealthReadout::Render(device); },
+	[](IDirect3DDevice9* device) { HudOpacity::Scope scope(HudLayers::Element_Menus); TrainingMenuItems::Render(device); },
+	[](IDirect3DDevice9* device) { OptionTitle::Render(device); },
 };
 
 const Task kInput[] = {
@@ -340,35 +351,30 @@ struct TaskTime
 
 TaskTime g_taskTimes[Modules::Group_COUNT][kMostTasks] = {};
 
-void RunTimed(Modules::Group group, IDirect3DDevice9* device)
+void Accumulate(Modules::Group group, int index, int64_t spent)
+{
+	if (!Profiler::IsEnabled() || index >= kMostTasks)
+		return;
+
+	TaskTime& time = g_taskTimes[group][index];
+	time.total += spent;
+	time.most = spent > time.most ? spent : time.most;
+	++time.calls;
+}
+
+void RunTasks(Modules::Group group, IDirect3DDevice9* device)
 {
 	const GroupTable& table = kGroups[group];
 
-	for (int i = 0; i < table.count && i < kMostTasks; ++i)
+	for (int i = 0; i < table.count; ++i)
 	{
 		const int64_t began = Profiler::Now();
 		table.tasks[i].Run(device);
 		const int64_t spent = Profiler::Now() - began;
 
-		TaskTime& time = g_taskTimes[group][i];
-		time.total += spent;
-		time.most = spent > time.most ? spent : time.most;
-		++time.calls;
+		SpikeWatch::NoteTask(kGroupNames[group], i, spent);
+		Accumulate(group, i, spent);
 	}
-}
-
-void RunTasks(Modules::Group group, IDirect3DDevice9* device)
-{
-	if (Profiler::IsEnabled())
-	{
-		RunTimed(group, device);
-		return;
-	}
-
-	const GroupTable& table = kGroups[group];
-
-	for (int i = 0; i < table.count; ++i)
-		table.tasks[i].Run(device);
 }
 
 int LogStageFault(const char* name, DWORD code)

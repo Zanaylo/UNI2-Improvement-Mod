@@ -56,6 +56,7 @@
 { GameOffsets::kFnReleaseDummyPad, "kFnReleaseDummyPad", "83 3D ?? ?? ?? ?? 00 75 09 83 3D ?? ?? ?? ?? ?? 74 36" },
 { GameOffsets::kFnTrainingDamageInfoDraw, "kFnTrainingDamageInfoDraw", "55 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 83 EC 34 A1 ?? ?? ?? ?? 33 C5 89 45 F0 53 56 57 50 8D 45 F4 64 A3 00 00 00 00 8B D9 ?? ?? ?? ?? 00 00 00" },
 { GameOffsets::kFnInputDisplayRefresh, "kFnInputDisplayRefresh", "55 8B EC 33 C0 83 EC 08 38 05 ?? ?? ?? ??" },
+{ GameOffsets::kFnInputHistoryDraw, "kFnInputHistoryDraw", "55 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 83 EC 64 A1 ?? ?? ?? ?? 33 C5 89 45 F0 53 56 57 50 8D 45 F4 64 A3 00 00 00 00 8B F9 89 7D A4" },
 { GameOffsets::kFnDummyPromote, "kFnDummyPromote", "8B C2 33 D2 85 C0 56 0F 94 C2 69 F0 88 2A 00 00" },
 { GameOffsets::kFnDummyActionDriver, "kFnDummyActionDriver", "53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 ?? ?? ?? ?? 8B EC 83 EC 28 A1 ?? ?? ?? ?? 33 C5 89 45 FC 56" },
 { GameOffsets::kFnSessionTeardown, "kFnSessionTeardown", "55 8B EC 83 EC 3C C7 05 ?? ?? ?? ?? 00 00 00 00" },

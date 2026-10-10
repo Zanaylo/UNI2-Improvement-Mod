@@ -10,6 +10,7 @@
 
 void OpenLogger();
 void CloseLogger();
+void FlushLogger();
 void WriteLog(const char* format, ...);
 
 void WriteLogRaw(const char* format, ...);

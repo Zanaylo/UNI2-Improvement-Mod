@@ -1,5 +1,6 @@
 #include "Game/Audio/BgmVolume.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
@@ -224,7 +225,7 @@ void BgmVolume::Load()
 	const std::string path = IniPath();
 
 	char section[8192] = {};
-	const DWORD read = GetPrivateProfileSectionA(kSection, section, sizeof(section), path.c_str());
+	const DWORD read = Ini::GetSection(kSection, section, sizeof(section), path.c_str());
 
 	if (read == 0)
 		return;
@@ -246,14 +247,14 @@ void BgmVolume::Save()
 {
 	const std::string path = IniPath();
 
-	WritePrivateProfileStringA(kSection, nullptr, nullptr, path.c_str());
+	Ini::Write(kSection, nullptr, nullptr, path.c_str());
 
 	for (const std::pair<const std::string, int>& pick : g_picks)
 	{
 		char value[16] = {};
 		sprintf_s(value, "%d", pick.second);
 
-		WritePrivateProfileStringA(kSection, pick.first.c_str(), value, path.c_str());
+		Ini::Write(kSection, pick.first.c_str(), value, path.c_str());
 	}
 }
 

@@ -1,5 +1,6 @@
 ﻿#include "Game/Audio/BgmThemes.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
@@ -45,14 +46,14 @@ std::string ThemeIniPath(const char* id)
 void ReadText(const char* section, const char* key, const char* fallback, const std::string& path,
 	char* out, DWORD size)
 {
-	GetPrivateProfileStringA(section, key, fallback, out, size, path.c_str());
+	Ini::GetString(section, key, fallback, out, size, path.c_str());
 }
 
 int ReadMapSection(const std::string& path, Entry* out, int maxEntries)
 {
 	std::string buffer(8192, '\0');
 
-	const DWORD written = GetPrivateProfileSectionA("Map", &buffer[0],
+	const DWORD written = Ini::GetSection("Map", &buffer[0],
 		static_cast<DWORD>(buffer.size()), path.c_str());
 
 	if (written == 0)
@@ -120,14 +121,14 @@ bool LoadTheme(const char* id, Loaded& out)
 
 void ReadActive()
 {
-	GetPrivateProfileStringA("Bgm", "Theme", "", g_active, sizeof(g_active),
+	Ini::GetString("Bgm", "Theme", "", g_active, sizeof(g_active),
 		RulesIniPath().c_str());
 }
 
 void WriteActive(const char* id)
 {
 	strncpy_s(g_active, id != nullptr ? id : "", _TRUNCATE);
-	WritePrivateProfileStringA("Bgm", "Theme", g_active, RulesIniPath().c_str());
+	Ini::Write("Bgm", "Theme", g_active, RulesIniPath().c_str());
 }
 
 }

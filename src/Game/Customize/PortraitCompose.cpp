@@ -1,6 +1,7 @@
 #include "Game/Customize/PortraitCompose.h"
 
 #include "Core/BackgroundJob.h"
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -231,7 +232,7 @@ void Recompose(int chara)
 std::string LanguageFolder()
 {
 	char language[64] = {};
-	GetPrivateProfileStringA(kLanguageSection, kLanguageKey, "", language, sizeof(language),
+	Ini::GetString(kLanguageSection, kLanguageKey, "", language, sizeof(language),
 		(GetModDirectory() + kLanguageFile).c_str());
 
 	return language[0] == '\0' ? std::string() : std::string(kLanguagePrefix) + language + "\\" + kSelectFolder;
@@ -385,7 +386,7 @@ void RepaintOutdated()
 {
 	g_revisionChecked = true;
 
-	if (static_cast<int>(GetPrivateProfileIntA(kSection, kRevisionKey, 0, Settings::GetIniPath().c_str())) == kPaintRevision)
+	if (static_cast<int>(Ini::GetInt(kSection, kRevisionKey, 0, Settings::GetIniPath().c_str())) == kPaintRevision)
 		return;
 
 	const std::set<int> worn = WornCharas();

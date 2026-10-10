@@ -939,6 +939,12 @@
     <ClCompile Include="src\Core\Config\Settings.cpp">
       <Filter>Core\Config</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Config\IniDocument.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\IniStore.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\logger.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1002,6 +1008,9 @@
     <ClCompile Include="src\Core\Harness\PerfCommands.cpp">
       <Filter>Core\Harness</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Harness\DrawCommands.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Input\BackgroundKeyboard.cpp">
       <Filter>Core\Input</Filter>
     </ClCompile>
@@ -1009,6 +1018,21 @@
       <Filter>Hooks</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Display\MovieWindow.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\HudLayers.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\HudOpacity.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\InputHistoryLog.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\InputHistoryView.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\OpacitySteps.cpp">
       <Filter>Game\Display</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Config\keycodes.cpp">
@@ -1374,6 +1398,9 @@
     <ClCompile Include="src\D3D9\Draw\QuadRenderer.cpp">
       <Filter>D3D9\Draw</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\SystemText.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
     <ClCompile Include="src\D3D9\Draw\GameFont.cpp">
       <Filter>D3D9\Draw</Filter>
     </ClCompile>
@@ -1390,6 +1417,21 @@
       <Filter>Overlay\Native</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Native\DisplaySettingsItems.cpp">
+      <Filter>Overlay\Native</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Native\HudOpacityItems.cpp">
+      <Filter>Overlay\Native</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Native\OptionTitle.cpp">
+      <Filter>Overlay\Native</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Native\OptionScreenState.cpp">
+      <Filter>Overlay\Native</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Native\OptionScreen.cpp">
+      <Filter>Overlay\Native</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Native\NativeDraw.cpp">
       <Filter>Overlay\Native</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Windows\DummyScriptGuideWindow.cpp">
@@ -1423,6 +1465,12 @@
       <Filter>Overlay\Framework</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Profiler.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\SpikeWatch.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\SpikeReport.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\CodeFingerprint.cpp">
@@ -1483,6 +1531,21 @@
       <Filter>D3D9\Draw</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Draw\DrawQueueProbe.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\DrawQueueCensus.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\ColourAlpha.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\LayerFadeProbe.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\QueuedItemFade.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\QueuedItemScale.cpp">
       <Filter>D3D9\Draw</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Draw\DrawQueue.cpp">
@@ -1871,6 +1934,12 @@
     <ClInclude Include="src\Core\Config\Settings.h">
       <Filter>Core\Config</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Config\IniDocument.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\IniStore.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Harness\Harness.h">
       <Filter>Core\Harness</Filter>
     </ClInclude>
@@ -1898,6 +1967,9 @@
     <ClInclude Include="src\Core\Harness\PerfCommands.h">
       <Filter>Core\Harness</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Harness\DrawCommands.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Input\BackgroundKeyboard.h">
       <Filter>Core\Input</Filter>
     </ClInclude>
@@ -1905,6 +1977,21 @@
       <Filter>Hooks</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Display\MovieWindow.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\HudLayers.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\HudOpacity.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\InputHistoryLog.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\InputHistoryView.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\OpacitySteps.h">
       <Filter>Game\Display</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\ComRef.h">
@@ -2978,6 +3065,9 @@
     <ClInclude Include="src\D3D9\Draw\QuadRenderer.h">
       <Filter>D3D9\Draw</Filter>
     </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\SystemText.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
     <ClInclude Include="src\D3D9\Draw\GameFont.h">
       <Filter>D3D9\Draw</Filter>
     </ClInclude>
@@ -2997,6 +3087,21 @@
       <Filter>Overlay\Native</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Native\DisplaySettingsItems.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Native\HudOpacityItems.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Native\OptionTitle.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Native\OptionScreenState.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Native\OptionScreen.h">
+      <Filter>Overlay\Native</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Native\NativeDraw.h">
       <Filter>Overlay\Native</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Windows\DummyScriptGuideWindow.h">
@@ -3030,6 +3135,12 @@
       <Filter>Overlay\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Profiler.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\SpikeWatch.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\SpikeReport.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\CodeFingerprint.h">
@@ -3108,6 +3219,21 @@
       <Filter>D3D9\Draw</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Draw\DrawQueueProbe.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\DrawQueueCensus.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\ColourAlpha.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\LayerFadeProbe.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\QueuedItemFade.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\QueuedItemScale.h">
       <Filter>D3D9\Draw</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Draw\DrawQueue.h">

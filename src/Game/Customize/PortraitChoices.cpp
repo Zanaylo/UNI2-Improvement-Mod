@@ -1,5 +1,6 @@
 #include "Game/Customize/PortraitChoices.h"
 
+#include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Game/Customize/PortraitCatalog.h"
 #include "Game/Customize/PortraitPicks.h"
@@ -25,7 +26,7 @@ std::string ReadLocked(int chara)
 		return known->second;
 
 	char value[kIdBytes] = {};
-	GetPrivateProfileStringA(kSection, PortraitPicks::KeyOf(chara).c_str(), "", value, sizeof(value),
+	Ini::GetString(kSection, PortraitPicks::KeyOf(chara).c_str(), "", value, sizeof(value),
 		Settings::GetIniPath().c_str());
 
 	const PortraitCatalog::Art* const art = PortraitCatalog::Find(value);

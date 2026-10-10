@@ -11,8 +11,12 @@
 #include "Core/Input/PadInput.h"
 #include "Core/info.h"
 #include "Core/utils.h"
+#include "D3D9/Draw/ColourAlpha.h"
 #include "Game/Battle/KeyboardSeat.h"
 #include "Game/Battle/ScreenShake.h"
+#include "Game/Display/HudOpacity.h"
+#include "Game/Display/InputHistoryView.h"
+#include "Game/Display/OpacitySteps.h"
 #include "Game/Engine/OnlineState.h"
 #include "Overlay/Framework/WindowManager.h"
 #include "Overlay/Panels/GraphicsPanel.h"
@@ -39,6 +43,7 @@ void SetBindCapture(int index, bool pad)
 }
 
 void DrawKeyboardTab();
+void DrawHudTab();
 void DrawConfigSection();
 void DrawConfigGeneralTab();
 void DrawKeybindsTab();
@@ -126,6 +131,67 @@ void DrawKeyboardTab()
 		ImGui::TextDisabled("Online: the sides are left alone until the match ends.");
 }
 
+void DrawHudOpacityRow(HudLayers::Element element)
+{
+	int percent = HudOpacity::Percent(element);
+
+	Ui::SetItemWidth(160.0f);
+
+	if (ImGui::SliderInt(HudOpacity::Name(element), &percent, HudOpacity::Lowest(element), ColourAlpha::kOpaque,
+		"%d%%"))
+	{
+		HudOpacity::SetPercent(element, percent / OpacitySteps::kStep * OpacitySteps::kStep);
+	}
+
+	if (ImGui::IsItemDeactivatedAfterEdit())
+		HudOpacity::Save(element);
+
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("%s", HudOpacity::Info(element));
+}
+
+void DrawInputHistorySettings()
+{
+	ImGui::SeparatorText("Input history");
+
+	bool behind = InputHistoryView::IsBehind();
+
+	if (ImGui::Checkbox("Behind the characters", &behind))
+		InputHistoryView::SetBehind(behind);
+
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Draws the input list behind the characters instead of over them.\nGame default: over them.");
+
+	int rows = InputHistoryView::Rows();
+
+	Ui::SetItemWidth(160.0f);
+
+	if (ImGui::SliderInt("Rows", &rows, InputHistoryView::kGameRows, InputHistoryView::kMostRows))
+		InputHistoryView::SetRows(rows);
+
+	if (ImGui::IsItemDeactivatedAfterEdit())
+		InputHistoryView::SaveRows();
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("How many inputs the list shows. More rows are drawn smaller, so the list keeps "
+			"the same height.\nGame default: 16.");
+	}
+}
+
+void DrawHudTab()
+{
+	ImGui::TextWrapped("How solid each part of the screen is during a fight. 100%% is the game as it is. "
+		"Also in the game's menu under Option, Display, Improvement Mod - HUD Opacity.");
+
+	ImGui::Spacing();
+
+	for (int element = 0; element < HudLayers::Element_COUNT; ++element)
+		DrawHudOpacityRow(static_cast<HudLayers::Element>(element));
+
+	DrawInputHistorySettings();
+}
+
 void DrawConfigSection()
 {
 	if (!ImGui::CollapsingHeader("Config"))
@@ -156,6 +222,12 @@ void DrawConfigSection()
 	if (ImGui::BeginTabItem("Keyboard"))
 	{
 		DrawKeyboardTab();
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("Hud"))
+	{
+		DrawHudTab();
 		ImGui::EndTabItem();
 	}
 
