@@ -339,6 +339,17 @@ int ColourPicker::ExtendedFor(int side, int chara)
 	return own.chara == chara ? own.extended : ColourSlotStep::kNoExtended;
 }
 
+void ColourPicker::Choose(int side, int chara, int extended)
+{
+	if (!IsSide(side) || !IsCharacter(chara))
+		return;
+
+	Choice& choice = g_choices[side];
+	choice = { chara, ColourSlotStep::kNoExtended, kNoColour, 0, "" };
+	Settle(choice, extended);
+	g_closed[side] = true;
+}
+
 bool ColourPicker::Describe(int side, Shown& out)
 {
 	if (!IsSide(side) || SceneWatch::Current() != GameOffsets::kSceneCharaSelect)

@@ -22,7 +22,6 @@
 #include "Overlay/Panels/GraphicsPanel.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Web/UpdateCheck.h"
-#include "Web/UpdateInstall.h"
 
 #include <Windows.h>
 #include <imgui.h>
@@ -248,7 +247,7 @@ void DrawConfigGeneralTab()
 			"downloaded unless you ask.");
 	}
 
-	ImGui::BeginDisabled(UpdateCheck::IsChecking() || UpdateInstall::IsBusy());
+	ImGui::BeginDisabled(UpdateCheck::IsChecking());
 
 	if (ImGui::Button("Check now"))
 		UpdateCheck::Refresh();

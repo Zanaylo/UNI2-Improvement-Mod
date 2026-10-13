@@ -3,6 +3,7 @@
 #include "Core/Config/keycodes.h"
 #include "Core/Harness/DrawCommands.h"
 #include "Core/Harness/FrameGrab.h"
+#include "Core/Harness/GameDebugCommands.h"
 #include "Core/Harness/Harness.h"
 #include "Core/Harness/InjectedKeys.h"
 #include "Core/Harness/QuietWindow.h"
@@ -195,6 +196,9 @@ std::string Execute(const std::string& line)
 		return reply;
 
 	if (DrawCommands::Execute(words, reply))
+		return reply;
+
+	if (GameDebugCommands::Execute(words, reply))
 		return reply;
 
 	return "error unknown command " + verb;

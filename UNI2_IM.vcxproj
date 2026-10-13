@@ -190,7 +190,6 @@
     <ClCompile Include="src\Web\Job.cpp" />
     <ClCompile Include="src\Web\GitHubRelease.cpp" />
     <ClCompile Include="src\Web\UpdateInstall.cpp" />
-    <ClCompile Include="src\Web\ReleasePackage.cpp" />
     <ClCompile Include="src\Game\Customize\BasePals.cpp" />
     <ClCompile Include="src\Game\Patches\PatchPacks.cpp" />
     <ClCompile Include="src\Network\NetLog.cpp" />
@@ -257,6 +256,7 @@
     <ClCompile Include="src\Game\Stages\Bbtag\IntroCamera.cpp" />
     <ClCompile Include="src\Game\Stages\StageInstall.cpp" />
     <ClCompile Include="src\Game\Files\SteamLibrary.cpp" />
+    <ClCompile Include="src\Game\Files\InstallCheck.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagPose.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagRig.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\EvbWriter.cpp" />
@@ -379,6 +379,8 @@
     <ClCompile Include="src\Core\Boot\crashdump.cpp" />
     <ClCompile Include="src\Core\Boot\ModuleInventory.cpp" />
     <ClCompile Include="src\Core\utils.cpp" />
+    <ClCompile Include="src\Core\FileSystem.cpp" />
+    <ClCompile Include="src\Core\GameBuild.cpp" />
     <ClCompile Include="src\Core\AsyncFileDialog.cpp" />
     <ClCompile Include="src\Core\Formats\TextEncoding.cpp" />
     <ClCompile Include="src\Core\Input\KeyboardCapture.cpp" />
@@ -405,6 +407,17 @@
     <ClCompile Include="src\Core\Input\PadInput.cpp" />
     <ClCompile Include="src\Core\Config\interfaces.cpp" />
     <ClCompile Include="src\Hooks\HookManager.cpp" />
+    <ClCompile Include="src\Hooks\HookStub.cpp" />
+    <ClCompile Include="src\Core\Harness\GameDebugCommands.cpp" />
+    <ClCompile Include="src\Overlay\Windows\GameDebugWindow.cpp" />
+    <ClCompile Include="src\Network\OnlineContext.cpp" />
+    <ClCompile Include="src\Game\Debug\GameDebug.cpp" />
+    <ClCompile Include="src\Game\Debug\ScriptDefines.cpp" />
+    <ClCompile Include="src\Game\Debug\ScriptConsole.cpp" />
+    <ClCompile Include="src\Game\Audio\SoundVolumeBackground.cpp" />
+    <ClCompile Include="src\Game\Audio\VolumeQueue.cpp" />
+    <ClCompile Include="src\Core\StallSampler.cpp" />
+    <ClCompile Include="src\Core\StallProfile.cpp" />
     <ClCompile Include="src\Hooks\hooks_input.cpp" />
     <ClCompile Include="src\Hooks\InputProbe.cpp" />
     <ClCompile Include="src\D3D9\Device\D3D9Proxy.cpp" />
@@ -483,6 +496,7 @@
     <ClCompile Include="src\Game\Customize\PatParts.cpp" />
     <ClCompile Include="src\Game\Battle\ScriptReload.cpp" />
     <ClCompile Include="src\Game\Engine\SaveData.cpp" />
+    <ClCompile Include="src\Game\Engine\SceneExit.cpp" />
     <ClCompile Include="src\Game\Engine\SceneWatch.cpp" />
     <ClCompile Include="src\Game\Menus\CharaSelectProbe.cpp" />
     <ClCompile Include="src\Game\Menus\ColourPicker.cpp" />
@@ -510,6 +524,7 @@
     <ClCompile Include="src\Training\FrameStepper.cpp" />
     <ClCompile Include="src\Training\StopTime.cpp" />
     <ClCompile Include="src\Training\StageColor.cpp" />
+    <ClCompile Include="src\Training\QuickTraining.cpp" />
     <ClCompile Include="src\Training\Dummy\DummyScript.cpp" />
     <ClCompile Include="src\Training\Meter\StateRecorder.cpp" />
     <ClCompile Include="src\Training\Dummy\DummyRecorder.cpp" />
@@ -733,7 +748,6 @@
     <ClInclude Include="src\Web\Job.h" />
     <ClInclude Include="src\Web\GitHubRelease.h" />
     <ClInclude Include="src\Web\UpdateInstall.h" />
-    <ClInclude Include="src\Web\ReleasePackage.h" />
     <ClInclude Include="src\Game\Customize\BasePals.h" />
     <ClInclude Include="src\Game\Patches\PatchPacks.h" />
     <ClInclude Include="src\Network\NetLog.h" />
@@ -799,6 +813,7 @@
     <ClInclude Include="src\Game\Stages\Bbtag\IntroCamera.h" />
     <ClInclude Include="src\Game\Stages\StageInstall.h" />
     <ClInclude Include="src\Game\Files\SteamLibrary.h" />
+    <ClInclude Include="src\Game\Files\InstallCheck.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagPose.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagRig.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\EvbWriter.h" />
@@ -920,6 +935,8 @@
     <ClInclude Include="src\Core\Boot\crashdump.h" />
     <ClInclude Include="src\Core\Boot\ModuleInventory.h" />
     <ClInclude Include="src\Core\utils.h" />
+    <ClInclude Include="src\Core\FileSystem.h" />
+    <ClInclude Include="src\Core\GameBuild.h" />
     <ClInclude Include="src\Core\AsyncFileDialog.h" />
     <ClInclude Include="src\Core\Formats\TextEncoding.h" />
     <ClInclude Include="src\Core\Input\KeyboardCapture.h" />
@@ -929,6 +946,17 @@
     <ClInclude Include="src\Core\Config\interfaces.h" />
     <ClInclude Include="src\Core\info.h" />
     <ClInclude Include="src\Hooks\HookManager.h" />
+    <ClInclude Include="src\Hooks\HookStub.h" />
+    <ClInclude Include="src\Core\Harness\GameDebugCommands.h" />
+    <ClInclude Include="src\Overlay\Windows\GameDebugWindow.h" />
+    <ClInclude Include="src\Network\OnlineContext.h" />
+    <ClInclude Include="src\Game\Debug\GameDebug.h" />
+    <ClInclude Include="src\Game\Debug\ScriptDefines.h" />
+    <ClInclude Include="src\Game\Debug\ScriptConsole.h" />
+    <ClInclude Include="src\Game\Audio\SoundVolumeBackground.h" />
+    <ClInclude Include="src\Game\Audio\VolumeQueue.h" />
+    <ClInclude Include="src\Core\StallSampler.h" />
+    <ClInclude Include="src\Core\StallProfile.h" />
     <ClInclude Include="src\Hooks\hooks_input.h" />
     <ClInclude Include="src\Hooks\InputProbe.h" />
     <ClInclude Include="src\D3D9\Device\D3D9Proxy.h" />
@@ -958,6 +986,7 @@
     <ClInclude Include="src\Game\Customize\PatParts.h" />
     <ClInclude Include="src\Game\Battle\ScriptReload.h" />
     <ClInclude Include="src\Game\Engine\SaveData.h" />
+    <ClInclude Include="src\Game\Engine\SceneExit.h" />
     <ClInclude Include="src\Game\Engine\SceneWatch.h" />
     <ClInclude Include="src\Game\Menus\CharaSelectProbe.h" />
     <ClInclude Include="src\Game\Menus\ColourPicker.h" />
@@ -1034,6 +1063,7 @@
     <ClInclude Include="src\Training\FrameStepper.h" />
     <ClInclude Include="src\Training\StopTime.h" />
     <ClInclude Include="src\Training\StageColor.h" />
+    <ClInclude Include="src\Training\QuickTraining.h" />
     <ClInclude Include="src\Training\Dummy\DummyScript.h" />
     <ClInclude Include="src\Training\Meter\StateRecorder.h" />
     <ClInclude Include="src\Training\Dummy\DummyRecorder.h" />

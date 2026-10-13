@@ -22,6 +22,8 @@
 #include "D3D9/Post/ShaderPack.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Stages/BgCeiling.h"
+#include "Game/Debug/GameDebug.h"
+#include "Game/Files/InstallCheck.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Stages/StageImport.h"
 #include "Screens/ScreenDirector.h"
@@ -192,6 +194,7 @@ void Stage_Netplay()
 void Stage_FileOverrides()
 {
 	BgCeiling::Initialize();
+	GameDebug::Prepare();
 	ModFiles::Initialize();
 	StageImport::Initialize();
 	GamePatches::ApplyRemembered();
@@ -267,6 +270,7 @@ DWORD WINAPI InitThread(LPVOID)
 
 	Modules::RunGuarded("d3d9 hooks", Stage_D3D9);
 	Modules::RunGuarded("update check", Stage_UpdateCheck);
+	Modules::RunGuarded("install check", [] { InstallCheck::Run(); });
 	Modules::RunGuarded("ui assets", Stage_UiAssets);
 	Modules::RunGuarded("process tuning", Stage_ProcessTuning);
 	Modules::RunGuarded("input entry point", Stage_InputEntry);

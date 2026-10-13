@@ -5,6 +5,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
+#include "Hooks/HookStub.h"
 
 #include <MinHook.h>
 #include <cstdio>
@@ -49,16 +50,7 @@ uintptr_t ScanRange(uintptr_t start, size_t size, const char* pattern, const cha
 constexpr int kMaxJmpHops = 8;
 constexpr int kMaxRecords = 256;
 
-constexpr size_t kStubBytes = 16;
-constexpr uint8_t kPushEax = 0x50;
-constexpr uint8_t kMovEaxImm32 = 0xB8;
-constexpr uint8_t kLockPrefix = 0xF0;
-constexpr uint8_t kIncOpcode = 0xFF;
-constexpr uint8_t kIncAtEax = 0x00;
-constexpr uint8_t kPopEax = 0x58;
-constexpr uint8_t kJmpRel32 = 0xE9;
-constexpr size_t kStubJumpAt = 10;
-constexpr size_t kStubLength = 15;
+constexpr size_t kStubBytes = HookStub::kBytes;
 
 struct HookRecord
 {
@@ -66,6 +58,8 @@ struct HookRecord
 	void* resolved;
 	void* detour;
 	void* handler;
+	void* trampoline;
+	void* volatile gate;
 	const char* label;
 	DWORD createdTick;
 	bool reported;
@@ -88,26 +82,29 @@ uint8_t* StubFor(int index)
 	return g_stubs == nullptr ? nullptr : g_stubs + index * kStubBytes;
 }
 
-void* CountingStub(int index, volatile LONG* counter, void* handler)
+void* GatedStub(int index, HookRecord& record)
 {
 	uint8_t* const stub = StubFor(index);
 
 	if (stub == nullptr)
-		return handler;
+		return record.handler;
 
-	stub[0] = kPushEax;
-	stub[1] = kMovEaxImm32;
-	*reinterpret_cast<volatile LONG**>(stub + 2) = counter;
-	stub[6] = kLockPrefix;
-	stub[7] = kIncOpcode;
-	stub[8] = kIncAtEax;
-	stub[9] = kPopEax;
-	stub[kStubJumpAt] = kJmpRel32;
-	*reinterpret_cast<int32_t*>(stub + kStubJumpAt + 1) =
-		static_cast<int32_t>(static_cast<uint8_t*>(handler) - (stub + kStubLength));
+	record.gate = HookStub::CountingEntry(stub);
+	HookStub::Write(stub, &record.gate, &record.calls, record.handler);
 
-	FlushInstructionCache(GetCurrentProcess(), stub, kStubBytes);
 	return stub;
+}
+
+bool IsGated(const HookRecord& record)
+{
+	return record.detour != record.handler && record.trampoline != nullptr;
+}
+
+void OpenGate(HookRecord& record, bool open)
+{
+	void* const target = open ? HookStub::CountingEntry(static_cast<uint8_t*>(record.detour)) : record.trampoline;
+
+	InterlockedExchangePointer(&record.gate, target);
 }
 
 bool IsCountingStub(const void* address)
@@ -294,7 +291,8 @@ HookRecord* ReserveRecord(void* requested, void* resolved, void* handler, const 
 	record.reported = false;
 	record.parked = false;
 	record.calls = 0;
-	record.detour = CountingStub(g_recordCount, &record.calls, handler);
+	record.trampoline = nullptr;
+	record.detour = GatedStub(g_recordCount, record);
 
 	return &record;
 }
@@ -485,6 +483,8 @@ bool HookManager::CreateHook(void* target, void* detour, void** original, const 
 		return false;
 	}
 
+	record->trampoline = original != nullptr ? *original : nullptr;
+
 	++g_recordCount;
 	LogHookCreated(label, target, resolved, hops);
 	return true;
@@ -574,12 +574,18 @@ bool HookManager::SetHookEnabled(void* target, bool enabled)
 	std::lock_guard<std::recursive_mutex> lock(g_hookLock);
 
 	void* const resolved = ResolvedAddressFor(target);
+	HookRecord* const record = FindRecordByResolved(resolved);
 
-	for (int i = 0; i < g_recordCount; ++i)
-	{
-		if (g_records[i].resolved == resolved)
-			g_records[i].parked = !enabled;
-	}
+	if (record != nullptr)
+		record->parked = !enabled;
+
+	const bool gated = record != nullptr && IsGated(*record);
+
+	if (gated)
+		OpenGate(*record, enabled);
+
+	if (gated && !enabled)
+		return true;
 
 	const MH_STATUS status = enabled ? MH_EnableHook(resolved) : MH_DisableHook(resolved);
 	if (status != MH_OK && status != MH_ERROR_ENABLED && status != MH_ERROR_DISABLED)
@@ -604,8 +610,11 @@ HookState ClassifyHook(const HookRecord& record, int& outHops, const void*& outE
 {
 	outEndpoint = WalkJmpChain(record.resolved, false, &outHops);
 
-	if (outEndpoint == record.detour)
+	if (outEndpoint == record.detour || (IsGated(record) &&
+		HookStub::Contains(static_cast<const uint8_t*>(record.detour), outEndpoint)))
+	{
 		return HookState::Live;
+	}
 
 	if (outHops == 0)
 		return HookState::Removed;
@@ -835,7 +844,7 @@ bool HookManager::EnableAllHooks()
 
 	for (int i = 0; i < g_recordCount && status == MH_OK; ++i)
 	{
-		if (g_records[i].parked)
+		if (g_records[i].parked && !IsGated(g_records[i]))
 			status = MH_QueueDisableHook(g_records[i].resolved);
 	}
 

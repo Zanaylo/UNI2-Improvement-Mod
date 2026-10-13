@@ -3,6 +3,7 @@
 #include "Core/info.h"
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
+#include "Web/GitHubRelease.h"
 
 #include <Windows.h>
 
@@ -16,7 +17,6 @@ namespace {
 constexpr int kNotesLength = 2048;
 
 std::mutex g_lock;
-GitHubRelease::Release g_release;
 
 std::atomic<bool> g_checking{ false };
 std::atomic<bool> g_answered{ false };
@@ -31,8 +31,6 @@ char g_status[256] = "not checked yet";
 void Publish(const GitHubRelease::Release& release, bool newer)
 {
 	std::lock_guard<std::mutex> guard(g_lock);
-
-	g_release = release;
 
 	strncpy_s(g_version, release.version.c_str(), _TRUNCATE);
 	strncpy_s(g_page, release.page.empty() ? UNI2_IM_RELEASE_PAGE : release.page.c_str(),
@@ -155,17 +153,6 @@ const char* UpdateCheck::GetReleaseNotes()
 const char* UpdateCheck::GetStatusText()
 {
 	return g_status;
-}
-
-bool UpdateCheck::CopyRelease(GitHubRelease::Release& out)
-{
-	std::lock_guard<std::mutex> guard(g_lock);
-
-	if (g_release.tag.empty())
-		return false;
-
-	out = g_release;
-	return true;
 }
 
 void UpdateCheck::Dismiss()

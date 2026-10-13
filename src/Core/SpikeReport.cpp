@@ -18,6 +18,10 @@ const char* const kCostNames[SpikeReport::Cost_COUNT] = {
 	"other file reads",
 	"present wait",
 	"game update",
+	"effect compiles",
+	"game thread waits",
+	"texture locks",
+	"sound volume",
 };
 
 std::string CostText(SpikeReport::Cost cost, const SpikeReport::Spent& spent)

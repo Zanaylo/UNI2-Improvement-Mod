@@ -3,6 +3,7 @@
 #include "Core/FileIndex.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Debug/GameDebug.h"
 #include "Game/Files/DataSearchPath.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Customize/PortraitLayer.h"
@@ -464,6 +465,7 @@ bool Rebuild()
 
 	ModPacks::Layer(built);
 	PortraitLayer::Layer(built);
+	GameDebug::Layer(built);
 
 	for (const FileIndex::Map::value_type& entry : own.Entries())
 		built.Add(entry.first, entry.second);

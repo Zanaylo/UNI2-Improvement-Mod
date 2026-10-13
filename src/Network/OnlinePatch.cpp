@@ -2,16 +2,14 @@
 
 #include "Core/logger.h"
 #include "Game/Battle/BattleDataReload.h"
-#include "Game/Audio/BgmControl.h"
-#include "Game/Engine/GameOffsets.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Engine/GameState.h"
-#include "Game/Engine/OnlineState.h"
 #include "Network/MatchKind.h"
 #include "Network/ModHandshake.h"
 #include "Network/ModPresence.h"
 #include "Network/NetLink.h"
 #include "Network/NetLog.h"
+#include "Network/OnlineContext.h"
 #include "Network/Spectate/SpectateViewer.h"
 
 #include <cstdio>
@@ -36,12 +34,6 @@ struct Decision
 	int target;
 	const char* why;
 };
-
-bool InOnlineContext()
-{
-	return BgmControl::GetLastRequested() == GameOffsets::kBgmNetworkMenu ||
-		NetLink::Lobby() != 0 || OnlineState::IsOnline();
-}
 
 Decision ForSession(int home, const char* pick, bool playerMatch)
 {
@@ -161,7 +153,7 @@ void OnlinePatch::Update()
 	if (!Supported() || SpectateViewer::HoldsPatch())
 		return;
 
-	if (InOnlineContext())
+	if (OnlineContext::IsActive())
 	{
 		g_offlineChecks = 0;
 		Apply(Decide());

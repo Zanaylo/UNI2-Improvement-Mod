@@ -11,21 +11,28 @@
 #include "Core/Input/PadInput.h"
 #include "Core/info.h"
 #include "Core/utils.h"
+#include "Game/Customize/ColorCustomize.h"
+#include "Game/Customize/StockPalettes.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Engine/OnlineState.h"
 #include "Game/Menus/BattleCockpit.h"
+#include "Game/Tables/CharaTables.h"
 #include "Overlay/Framework/WindowManager.h"
 #include "Overlay/Hud/FrameMeterHud.h"
 #include "Overlay/Hud/GrdPopupHud.h"
 #include "Overlay/Hud/HealthReadout.h"
 #include "Overlay/Hud/ProrationHud.h"
+#include "Overlay/Widgets/ComboNav.h"
 #include "Overlay/Windows/HitboxOverlay.h"
+#include "Palette/ColourSlots.h"
+#include "Palette/PaletteLibrary.h"
 #include "Palette/PaletteManager.h"
 #include "Training/Dummy/DummyScript.h"
 #include "Training/Dummy/PlayerControl.h"
 #include "Training/FrameStepper.h"
 #include "Training/Meter/FrameMeter.h"
+#include "Training/QuickTraining.h"
 #include "Training/StageColor.h"
 
 #include <Windows.h>
@@ -35,6 +42,7 @@
 namespace {
 
 void DrawTrainingSection();
+void DrawTrainingBlockedReason();
 void DrawHitboxControls();
 void DrawHitboxTypeControls();
 void DrawFrameMeterControls();
@@ -47,26 +55,30 @@ void DrawScriptTab(int player);
 void DrawStageColourControls();
 void PersistAutoPause();
 void DrawFreezeModeCombo();
+void DrawQuickTrainingControls();
+void DrawQuickTrainingSide(int player);
+void DrawQuickTrainingCharaCombo(int player);
+void DrawQuickTrainingColourCombo(int player);
+int StockColourCount(int chara);
+int ColourOptions(int chara, QuickTraining::Wear* out);
+bool SameWear(const QuickTraining::Wear& a, const QuickTraining::Wear& b);
+int IndexOfWear(const QuickTraining::Wear* options, int count, const QuickTraining::Wear& wear);
+void ColourOptionLabel(int chara, const QuickTraining::Wear& wear, char* out, size_t size);
+void WearOption(int player, int chara, const QuickTraining::Wear& wear);
+
+constexpr int kMostColourOptions = ColorCustomize::kColourLimit + PaletteLibrary::kMaxFiles;
+constexpr size_t kColourOptionLabel = 160;
 
 void DrawTrainingSection()
 {
 	if (!ImGui::CollapsingHeader("Training", ImGuiTreeNodeFlags_DefaultOpen))
 		return;
 
+	DrawQuickTrainingControls();
+
 	if (!GameState::AllowsTrainingTools())
 	{
-		if (OnlineState::IsBlind())
-		{
-			ImGui::TextDisabled("Steam networking did not start, so the mod cannot tell if a match "
-				"is online. Modes that are surely offline still work. Anything that might be online "
-				"is blocked.");
-		}
-		else
-		{
-			ImGui::TextDisabled(OnlineState::IsOnline()
-				? "Not while you are online."
-				: "Only in a match: training, replay, single player or local versus.");
-		}
+		DrawTrainingBlockedReason();
 		return;
 	}
 
@@ -83,6 +95,27 @@ void DrawTrainingSection()
 
 	ImGui::Spacing();
 	DrawFrameStepControls();
+}
+
+void DrawTrainingBlockedReason()
+{
+	if (!IsMeasuredGameBuild())
+	{
+		ImGui::TextDisabled("Off on this copy of the game, see the note at the top.");
+		return;
+	}
+
+	if (OnlineState::IsBlind())
+	{
+		ImGui::TextDisabled("Steam networking did not start, so the mod cannot tell if a match "
+			"is online. Modes that are surely offline still work. Anything that might be online "
+			"is blocked.");
+		return;
+	}
+
+	ImGui::TextDisabled(OnlineState::IsOnline()
+		? "Not while you are online."
+		: "Only in a match: training, replay, single player or local versus.");
 }
 
 void DrawHitboxControls()
@@ -982,6 +1015,189 @@ void DrawFreezeModeCombo()
 		ImGui::SameLine();
 		ImGui::TextDisabled("(forced in replay or watch mode)");
 	}
+}
+
+void DrawQuickTrainingControls()
+{
+	if (!ImGui::TreeNode("Training shortcut"))
+		return;
+
+	bool enabled = QuickTraining::IsEnabled();
+	if (ImGui::Checkbox("Choose its characters", &enabled))
+		QuickTraining::SetEnabled(enabled);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("The main menu's Training shortcut skips character select. This picks the "
+			"characters and colours it starts with.\nGame default: your last training pick, or Hyde vs Linne.");
+	}
+
+	ImGui::BeginDisabled(!enabled);
+
+	for (int player = 0; player < QuickTraining::kPlayers; ++player)
+		DrawQuickTrainingSide(player);
+
+	ImGui::EndDisabled();
+	ImGui::TreePop();
+}
+
+void DrawQuickTrainingSide(int player)
+{
+	ImGui::PushID(player);
+
+	ImGui::AlignTextToFramePadding();
+	ImGui::Text("P%d", player + 1);
+	ImGui::SameLine();
+	DrawQuickTrainingCharaCombo(player);
+	ImGui::SameLine();
+	DrawQuickTrainingColourCombo(player);
+
+	ImGui::PopID();
+}
+
+void DrawQuickTrainingCharaCombo(int player)
+{
+	const int current = QuickTraining::GetChara(player);
+	const int count = CharaTables::GetCharaCount();
+
+	Ui::SetItemWidth(130.0f);
+
+	if (ImGui::BeginCombo("##chara", CharaTables::Name(current)))
+	{
+		for (int chara = 0; chara < count; ++chara)
+		{
+			const bool selected = chara == current;
+
+			if (ImGui::Selectable(CharaTables::Name(chara), selected))
+				QuickTraining::SetChara(player, chara);
+
+			ComboNav::KeepSelectedInView(selected);
+		}
+
+		ImGui::EndCombo();
+	}
+
+	const int target = ComboNav::WheelTarget(current, count);
+
+	if (target != current)
+		QuickTraining::SetChara(player, target);
+}
+
+void DrawQuickTrainingColourCombo(int player)
+{
+	const int chara = QuickTraining::GetChara(player);
+	const QuickTraining::Wear current = QuickTraining::GetWear(player);
+
+	char label[kColourOptionLabel] = {};
+	ColourOptionLabel(chara, current, label, sizeof(label));
+
+	Ui::SetItemWidth(220.0f);
+
+	if (ImGui::BeginCombo("##colour", label))
+	{
+		if (ImGui::IsWindowAppearing())
+			PaletteLibrary::Rescan(chara);
+
+		QuickTraining::Wear options[kMostColourOptions] = {};
+		const int count = ColourOptions(chara, options);
+
+		for (int option = 0; option < count; ++option)
+		{
+			const bool selected = SameWear(options[option], current);
+
+			ColourOptionLabel(chara, options[option], label, sizeof(label));
+			ImGui::PushID(option);
+
+			if (ImGui::Selectable(label, selected))
+				WearOption(player, chara, options[option]);
+
+			ComboNav::KeepSelectedInView(selected);
+			ImGui::PopID();
+		}
+
+		ImGui::EndCombo();
+	}
+
+	if (!ImGui::IsItemHovered())
+		return;
+
+	QuickTraining::Wear options[kMostColourOptions] = {};
+	const int count = ColourOptions(chara, options);
+	const int index = IndexOfWear(options, count, current);
+	const int target = ComboNav::WheelTarget(index, count);
+
+	if (target != index)
+		WearOption(player, chara, options[target]);
+}
+
+int StockColourCount(int chara)
+{
+	StockPalettes::Load(chara);
+
+	const int count = StockPalettes::GetCount(chara);
+	return count > 0 ? count : ColorCustomize::kStockLimit;
+}
+
+int ColourOptions(int chara, QuickTraining::Wear* out)
+{
+	const int stock = StockColourCount(chara);
+	int count = 0;
+
+	for (int colour = 0; colour < ColorCustomize::kColourLimit; ++colour)
+	{
+		if (colour >= stock && colour < ColorCustomize::kCustomFirst)
+			continue;
+
+		out[count++] = { colour, ColourSlots::kNoExtended };
+	}
+
+	const int extended = ColourSlots::ExtendedCount(chara);
+
+	for (int slot = 1; slot <= extended && count < kMostColourOptions; ++slot)
+		out[count++] = { ColourSlots::kNoColour, slot };
+
+	return count;
+}
+
+bool SameWear(const QuickTraining::Wear& a, const QuickTraining::Wear& b)
+{
+	if (a.extended != ColourSlots::kNoExtended || b.extended != ColourSlots::kNoExtended)
+		return a.extended == b.extended;
+
+	return a.colour == b.colour;
+}
+
+int IndexOfWear(const QuickTraining::Wear* options, int count, const QuickTraining::Wear& wear)
+{
+	for (int option = 0; option < count; ++option)
+	{
+		if (SameWear(options[option], wear))
+			return option;
+	}
+
+	return 0;
+}
+
+void ColourOptionLabel(int chara, const QuickTraining::Wear& wear, char* out, size_t size)
+{
+	if (wear.extended == ColourSlots::kNoExtended)
+	{
+		ColourSlots::Label(chara, wear.colour, out, size);
+		return;
+	}
+
+	sprintf_s(out, size, "EX %d - %s", wear.extended, ColourSlots::ExtendedFile(chara, wear.extended));
+}
+
+void WearOption(int player, int chara, const QuickTraining::Wear& wear)
+{
+	if (wear.extended == ColourSlots::kNoExtended)
+	{
+		QuickTraining::SetColour(player, wear.colour);
+		return;
+	}
+
+	QuickTraining::SetPalette(player, ColourSlots::ExtendedFile(chara, wear.extended));
 }
 
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace ColorCustomize
 {
 	constexpr int kSlotCount = 5;
@@ -12,6 +14,8 @@ namespace ColorCustomize
 	bool IsAvailable();
 
 	const char* PartName(int part);
+
+	void ColourLabel(int colour, char* out, size_t size);
 
 	bool GetEquipped(int chara, int& outColour);
 	bool SetEquipped(int chara, int colour);

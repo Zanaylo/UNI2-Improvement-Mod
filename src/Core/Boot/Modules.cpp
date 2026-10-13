@@ -7,6 +7,9 @@
 #include "Core/Input/BackgroundKeyboard.h"
 #include "Core/Profiler.h"
 #include "Core/SpikeWatch.h"
+#include "Core/StallSampler.h"
+#include "Game/Audio/SoundVolumeBackground.h"
+#include "Game/Debug/GameDebug.h"
 #include "Core/logger.h"
 #include "D3D9/Device/SceneScale.h"
 #include "D3D9/Post/SceneUpscale.h"
@@ -106,6 +109,7 @@
 #include "Screens/ScreenDirector.h"
 #include "Training/Dummy/PlayerControl.h"
 #include "Training/FrameStepper.h"
+#include "Training/QuickTraining.h"
 #include "Training/StageColor.h"
 #include "Training/TrainingSave.h"
 #include "Web/UpdateInstall.h"
@@ -161,6 +165,8 @@ struct NamedStep
 
 const NamedStep kGameHooks[] = {
 	{ "game hooks: spike watch", [] { SpikeWatch::Install(); } },
+	{ "game hooks: stall sampler", [] { if (g_modVals.stallSampler) StallSampler::Start(); } },
+	{ "game hooks: sound volume", [] { SoundVolumeBackground::Install(); } },
 	{ "game hooks: chara tracker", [] { CharaTracker::Install(); } },
 	{ "game hooks: frame stepper", [] { FrameStepper::Initialize(); } },
 	{ "game hooks: player control", [] { PlayerControl::Initialize(); } },
@@ -251,6 +257,8 @@ const Task kFrame[] = {
 	[] { InputHistoryView::OnFrame(); },
 	[] { if (SoundPacks::ConsumeScanRequest()) SoundPacks::Scan(); },
 	[] { if (SoundPacks::ConsumeChanged()) ModFiles::Rescan(); },
+	[] { SoundVolumeBackground::OnFrame(); },
+	[] { GameDebug::OnFrame(); },
 };
 
 const Task kReplay[] = {
@@ -307,6 +315,7 @@ const Task kTail[] = {
 	[] { StageDetail::OnPresent(); },
 	[] { InputProbe::OnFrame(); },
 	[] { StageColor::OnFrame(); },
+	[] { QuickTraining::OnFrame(); },
 	[] { ExtraStages::OnFrame(); },
 	[] { OnlineStage::OnFrame(); },
 	[] { PotatoMode::OnFrame(); },

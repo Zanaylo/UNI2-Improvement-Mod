@@ -198,6 +198,10 @@ namespace GameOffsets
 	constexpr uintptr_t kTrainingStageSaved = 0x5a8360;
 	constexpr uintptr_t kTrainingStageLive = 0x444888c;
 
+	constexpr uintptr_t kTrainingPick = 0x4448878;
+	constexpr uintptr_t kTrainingPickReady = 0x44486db;
+	constexpr uintptr_t kBattleBgmPick = 0x5a4320;
+
 	constexpr uintptr_t kBgStageDrawn = 0x657e34;
 
 	constexpr uintptr_t kFnLoadStageObjectPat = 0x2063b0;
@@ -632,6 +636,7 @@ namespace GameOffsets
 	constexpr uintptr_t kSceneResultB = 0x5a58d4;
 
 	constexpr uint32_t kSceneBattle = 1;
+	constexpr uint32_t kSceneBoot = 2;
 	constexpr uint32_t kSceneMenu = 3;
 	constexpr uint32_t kSceneCharaSelect = 24;
 	constexpr uint32_t kSceneNetwork = 49;
@@ -731,6 +736,10 @@ namespace GameOffsets
 	constexpr uintptr_t kFrameWaitSkipOnce = 0x6550cc;
 	constexpr uintptr_t kSiteFrameWaitSkipOnceRead = 0xdc1e7;
 	constexpr uintptr_t kSiteFrameWaitSkipOnceClear = 0xdc37a;
+	constexpr uintptr_t kScriptConsoleEnabled = 0x4439828;
+	constexpr uintptr_t kScriptConsoleHandle = 0x4439830;
+	constexpr uintptr_t kSiteScriptConsoleEnabledRead = 0x48082c;
+	constexpr uintptr_t kSiteScriptConsoleHandleRead = 0x48084a;
 	constexpr uintptr_t kFrameWaitPassCallback = 0x6550d8;
 	constexpr uintptr_t kFramePeriodSeconds = 0x569fb8;
 	constexpr uintptr_t kSiteFrameWaitHasQpcRead = 0xdc0ca;

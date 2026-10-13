@@ -59,21 +59,6 @@ int SheetSetFor(bool summon)
 	return summon ? BasePals::kSummonSet : BasePals::kCharacterSet;
 }
 
-void ColourSlotLabel(int chara, int colour, char* out, size_t size)
-{
-	const char* const holder = ColourSlots::BoundFile(chara, colour);
-	const bool stock = colour < ColourSlots::kStockColours;
-	const int number = stock ? colour + 1 : colour - ColourSlots::kStockColours + 1;
-
-	if (holder[0] == '\0')
-	{
-		sprintf_s(out, size, stock ? "Colour %d" : "Custom %d", number);
-		return;
-	}
-
-	sprintf_s(out, size, stock ? "Colour %d - %s" : "Custom %d - %s", number, holder);
-}
-
 void ExtendedLabel(int chara, const char* file, char* out, size_t size)
 {
 	const int extended = ColourSlots::ExtendedOf(chara, file);
@@ -1125,7 +1110,7 @@ void PaletteWindow::DrawColourSlot(int player)
 	if (bound == ColourSlots::kNoColour)
 		ExtendedLabel(chara, file, current, sizeof(current));
 	else
-		ColourSlotLabel(chara, bound, current, sizeof(current));
+		ColourSlots::Label(chara, bound, current, sizeof(current));
 
 	Ui::SetItemWidth(170.0f);
 
@@ -1145,7 +1130,7 @@ void PaletteWindow::DrawColourSlot(int player)
 		{
 			const bool selected = colour == bound;
 
-			ColourSlotLabel(chara, colour, label, sizeof(label));
+			ColourSlots::Label(chara, colour, label, sizeof(label));
 			ImGui::PushID(colour);
 
 			if (ImGui::Selectable(label, selected))

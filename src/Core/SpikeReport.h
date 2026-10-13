@@ -16,6 +16,10 @@ namespace SpikeReport
 		Cost_OtherFileRead,
 		Cost_PresentWait,
 		Cost_GameUpdate,
+		Cost_EffectCompile,
+		Cost_GameWait,
+		Cost_TextureLock,
+		Cost_SoundVolume,
 		Cost_COUNT,
 	};
 

@@ -19,7 +19,7 @@ HMODULE g_modModule = nullptr;
 uintptr_t g_gameBase = 0;
 size_t g_gameSize = 0;
 uint32_t g_gameStamp = 0;
-bool g_gameMeasured = false;
+GameBuild::Age g_gameAge = GameBuild::Age::Newer;
 
 void ResolveGameModule()
 {
@@ -41,8 +41,7 @@ void ResolveGameModule()
 	if (dos->e_magic == IMAGE_DOS_SIGNATURE && nt->Signature == IMAGE_NT_SIGNATURE)
 	{
 		g_gameStamp = nt->FileHeader.TimeDateStamp;
-		g_gameMeasured = g_gameStamp == UNI2_IM_SUPPORTED_GAME_STAMP &&
-			nt->OptionalHeader.SizeOfImage == UNI2_IM_SUPPORTED_GAME_IMAGE_SIZE;
+		g_gameAge = GameBuild::Classify(g_gameStamp, nt->OptionalHeader.SizeOfImage);
 	}
 
 	g_gameSize = info.SizeOfImage;
@@ -227,41 +226,6 @@ bool CreateModDirectories()
 		MakeDirectory(root + "\\Screens") && MakeDirectory(root + "\\Shaders");
 }
 
-bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t minimumSize)
-{
-	FILE* file = nullptr;
-	if (fopen_s(&file, path.c_str(), "rb") != 0 || file == nullptr)
-		return false;
-
-	fseek(file, 0, SEEK_END);
-	const long size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	if (size <= static_cast<long>(minimumSize))
-	{
-		fclose(file);
-		return false;
-	}
-
-	out.resize(static_cast<size_t>(size));
-	const size_t read = fread(out.data(), 1, out.size(), file);
-	fclose(file);
-
-	return read == out.size();
-}
-
-bool WriteWholeFile(const std::string& path, const std::vector<uint8_t>& data)
-{
-	FILE* file = nullptr;
-	if (fopen_s(&file, path.c_str(), "wb") != 0 || file == nullptr)
-		return false;
-
-	const size_t written = data.empty() ? 0 : fwrite(data.data(), 1, data.size(), file);
-	const bool closed = fclose(file) == 0;
-
-	return closed && written == data.size();
-}
-
 std::string ResourceFileName(const char* name)
 {
 	if (name == nullptr)
@@ -292,8 +256,13 @@ size_t GetGameModuleSize()
 
 bool IsMeasuredGameBuild()
 {
+	return GetGameBuildAge() == GameBuild::Age::Supported;
+}
+
+GameBuild::Age GetGameBuildAge()
+{
 	ResolveGameModule();
-	return g_gameMeasured;
+	return g_gameAge;
 }
 
 uint32_t GetGameBuildStamp()
@@ -306,7 +275,7 @@ uintptr_t RvaToAddress(uintptr_t rva)
 {
 	ResolveGameModule();
 
-	if (g_gameBase == 0 || !g_gameMeasured)
+	if (g_gameBase == 0 || g_gameAge != GameBuild::Age::Supported)
 		return 0;
 
 	return g_gameBase + rva;

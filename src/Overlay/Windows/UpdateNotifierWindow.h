@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Overlay/Framework/IWindow.h"
-#include "Web/UpdateInstall.h"
 
 class UpdateNotifierWindow : public IWindow
 {
@@ -15,5 +14,4 @@ protected:
 
 private:
 	void DrawInstall();
-	void DrawProgress(const UpdateInstall::Snapshot& snapshot);
 };

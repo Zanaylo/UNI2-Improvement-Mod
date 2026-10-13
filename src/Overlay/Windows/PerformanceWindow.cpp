@@ -95,6 +95,15 @@ const Option kOptions[] = {
 		"Times every frame to reach the screen just before it refreshes, so no frame is shown twice "
 		"or skipped. Needs a 60 Hz or 120 Hz screen. Game default: off.",
 	},
+	{
+		&g_modVals.soundVolumeBackground,
+		"SoundVolumeBackground",
+		"Set sound volumes in the background",
+		"Removes the half-second freeze on the title screen.",
+		"The game changes the volume of every loaded sound one by one, and each change takes about 3 ms, "
+		"which freezes the picture. This hands those changes to a background thread. A sound that starts "
+		"right then can play at its old volume for a moment. Game default: off.",
+	},
 };
 
 using UiText::Help;

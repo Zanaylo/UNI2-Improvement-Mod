@@ -1,5 +1,7 @@
 #include "Game/Stages/BgGrade.h"
 
+#include "Core/Profiler.h"
+#include "Core/SpikeWatch.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
@@ -580,7 +582,7 @@ bool Rewrite(const char* source, size_t bytes, std::string& out)
 	return true;
 }
 
-HRESULT WINAPI HookedCreateEffect(void* device, const void* source, UINT bytes,
+HRESULT CreateEffectGraded(void* device, const void* source, UINT bytes,
 	const void* defines, void* include, DWORD flags, void* pool, void** effect, void** errors)
 {
 	const long seen = InterlockedIncrement(&g_effects);
@@ -609,6 +611,16 @@ HRESULT WINAPI HookedCreateEffect(void* device, const void* source, UINT bytes,
 	}
 
 	return g_createEffectHook.Original()(device, source, bytes, defines, include, flags, pool, effect, errors);
+}
+
+HRESULT WINAPI HookedCreateEffect(void* device, const void* source, UINT bytes,
+	const void* defines, void* include, DWORD flags, void* pool, void** effect, void** errors)
+{
+	const int64_t began = Profiler::Now();
+	const HRESULT result = CreateEffectGraded(device, source, bytes, defines, include, flags, pool, effect, errors);
+	SpikeWatch::Add(SpikeReport::Cost_EffectCompile, Profiler::Now() - began);
+
+	return result;
 }
 
 HRESULT STDMETHODCALLTYPE HookedSetRenderState(IDirect3DDevice9* device,

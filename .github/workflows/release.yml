@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-2025
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build and package
+        shell: pwsh
+        run: ./tools/package.ps1
+
+      - name: Check the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $manifest = Get-Content export/manifest.json -Raw | ConvertFrom-Json
+          if ($manifest.tag -ne $env:TAG) { throw "tag $env:TAG does not match UNI2_IM_VERSION $($manifest.version) in src/Core/info.h" }
+
+      - name: Attest where the files were built
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            export/UNI2-Improvement-Mod-*.zip
+            export/UNI2-Improvement-Mod-*/*
+
+      - name: Upload the release package
+        uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: |
+            export/UNI2-Improvement-Mod-*.zip
+            export/manifest.json
+          if-no-files-found: error
+
+      - name: Draft the GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          $manifest = Get-Content export/manifest.json -Raw | ConvertFrom-Json
+          $zip = Join-Path export $manifest.assetName
+
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:TAG --draft --verify-tag --title $env:TAG
+            if ($LASTEXITCODE -ne 0) { throw "the draft release could not be created" }
+          }
+
+          gh release upload $env:TAG $zip export/manifest.json --clobber
+          if ($LASTEXITCODE -ne 0) { throw "the release files could not be uploaded" }

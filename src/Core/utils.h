@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include "Core/FileSystem.h"
+#include "Core/GameBuild.h"
+
 #include <Windows.h>
 #include <cstdint>
 #include <string>
@@ -24,10 +27,6 @@ bool CreateModDirectories();
 bool CreateDirectoryTree(const std::string& folder);
 void RemoveDirectoryTree(const std::string& folder);
 
-bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t minimumSize = 0);
-
-bool WriteWholeFile(const std::string& path, const std::vector<uint8_t>& data);
-
 uint32_t ReadLittle32(const std::vector<uint8_t>& blob, size_t at);
 
 std::string ResourceFileName(const char* name);
@@ -35,6 +34,7 @@ std::string ResourceFileName(const char* name);
 uintptr_t GetGameBaseAddress();
 size_t GetGameModuleSize();
 bool IsMeasuredGameBuild();
+GameBuild::Age GetGameBuildAge();
 uint32_t GetGameBuildStamp();
 uintptr_t RvaToAddress(uintptr_t rva);
 bool IsAddressInGameModule(uintptr_t address);

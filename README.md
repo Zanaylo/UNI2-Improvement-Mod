@@ -73,6 +73,31 @@ installed game first.
 If you find something here that gives an edge in a real match, that is a bug. Report it.
 [More](https://github.com/Zanaylo/UNI2-Improvement-Mod/wiki/Online-play).
 
+## Antivirus warnings
+
+Some antivirus programs flag game mods like this one. It replaces `dinput8.dll` next to the game,
+changes the game's code in memory and can download its own updates, which is also what malware
+does. To check that what you have is a real release:
+
+- Every release is built on GitHub from the source in this repository, and GitHub keeps a record of
+  it: `gh attestation verify UNI2-Improvement-Mod-<version>.zip --repo Zanaylo/UNI2-Improvement-Mod`.
+- The release's `manifest.json` lists the zip's SHA-256. The updater refuses a download that does
+  not match it.
+
+## Privacy
+
+The mod sends nothing about you anywhere. This is everything it does over the network:
+
+- **Update check.** When the game starts, the mod asks GitHub for the latest release. Turn it off with
+  *Check for updates on start* in the overlay, or `CheckForUpdates = 0` under `[Mod]` in the ini.
+- **Updates.** Only when you press **Update now** or open `UNI2IMUpdater.exe`: the release is
+  downloaded from GitHub.
+- **Palettes online.** Your palette is sent to your opponent over Steam, only if they run the mod
+  too. `SharePalettes = 0` under `[Netplay]` turns it off.
+- **Replay upload.** After an online match the game uploads its own replay and score to its own
+  servers. The mod lets that finish in the background and adds nothing to it.
+  `BackgroundReplayUpload = 0` under `[Netplay]` leaves it to the game.
+
 ## Credits
 
 - [Under Night BR](https://discord.gg/Az7uQUU)
@@ -88,3 +113,8 @@ Thanks to Pescador Cearense, Eon, Listentothebirds - Rafael, Willyofruit, Sky Le
 Yorezordd (Velho fudido), Thiago, Tanasinn [AZ], Licensed Grappler, Anklegator, Kozup, Henriquez, Yuko, BootySama (🫃), Glacey, firezeroboredvanguard and blue_three.
 
 Building it yourself: [Building](https://github.com/Zanaylo/UNI2-Improvement-Mod/wiki/Building).
+
+## License
+
+Copyright (C) 2026 Zanaylo. Released under the [GNU General Public License v3.0](LICENSE).
+The libraries in `depends/` keep their own licenses, next to each of them.

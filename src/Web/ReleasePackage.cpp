@@ -13,6 +13,7 @@
 namespace {
 
 constexpr const char* kManifestAsset = "manifest.json";
+constexpr size_t kSha256HexLength = 64;
 
 std::string Combine(const std::string& folder, const char* name)
 {
@@ -106,32 +107,62 @@ const GitHubRelease::Asset* ReleasePackage::Pick(const GitHubRelease::Release& r
 	return asset != nullptr ? asset : release.FindAssetEndingWith(".zip");
 }
 
-bool ReleasePackage::ExpectedSha256(const GitHubRelease::Release& release,
-	const std::string& assetName, std::string& outSha, std::string& outError)
+bool ReleasePackage::ReadManifestSha256(const std::string& manifest, const std::string& assetName,
+	std::string& outSha, std::string& outError)
 {
 	outSha.clear();
-	outError.clear();
 
+	Json::Value root;
+
+	if (!Json::Parse(manifest, root) || !root.IsObject())
+	{
+		outError = "the release's manifest.json could not be read";
+		return false;
+	}
+
+	if (_stricmp(root.MemberString("assetName").c_str(), assetName.c_str()) != 0)
+	{
+		outError = "the release's manifest.json describes another zip than " + assetName;
+		return false;
+	}
+
+	const std::string sha = root.MemberString("sha256");
+
+	if (sha.size() != kSha256HexLength)
+	{
+		outError = "the release's manifest.json carries no SHA-256 for " + assetName;
+		return false;
+	}
+
+	outSha = sha;
+	return true;
+}
+
+bool ReleasePackage::Verify(const GitHubRelease::Release& release, const std::string& assetName,
+	const std::string& archive, std::string& outError)
+{
 	const GitHubRelease::Asset* const manifest = release.FindAsset(kManifestAsset);
 
 	if (manifest == nullptr)
+	{
+		outError = "the release has no manifest.json, so the download cannot be checked";
 		return false;
+	}
 
 	std::string text;
 
 	if (!Http::GetText(manifest->url, text, outError))
+	{
+		outError = "the release's manifest.json could not be downloaded: " + outError;
+		return false;
+	}
+
+	std::string expected;
+
+	if (!ReadManifestSha256(text, assetName, expected, outError))
 		return false;
 
-	Json::Value root;
-
-	if (!Json::Parse(text, root) || !root.IsObject())
-		return false;
-
-	if (_stricmp(root.MemberString("assetName").c_str(), assetName.c_str()) != 0)
-		return false;
-
-	outSha = root.MemberString("sha256");
-	return outSha.size() == 64;
+	return MatchesChecksum(archive, expected, outError);
 }
 
 bool ReleasePackage::MatchesChecksum(const std::string& archive, const std::string& expected,

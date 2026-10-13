@@ -1,34 +1,15 @@
 #include "Core/info.h"
 #include "Updater/Install.h"
 #include "Updater/Standalone.h"
+#include "Updater/UpdaterArgs.h"
 #include "Updater/UpdaterLog.h"
 #include "Updater/UpdaterPaths.h"
 
 #include <Windows.h>
-#include <shellapi.h>
 
 #include <string>
 
 namespace {
-
-std::wstring HandoffFromCommandLine()
-{
-	int count = 0;
-	LPWSTR* const parts = CommandLineToArgvW(GetCommandLineW(), &count);
-
-	std::wstring path;
-
-	for (int i = 1; parts != nullptr && i + 1 < count; ++i)
-	{
-		if (std::wstring(parts[i]) == L"--handoff")
-			path = parts[i + 1];
-	}
-
-	if (parts != nullptr)
-		LocalFree(parts);
-
-	return path;
-}
 
 int RunHandoff(const std::wstring& path)
 {
@@ -57,10 +38,13 @@ int RunHandoff(const std::wstring& path)
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 {
-	const std::wstring path = HandoffFromCommandLine();
+	const UpdaterArgs::Request request = UpdaterArgs::FromCommandLine();
 
-	if (path.empty())
-		return Standalone::Run();
+	if (request.mode == UpdaterArgs::Mode::Handoff)
+		return RunHandoff(request.handoffPath);
 
-	return RunHandoff(path);
+	if (request.mode == UpdaterArgs::Mode::GameUpdate)
+		return Standalone::RunForGame(request.parentPid);
+
+	return Standalone::Run();
 }

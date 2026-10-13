@@ -17,6 +17,7 @@ namespace ColourPicker
 	bool Install();
 
 	int ExtendedFor(int side, int chara);
+	void Choose(int side, int chara, int extended);
 	unsigned Picks();
 
 	bool Describe(int side, Shown& out);

@@ -695,7 +695,7 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 	HookVTableEntry(vtable, kDrawIndexedPrimitiveIndex, g_drawIndexedPrimitiveHook, &HookedDrawIndexedPrimitive);
 	HookVTableEntry(vtable, kDrawPrimitiveUPIndex, g_drawPrimitiveUPHook, &HookedDrawPrimitiveUP);
 	HookVTableEntry(vtable, kDrawIndexedPrimitiveUPIndex, g_drawIndexedPrimitiveUPHook, &HookedDrawIndexedPrimitiveUP);
-	SpikeWatch::AttachDevice(vtable);
+	SpikeWatch::AttachDevice(device, vtable);
 
 	if (!reset || !present)
 	{

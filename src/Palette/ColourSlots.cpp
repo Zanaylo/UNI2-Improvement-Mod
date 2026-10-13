@@ -2,6 +2,7 @@
 
 #include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
+#include "Game/Customize/ColorCustomize.h"
 #include "Palette/PaletteLibrary.h"
 #include "Palette/PaletteManager.h"
 
@@ -202,6 +203,19 @@ const char* ColourSlots::BoundFile(int chara, int colour)
 		return "";
 
 	return ShelfFor(chara).files[colour].c_str();
+}
+
+void ColourSlots::Label(int chara, int colour, char* out, size_t size)
+{
+	ColorCustomize::ColourLabel(colour, out, size);
+
+	const char* const holder = BoundFile(chara, colour);
+
+	if (holder[0] == '\0')
+		return;
+
+	const size_t used = strlen(out);
+	sprintf_s(out + used, size - used, " - %s", holder);
 }
 
 int ColourSlots::ColourOf(int chara, const char* file)

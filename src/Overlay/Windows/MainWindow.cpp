@@ -24,6 +24,7 @@
 #include "Screens/ScreenTheme.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Overlay/Framework/WindowManager.h"
+#include "Game/Files/InstallCheck.h"
 #include "Game/Files/ModPacks.h"
 #include "Game/Stages/BgCeiling.h"
 #include "Game/Stages/StageLibrary.h"
@@ -69,14 +70,36 @@ void MainWindow::DrawPlayerCount()
 	UiText::Good("%d", PlayerCount::Get());
 }
 
+void MainWindow::DrawSteamFolderWarning()
+{
+	const char* const steamFolder = InstallCheck::SteamFolderElsewhere();
+
+	if (steamFolder == nullptr)
+		return;
+
+	UiText::Warn("Steam starts the game from another folder, so the mod does not load when you play "
+		"from Steam. Install the mod in:");
+	UiText::Muted("%s", steamFolder);
+	ImGui::Separator();
+}
+
+void MainWindow::DrawGameBuildWarning()
+{
+	const GameBuild::Age age = GetGameBuildAge();
+
+	if (age == GameBuild::Age::Supported)
+		return;
+
+	UiText::Warn("%s", age == GameBuild::Age::Older
+		? "This copy of the game is out of date. Game features stay off until it is updated."
+		: "The game was updated. Game features stay off until the mod is updated too.");
+	ImGui::Separator();
+}
+
 void MainWindow::Draw()
 {
-	if (!IsMeasuredGameBuild())
-	{
-		UiText::Warn("The game was updated. Game features stay off until the mod is updated too.");
-		ImGui::Separator();
-	}
-
+	DrawSteamFolderWarning();
+	DrawGameBuildWarning();
 	DrawPlayerCount();
 	ImGui::Separator();
 	TrainingPanel::Draw();
@@ -104,6 +127,7 @@ void MainWindow::Draw()
 	DrawModsSection();
 
 	DrawMiscSection();
+	DrawGameDebugSection();
 	ImGui::Separator();
 	ConfigPanel::Draw();
 }
@@ -320,6 +344,20 @@ void MainWindow::DrawMiscSection()
 
 	ImGui::TextWrapped("Another art for each character on every screen, and the MELTY BLOOD TYPE LUMINA "
 		"announcers.");
+}
+
+void MainWindow::DrawGameDebugSection()
+{
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const window = container != nullptr ? container->GetWindow(WindowType_GameDebug) : nullptr;
+
+	if (window == nullptr || !ImGui::CollapsingHeader("Game debug options"))
+		return;
+
+	if (ImGui::Button(window->IsOpen() ? "Close game debug options" : "Open game debug options"))
+		window->Toggle();
+
+	ImGui::TextWrapped("Logs and switches French Bread left in the battle scripts.");
 }
 
 void MainWindow::DrawModsSection()

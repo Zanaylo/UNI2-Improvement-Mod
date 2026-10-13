@@ -23,6 +23,21 @@ std::string Narrow(const std::wstring& value, UINT codePage)
 	return text;
 }
 
+std::wstring Widen(const std::string& value, UINT codePage)
+{
+	if (value.empty())
+		return std::wstring();
+
+	const int length = MultiByteToWideChar(codePage, 0, value.c_str(), -1, nullptr, 0);
+
+	if (length <= 1)
+		return std::wstring();
+
+	std::wstring wide(static_cast<size_t>(length - 1), L'\0');
+	MultiByteToWideChar(codePage, 0, value.c_str(), -1, &wide[0], length);
+	return wide;
+}
+
 std::wstring FullPath(const std::wstring& path)
 {
 	wchar_t buffer[MAX_PATH * 2] = {};
@@ -98,17 +113,12 @@ std::string UpdaterPaths::Ansi(const std::wstring& value)
 
 std::wstring UpdaterPaths::Wide(const std::string& utf8)
 {
-	if (utf8.empty())
-		return std::wstring();
+	return Widen(utf8, CP_UTF8);
+}
 
-	const int length = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
-
-	if (length <= 1)
-		return std::wstring();
-
-	std::wstring wide(static_cast<size_t>(length - 1), L'\0');
-	MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &wide[0], length);
-	return wide;
+std::wstring UpdaterPaths::FromAnsi(const std::string& ansi)
+{
+	return Widen(ansi, CP_ACP);
 }
 
 std::string UpdaterPaths::Stamp()

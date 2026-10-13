@@ -42,15 +42,9 @@ ImU32 ColourAt(const uint8_t* row, int index)
 
 void ColourName(int chara, int colour, char* out, size_t size)
 {
-	if (colour >= ColorCustomize::kCustomFirst)
+	if (colour >= ColorCustomize::kCustomFirst || colour < StockPalettes::GetCount(chara))
 	{
-		sprintf_s(out, size, "Custom %d", colour - ColorCustomize::kCustomFirst + 1);
-		return;
-	}
-
-	if (colour < StockPalettes::GetCount(chara))
-	{
-		sprintf_s(out, size, "Colour %02d", colour + 1);
+		ColorCustomize::ColourLabel(colour, out, size);
 		return;
 	}
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace ColourSlots
 {
 	constexpr int kGameColours = 0x2f;
@@ -9,6 +11,7 @@ namespace ColourSlots
 	constexpr int kNoExtended = 0;
 
 	const char* BoundFile(int chara, int colour);
+	void Label(int chara, int colour, char* out, size_t size);
 	int ColourOf(int chara, const char* file);
 
 	void Bind(int chara, int colour, const char* file);

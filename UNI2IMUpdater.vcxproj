@@ -95,6 +95,7 @@
     <ClCompile Include="src\Updater\UNI2IMUpdater.cpp" />
     <ClCompile Include="src\Updater\Install.cpp" />
     <ClCompile Include="src\Updater\Standalone.cpp" />
+    <ClCompile Include="src\Updater\UpdaterArgs.cpp" />
     <ClCompile Include="src\Updater\UpdaterLog.cpp" />
     <ClCompile Include="src\Updater\UpdaterPaths.cpp" />
     <ClCompile Include="src\Updater\UpdaterUi.cpp" />
@@ -104,6 +105,8 @@
     <ClCompile Include="src\Core\Formats\Deflate.cpp" />
     <ClCompile Include="src\Core\Formats\Json.cpp" />
     <ClCompile Include="src\Core\Formats\ZipArchive.cpp" />
+    <ClCompile Include="src\Core\FileSystem.cpp" />
+    <ClCompile Include="src\Game\Files\SteamLibrary.cpp" />
   </ItemGroup>
 
   <ItemGroup>

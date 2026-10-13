@@ -6,6 +6,7 @@
 #include "Game/Customize/PlayerCard.h"
 
 #include <cstdint>
+#include <cstdio>
 
 namespace {
 
@@ -147,6 +148,17 @@ const char* ColorCustomize::PartName(int part)
 		return "";
 
 	return kPartNames[part];
+}
+
+void ColorCustomize::ColourLabel(int colour, char* out, size_t size)
+{
+	if (colour >= kCustomFirst)
+	{
+		sprintf_s(out, size, "Custom %d", colour - kCustomFirst + 1);
+		return;
+	}
+
+	sprintf_s(out, size, "Colour %02d", colour + 1);
 }
 
 bool ColorCustomize::GetEquipped(int chara, int& outColour)

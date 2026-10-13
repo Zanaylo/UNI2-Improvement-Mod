@@ -1,6 +1,8 @@
 #include "Updater/Standalone.h"
 
+#include "Core/FileSystem.h"
 #include "Core/info.h"
+#include "Game/Files/SteamLibrary.h"
 #include "Updater/Install.h"
 #include "Updater/UpdaterLog.h"
 #include "Updater/UpdaterPaths.h"
@@ -105,6 +107,30 @@ bool FindGameRoot(std::wstring& out)
 	}
 
 	return false;
+}
+
+void PreferSteamFolder(std::wstring& root)
+{
+	const std::string steamFolder = SteamLibrary::AppFolder(UNI2_IM_STEAM_APP_ID);
+	const std::wstring steamRoot = UpdaterPaths::FromAnsi(steamFolder);
+
+	if (steamFolder.empty() || !IsGameFolder(steamRoot))
+		return;
+
+	if (SameFolder(steamFolder, UpdaterPaths::Ansi(root)))
+		return;
+
+	UpdaterUi::Choice choice;
+	choice.tone = Tone::Warning;
+	choice.instruction = L"Steam starts the game from another folder";
+	choice.content = L"Steam starts the game from\n" + steamRoot + L"\n\nA mod installed in\n" + root +
+		L"\nonly loads when you open uni2.exe from that folder yourself. Install the mod where Steam "
+		L"starts the game?";
+	choice.confirm = L"Use Steam's folder";
+	choice.decline = L"Keep this folder";
+
+	if (UpdaterUi::Ask(choice))
+		root = steamRoot;
 }
 
 std::wstring VersionString(std::vector<BYTE>& block, const wchar_t* name)
@@ -287,17 +313,12 @@ bool Fetch(const GitHubRelease::Release& release, const GitHubRelease::Asset& pa
 		return false;
 	}
 
-	std::string expected;
+	task.SetStep(L"Checking the download");
 
-	if (ReleasePackage::ExpectedSha256(release, package.name, expected, error))
+	if (!ReleasePackage::Verify(release, package.name, archive, error))
 	{
-		task.SetStep(L"Checking the download");
-
-		if (!ReleasePackage::MatchesChecksum(archive, expected, error))
-		{
-			task.SetError(error);
-			return false;
-		}
+		task.SetError(error);
+		return false;
 	}
 
 	task.SetStep(L"Unpacking");
@@ -425,8 +446,17 @@ int Flow()
 
 	DeleteFileW(SetAsidePath(root).c_str());
 
+	const std::wstring found = root;
+	PreferSteamFolder(root);
+
 	Handoff handoff = HandoffFor(root);
 	UpdaterLog::Open(handoff.logPath);
+
+	if (root != found)
+	{
+		UpdaterLog::Write("%s is not the folder Steam starts the game from, installing in Steam's "
+			"folder instead", UpdaterPaths::Utf8(found).c_str());
+	}
 
 	const Installed installed = ReadInstalled(root);
 
@@ -463,17 +493,88 @@ int Flow()
 	return 0;
 }
 
+int OfferGameAfterFailure(const Handoff& handoff)
+{
+	UpdaterUi::Choice choice;
+	choice.tone = Tone::Warning;
+	choice.instruction = L"The update was not installed";
+	choice.content = L"The version you had is still installed.";
+	choice.confirm = L"Start the game";
+
+	if (UpdaterUi::Ask(choice))
+		Install::Relaunch(handoff);
+
+	return 1;
 }
 
-int Standalone::Run()
+int FlowForGame(DWORD parentPid)
+{
+	const std::wstring root = UpdaterPaths::Parent(UpdaterPaths::Self());
+
+	if (!IsGameFolder(root))
+	{
+		UpdaterUi::Tell(Tone::Error, L"The updater is not in the game's folder", L"The game asked "
+			L"for an update, but there is no uni2.exe in\n" + root);
+		return 1;
+	}
+
+	DeleteFileW(SetAsidePath(root).c_str());
+
+	Handoff handoff = HandoffFor(root);
+	handoff.parentPid = parentPid;
+	handoff.relaunch = true;
+	UpdaterLog::Open(handoff.logPath);
+
+	const Installed installed = ReadInstalled(root);
+
+	UpdaterLog::Write("updater %s opened by the game in %s, the mod there is %s", UNI2_IM_VERSION,
+		UpdaterPaths::Utf8(root).c_str(), installed.ours ? installed.version.c_str() :
+		"not a version this updater knows");
+
+	GitHubRelease::Release release;
+
+	if (!FetchLatest(release))
+		return OfferGameAfterFailure(handoff);
+
+	if (installed.ours && GitHubRelease::Compare(release.version, installed.version) <= 0)
+	{
+		UpdaterLog::Write("%s is already the latest, starting the game again",
+			installed.version.c_str());
+		Install::Relaunch(handoff);
+		return 0;
+	}
+
+	handoff.tag = Wide(release.tag);
+
+	if (!Download(release, handoff) || !InstallStaged(handoff))
+		return OfferGameAfterFailure(handoff);
+
+	Install::Relaunch(handoff);
+	return 0;
+}
+
+template <typename Flow>
+int InComApartment(Flow flow)
 {
 	const HRESULT com = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED |
 		COINIT_DISABLE_OLE1DDE);
 
-	const int result = Flow();
+	const int result = flow();
 
 	if (SUCCEEDED(com))
 		CoUninitialize();
 
 	return result;
+}
+
+}
+
+int Standalone::Run()
+{
+	return InComApartment([] { return Flow(); });
+}
+
+int Standalone::RunForGame(DWORD parentPid)
+{
+	return InComApartment([parentPid] { return FlowForGame(parentPid); });
 }

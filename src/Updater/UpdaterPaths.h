@@ -16,6 +16,7 @@ namespace UpdaterPaths
 	std::string Utf8(const std::wstring& value);
 	std::string Ansi(const std::wstring& value);
 	std::wstring Wide(const std::string& utf8);
+	std::wstring FromAnsi(const std::string& ansi);
 
 	std::string Stamp();
 }

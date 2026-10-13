@@ -1,6 +1,6 @@
 #include "Game/Files/SteamLibrary.h"
 
-#include "Core/utils.h"
+#include "Core/FileSystem.h"
 
 #include <Windows.h>
 
@@ -15,6 +15,9 @@ constexpr const char* kSteamPathValue = "SteamPath";
 constexpr const char* kLibraryFile = "\\steamapps\\libraryfolders.vdf";
 constexpr const char* kCommonFolder = "\\steamapps\\common\\";
 constexpr const char* kPathKey = "\"path\"";
+constexpr const char* kInstallDirKey = "\"installdir\"";
+constexpr const char* kManifestPrefix = "\\steamapps\\appmanifest_";
+constexpr const char* kManifestExtension = ".acf";
 
 std::string SteamPath()
 {
@@ -113,6 +116,34 @@ std::string SteamLibrary::GameFolder(const char* installFolder)
 
 		if (IsFolder(candidate))
 			return candidate;
+	}
+
+	return std::string();
+}
+
+std::string SteamLibrary::ManifestInstallDir(const std::string& manifest)
+{
+	const size_t key = manifest.find(kInstallDirKey);
+
+	if (key == std::string::npos)
+		return std::string();
+
+	return QuotedAfter(manifest, key + strlen(kInstallDirKey));
+}
+
+std::string SteamLibrary::AppFolder(const char* appId)
+{
+	for (const std::string& library : Folders())
+	{
+		std::vector<uint8_t> raw;
+
+		if (!ReadWholeFile(library + kManifestPrefix + appId + kManifestExtension, raw))
+			continue;
+
+		const std::string installDir = ManifestInstallDir(std::string(raw.begin(), raw.end()));
+
+		if (!installDir.empty())
+			return library + kCommonFolder + installDir;
 	}
 
 	return std::string();

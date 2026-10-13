@@ -67,6 +67,9 @@
     <Filter Include="Game\Customize">
       <UniqueIdentifier>{24d751bc-9847-8364-096a-ccda9036303e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Debug">
+      <UniqueIdentifier>{aed4b22d-0ad2-2d2c-8460-d356f72fcd8e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Game\Display">
       <UniqueIdentifier>{86eef5fb-8022-6699-d478-2e83e8ce0c19}</UniqueIdentifier>
     </Filter>
@@ -405,9 +408,6 @@
     <ClCompile Include="src\Web\UpdateInstall.cpp">
       <Filter>Web</Filter>
     </ClCompile>
-    <ClCompile Include="src\Web\ReleasePackage.cpp">
-      <Filter>Web</Filter>
-    </ClCompile>
     <ClCompile Include="src\Game\Customize\BasePals.cpp">
       <Filter>Game\Customize</Filter>
     </ClCompile>
@@ -604,6 +604,9 @@
       <Filter>Game\Stages</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Files\SteamLibrary.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Files\InstallCheck.cpp">
       <Filter>Game\Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagPose.cpp">
@@ -972,6 +975,12 @@
     <ClCompile Include="src\Core\utils.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\FileSystem.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\GameBuild.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\AsyncFileDialog.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1049,6 +1058,39 @@
     </ClCompile>
     <ClCompile Include="src\Hooks\HookManager.cpp">
       <Filter>Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hooks\HookStub.cpp">
+      <Filter>Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\GameDebugCommands.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\GameDebugWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\OnlineContext.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Debug\GameDebug.cpp">
+      <Filter>Game\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Debug\ScriptDefines.cpp">
+      <Filter>Game\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Debug\ScriptConsole.cpp">
+      <Filter>Game\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\SoundVolumeBackground.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\VolumeQueue.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\StallSampler.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\StallProfile.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Hooks\hooks_input.cpp">
       <Filter>Hooks</Filter>
@@ -1284,6 +1326,9 @@
     <ClCompile Include="src\Game\Engine\SaveData.cpp">
       <Filter>Game\Engine</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Engine\SceneExit.cpp">
+      <Filter>Game\Engine</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Engine\SceneWatch.cpp">
       <Filter>Game\Engine</Filter>
     </ClCompile>
@@ -1363,6 +1408,9 @@
       <Filter>Training</Filter>
     </ClCompile>
     <ClCompile Include="src\Training\StageColor.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\QuickTraining.cpp">
       <Filter>Training</Filter>
     </ClCompile>
     <ClCompile Include="src\Training\Dummy\DummyScript.cpp">
@@ -2129,9 +2177,6 @@
     <ClInclude Include="src\Web\UpdateInstall.h">
       <Filter>Web</Filter>
     </ClInclude>
-    <ClInclude Include="src\Web\ReleasePackage.h">
-      <Filter>Web</Filter>
-    </ClInclude>
     <ClInclude Include="src\Game\Customize\BasePals.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>
@@ -2325,6 +2370,9 @@
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Files\SteamLibrary.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\InstallCheck.h">
       <Filter>Game\Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagPose.h">
@@ -2690,6 +2738,12 @@
     <ClInclude Include="src\Core\utils.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\FileSystem.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\GameBuild.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\AsyncFileDialog.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -2716,6 +2770,39 @@
     </ClInclude>
     <ClInclude Include="src\Hooks\HookManager.h">
       <Filter>Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks\HookStub.h">
+      <Filter>Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Harness\GameDebugCommands.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\GameDebugWindow.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\OnlineContext.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Debug\GameDebug.h">
+      <Filter>Game\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Debug\ScriptDefines.h">
+      <Filter>Game\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Debug\ScriptConsole.h">
+      <Filter>Game\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\SoundVolumeBackground.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\VolumeQueue.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\StallSampler.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\StallProfile.h">
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Hooks\hooks_input.h">
       <Filter>Hooks</Filter>
@@ -2802,6 +2889,9 @@
       <Filter>Game\Battle</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Engine\SaveData.h">
+      <Filter>Game\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Engine\SceneExit.h">
       <Filter>Game\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Engine\SceneWatch.h">
@@ -3030,6 +3120,9 @@
       <Filter>Training</Filter>
     </ClInclude>
     <ClInclude Include="src\Training\StageColor.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\QuickTraining.h">
       <Filter>Training</Filter>
     </ClInclude>
     <ClInclude Include="src\Training\Dummy\DummyScript.h">
