@@ -116,5 +116,5 @@ Building it yourself: [Building](https://github.com/Zanaylo/UNI2-Improvement-Mod
 
 ## License
 
-Copyright (C) 2026 Zanaylo. Released under the [GNU General Public License v3.0](LICENSE).
+Released under the [GNU General Public License v3.0](LICENSE).
 The libraries in `depends/` keep their own licenses, next to each of them.
