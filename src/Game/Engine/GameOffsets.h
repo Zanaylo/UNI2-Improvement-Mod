@@ -908,7 +908,7 @@ namespace GameOffsets
 	constexpr uintptr_t kGgpoSpectatorBackendVTable = 0x5379f4;
 	constexpr uintptr_t kGgpoPlayerEndpoints = 0xbd8;
 	constexpr uintptr_t kGgpoSpectatorHostEndpoint = 0x450;
-	constexpr uintptr_t kGgpoPlayerCount = 0x5d878;
+	constexpr uintptr_t kGgpoPlayerCount = 0x5d868;
 	constexpr int kGgpoMostPlayers = 4;
 	constexpr uintptr_t kGgpoEndpointUdp = 0x04;
 	constexpr uintptr_t kGgpoEndpointQueue = 0x24;
@@ -1013,8 +1013,8 @@ namespace GameOffsets
 	constexpr uintptr_t kReplaySaveResult = 0x1e8a15c;
 	constexpr uintptr_t kFnApplyMatchBlock = 0x447f60;
 
-	constexpr uintptr_t kGgpoSynchronizing = 0x5d874;
-	constexpr uintptr_t kGgpoSpectatorCount = 0x5d86c;
+	constexpr uintptr_t kGgpoSynchronizing = 0x5d864;
+	constexpr uintptr_t kGgpoSpectatorCount = 0x5d85c;
 	constexpr uintptr_t kGgpoSpectatorEndpoints = 0xbdc;
 	constexpr size_t kGgpoEndpointStride = 0x2e64;
 	constexpr int kGgpoMostSpectators = 32;
@@ -1125,8 +1125,8 @@ namespace GameOffsets
 	constexpr uintptr_t kNetplayPadOwnerA = 0x5f23cc;
 	constexpr uintptr_t kNetplayPadOwnerB = 0x5f23d0;
 	constexpr uintptr_t kExternalInputExtra = 0x1d595f0;
-	constexpr uintptr_t kGgpoSpectatorCursor = 0x5d880;
-	constexpr uintptr_t kGgpoDisconnectTimeout = 0x5d88c;
+	constexpr uintptr_t kGgpoSpectatorCursor = 0x5d870;
+	constexpr uintptr_t kGgpoDisconnectTimeout = 0x5d87c;
 	constexpr uintptr_t kRoomExtraMenu = 0xcc7960;
 	constexpr uintptr_t kRoomExtraMenuState = 0x1c;
 	constexpr uintptr_t kRoomExtraMenuClosing = 0x20;
