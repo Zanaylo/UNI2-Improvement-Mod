@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Web/GitHubRelease.h"
+
+#include <vector>
+
 namespace UpdateCheck
 {
 	void Start();
@@ -14,9 +18,14 @@ namespace UpdateCheck
 
 	const char* GetLatestVersion();
 	const char* GetReleaseUrl();
-	const char* GetReleaseNotes();
 	const char* GetStatusText();
+
+	std::vector<GitHubRelease::Release> GetNewerReleases();
+	long Revision();
 
 	void Dismiss();
 	bool WasDismissed();
+
+	void SkipLatest();
+	bool IsLatestSkipped();
 }

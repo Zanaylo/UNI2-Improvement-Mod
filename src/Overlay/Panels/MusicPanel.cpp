@@ -4,6 +4,7 @@
 #include "Game/Audio/BgmControl.h"
 #include "Game/Audio/BgmLibrary.h"
 #include "Game/Audio/BgmNames.h"
+#include "Game/Audio/BgmPicker.h"
 #include "Game/Audio/BgmTable.h"
 #include "Game/Audio/BgmVolume.h"
 #include "Game/Audio/BgmThemes.h"
@@ -508,9 +509,13 @@ void MusicPanel::DrawPackDraftTable(int count)
 void MusicPanel::DrawMyMusic()
 {
 	UiText::Muted("Add your own music");
-	UiText::Help("Pick an MP3, OGG or WAV file. It is copied into the mod and listed in Browse. "
+	UiText::Help("Pick an MP3, OGG or WAV file. It is copied into the mod and listed in Browse "
+		"and in the game's Stage & BGM Select. "
 		"Anything that isn't OGG Vorbis is converted, and the copy in Music\\.cache can be deleted "
 		"at any time.");
+
+	if (!BgmPicker::Active())
+		UiText::Warn("Stage & BGM Select: %s", BgmPicker::StatusText());
 
 	Ui::SetItemWidth(kComboWidth);
 	ImGui::InputTextWithHint("Folder", "Folder name", m_musicPack, IM_ARRAYSIZE(m_musicPack));

@@ -30,8 +30,10 @@ namespace GitHubRelease
 	};
 
 	bool ParseLatest(const std::string& json, Release& out, std::string& outError);
+	bool ParseList(const std::string& json, std::vector<Release>& out, std::string& outError);
 
 	bool FetchLatest(Release& out, std::string& outError);
+	bool FetchAll(std::vector<Release>& out, std::string& outError);
 
 	bool IsNewerThanRunning(const std::string& version);
 

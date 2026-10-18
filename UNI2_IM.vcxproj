@@ -155,6 +155,7 @@
     <ClCompile Include="src\Overlay\Windows\SubtitlesWindow.cpp" />
     <ClCompile Include="src\Game\Patches\BundledPack.cpp" />
     <ClCompile Include="src\Core\Formats\Json.cpp" />
+    <ClCompile Include="src\Core\Formats\Markdown.cpp" />
     <ClCompile Include="src\Game\Lobby\NameCensor.cpp" />
     <ClCompile Include="src\Game\Lobby\RoomNameCensor.cpp" />
     <ClCompile Include="src\Game\Lobby\IrHider.cpp" />
@@ -232,6 +233,8 @@
     <ClCompile Include="src\Core\SoundOutput.cpp" />
     <ClCompile Include="src\Game\Audio\SoundpackBuilder.cpp" />
     <ClCompile Include="src\Game\Audio\BgmLibrary.cpp" />
+    <ClCompile Include="src\Game\Audio\BgmPicker.cpp" />
+    <ClCompile Include="src\Game\Audio\BgmSelectFile.cpp" />
     <ClCompile Include="src\Game\Files\ModFiles.cpp" />
     <ClCompile Include="src\Game\Files\ModPacks.cpp" />
     <ClCompile Include="src\Overlay\Panels\ModsPanel.cpp" />
@@ -408,6 +411,7 @@
     <ClCompile Include="src\Core\Config\interfaces.cpp" />
     <ClCompile Include="src\Hooks\HookManager.cpp" />
     <ClCompile Include="src\Hooks\HookStub.cpp" />
+    <ClCompile Include="src\Hooks\CompareTrampoline.cpp" />
     <ClCompile Include="src\Core\Harness\GameDebugCommands.cpp" />
     <ClCompile Include="src\Overlay\Windows\GameDebugWindow.cpp" />
     <ClCompile Include="src\Network\OnlineContext.cpp" />
@@ -427,6 +431,8 @@
     <ClCompile Include="src\Overlay\Framework\WindowManager.cpp" />
     <ClCompile Include="src\Overlay\Hud\NotificationBar.cpp" />
     <ClCompile Include="src\Overlay\Widgets\UiText.cpp" />
+    <ClCompile Include="src\Overlay\Widgets\BoldText.cpp" />
+    <ClCompile Include="src\Overlay\Widgets\MarkdownView.cpp" />
     <ClCompile Include="src\Overlay\Widgets\UiScale.cpp" />
     <ClCompile Include="src\Overlay\Widgets\OverlayFont.cpp" />
     <ClCompile Include="src\Overlay\Widgets\PlatePreview.cpp" />
@@ -711,6 +717,7 @@
     <ClInclude Include="src\Overlay\Windows\SubtitlesWindow.h" />
     <ClInclude Include="src\Game\Patches\BundledPack.h" />
     <ClInclude Include="src\Core\Formats\Json.h" />
+    <ClInclude Include="src\Core\Formats\Markdown.h" />
     <ClInclude Include="src\Game\Lobby\NameCensor.h" />
     <ClInclude Include="src\Game\Lobby\RoomNameCensor.h" />
     <ClInclude Include="src\Game\Lobby\IrHider.h" />
@@ -791,6 +798,8 @@
     <ClInclude Include="src\Core\SoundOutput.h" />
     <ClInclude Include="src\Game\Audio\SoundpackBuilder.h" />
     <ClInclude Include="src\Game\Audio\BgmLibrary.h" />
+    <ClInclude Include="src\Game\Audio\BgmPicker.h" />
+    <ClInclude Include="src\Game\Audio\BgmSelectFile.h" />
     <ClInclude Include="src\Game\Files\ModFiles.h" />
     <ClInclude Include="src\Game\Audio\OstImport.h" />
     <ClInclude Include="src\Game\Stages\BgListOverride.h" />
@@ -947,6 +956,7 @@
     <ClInclude Include="src\Core\info.h" />
     <ClInclude Include="src\Hooks\HookManager.h" />
     <ClInclude Include="src\Hooks\HookStub.h" />
+    <ClInclude Include="src\Hooks\CompareTrampoline.h" />
     <ClInclude Include="src\Core\Harness\GameDebugCommands.h" />
     <ClInclude Include="src\Overlay\Windows\GameDebugWindow.h" />
     <ClInclude Include="src\Network\OnlineContext.h" />
@@ -966,6 +976,8 @@
     <ClInclude Include="src\Overlay\Framework\WindowManager.h" />
     <ClInclude Include="src\Overlay\Hud\NotificationBar.h" />
     <ClInclude Include="src\Overlay\Widgets\UiText.h" />
+    <ClInclude Include="src\Overlay\Widgets\BoldText.h" />
+    <ClInclude Include="src\Overlay\Widgets\MarkdownView.h" />
     <ClInclude Include="src\Overlay\Widgets\UiScale.h" />
     <ClInclude Include="src\Overlay\Widgets\OverlayFont.h" />
     <ClInclude Include="src\Overlay\Widgets\PlatePreview.h" />

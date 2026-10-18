@@ -1,20 +1,24 @@
 #include "Web/UpdateCheck.h"
 
 #include "Core/info.h"
+#include "Core/Config/IniStore.h"
+#include "Core/Config/Settings.h"
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
-#include "Web/GitHubRelease.h"
 
 #include <Windows.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cstdio>
+#include <cstring>
 #include <mutex>
 #include <string>
 
 namespace {
 
-constexpr int kNotesLength = 2048;
+constexpr const char* kSection = "Mod";
+constexpr const char* kSkippedKey = "SkippedUpdate";
 
 std::mutex g_lock;
 
@@ -22,27 +26,74 @@ std::atomic<bool> g_checking{ false };
 std::atomic<bool> g_answered{ false };
 std::atomic<bool> g_newer{ false };
 std::atomic<bool> g_dismissed{ false };
+std::atomic<bool> g_skipped{ false };
+std::atomic<long> g_revision{ 0 };
 
 char g_version[32] = {};
 char g_page[256] = UNI2_IM_RELEASE_PAGE;
-char g_notes[kNotesLength] = {};
 char g_status[256] = "not checked yet";
+std::vector<GitHubRelease::Release> g_newerReleases;
 
-void Publish(const GitHubRelease::Release& release, bool newer)
+bool IsSkipped(const std::string& version)
 {
+	char stored[32] = {};
+
+	Ini::GetString(kSection, kSkippedKey, "", stored, sizeof(stored), Settings::GetIniPath().c_str());
+
+	return stored[0] != '\0' && version == stored;
+}
+
+std::vector<GitHubRelease::Release> Stable(const std::vector<GitHubRelease::Release>& releases)
+{
+	std::vector<GitHubRelease::Release> stable;
+
+	for (const GitHubRelease::Release& release : releases)
+	{
+		if (!release.draft && !release.prerelease)
+			stable.push_back(release);
+	}
+
+	std::sort(stable.begin(), stable.end(),
+		[](const GitHubRelease::Release& left, const GitHubRelease::Release& right)
+		{
+			return GitHubRelease::Compare(left.version, right.version) > 0;
+		});
+
+	return stable;
+}
+
+std::vector<GitHubRelease::Release> NewerThanRunning(const std::vector<GitHubRelease::Release>& stable)
+{
+	std::vector<GitHubRelease::Release> newer;
+
+	for (const GitHubRelease::Release& release : stable)
+	{
+		if (GitHubRelease::IsNewerThanRunning(release.version))
+			newer.push_back(release);
+	}
+
+	return newer;
+}
+
+void Publish(const GitHubRelease::Release& latest, const std::vector<GitHubRelease::Release>& newer)
+{
+	const bool skipped = !newer.empty() && IsSkipped(latest.version);
+
 	std::lock_guard<std::mutex> guard(g_lock);
 
-	strncpy_s(g_version, release.version.c_str(), _TRUNCATE);
-	strncpy_s(g_page, release.page.empty() ? UNI2_IM_RELEASE_PAGE : release.page.c_str(),
-		_TRUNCATE);
-	strncpy_s(g_notes, release.notes.c_str(), _TRUNCATE);
+	strncpy_s(g_version, latest.version.c_str(), _TRUNCATE);
+	strncpy_s(g_page, latest.page.empty() ? UNI2_IM_RELEASE_PAGE : latest.page.c_str(), _TRUNCATE);
+	g_newerReleases = newer;
 
-	if (newer)
-		sprintf_s(g_status, "%s is out, you have %s", release.version.c_str(), UNI2_IM_VERSION);
-	else
+	if (newer.empty())
 		strncpy_s(g_status, "you have the latest version", _TRUNCATE);
+	else
+		sprintf_s(g_status, "%s is out, you have %s%s", latest.version.c_str(), UNI2_IM_VERSION,
+			skipped ? " (you skipped it)" : "");
 
-	g_newer.store(newer);
+	g_skipped.store(skipped);
+	g_newer.store(!newer.empty());
+	++g_revision;
 }
 
 void Fail(const char* error)
@@ -55,26 +106,31 @@ void Fail(const char* error)
 
 DWORD WINAPI Run(LPVOID)
 {
-	GitHubRelease::Release release;
+	std::vector<GitHubRelease::Release> releases;
 	std::string error;
 
-	if (!GitHubRelease::FetchLatest(release, error))
+	if (!GitHubRelease::FetchAll(releases, error))
 	{
 		Fail(error.c_str());
 		LOG("update check: %s", error.c_str());
 	}
-	else if (release.draft)
-	{
-		Fail("the newest release is still a draft");
-	}
 	else
 	{
-		const bool newer = GitHubRelease::IsNewerThanRunning(release.version);
+		const std::vector<GitHubRelease::Release> stable = Stable(releases);
 
-		Publish(release, newer);
+		if (stable.empty())
+		{
+			Fail("no release has been published yet");
+		}
+		else
+		{
+			const std::vector<GitHubRelease::Release> newer = NewerThanRunning(stable);
 
-		LOG("update check: %s is the latest, this is %s%s", release.version.c_str(),
-			UNI2_IM_VERSION, newer ? " - an update is available" : "");
+			Publish(stable.front(), newer);
+
+			LOG("update check: %s is the latest, this is %s, %d newer release(s)",
+				stable.front().version.c_str(), UNI2_IM_VERSION, static_cast<int>(newer.size()));
+		}
 	}
 
 	g_answered.store(true);
@@ -145,14 +201,20 @@ const char* UpdateCheck::GetReleaseUrl()
 	return g_page;
 }
 
-const char* UpdateCheck::GetReleaseNotes()
-{
-	return g_notes;
-}
-
 const char* UpdateCheck::GetStatusText()
 {
 	return g_status;
+}
+
+std::vector<GitHubRelease::Release> UpdateCheck::GetNewerReleases()
+{
+	std::lock_guard<std::mutex> guard(g_lock);
+	return g_newerReleases;
+}
+
+long UpdateCheck::Revision()
+{
+	return g_revision.load();
 }
 
 void UpdateCheck::Dismiss()
@@ -163,4 +225,23 @@ void UpdateCheck::Dismiss()
 bool UpdateCheck::WasDismissed()
 {
 	return g_dismissed.load();
+}
+
+void UpdateCheck::SkipLatest()
+{
+	std::string version;
+
+	{
+		std::lock_guard<std::mutex> guard(g_lock);
+		version = g_version;
+	}
+
+	Settings::SaveString(kSection, kSkippedKey, version.c_str());
+	g_skipped.store(true);
+	g_dismissed.store(true);
+}
+
+bool UpdateCheck::IsLatestSkipped()
+{
+	return g_skipped.load();
 }

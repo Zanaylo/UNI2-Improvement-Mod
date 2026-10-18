@@ -30,6 +30,8 @@
 { GameOffsets::kFnFrameWait, "kFnFrameWait", "55 8B EC 83 E4 F8 ?? ?? ?? ?? 00 00 A1 ?? ?? ?? ?? 33 C4 89 ?? ?? ?? ?? 00 00 83 3D ?? ?? ?? ?? 00 53 56 8B 35 ?? ?? ?? ??" },
 { GameOffsets::kFnOnLobbyChatUpdate, "kFnOnLobbyChatUpdate", "55 8B EC 83 E4 F8 51 8B 45 08 56 8B 70 18" },
 { GameOffsets::kFnBgmSelectable, "kFnBgmSelectable", "55 8B EC 83 EC 0C 56 57 8B F9 8D 47 02" },
+{ GameOffsets::kFnBgmSelectBuild, "kFnBgmSelectBuild", "55 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 81 EC 40 01 00 00 A1 ?? ?? ?? ?? 33 C5 89 45 F0 53 56 57 50 8D 45 F4 64 A3 00 00 00 00 80 3D ?? ?? ?? ?? 00" },
+{ GameOffsets::kSiteBgmSelectSections, "kSiteBgmSelectSections", "83 F8 64 0F 8C ?? ?? ?? ?? 85 DB 74 ?? 51 8B CB" },
 { GameOffsets::kFnStageUnlocked, "kFnStageUnlocked", "56 83 F9 64 ?? ?? ?? ?? ?? ?? 85 C9" },
 { GameOffsets::kFnBattlePlayerSeLoad, "kFnBattlePlayerSeLoad", "55 8B EC 51 53 56 57 8B FA 8B D9 8B 34 BD ?? ?? ?? ??" },
 { GameOffsets::kFnFrameUpdate, "kFnFrameUpdate", "53 8B DC 83 EC 08 83 E4 F8 83 C4 04 55 8B 6B 04 ?? ?? ?? ?? 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 53 83 EC 20 56 57 A1 ?? ?? ?? ?? 33 C5 50 8D 45 F4 64 A3 00 00 00 00 8B F1 89 75 E4" },

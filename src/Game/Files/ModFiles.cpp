@@ -8,6 +8,7 @@
 #include "Game/Patches/GamePatches.h"
 #include "Game/Customize/PortraitLayer.h"
 #include "Game/Files/ModPacks.h"
+#include "Game/Audio/BgmPicker.h"
 #include "Game/Audio/SoundPacks.h"
 #include "Game/Audio/UserMusic.h"
 #include "Hooks/GameHook.h"
@@ -469,6 +470,8 @@ bool Rebuild()
 
 	for (const FileIndex::Map::value_type& entry : own.Entries())
 		built.Add(entry.first, entry.second);
+
+	BgmPicker::Layer(built);
 
 	InterlockedExchange(&g_own, own.Count());
 

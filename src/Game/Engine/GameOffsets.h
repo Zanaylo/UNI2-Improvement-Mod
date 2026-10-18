@@ -867,6 +867,10 @@ namespace GameOffsets
 	constexpr uintptr_t kBgmState = 0x6550c4;
 	constexpr uintptr_t kBgmLoadedFlag = 0x654fa8;
 	constexpr uintptr_t kFnBgmSelectable = 0x112f00;
+	constexpr uintptr_t kFnBgmSelectBuild = 0x384be0;
+	constexpr uintptr_t kSiteBgmSelectSections = 0x3850c6;
+	constexpr int kBgmSelectStockSections = 100;
+	constexpr uintptr_t kBgmSelectBuilt = 0x83b010;
 	constexpr uintptr_t kBgmCurrentId = 0x5a3e14;
 	constexpr uintptr_t kBgmPlayer = 0x654fb0;
 	constexpr uintptr_t kBgmSuppressed = 0x65503c;

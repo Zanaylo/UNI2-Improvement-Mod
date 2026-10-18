@@ -3,9 +3,9 @@
 #define UNI2_IM_NAME "UNI2 Improvement Mod"
 #define UNI2_IM_VERSION_MAJOR 0
 #define UNI2_IM_VERSION_MINOR 7
-#define UNI2_IM_VERSION_PATCH 7
+#define UNI2_IM_VERSION_PATCH 8
 
-#define UNI2_IM_VERSION "0.7.7"
+#define UNI2_IM_VERSION "0.7.8"
 #define UNI2_IM_SUPPORTED_GAME_VERSION "Ver.0.10.0"
 #define UNI2_IM_SUPPORTED_GAME_STAMP 0x6abcb77fu
 #define UNI2_IM_SUPPORTED_GAME_IMAGE_SIZE 0x44e5000u
@@ -14,6 +14,7 @@
 
 #define UNI2_IM_RELEASE_PAGE "https://github.com/Zanaylo/UNI2-Improvement-Mod/releases"
 #define UNI2_IM_RELEASE_API  "https://api.github.com/repos/Zanaylo/UNI2-Improvement-Mod/releases/latest"
+#define UNI2_IM_RELEASES_API "https://api.github.com/repos/Zanaylo/UNI2-Improvement-Mod/releases?per_page=30"
 
 #define UNI2_IM_UPDATER_EXE "UNI2IMUpdater.exe"
 #define UNI2_IM_UPDATER_UPDATE_FLAG "--update"

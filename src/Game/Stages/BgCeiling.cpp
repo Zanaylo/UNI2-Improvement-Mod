@@ -5,6 +5,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Engine/GameOffsets.h"
+#include "Hooks/CompareTrampoline.h"
 
 #include <Windows.h>
 
@@ -19,24 +20,8 @@ constexpr const char* kKey = "WidenStageTable";
 
 constexpr size_t kSlotBytes = sizeof(uint32_t);
 constexpr uint8_t kInt3 = 0xcc;
-constexpr uint8_t kNop = 0x90;
-constexpr uint8_t kJumpNear = 0xe9;
-constexpr uint8_t kCompareGroup = 0x83;
-constexpr uint8_t kCompareWide = 0x81;
-constexpr uint8_t kTwoByte = 0x0f;
-constexpr uint8_t kNearCondition = 0x80;
-constexpr uint8_t kFirstRegisterForm = 0xf8;
-constexpr uint8_t kFirstShortCondition = 0x7c;
-constexpr uint8_t kLastShortCondition = 0x7f;
-constexpr uint8_t kFirstNearCondition = 0x8c;
-constexpr uint8_t kLastNearCondition = 0x8f;
 constexpr uint8_t kBelowCount = 0x63;
 constexpr uint8_t kAtCount = 0x64;
-constexpr size_t kCompareBytes = 3;
-constexpr size_t kShortJumpBytes = 2;
-constexpr size_t kNearJumpBytes = 6;
-constexpr size_t kJumpBytes = 5;
-constexpr size_t kTrampolineBytes = 20;
 constexpr size_t kFunctionWindow = 0x8000;
 constexpr int kLeastTableSites = 60;
 constexpr int kMostTableSites = 140;
@@ -63,15 +48,7 @@ constexpr int kMostCellSites = 12;
 constexpr int kLeastRandomArrays = 2;
 constexpr int kMostRandomArrays = 6;
 
-struct Bound
-{
-	uint8_t* at;
-	uint8_t modrm;
-	uint8_t condition;
-	uint8_t counted;
-	size_t bytes;
-	uint8_t* target;
-};
+using Bound = CompareTrampoline::Site;
 
 struct Cell
 {
@@ -168,45 +145,15 @@ bool Holds(const uint8_t* at, const uint32_t* wanted, int count)
 
 bool Decoded(uint8_t* at, Bound& out)
 {
-	if (at[0] != kCompareGroup || at[1] < kFirstRegisterForm)
+	if (!CompareTrampoline::Decode(at, out))
 		return false;
 
-	if (at[2] != kBelowCount && at[2] != kAtCount)
-		return false;
-
-	uint8_t* const jump = at + kCompareBytes;
-
-	if (jump[0] >= kFirstShortCondition && jump[0] <= kLastShortCondition)
-	{
-		out.condition = static_cast<uint8_t>(jump[0] & 0x0f);
-		out.bytes = kShortJumpBytes;
-		out.target = jump + kShortJumpBytes + static_cast<int8_t>(jump[1]);
-	}
-	else if (jump[0] == kTwoByte && jump[1] >= kFirstNearCondition &&
-		jump[1] <= kLastNearCondition)
-	{
-		int32_t relative = 0;
-		memcpy(&relative, jump + 2, sizeof(relative));
-
-		out.condition = static_cast<uint8_t>(jump[1] & 0x0f);
-		out.bytes = kNearJumpBytes;
-		out.target = jump + kNearJumpBytes + relative;
-	}
-	else
-	{
-		return false;
-	}
-
-	out.at = at;
-	out.modrm = at[1];
-	out.counted = at[2];
-
-	return true;
+	return out.counted == kBelowCount || out.counted == kAtCount;
 }
 
 void Bounds(const uint32_t* arrays, int count, std::vector<Bound>& out)
 {
-	for (size_t at = 0; at + kCompareBytes + kNearJumpBytes <= g_textBytes; ++at)
+	for (size_t at = 0; at + CompareTrampoline::kLongestSite <= g_textBytes; ++at)
 	{
 		Bound bound = {};
 
@@ -217,43 +164,11 @@ void Bounds(const uint32_t* arrays, int count, std::vector<Bound>& out)
 	}
 }
 
-bool Emit(const Bound& bound, uint8_t* trampoline, int ceiling)
+bool Lift(const Bound& bound, uint8_t* trampoline, int ceiling)
 {
 	const int32_t wanted = bound.counted == kAtCount ? ceiling : ceiling - 1;
 
-	uint8_t body[kTrampolineBytes] = {};
-	size_t at = 0;
-
-	body[at++] = kCompareWide;
-	body[at++] = bound.modrm;
-	memcpy(body + at, &wanted, sizeof(wanted));
-	at += sizeof(wanted);
-
-	body[at++] = kTwoByte;
-	body[at++] = static_cast<uint8_t>(kNearCondition | bound.condition);
-
-	const int32_t toTarget = static_cast<int32_t>(bound.target - (trampoline + at + 4));
-	memcpy(body + at, &toTarget, sizeof(toTarget));
-	at += sizeof(toTarget);
-
-	uint8_t* const resume = bound.at + kCompareBytes + bound.bytes;
-
-	body[at++] = kJumpNear;
-
-	const int32_t toResume = static_cast<int32_t>(resume - (trampoline + at + 4));
-	memcpy(body + at, &toResume, sizeof(toResume));
-	at += sizeof(toResume);
-
-	memcpy(trampoline, body, kTrampolineBytes);
-
-	uint8_t patch[kCompareBytes + kNearJumpBytes];
-	memset(patch, kNop, sizeof(patch));
-	patch[0] = kJumpNear;
-
-	const int32_t toTrampoline = static_cast<int32_t>(trampoline - (bound.at + kJumpBytes));
-	memcpy(patch + 1, &toTrampoline, sizeof(toTrampoline));
-
-	return Poke(bound.at, patch, kCompareBytes + bound.bytes);
+	return CompareTrampoline::Emit(bound, trampoline, wanted);
 }
 
 uint8_t* Widened(uintptr_t stock, int entries, int padded, uint32_t beyond)
@@ -601,7 +516,7 @@ bool BgCeiling::Initialize()
 
 	uint8_t* const wideList = Widened(list, kWideListEntries, kPaddedListEntries, 0);
 	uint8_t* const trampolines = static_cast<uint8_t*>(VirtualAlloc(nullptr,
-		bounds.size() * kTrampolineBytes, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+		bounds.size() * CompareTrampoline::kBytes, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
 
 	if (wideTable == nullptr || wideList == nullptr || trampolines == nullptr)
 	{
@@ -613,7 +528,7 @@ bool BgCeiling::Initialize()
 	int lifted = 0;
 
 	for (size_t i = 0; i < bounds.size(); ++i)
-		lifted += Emit(bounds[i], trampolines + i * kTrampolineBytes, kWideNumbers) ? 1 : 0;
+		lifted += Lift(bounds[i], trampolines + i * CompareTrampoline::kBytes, kWideNumbers) ? 1 : 0;
 
 	const int repointed = Repoint(tableSites, wideTable) + Repoint(listSites, wideList);
 

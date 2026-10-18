@@ -37,6 +37,52 @@ bool EndsWith(const std::string& text, const char* suffix)
 	return _stricmp(text.c_str() + text.size() - length, suffix) == 0;
 }
 
+void ReadAssets(const Json::Value& root, GitHubRelease::Release& out)
+{
+	const Json::Value* const assets = root.Find("assets");
+
+	if (assets == nullptr || !assets->IsArray())
+		return;
+
+	for (size_t i = 0; i < assets->Count(); ++i)
+	{
+		const Json::Value* const entry = assets->At(i);
+
+		if (entry == nullptr || !entry->IsObject())
+			continue;
+
+		GitHubRelease::Asset asset;
+		asset.name = entry->MemberString("name");
+		asset.url = entry->MemberString("browser_download_url");
+		asset.size = entry->MemberUnsigned("size");
+
+		if (asset.name.empty() || asset.url.empty())
+			continue;
+
+		out.assets.push_back(asset);
+	}
+}
+
+bool ReadRelease(const Json::Value& root, GitHubRelease::Release& out)
+{
+	out = GitHubRelease::Release();
+	out.tag = root.MemberString("tag_name");
+
+	if (out.tag.empty())
+		return false;
+
+	out.version = StripTagPrefix(out.tag);
+	out.title = root.MemberString("name");
+	out.notes = root.MemberString("body");
+	out.page = root.MemberString("html_url", UNI2_IM_RELEASE_PAGE);
+	out.published = root.MemberString("published_at");
+	out.draft = root.MemberBool("draft");
+	out.prerelease = root.MemberBool("prerelease");
+
+	ReadAssets(root, out);
+	return true;
+}
+
 }
 
 const GitHubRelease::Asset* GitHubRelease::Release::FindAsset(const char* name) const
@@ -102,43 +148,38 @@ bool GitHubRelease::ParseLatest(const std::string& json, Release& out, std::stri
 		return false;
 	}
 
-	out.tag = root.MemberString("tag_name");
-
-	if (out.tag.empty())
+	if (!ReadRelease(root, out))
 	{
 		outError = "the answer carries no tag";
 		return false;
 	}
 
-	out.version = StripTagPrefix(out.tag);
-	out.title = root.MemberString("name");
-	out.notes = root.MemberString("body");
-	out.page = root.MemberString("html_url", UNI2_IM_RELEASE_PAGE);
-	out.published = root.MemberString("published_at");
-	out.draft = root.MemberBool("draft");
-	out.prerelease = root.MemberBool("prerelease");
+	return true;
+}
 
-	const Json::Value* const assets = root.Find("assets");
+bool GitHubRelease::ParseList(const std::string& json, std::vector<Release>& out,
+	std::string& outError)
+{
+	out.clear();
+	outError.clear();
 
-	if (assets == nullptr || !assets->IsArray())
-		return true;
+	Json::Value root;
 
-	for (size_t i = 0; i < assets->Count(); ++i)
+	if (!Json::Parse(json, root) || !root.IsArray())
 	{
-		const Json::Value* const entry = assets->At(i);
+		outError = "the answer was not the release list";
+		return false;
+	}
 
-		if (entry == nullptr || !entry->IsObject())
+	for (size_t i = 0; i < root.Count(); ++i)
+	{
+		const Json::Value* const entry = root.At(i);
+		Release release;
+
+		if (entry == nullptr || !entry->IsObject() || !ReadRelease(*entry, release))
 			continue;
 
-		Asset asset;
-		asset.name = entry->MemberString("name");
-		asset.url = entry->MemberString("browser_download_url");
-		asset.size = entry->MemberUnsigned("size");
-
-		if (asset.name.empty() || asset.url.empty())
-			continue;
-
-		out.assets.push_back(asset);
+		out.push_back(release);
 	}
 
 	return true;
@@ -152,4 +193,14 @@ bool GitHubRelease::FetchLatest(Release& out, std::string& outError)
 		return false;
 
 	return ParseLatest(json, out, outError);
+}
+
+bool GitHubRelease::FetchAll(std::vector<Release>& out, std::string& outError)
+{
+	std::string json;
+
+	if (!Http::GetText(UNI2_IM_RELEASES_API, json, outError))
+		return false;
+
+	return ParseList(json, out, outError);
 }

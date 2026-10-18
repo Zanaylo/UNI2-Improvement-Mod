@@ -539,7 +539,7 @@ void WindowManager::OpenUpdateNotifier()
 
 void WindowManager::AnnounceUpdate()
 {
-	if (m_updateAnnounced || !UpdateCheck::HasNewer())
+	if (m_updateAnnounced || !UpdateCheck::HasNewer() || UpdateCheck::IsLatestSkipped())
 		return;
 
 	m_updateAnnounced = true;

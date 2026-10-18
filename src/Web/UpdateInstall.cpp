@@ -4,6 +4,7 @@
 #include "Core/info.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Engine/SaveData.h"
 
 #include <Windows.h>
 
@@ -12,8 +13,12 @@
 
 namespace {
 
+constexpr DWORD kSaveWaitLimitMs = 15000;
+
 std::atomic<bool> g_launchWanted{ false };
 std::string g_error;
+bool g_closing = false;
+DWORD g_closingSince = 0;
 
 std::string UpdaterPath()
 {
@@ -53,6 +58,61 @@ bool LaunchUpdater(const std::string& updater)
 	return true;
 }
 
+void BeginClosing()
+{
+	if (!UpdateInstall::IsAvailable())
+	{
+		g_error = UNI2_IM_UPDATER_EXE " is not next to " UNI2_IM_GAME_EXE ". Download the release "
+			"and unzip it there yourself.";
+		return;
+	}
+
+	g_closing = true;
+	g_closingSince = GetTickCount();
+
+	if (SaveData::IsBusy())
+		LOG("UpdateInstall: the game is writing its save, closing once it is done");
+}
+
+bool SaveStillWriting()
+{
+	if (!SaveData::IsBusy())
+		return false;
+
+	const DWORD waited = GetTickCount() - g_closingSince;
+
+	if (waited >= kSaveWaitLimitMs)
+	{
+		LOG("UpdateInstall: the save was still being written after %lu ms, closing anyway", waited);
+		return false;
+	}
+
+	SaveData::Pump();
+	return true;
+}
+
+void HandOver()
+{
+	g_closing = false;
+
+	if (!LaunchUpdater(UpdaterPath()))
+	{
+		g_error = "The updater did not start. Download the release and unzip it next to "
+			UNI2_IM_GAME_EXE " yourself.";
+		return;
+	}
+
+	LOG("UpdateInstall: handing over to " UNI2_IM_UPDATER_EXE " and closing the game after %lu ms",
+		GetTickCount() - g_closingSince);
+	Ini::Flush();
+	ExitProcess(0);
+}
+
+}
+
+bool UpdateInstall::IsAvailable()
+{
+	return GetFileAttributesA(UpdaterPath().c_str()) != INVALID_FILE_ATTRIBUTES;
 }
 
 void UpdateInstall::Start()
@@ -63,28 +123,13 @@ void UpdateInstall::Start()
 
 void UpdateInstall::OnFrame()
 {
-	if (!g_launchWanted.exchange(false))
+	if (g_launchWanted.exchange(false))
+		BeginClosing();
+
+	if (!g_closing || SaveStillWriting())
 		return;
 
-	const std::string updater = UpdaterPath();
-
-	if (GetFileAttributesA(updater.c_str()) == INVALID_FILE_ATTRIBUTES)
-	{
-		g_error = UNI2_IM_UPDATER_EXE " is not next to " UNI2_IM_GAME_EXE ". Download the release "
-			"and unzip it there yourself.";
-		return;
-	}
-
-	if (!LaunchUpdater(updater))
-	{
-		g_error = "The updater did not start. Download the release and unzip it next to "
-			UNI2_IM_GAME_EXE " yourself.";
-		return;
-	}
-
-	LOG("UpdateInstall: handing over to " UNI2_IM_UPDATER_EXE " and closing the game");
-	Ini::Flush();
-	ExitProcess(0);
+	HandOver();
 }
 
 const char* UpdateInstall::GetError()

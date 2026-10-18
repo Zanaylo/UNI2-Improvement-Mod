@@ -3,6 +3,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
+#include "Game/Audio/BgmSelectFile.h"
 #include "Game/Audio/BgmTableFile.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Audio/BgmThemes.h"
@@ -14,6 +15,7 @@
 
 #include <Windows.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -296,43 +298,14 @@ void DropPackBlock(std::vector<uint8_t>& table, const char* packName)
 	table.assign(text.begin(), text.end());
 }
 
-void SplitPicker(const std::vector<uint8_t>& blob, const char* tag, std::string& prefix,
-	std::vector<std::string>& records)
+void DropPackRecords(BgmSelectFile::Contents& contents, const char* tag)
 {
-	prefix.clear();
-	records.clear();
-
 	const std::string mine = std::string("(") + tag + ")";
+	std::vector<BgmSelectFile::Record>& records = contents.records;
 
-	std::string current;
-	bool open = false;
-
-	for (const std::string& raw : Lines(blob))
-	{
-		std::string line = raw;
-		Trim(line);
-
-		if (line.size() > 2 && line[0] == '[' && line.back() == ']')
-		{
-			if (open && current.find(mine) == std::string::npos)
-				records.push_back(current);
-
-			current.clear();
-			open = true;
-			continue;
-		}
-
-		if (open)
-		{
-			current += raw + "\r\n";
-			continue;
-		}
-
-		prefix += raw + "\r\n";
-	}
-
-	if (open && current.find(mine) == std::string::npos)
-		records.push_back(current);
+	records.erase(std::remove_if(records.begin(), records.end(),
+		[&mine](const BgmSelectFile::Record& record) { return record.body.find(mine) != std::string::npos; }),
+		records.end());
 }
 
 bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* prefix,
@@ -371,7 +344,7 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 	std::string added;
 	std::string pack = std::string("#pack ") + packName + "\r\n#tag " + tag +
 		"\r\n#author Raito\r\n\r\n";
-	std::string picker;
+	std::vector<BgmSelectFile::Record> picker;
 
 	int slot = kFirstSlot;
 	int written = 0;
@@ -415,9 +388,8 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 				slot, stored.c_str(), track.loop.c_str(), track.loopPos.c_str());
 			added += line;
 
-			sprintf_s(line, "num = %d\r\nname = %s (%s)\r\n\r\n", slot,
-				track.title.empty() ? stored.c_str() : track.title.c_str(), tag);
-			picker += line;
+			const std::string title = track.title.empty() ? stored : track.title;
+			picker.push_back({ slot, BgmSelectFile::Body(slot, title + " (" + tag + ")") });
 
 			++slot;
 		}
@@ -447,35 +419,22 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 	WriteWhole(Combine(bgmFolder, "bgm.txt"),
 		reinterpret_cast<const uint8_t*>(merged.data()), merged.size());
 
-	std::vector<uint8_t> selectBase = BaseFile("Mods\\grpdat\\CSel\\bgmselect.txt", "CSel",
-		"bgmselect.txt");
+	BgmSelectFile::Contents select;
+	BgmSelectFile::Split(BgmSelectFile::ReadBase(), select);
 
-	if (!selectBase.empty() && !picker.empty())
+	if (!select.records.empty() && !picker.empty())
 	{
-		std::string prefix;
-		std::vector<std::string> records;
-		SplitPicker(selectBase, tag, prefix, records);
+		DropPackRecords(select, tag);
 
-		size_t at = 0;
-
-		while (at < picker.size() && records.size() < kPickerLimit)
+		for (const BgmSelectFile::Record& record : picker)
 		{
-			const size_t stop = picker.find("\r\n\r\n", at);
-			const size_t end = stop == std::string::npos ? picker.size() : stop + 4;
+			if (select.records.size() >= kPickerLimit)
+				break;
 
-			records.push_back(picker.substr(at, end - at));
-			at = end;
+			select.records.push_back(record);
 		}
 
-		std::string list = prefix;
-
-		for (size_t i = 0; i < records.size(); ++i)
-		{
-			char header[16] = {};
-			sprintf_s(header, "[%02d]\r\n", static_cast<int>(i));
-			list += header;
-			list += records[i];
-		}
+		const std::string list = BgmSelectFile::Compose(select);
 
 		WriteWhole(Combine(selectFolder, "bgmselect.txt"),
 			reinterpret_cast<const uint8_t*>(list.data()), list.size());

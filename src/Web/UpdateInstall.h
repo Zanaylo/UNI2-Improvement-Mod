@@ -2,6 +2,8 @@
 
 namespace UpdateInstall
 {
+	bool IsAvailable();
+
 	void Start();
 
 	void OnFrame();

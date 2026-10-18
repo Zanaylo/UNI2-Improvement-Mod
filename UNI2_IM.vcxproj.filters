@@ -303,6 +303,9 @@
     <ClCompile Include="src\Core\Formats\Json.cpp">
       <Filter>Core\Formats</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Formats\Markdown.cpp">
+      <Filter>Core\Formats</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Lobby\NameCensor.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
@@ -532,6 +535,12 @@
       <Filter>Game\Audio</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Audio\BgmLibrary.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\BgmPicker.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\BgmSelectFile.cpp">
       <Filter>Game\Audio</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Files\ModFiles.cpp">
@@ -1062,6 +1071,9 @@
     <ClCompile Include="src\Hooks\HookStub.cpp">
       <Filter>Hooks</Filter>
     </ClCompile>
+    <ClCompile Include="src\Hooks\CompareTrampoline.cpp">
+      <Filter>Hooks</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Harness\GameDebugCommands.cpp">
       <Filter>Core\Harness</Filter>
     </ClCompile>
@@ -1117,6 +1129,12 @@
       <Filter>Overlay\Hud</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Widgets\UiText.cpp">
+      <Filter>Overlay\Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Widgets\BoldText.cpp">
+      <Filter>Overlay\Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Widgets\MarkdownView.cpp">
       <Filter>Overlay\Widgets</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Widgets\UiScale.cpp">
@@ -2066,6 +2084,9 @@
     <ClInclude Include="src\Core\Formats\Json.h">
       <Filter>Core\Formats</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Formats\Markdown.h">
+      <Filter>Core\Formats</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Lobby\NameCensor.h">
       <Filter>Game\Lobby</Filter>
     </ClInclude>
@@ -2304,6 +2325,12 @@
       <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Audio\BgmLibrary.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmPicker.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmSelectFile.h">
       <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Files\ModFiles.h">
@@ -2774,6 +2801,9 @@
     <ClInclude Include="src\Hooks\HookStub.h">
       <Filter>Hooks</Filter>
     </ClInclude>
+    <ClInclude Include="src\Hooks\CompareTrampoline.h">
+      <Filter>Hooks</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Harness\GameDebugCommands.h">
       <Filter>Core\Harness</Filter>
     </ClInclude>
@@ -2829,6 +2859,12 @@
       <Filter>Overlay\Hud</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Widgets\UiText.h">
+      <Filter>Overlay\Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Widgets\BoldText.h">
+      <Filter>Overlay\Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Widgets\MarkdownView.h">
       <Filter>Overlay\Widgets</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Widgets\UiScale.h">
