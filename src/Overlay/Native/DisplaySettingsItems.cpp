@@ -70,7 +70,7 @@ const Setting kSettings[] = {
 	{ "Stage resolution", "The size the stage is drawn at. Lower is lighter, higher is sharper. Needs a restart.",
 		StageSteps::kCount, &StageResolution::GetLevelName, StageSteps::kGame,
 		&StageResolution::GetLevel, &StageResolution::Apply },
-	{ "Characters and text", "Draw characters and text at the stage resolution too. Needs a restart.",
+	{ "Characters and text filters", "Draw characters and text at the stage resolution too. Needs a restart.",
 		SceneLayer::Level_COUNT, &SceneLayer::GetLevelName, SceneLayer::Level_Native,
 		&SceneLayer::GetLevel, &SceneLayer::Apply },
 	{ "Character edges", "Smooth softens the character art. Pixels shows its own pixels, enlarged.",

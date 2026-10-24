@@ -333,8 +333,8 @@ Option, Display, Improvement Mod Display Settings. São duas opções:
 
 O jogo desenha a cena em 1280x720 e estica até a output resolution. O palco é 3D, então a render
 resolution desenha ele com detalhe de verdade, como o Melty Blood Type Lumina e o BlazBlue.
-Personagens, efeitos, menus e texto são arte de 720p. Com **Characters and text at this size too**
-(ligado por padrão) eles também são desenhados na render resolution. Logo abaixo, **Characters** é
+Personagens, efeitos, menus e texto são arte de 720p. Com **Characters and text filters**
+(desligado por padrão) eles também são desenhados na render resolution. Logo abaixo, **Characters** é
 Smooth (bordas suaves) ou Pixels (os pixels da própria arte, ampliados), e **Text** é Smooth (igual ao
 frame meter) ou Sharp (bordas duras). As duas valem na hora. A arte não tem detalhe escondido,
 então menus e HUD ficam tão suaves quanto antes, não mais detalhados. No ini é

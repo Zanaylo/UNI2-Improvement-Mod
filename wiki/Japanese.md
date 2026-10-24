@@ -212,7 +212,7 @@ Performance ウィンドウのタブです。60 fps が出ない PC 向けです
 | **Output resolution** | 画面に送る最終画像のサイズ | 720p の画像の引き伸ばし (Shaders タブのアップスケールフィルター) |
 | **Render resolution** | 3D ステージ | ステージの細部 |
 
-ゲームはシーンを 1280x720 で描き、Output resolution まで引き伸ばします。ステージは 3D なので、Render resolution で本当に細かく描かれます。キャラクター、エフェクト、メニュー、文字は 720p の絵です。**Characters and text at this size too** (初期設定でオン) では、これらも Render resolution で描かれます。その下の **Characters** は Smooth (滑らかな輪郭) か Pixels (絵のピクセルをそのまま拡大)、**Text** は Smooth (フレームメーターと同じ) か Sharp (くっきりした輪郭) です。どちらもすぐに反映されます。絵にない細部は増えないので、メニューと HUD は以前と同じ滑らかさです。ini では `SpritesAtRenderResolution`、`SmoothCharacters`、`SharpText` です。**両方を画面の解像度に合わせてください。**
+ゲームはシーンを 1280x720 で描き、Output resolution まで引き伸ばします。ステージは 3D なので、Render resolution で本当に細かく描かれます。キャラクター、エフェクト、メニュー、文字は 720p の絵です。**Characters and text filters** (初期設定ではオフ) では、これらも Render resolution で描かれます。その下の **Characters** は Smooth (滑らかな輪郭) か Pixels (絵のピクセルをそのまま拡大)、**Text** は Smooth (フレームメーターと同じ) か Sharp (くっきりした輪郭) です。どちらもすぐに反映されます。絵にない細部は増えないので、メニューと HUD は以前と同じ滑らかさです。ini では `SpritesAtRenderResolution`、`SmoothCharacters`、`SharpText` です。**両方を画面の解像度に合わせてください。**
 
 どちらも再起動が必要で、POTATO MODE 中は Render resolution は無効です。ini では `Supersample` と `InternalResolution` です。
 

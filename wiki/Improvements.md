@@ -11,7 +11,7 @@ Improvement Mod Display Settings. It is the opposite of POTATO MODE: the game is
 
 The game draws its scene at 1280x720 and stretches it to the output resolution. The stage is 3D, so
 the render resolution draws it with real detail, the way Melty Blood Type Lumina and BlazBlue do.
-Characters, effects, menus and text are 720p art. With **Characters and text at this size too** (on by
+Characters, effects, menus and text are 720p art. With **Characters and text filters** (off by
 default) they are drawn at the render resolution as well. Under it, **Characters** is Smooth (soft
 edges) or Pixels (the art's own pixels, enlarged), and **Text** is Smooth (like the frame meter) or
 Sharp (hard edges). Both apply right away. Art has no hidden detail, so menus and the HUD look as
@@ -42,7 +42,7 @@ Windowed and borderless only. In the ini it is `Supersample`.
 
 In the ini it is `InternalResolution`.
 
-**Characters and text at this size too** draws everything else at the render resolution as well. Off,
+**Characters and text filters** draws everything else at the render resolution as well. Off,
 characters, effects and menus stay a 720p picture: where something covers the stage, that pixel comes
 from the 720p picture, and with the upscale filter Off the mod uses bicubic for it. Measured on a 4K
 screen: still 60 fps with no frame over 18 ms in training, about 2 MB more memory. Needs a restart. In

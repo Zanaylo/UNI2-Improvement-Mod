@@ -1188,7 +1188,7 @@ bool PerformanceWindow::DrawStageResolution()
 
 	bool wholeScene = SceneLayer::GetLevel() == SceneLayer::Level_RenderResolution;
 
-	if (ImGui::Checkbox("Characters and text at this size too", &wholeScene))
+	if (ImGui::Checkbox("Characters and text filters", &wholeScene))
 	{
 		SceneLayer::Apply(wholeScene ? SceneLayer::Level_RenderResolution : SceneLayer::Level_Native);
 		changed = true;

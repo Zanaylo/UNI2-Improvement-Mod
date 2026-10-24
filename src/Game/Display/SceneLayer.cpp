@@ -6,7 +6,7 @@
 
 namespace {
 
-const char* const kNames[SceneLayer::Level_COUNT] = { "720p", "Stage resolution" };
+const char* const kNames[SceneLayer::Level_COUNT] = { "Off", "On" };
 
 int Clamp(int level)
 {
@@ -26,7 +26,7 @@ void SceneLayer::Apply(int level)
 
 	g_modVals.spritesAtRenderResolution = clamped == Level_RenderResolution;
 	Settings::SaveInt("Graphics", "SpritesAtRenderResolution", clamped);
-	LOG("characters and text drawn at %s, applies at the next start", kNames[clamped]);
+	LOG("characters and text filters %s, applies at the next start", kNames[clamped]);
 }
 
 const char* SceneLayer::GetLevelName(int level)

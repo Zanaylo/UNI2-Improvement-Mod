@@ -199,7 +199,7 @@ restores them. Change the other keys only if you want to push one further than t
 | `PotatoStage` | `0` | The stage quality on the POTATO MODE tab, at every `PotatoMode` level including off: 0 off (1280x720), 1 540p, 2 360p, 3 270p. Takes the place of `InternalResolution` while it is set. Needs a restart. |
 | `Supersample` | `0` | The output resolution on the Improvements tab, the size of the picture sent to your screen: 0 off (the game's own Display option), 1 1080p, 2 1440p, 3 4K. Ignored while `PotatoMode` is set, because both set the drawing size. |
 | `InternalResolution` | `0` | The render resolution on the Improvements tab, the size the game draws its 3D stage at: 0 off (1280x720), 1 1080p, 2 1440p, 3 4K. Set it to the same size as `Supersample`. Needs a restart, off while `PotatoMode` or `PotatoStage` is set. |
-| `SpritesAtRenderResolution` | `1` | Characters and text at this size too: 1 draws characters, effects, menus and text at `InternalResolution` too; 0 keeps them a 720p picture. Only above 720p. Needs a restart. |
+| `SpritesAtRenderResolution` | `0` | Characters and text filters: 1 draws characters, effects, menus and text at `InternalResolution` too; 0 keeps them a 720p picture. Only above 720p. Needs a restart. |
 | `SmoothCharacters` | `1` | With `SpritesAtRenderResolution`: 1 smooths the edges of the character art, 0 shows its own pixels, enlarged. Applies right away. |
 | `SharpText` | `0` | With `SpritesAtRenderResolution`: 0 draws the game's text smooth, like the frame meter; 1 gives it hard edges. Applies right away. |
 | `Sharpen` | `0` | Sharpening on the finished frame, 0 to 100. 0 is off, 40-60 is the useful range. Applies right away and works at any drawing size, POTATO MODE included. |
