@@ -138,6 +138,8 @@ void NetplayWindow::Draw()
 		DrawRoomNamePrivacy();
 		ImGui::Separator();
 		DrawIrPrivacy();
+		ImGui::Separator();
+		DrawSteamPresence();
 		ImGui::EndTabItem();
 	}
 
@@ -903,6 +905,19 @@ void NetplayWindow::DrawIrPrivacy()
 		return;
 
 	ImGui::Text("%ld IR number(s) hidden this run.", IrHider::NumbersHidden());
+}
+
+void NetplayWindow::DrawSteamPresence()
+{
+	ImGui::TextUnformatted("Steam status");
+
+	bool show = g_modVals.steamRichPresence;
+
+	if (ImGui::Checkbox("Show what I am doing to Steam friends", &show))
+	{
+		g_modVals.steamRichPresence = show;
+		Settings::SaveInt("Privacy", "SteamRichPresence", show ? 1 : 0);
+	}
 }
 
 namespace {

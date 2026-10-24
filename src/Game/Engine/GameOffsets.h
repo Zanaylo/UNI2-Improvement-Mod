@@ -8,10 +8,10 @@ namespace GameOffsets
 	constexpr uintptr_t kCharaStackBase = 0x5f2a94;
 	constexpr uintptr_t kCharaStackTop = 0x5f2a98;
 
-	constexpr uintptr_t kPlayerDataVTable = 0x5536c8;
+	constexpr uintptr_t kPlayerDataVTable = 0x55369c;
 	constexpr uintptr_t kPlayerDataSize = 0xbc0;
 
-	constexpr uintptr_t kEffectVTable = 0x556f28;
+	constexpr uintptr_t kEffectVTable = 0x556ef4;
 
 	constexpr uintptr_t kEffectArrayBase = 0x87d430;
 	constexpr uintptr_t kEffectArrayStride = 0x7dc;
@@ -43,9 +43,9 @@ namespace GameOffsets
 
 	constexpr uintptr_t kPlayerDataFacing = 0x644;
 
-	constexpr uintptr_t kScaleCommon = 0x569fac;
-	constexpr uintptr_t kScaleX = 0x569f98;
-	constexpr uintptr_t kScaleY = 0x56a3f0;
+	constexpr uintptr_t kScaleCommon = 0x569f4c;
+	constexpr uintptr_t kScaleX = 0x569f38;
+	constexpr uintptr_t kScaleY = 0x56a390;
 	constexpr uintptr_t kScreenMatrix = 0x85d058;
 
 	constexpr uintptr_t kCameraObject = 0x85cca0;
@@ -628,6 +628,13 @@ namespace GameOffsets
 
 	constexpr uintptr_t kReplayTakeState = 0x1d89f10;
 	constexpr uint32_t kReplayTakePlaying = 2;
+	constexpr uint32_t kReplayTakeRecording = 1;
+
+	constexpr uintptr_t kFnSerializeReplay = 0x218480;
+	constexpr uintptr_t kFnFreeByteVector = 0x10260;
+	constexpr uintptr_t kReplayRoundsBegin = 0xe8;
+	constexpr uintptr_t kReplayRoundsEnd = 0xec;
+	constexpr size_t kReplayRoundStride = 0xc2c;
 
 	constexpr uintptr_t kSceneId = 0x5a4a84;
 	constexpr uintptr_t kSceneRequest = 0x776b64;
@@ -718,7 +725,7 @@ namespace GameOffsets
 	constexpr uint32_t kBattleModeNetworkMenu = 0;
 	constexpr int32_t kSubModeNone = -1;
 
-	constexpr uintptr_t kVersionString = 0x55cdb4;
+	constexpr uintptr_t kVersionString = 0x55cd74;
 
 	constexpr uintptr_t kFnMessageLoop = 0x4e5cc0;
 	constexpr uintptr_t kFnGameThread = 0x4e34e0;
@@ -741,7 +748,7 @@ namespace GameOffsets
 	constexpr uintptr_t kSiteScriptConsoleEnabledRead = 0x48082c;
 	constexpr uintptr_t kSiteScriptConsoleHandleRead = 0x48084a;
 	constexpr uintptr_t kFrameWaitPassCallback = 0x6550d8;
-	constexpr uintptr_t kFramePeriodSeconds = 0x569fb8;
+	constexpr uintptr_t kFramePeriodSeconds = 0x569f58;
 	constexpr uintptr_t kSiteFrameWaitHasQpcRead = 0xdc0ca;
 	constexpr uintptr_t kSiteFrameWaitFrozenRead = 0xdc0f2;
 	constexpr uintptr_t kSiteFrameWaitPeriodRead = 0xdc199;
@@ -765,16 +772,16 @@ namespace GameOffsets
 	constexpr uintptr_t kRenderVirtualCopyBlock = 0x4df590;
 	constexpr int kRenderVirtualCopyBlockLength = 20;
 
-	constexpr uintptr_t kReferenceHalfWidthLiteral = 0x56a39c;
-	constexpr uintptr_t kReferenceHalfHeightLiteral = 0x56a364;
+	constexpr uintptr_t kReferenceHalfWidthLiteral = 0x56a33c;
+	constexpr uintptr_t kReferenceHalfHeightLiteral = 0x56a304;
 
 	constexpr uintptr_t kCameraHalfWidth = 0x85cf04;
 	constexpr uintptr_t kCameraHalfHeight = 0x85cf08;
 	constexpr uintptr_t kCameraRcpHalfWidth = 0x85cf0c;
 	constexpr uintptr_t kCameraRcpHalfHeight = 0x85cf10;
 
-	constexpr uintptr_t kReferenceHalfWidth[] = { 0x569f98, 0x56a3ec };
-	constexpr uintptr_t kReferenceHalfHeight[] = { 0x569fa0, 0x56a3f0 };
+	constexpr uintptr_t kReferenceHalfWidth[] = { 0x569f38, 0x56a38c };
+	constexpr uintptr_t kReferenceHalfHeight[] = { 0x569f40, 0x56a390 };
 
 	constexpr uintptr_t kRenderProjectionWidthOperand = 0x11bab4;
 	constexpr uintptr_t kRenderProjectionHeightOperand = 0x11baa1;
@@ -843,12 +850,12 @@ namespace GameOffsets
 
 	constexpr uintptr_t kFnLoadBattleScript = 0x4a6cd0;
 	constexpr uintptr_t kBattleScriptContext = 0x4401008;
-	constexpr uintptr_t kBattleInitPath = 0x562090;
-	constexpr uintptr_t kBattleInitRoot = 0x5620c4;
-	constexpr uintptr_t kBattleStdPath = 0x5620ac;
-	constexpr uintptr_t kBattleStdRoot = 0x5620d0;
-	constexpr uintptr_t kComBasePath = 0x55458c;
-	constexpr uintptr_t kComBaseRoot = 0x5545a0;
+	constexpr uintptr_t kBattleInitPath = 0x562038;
+	constexpr uintptr_t kBattleInitRoot = 0x56206c;
+	constexpr uintptr_t kBattleStdPath = 0x562054;
+	constexpr uintptr_t kBattleStdRoot = 0x562078;
+	constexpr uintptr_t kComBasePath = 0x554564;
+	constexpr uintptr_t kComBaseRoot = 0x554578;
 
 	constexpr uintptr_t kFnReloadBattleScripts = 0x4dcb00;
 	constexpr uintptr_t kFnLoadVectorTable = 0x129260;
@@ -936,7 +943,7 @@ namespace GameOffsets
 	constexpr uintptr_t kSiteTimeSyncTail = 0x4dde23;
 	constexpr uintptr_t kSiteAdvantageRoundTrip = 0x9c888;
 	constexpr uintptr_t kSiteTimeSyncAverages = 0x9cd23;
-	constexpr uintptr_t kTimeSyncAverageDivisor = 0x56a2d0;
+	constexpr uintptr_t kTimeSyncAverageDivisor = 0x56a270;
 	constexpr uintptr_t kGgpoSyncPlayers = 0x59c;
 	constexpr uintptr_t kGgpoSyncInputSize = 0x5a0;
 	constexpr uintptr_t kGgpoLastConfirmedFrame = 0x5a8;
@@ -974,8 +981,8 @@ namespace GameOffsets
 	constexpr uintptr_t kWebRequestLaunchResult = 0x04;
 	constexpr uintptr_t kWebRequestResult = 0x0c;
 	constexpr uintptr_t kWebRequestFinished = 0x10;
-	constexpr uintptr_t kRecordScoreVTable = 0x5511e0;
-	constexpr uintptr_t kTitleCloudUploadVTable = 0x55145c;
+	constexpr uintptr_t kRecordScoreVTable = 0x5511d0;
+	constexpr uintptr_t kTitleCloudUploadVTable = 0x55144c;
 	constexpr uintptr_t kReplayUploadChain = 0x1d5966c;
 	constexpr int kReplayUploadChainIdle = 0;
 	constexpr int kReplayUploadChainDone = 6;
@@ -1009,6 +1016,9 @@ namespace GameOffsets
 	constexpr uintptr_t kStageSyncOption = 0x5a8572;
 	constexpr uint8_t kStageSyncOwn = 1;
 	constexpr uintptr_t kNetworkStagePick = 0xc7e694;
+	constexpr uintptr_t kNetworkProfile = 0xc7e670;
+	constexpr uintptr_t kNetworkProfileChara = 0x4;
+	constexpr uintptr_t kNetworkProfileColour = 0x8;
 	constexpr uintptr_t kStageOwnPick = 0x4448868;
 	constexpr uintptr_t kAfterMatchState = 0x84380c;
 	constexpr int kAfterMatchAwaitRematch = 0x401;
@@ -1041,7 +1051,7 @@ namespace GameOffsets
 	constexpr uintptr_t kSpectatorNextFrame = 0x32c0;
 	constexpr uintptr_t kSpectatorInputs = 0x32c4;
 	constexpr size_t kSpectatorInputBytes = 0x2c;
-	constexpr int kSpectatorInputSlots = 64;
+	constexpr int kSpectatorInputSlots = 4096;
 
 	constexpr size_t kSessionDescriptionSize = 0x280;
 	constexpr size_t kSessionHolderSize = 0x908;

@@ -89,6 +89,39 @@ StallProfile::Leaf LeafOf(uintptr_t instruction)
 	return StallProfile::Leaf_Other;
 }
 
+constexpr int kMostNamedOthers = 8;
+
+HMODULE g_namedOthers[kMostNamedOthers] = {};
+int g_namedOtherCount = 0;
+
+bool AlreadyNamed(HMODULE module)
+{
+	for (int i = 0; i < g_namedOtherCount; ++i)
+	{
+		if (g_namedOthers[i] == module)
+			return true;
+	}
+
+	return false;
+}
+
+void NameOtherModule(uintptr_t instruction)
+{
+	HMODULE module = nullptr;
+
+	if (g_namedOtherCount >= kMostNamedOthers || !GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>(instruction), &module) ||
+		AlreadyNamed(module))
+	{
+		return;
+	}
+
+	char path[MAX_PATH] = {};
+	GetModuleFileNameA(module, path, MAX_PATH);
+	g_namedOthers[g_namedOtherCount++] = module;
+	LOG("StallSampler: 'other' samples include %s (at 0x%08x)", path, static_cast<unsigned>(instruction));
+}
+
 bool LearnImage()
 {
 	uintptr_t start = 0;
@@ -153,7 +186,12 @@ void SampleTarget()
 	uint32_t chain[StallProfile::kChainDepth] = {};
 	const int depth = StallProfile::BuildChain(g_image, context.Eip, g_stack, words, chain);
 
-	g_table.Add(chain, depth, LeafOf(context.Eip));
+	const StallProfile::Leaf leaf = LeafOf(context.Eip);
+
+	if (leaf == StallProfile::Leaf_Other)
+		NameOtherModule(context.Eip);
+
+	g_table.Add(chain, depth, leaf);
 }
 
 void SampleOnce()

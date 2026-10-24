@@ -9,6 +9,8 @@
 #include "Core/Harness/CleanFrame.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "D3D9/Device/ExclusiveSupersample.h"
+#include "D3D9/Device/ResetClock.h"
 #include "D3D9/Device/GraphicsWrapper.h"
 #include "Game/Engine/GameOffsets.h"
 #include "D3D9/Device/GameCaller.h"
@@ -106,15 +108,37 @@ const char* HeldDefaultResources()
 	return text[0] != 0 ? text : "none of the mod's";
 }
 
+void LogSwapChain(IDirect3DDevice9* device, const char* when)
+{
+	IDirect3DSwapChain9* chain = nullptr;
+	D3DPRESENT_PARAMETERS real = {};
+
+	if (FAILED(device->GetSwapChain(0, &chain)) || chain == nullptr)
+		return;
+
+	const HRESULT read = chain->GetPresentParameters(&real);
+	chain->Release();
+
+	if (FAILED(read))
+		return;
+
+	LOG("Swap chain %s: %ux%u windowed %d, %u buffer(s), swap effect %d, interval 0x%x, refresh %u, flags 0x%lx", when,
+		real.BackBufferWidth, real.BackBufferHeight, real.Windowed, real.BackBufferCount,
+		static_cast<int>(real.SwapEffect), real.PresentationInterval, real.FullScreen_RefreshRateInHz,
+		static_cast<unsigned long>(real.Flags));
+}
+
 HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* presentParameters)
 {
 	const bool isTrackedDevice = (device == g_device);
 
 	D3DPRESENT_PARAMETERS asked = {};
+	ExclusiveSupersample::Translation translation = {};
 	const bool tunable = isTrackedDevice && presentParameters != nullptr;
 
 	if (tunable)
 	{
+		translation = ExclusiveSupersample::Prepare(*presentParameters);
 		asked = *presentParameters;
 		PresentTuning::Apply(device, *presentParameters);
 	}
@@ -126,6 +150,7 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 			presentParameters ? presentParameters->BackBufferHeight : 0,
 			presentParameters ? presentParameters->Windowed : -1);
 
+		ResetClock::OnResetBegan();
 		InterlockedExchange(&g_deviceLost, 1);
 
 		WindowManager::GetInstance().OnDeviceLost();
@@ -137,6 +162,8 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 		StageCapture::OnDeviceLost();
 		ScaledTargets::OnDeviceLost();
 		StageDetail::OnDeviceLost();
+		ExclusiveSupersample::OnDeviceLost(device);
+		ResetClock::OnModReleased();
 	}
 
 	HRESULT result = g_resetHook.Original()(device, presentParameters);
@@ -152,10 +179,16 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 
 	if (isTrackedDevice)
 	{
+		ResetClock::OnResetReturned(SUCCEEDED(result));
+
 		if (SUCCEEDED(result))
 		{
 			if (presentParameters != nullptr)
+			{
+				ExclusiveSupersample::Finish(device, translation, *presentParameters);
+				LogSwapChain(device, "after reset");
 				g_presentParameters = *presentParameters;
+			}
 
 			InterlockedIncrement(&g_resetGeneration);
 			InterlockedExchange(&g_deviceLost, 0);
@@ -594,7 +627,10 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 	}
 
 	if (device == g_device)
+	{
+		ExclusiveSupersample::BeginPresent(device);
 		DisplaySync::OnPresenting();
+	}
 
 	{
 		Profiler::Scope scope(Profiler::Section_PresentDevice);
@@ -605,6 +641,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	if (device == g_device)
 	{
+		ExclusiveSupersample::EndPresent(device);
+		ResetClock::OnPresented();
 		DisplaySync::OnPresented();
 
 		if (result == D3DERR_DEVICELOST)
@@ -709,6 +747,7 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 	ScaledTargets::Attach(device);
 	PretransformedDraws::Attach(device);
 
+	LogSwapChain(device, "at install");
 	g_installed = true;
 	LOG("Device hooks installed on device 0x%p, window 0x%p", (void*)device, (void*)g_gameProc.hWndGame);
 

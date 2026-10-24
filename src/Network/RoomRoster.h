@@ -34,6 +34,8 @@ namespace RoomRoster
 	int EventCount();
 	bool GetEvent(int index, Event& out);
 
+	unsigned LastDepartureOf(uint64_t user);
+
 	int GetGhostsPrevented();
 
 	const char* DescribeFlags(int flags, char* out, int size);

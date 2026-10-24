@@ -7,6 +7,8 @@
 #include "Core/Input/BackgroundKeyboard.h"
 #include "Core/Profiler.h"
 #include "Core/SpikeWatch.h"
+#include "Core/FramePhases.h"
+#include "Core/Input/WindowsPointer.h"
 #include "Core/StallSampler.h"
 #include "Game/Audio/SoundVolumeBackground.h"
 #include "Game/Debug/GameDebug.h"
@@ -55,6 +57,7 @@
 #include "Game/Patches/GamePatches.h"
 #include "Game/Patches/PatchPacks.h"
 #include "Game/Replays/ReplayFiles.h"
+#include "Game/Replays/ReplayRescue.h"
 #include "Game/Replays/ReplayState.h"
 #include "Game/Stages/BgClear.h"
 #include "Game/Stages/BgGrade.h"
@@ -83,6 +86,7 @@
 #include "Network/RoundLog.h"
 #include "Network/GameResults.h"
 #include "Network/RoundTripSmoothing.h"
+#include "Network/Steam/RichPresence.h"
 #include "Network/SaveStatePatch.h"
 #include "Network/TimeSyncPatch.h"
 #include "Overlay/Hud/FrameMeterHud.h"
@@ -166,6 +170,8 @@ struct NamedStep
 const NamedStep kGameHooks[] = {
 	{ "game hooks: spike watch", [] { SpikeWatch::Install(); } },
 	{ "game hooks: stall sampler", [] { if (g_modVals.stallSampler) StallSampler::Start(); } },
+	{ "game hooks: frame phases", [] { FramePhases::Prepare(); } },
+	{ "game hooks: windows pointer", [] { WindowsPointer::Install(); } },
 	{ "game hooks: sound volume", [] { SoundVolumeBackground::Install(); } },
 	{ "game hooks: chara tracker", [] { CharaTracker::Install(); } },
 	{ "game hooks: frame stepper", [] { FrameStepper::Initialize(); } },
@@ -176,6 +182,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: palette draw probe", [] { if (g_modVals.showLegacyPalettes) PaletteDrawProbe::Install(); } },
 	{ "game hooks: keyboard seat", [] { KeyboardSeat::Initialize(); } },
 	{ "game hooks: replay files", [] { ReplayFiles::Initialize(); } },
+	{ "game hooks: replay rescue", [] { ReplayRescue::Initialize(); } },
 	{ "game hooks: balance rules", [] { BalanceRules::Install(); } },
 	{ "game hooks: screen shake", [] { ScreenShake::Install(); } },
 	{ "game hooks: training menu", [] { TrainingMenuItems::Install(); } },
@@ -222,6 +229,7 @@ const Task kFrame[] = {
 	[] { RoundTripSmoothing::OnFrame(); },
 	[] { RoundLog::OnFrame(); },
 	[] { GameResults::OnFrame(); },
+	[] { RichPresence::OnFrame(); },
 	[] { BackgroundUpload::OnFrame(); },
 	[] { GamePatches::Update(); },
 	[] { DataSearchPath::Assert(); },

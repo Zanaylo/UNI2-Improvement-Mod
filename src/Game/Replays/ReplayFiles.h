@@ -34,6 +34,7 @@ namespace ReplayFiles
 	void SelectAccount(int index);
 
 	bool ReadInfo(int slot, Info& out);
+	void DescribeHeader(const uint8_t* header, Info& out);
 	int CountUsed();
 
 	std::string PlayerName(const Info& info, int player);
@@ -42,6 +43,8 @@ namespace ReplayFiles
 	std::string FileNameFor(const Info& info, int matchNumber);
 
 	std::string Export(int slot);
+	std::string SaveRecord(const std::vector<uint8_t>& record, const std::string& note);
+	std::string WriteRecordFile(const std::vector<uint8_t>& record, const Info& info, const std::string& name);
 	int ExportAll(std::string& outError);
 
 	bool Import(const std::string& path, std::string& outError);

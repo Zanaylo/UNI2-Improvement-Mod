@@ -1,4 +1,5 @@
 { GameOffsets::kFnVectorReallocate, "kFnVectorReallocate", "55 8B EC 83 EC 0C 8B 45 08 53 8B D9 56 57 8B 13 2B C2 C1 F8 02" },
+{ GameOffsets::kFnFreeByteVector, "kFnFreeByteVector", "56 8B F1 8B 06 85 C0 74 3D 8B 4E 08" },
 { GameOffsets::kFnSetEffectFloatParam, "kFnSetEffectFloatParam", "55 8B EC A1 ?? ?? ?? ?? 56 57 FF 75 08 8D B0 ?? ?? ?? ??" },
 { GameOffsets::kFnCheckCancelFree, "kFnCheckCancelFree", "8B D1 33 C0 56 8B B2 54 06 00 00 85 F6" },
 { GameOffsets::kFnSetLogName, "kFnSetLogName", "55 8B EC 80 3D ?? ?? ?? ?? 00 56 75 11" },
@@ -30,6 +31,7 @@
 { GameOffsets::kFnFrameWait, "kFnFrameWait", "55 8B EC 83 E4 F8 ?? ?? ?? ?? 00 00 A1 ?? ?? ?? ?? 33 C4 89 ?? ?? ?? ?? 00 00 83 3D ?? ?? ?? ?? 00 53 56 8B 35 ?? ?? ?? ??" },
 { GameOffsets::kFnOnLobbyChatUpdate, "kFnOnLobbyChatUpdate", "55 8B EC 83 E4 F8 51 8B 45 08 56 8B 70 18" },
 { GameOffsets::kFnBgmSelectable, "kFnBgmSelectable", "55 8B EC 83 EC 0C 56 57 8B F9 8D 47 02" },
+{ GameOffsets::kFnSerializeReplay, "kFnSerializeReplay", "55 8B EC 51 53 8B 5D 08 56 8B F1 8D 4B 08" },
 { GameOffsets::kFnBgmSelectBuild, "kFnBgmSelectBuild", "55 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 81 EC 40 01 00 00 A1 ?? ?? ?? ?? 33 C5 89 45 F0 53 56 57 50 8D 45 F4 64 A3 00 00 00 00 80 3D ?? ?? ?? ?? 00" },
 { GameOffsets::kSiteBgmSelectSections, "kSiteBgmSelectSections", "83 F8 64 0F 8C ?? ?? ?? ?? 85 DB 74 ?? 51 8B CB" },
 { GameOffsets::kFnStageUnlocked, "kFnStageUnlocked", "56 83 F9 64 ?? ?? ?? ?? ?? ?? 85 C9" },

@@ -8,6 +8,7 @@
 #include "D3D9/Device/DeviceHooks.h"
 #include "D3D9/Device/DgVoodoo.h"
 #include "D3D9/Device/Dxvk.h"
+#include "D3D9/Device/ExclusiveSupersample.h"
 #include "D3D9/Device/PresentTuning.h"
 #include "Hooks/GameHook.h"
 #include "Hooks/HookManager.h"
@@ -62,6 +63,7 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 	ReclaimCrashHandler();
 
 	D3DPRESENT_PARAMETERS asked = {};
+	ExclusiveSupersample::Translation translation = {};
 
 	if (presentParameters != nullptr)
 	{
@@ -69,11 +71,17 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 		LogAttempt("asked for by the game", S_OK, adapter, deviceType, behaviorFlags, asked);
 
 		if (!DgVoodoo::IsRunning())
+		{
+			translation = ExclusiveSupersample::Prepare(*presentParameters);
 			PresentTuning::Apply(self, adapter, *presentParameters);
+		}
 	}
 
 	HRESULT result = g_createDeviceHook.Original()(self, adapter, deviceType, hFocusWindow, behaviorFlags,
 		presentParameters, ppReturnedDeviceInterface);
+
+	if (FAILED(result))
+		translation = {};
 
 	if (FAILED(result) && presentParameters != nullptr &&
 		memcmp(&asked, presentParameters, sizeof(asked)) != 0)
@@ -108,6 +116,9 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 
 	if (SUCCEEDED(result) && ppReturnedDeviceInterface != nullptr && *ppReturnedDeviceInterface != nullptr)
 	{
+		if (presentParameters != nullptr)
+			ExclusiveSupersample::Finish(*ppReturnedDeviceInterface, translation, *presentParameters);
+
 		LOG("CreateDevice succeeded: %ux%u windowed=%d format=%d focusWindow=0x%p",
 			presentParameters ? presentParameters->BackBufferWidth : 0,
 			presentParameters ? presentParameters->BackBufferHeight : 0,

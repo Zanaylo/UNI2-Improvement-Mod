@@ -171,6 +171,28 @@ bool RoomRoster::GetEvent(int index, Event& out)
 	return valid;
 }
 
+unsigned RoomRoster::LastDepartureOf(uint64_t user)
+{
+	constexpr int kDeparture = StateChange_Left | StateChange_Disconnected;
+
+	unsigned latest = 0;
+	AcquireSRWLockShared(&g_lock);
+
+	for (int index = 0; index < g_eventCount; ++index)
+	{
+		const Event& event = g_events[index];
+
+		if (event.user != user || (event.rawFlags & kDeparture) == 0)
+			continue;
+
+		if (latest == 0 || static_cast<int>(event.tick - latest) > 0)
+			latest = event.tick;
+	}
+
+	ReleaseSRWLockShared(&g_lock);
+	return latest;
+}
+
 int RoomRoster::GetGhostsPrevented()
 {
 	return static_cast<int>(g_ghostsPrevented);

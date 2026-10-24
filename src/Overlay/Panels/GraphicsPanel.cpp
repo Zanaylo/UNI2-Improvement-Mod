@@ -107,7 +107,7 @@ void DrawAntiAliasing()
 
 	Help("FXAA over the finished frame.\n\n"
 		"Multisampling cannot work here, because the game draws its scene into textures. For "
-		"smoother edges, use this or raise the render resolution on the Improvements tab.");
+		"smoother edges, use this or raise the render resolution above.");
 
 	Muted("%s", AntiAlias::Describe(current));
 }
@@ -342,16 +342,24 @@ void GraphicsPanel::DrawShadersTab()
 	ImGui::SameLine();
 	Muted("None of this changes gameplay, inputs or what your opponent sees.");
 
-	DrawUpscaleFilter();
-	DrawAntiAliasing();
 	DrawBloom();
-	DrawSharpening();
 	DrawLook();
 	DrawShaderPacks();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Active now");
-	Muted("%s", PostChain::GetStatusText());
+	Muted("Upscale filter, anti-aliasing and sharpening are on the Improvements tab.");
+}
+
+void GraphicsPanel::DrawPictureQuality()
+{
+	DrawUpscaleFilter();
+	DrawAntiAliasing();
+	DrawSharpening();
+}
+
+void GraphicsPanel::DrawPostStatus()
+{
+	Muted("Shaders: %s", PostChain::GetStatusText());
 }
 
 void GraphicsPanel::DrawOverlayAppearance()
@@ -418,8 +426,14 @@ void GraphicsPanel::DrawMousePointer()
 	if (ImGui::Combo("Overlay pointer", &g_modVals.overlayCursor, modes, IM_ARRAYSIZE(modes)))
 		Settings::SaveInt("Overlay", "SoftwareCursor", g_modVals.overlayCursor);
 
-	Help("Automatic draws the mod's pointer in exclusive fullscreen and when a Direct3D wrapper "
-		"like dgVoodoo is running. In both cases the Windows pointer is hidden.");
+	if (ImGui::Checkbox("Keep the Windows pointer visible", &g_modVals.keepWindowsPointer))
+		Settings::SaveInt("Overlay", "KeepWindowsPointer", g_modVals.keepWindowsPointer ? 1 : 0);
+
+	Help("The game hides the mouse pointer. This keeps it on screen. Restart the game to apply. "
+		"Game default: hidden.");
+
+	Help("Automatic uses the Windows pointer, and draws the mod's only when Windows cannot show one: "
+		"with a Direct3D wrapper like dgVoodoo, or in exclusive fullscreen when the game hides it.");
 
 	if (GraphicsWrapper::IsPresent())
 		Warn("%s", GraphicsWrapper::StatusText());

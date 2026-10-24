@@ -8,4 +8,5 @@ namespace PresentTuning
 	void Apply(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS& parameters);
 
 	const char* GetLastDecision();
+	bool TurnedVsyncOn();
 }

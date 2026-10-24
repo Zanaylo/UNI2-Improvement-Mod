@@ -3,6 +3,7 @@
 #include "Core/Boot/Compat.h"
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
+#include "D3D9/Device/SyncedVsync.h"
 
 #include <cstdarg>
 #include <cstdio>
@@ -12,6 +13,7 @@ namespace {
 constexpr UINT kTickRateHz = 60;
 
 char g_decision[256] = "not applied yet";
+bool g_turnedVsyncOn = false;
 
 void Decide(const char* format, ...)
 {
@@ -222,9 +224,21 @@ void Rewrite(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS& parameters)
 
 	if (parameters.Windowed)
 	{
+		g_turnedVsyncOn = false;
 		Decide("windowed, back buffer %ux%u, Windows handles the rest",
 			parameters.BackBufferWidth, parameters.BackBufferHeight);
 		return;
+	}
+
+	const DWORD interval = SyncedVsync::IntervalFor(parameters, g_modVals.displaySync, g_modVals.displaySyncVsync);
+	g_turnedVsyncOn = interval != parameters.PresentationInterval;
+
+	if (interval != parameters.PresentationInterval)
+	{
+		LOG("[PresentTuning] DisplaySync lines frames up with the refresh, so exclusive fullscreen shows them "
+			"with vsync: interval 0x%lx -> 0x%lx", static_cast<unsigned long>(parameters.PresentationInterval),
+			static_cast<unsigned long>(interval));
+		parameters.PresentationInterval = interval;
 	}
 
 	const UINT refreshRate = ChooseRefreshRate(d3d9, adapter, parameters);
@@ -298,4 +312,9 @@ void PresentTuning::Apply(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS& param
 const char* PresentTuning::GetLastDecision()
 {
 	return g_decision;
+}
+
+bool PresentTuning::TurnedVsyncOn()
+{
+	return g_turnedVsyncOn;
 }

@@ -104,6 +104,14 @@ const Option kOptions[] = {
 		"which freezes the picture. This hands those changes to a background thread. A sound that starts "
 		"right then can play at its old volume for a moment. Game default: off.",
 	},
+	{
+		&g_modVals.restoreFullscreenOptimizations,
+		"RestoreFullscreenOptimizations",
+		"Undo \"Disable fullscreen optimizations\"",
+		"Keeps exclusive fullscreen at 60 fps. Applies from the next start.",
+		"With that Windows compatibility option ticked for the game, exclusive fullscreen can drop to "
+		"30 fps. This unticks it for you when the game starts. Default: on.",
+	},
 };
 
 using UiText::Help;
@@ -385,6 +393,17 @@ bool VsyncIsOn(const D3DPRESENT_PARAMETERS& present)
 	return present.PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
 }
 
+const char* VsyncLabel(const D3DPRESENT_PARAMETERS& present)
+{
+	if (!VsyncIsOn(present))
+		return "vsync off";
+
+	if (PresentTuning::TurnedVsyncOn())
+		return "vsync on (by \"No tearing in exclusive fullscreen\")";
+
+	return "vsync on";
+}
+
 constexpr DWORD kRefreshIntervalMs = 250;
 
 bool ShouldRefresh(DWORD& lastTick)
@@ -522,7 +541,7 @@ void PerformanceWindow::DrawWhatIsHappening()
 
 	ImGui::Text("%ux%u %s, %s, %u back buffer(s)", present.BackBufferWidth, present.BackBufferHeight,
 		present.Windowed ? "windowed" : "exclusive fullscreen",
-		VsyncIsOn(present) ? "vsync on" : "vsync off", present.BackBufferCount);
+		VsyncLabel(present), present.BackBufferCount);
 
 	if (!present.Windowed)
 	{
@@ -622,6 +641,20 @@ bool PerformanceWindow::DrawDisplayGroup()
 		sprintf_s(preview, "%d Hz", g_modVals.fullscreenRefreshHz);
 
 	ImGui::BeginDisabled(!g_modVals.displayTuning);
+
+	ImGui::BeginDisabled(!g_modVals.displaySync);
+
+	if (ImGui::Checkbox("No tearing in exclusive fullscreen", &g_modVals.displaySyncVsync))
+	{
+		SaveVideo("DisplaySyncVsync", g_modVals.displaySyncVsync ? 1 : 0);
+		changed = true;
+	}
+
+	ImGui::EndDisabled();
+
+	Help("Turns vsync on for you, even with the game's own vsync off, so no line splits the picture. "
+		"Costs at most the frame lead in input lag. Needs \"Line frames up with the screen\" on. "
+		"Applies after an alt-tab or a restart. Default: on.");
 
 	Ui::SetItemWidth(320.0f);
 
@@ -842,11 +875,10 @@ void PerformanceWindow::DrawMetricsTab()
 
 	{
 		const D3DPRESENT_PARAMETERS& setup = DeviceHooks::GetPresentParameters();
-		const bool vsync = setup.PresentationInterval != D3DPRESENT_INTERVAL_IMMEDIATE;
 
 		ImGui::Text("Swap effect %s, %s, %s, %u back buffer%s, %s",
 			SwapEffectName(setup.SwapEffect), setup.Windowed ? "windowed" : "exclusive fullscreen",
-			vsync ? "vsync on" : "vsync off", setup.BackBufferCount,
+			VsyncLabel(setup), setup.BackBufferCount,
 			setup.BackBufferCount == 1 ? "" : "s",
 			GraphicsWrapper::IsPresent() ? GraphicsWrapper::Name() : "native Direct3D 9");
 
@@ -1068,17 +1100,20 @@ void PerformanceWindow::DrawImprovementsTab()
 	}
 
 	Help("The size of the finished picture sent to your screen. Set it to your screen's resolution. "
-		"The game's 720p picture is enlarged to it by the upscale filter on the Shaders tab, and the "
-		"stage follows the render resolution below. Windowed only, needs a restart.");
+		"The game's 720p picture is enlarged to it by the upscale filter below, and the "
+		"stage follows the render resolution below. Needs a restart.");
 
 	Muted("%s", Improvements::Describe(Improvements::GetLevel()));
 
 	changed = DrawInternalResolution() || changed;
 
+	GraphicsPanel::DrawPictureQuality();
+
 	ImGui::Spacing();
 	ImGui::SeparatorText("Active now");
 
 	DrawPotatoState();
+	GraphicsPanel::DrawPostStatus();
 
 	if (!changed)
 		return;

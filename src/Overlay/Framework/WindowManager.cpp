@@ -9,10 +9,14 @@
 #include "Game/Menus/BattleCockpit.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Input/PadInput.h"
+#include "Core/Input/PointerRule.h"
+#include "Core/Input/WindowsPointer.h"
 #include "Core/Config/keycodes.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
+#include "D3D9/Device/BackgroundWindowCheck.h"
+#include "D3D9/Device/ResetClock.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Battle/GameRestart.h"
 #include "Game/Engine/GameOffsets.h"
@@ -188,6 +192,8 @@ bool IsKeyboardMessage(UINT message)
 
 LRESULT CALLBACK ModWindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	WindowsPointer::OnWindowMessage();
+
 	bool handled = false;
 	const LRESULT result = WindowManager::GetInstance().HandleWindowMessage(window, message, wParam, lParam, handled);
 
@@ -392,6 +398,10 @@ void WindowManager::ObserveFocus(UINT message, WPARAM wParam)
 		m_focusFromSystem = true;
 		m_hasFocus = wParam != 0;
 		SetHotkeyFocus(m_hasFocus);
+		ResetClock::OnFocus(m_hasFocus);
+
+		if (!m_hasFocus)
+			BackgroundWindowCheck::OnFocusLost(m_window);
 
 		if (!m_hasFocus)
 			m_focusEvidenceAt.store(0, std::memory_order_relaxed);
@@ -813,13 +823,10 @@ namespace {
 
 bool WantsSoftwareCursor()
 {
-	if (g_modVals.overlayCursor == 1)
-		return true;
+	const auto mode = static_cast<PointerRule::OverlayPointer>(g_modVals.overlayCursor);
+	const bool exclusive = DeviceHooks::GetPresentParameters().Windowed == FALSE;
 
-	if (g_modVals.overlayCursor == 2)
-		return false;
-
-	return DeviceHooks::GetPresentParameters().Windowed == FALSE || GraphicsWrapper::IsPresent();
+	return PointerRule::DrawsOwnPointer(mode, exclusive, GraphicsWrapper::IsPresent(), WindowsPointer::IsKept());
 }
 
 }

@@ -8,6 +8,7 @@
 #include "Network/RoomWatch/HistoryPlan.h"
 #include "Network/RoomWatch/InputStore.h"
 
+#include <algorithm>
 #include <cstring>
 
 namespace {
@@ -59,14 +60,17 @@ void CopyRing(uintptr_t backend)
 	if (received < 0)
 		return;
 
-	for (int i = 0; i < kRingSlots; ++i)
+	for (int frame = (std::max)(0, received - kRingSlots + 1); frame <= received; ++frame)
 	{
+		if (g_store.Has(frame))
+			continue;
+
 		InputStore::Slot slot = {};
 
-		if (!TryReadMemory(&slot, RingSlot(backend, i), sizeof(slot)))
+		if (!TryReadMemory(&slot, RingSlot(backend, frame), sizeof(slot)))
 			return;
 
-		if (slot.frame < 0 || slot.frame > received || g_store.Has(slot.frame))
+		if (slot.frame != frame)
 			continue;
 
 		g_store.Put(slot);
@@ -141,7 +145,7 @@ bool SpectatorStore::SetActive(bool active)
 		g_syncInputHook.SetEnabled(false);
 	}
 
-	NetLog::Write("spectator store %s", g_active ? "active, the spectator can fall behind without the 64 frame limit" :
+	NetLog::Write("spectator store %s", g_active ? "active, the spectator can fall behind past the game's own input buffer" :
 		"could not hook the spectator session");
 	return g_active;
 }

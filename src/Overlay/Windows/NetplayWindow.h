@@ -19,6 +19,7 @@ private:
 	void DrawReplayUpload();
 	void DrawSpectatorCatchUp();
 	void DrawRoomWatch();
+	void DrawSteamPresence();
 	void DrawNetcodeTab();
 	void DrawInputDelay();
 	bool DrawNetcodeOptions();

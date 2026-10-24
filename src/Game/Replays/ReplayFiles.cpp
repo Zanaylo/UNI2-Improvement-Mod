@@ -9,6 +9,7 @@
 #include "Game/Engine/SceneWatch.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Replays/ReplayArchive.h"
+#include "Game/Replays/ReplayRecord.h"
 #include "Game/Lobby/SteamNames.h"
 #include "Hooks/GameHook.h"
 #include "Network/NetLink.h"
@@ -24,18 +25,19 @@ constexpr char kMagic[8] = { 'U', 'N', 'I', '2', 'I', 'M', 'R', 'P' };
 constexpr uint32_t kFileVersionPlain = 1;
 constexpr uint32_t kFileVersionDeflate = 2;
 constexpr uint32_t kFileVersionNamed = 3;
+constexpr char kExtension[] = ".rep";
 
-constexpr size_t kOffVersion = 0x104;
-constexpr size_t kOffAuthorId = 0x108;
-constexpr size_t kOffTime = 0x112;
-constexpr size_t kOffLocked = 0x128;
-constexpr size_t kOffPlayer = 0x140;
-constexpr size_t kPlayerStride = 0xa0;
-constexpr size_t kPlayerChara = 0x08;
-constexpr size_t kPlayerTitle = 0x44;
-constexpr size_t kTitleBytes = 0x20;
-constexpr size_t kPlayerSteamIdBack = 0x08;
-constexpr size_t kOffTailTime = 0x7a78;
+using ReplayRecord::kOffVersion;
+using ReplayRecord::kOffTime;
+using ReplayRecord::kOffLocked;
+using ReplayRecord::kPlayerChara;
+using ReplayRecord::kPlayerTitle;
+using ReplayRecord::kTitleBytes;
+using ReplayRecord::kPlayerSteamIdBack;
+using ReplayRecord::kOffPayload;
+using ReplayRecord::kOffPayloadSize;
+using ReplayRecord::kHeaderBytes;
+using ReplayRecord::kOffTailTime;
 
 constexpr size_t kStoredNameBytes = 64;
 constexpr int kFallbackVersion = 101;
@@ -51,9 +53,6 @@ constexpr int kQueueSettleFrames = 90;
 
 constexpr size_t kFileNameChars = 32;
 
-constexpr size_t kOffPayload = 0x278;
-constexpr size_t kOffPayloadSize = 0x124;
-constexpr size_t kHeaderBytes = 0x300;
 
 constexpr size_t kImageBytes = ReplayFiles::kRecordSize * ReplayFiles::kSlotCount;
 
@@ -375,7 +374,7 @@ uint64_t TimeKey(const SYSTEMTIME& time)
 
 size_t PlayerBlock(int player)
 {
-	return kOffPlayer + static_cast<size_t>(player) * kPlayerStride;
+	return ReplayRecord::PlayerBlock(player);
 }
 
 std::string ReadTitle(const uint8_t* record, int player)
@@ -642,6 +641,14 @@ bool ReplayFiles::ReadInfo(int slot, Info& out)
 	if (!ReadSlotAt(slot, 0, header, sizeof(header)))
 		return false;
 
+	DescribeHeader(header, out);
+	return true;
+}
+
+void ReplayFiles::DescribeHeader(const uint8_t* header, Info& out)
+{
+	out = Info();
+
 	memcpy(&out.time, header + kOffTime, sizeof(SYSTEMTIME));
 
 	uint32_t payload = 0;
@@ -649,7 +656,7 @@ bool ReplayFiles::ReadInfo(int slot, Info& out)
 
 	out.used = out.time.wYear != 0 && payload != 0 && kOffPayload + payload <= kRecordSize;
 	if (!out.used)
-		return true;
+		return;
 
 	uint16_t version = 0;
 	memcpy(&version, header + kOffVersion, sizeof(version));
@@ -667,8 +674,6 @@ bool ReplayFiles::ReadInfo(int slot, Info& out)
 		out.title[player] = ReadTitle(header, player);
 		out.name[player] = SteamNames::Resolve(out.steamId[player]);
 	}
-
-	return true;
 }
 
 std::string ReplayFiles::PlayerName(const Info& info, int player)
@@ -717,11 +722,11 @@ std::string ReplayFiles::FileNameFor(const Info& info, int matchNumber)
 
 	char text[320] = {};
 
-	sprintf_s(text, "%s%03d_%s(%s)_vs_%s(%s).rep",
+	sprintf_s(text, "%s%03d_%s(%s)_vs_%s(%s)%s",
 		TimePrefix(info.time).c_str(),
 		matchNumber,
 		first.empty() ? "P1" : first.c_str(), ShortName(info.chara[0]),
-		second.empty() ? "P2" : second.c_str(), ShortName(info.chara[1]));
+		second.empty() ? "P2" : second.c_str(), ShortName(info.chara[1]), kExtension);
 
 	return text;
 }
@@ -740,7 +745,7 @@ const std::vector<std::string>& ReplayFiles::ListFiles()
 	g_filesValid = true;
 
 	WIN32_FIND_DATAA find = {};
-	const std::string pattern = GetFolder() + "*.rep";
+	const std::string pattern = GetFolder() + "*" + kExtension;
 
 	const HANDLE handle = FindFirstFileA(pattern.c_str(), &find);
 	if (handle == INVALID_HANDLE_VALUE)
@@ -790,6 +795,29 @@ std::string ReplayFiles::Export(int slot)
 		return std::string();
 	}
 
+	return WriteRecordFile(record, info, FileNameFor(info, NextMatchNumber(info.time)));
+}
+
+std::string ReplayFiles::SaveRecord(const std::vector<uint8_t>& record, const std::string& note)
+{
+	if (record.size() != kRecordSize)
+		return std::string();
+
+	Info info;
+	DescribeHeader(record.data(), info);
+
+	std::string name = FileNameFor(info, NextMatchNumber(info.time));
+	const std::string tag = Sanitise(note);
+
+	if (!tag.empty())
+		name.insert(name.size() - strlen(kExtension), "_" + tag);
+
+	return WriteRecordFile(record, info, name);
+}
+
+std::string ReplayFiles::WriteRecordFile(const std::vector<uint8_t>& record, const Info& info,
+	const std::string& name)
+{
 	std::vector<uint8_t> payload;
 	const bool packed = Deflate::Compress(record.data(), record.size(), payload) &&
 		payload.size() < record.size();
@@ -803,7 +831,6 @@ std::string ReplayFiles::Export(int slot)
 		return std::string();
 	}
 
-	const std::string name = FileNameFor(info, NextMatchNumber(info.time));
 	const std::string path = GetFolder() + name;
 
 	FILE* file = nullptr;
@@ -1049,45 +1076,33 @@ bool ReplayFiles::CanPlay()
 
 namespace {
 
+ReplayRecord::Facts FactsForNow()
+{
+	ReplayRecord::Facts facts = {};
+
+	const int known = ReplayFiles::CurrentVersion();
+	facts.version = static_cast<uint16_t>(known != 0 ? known : kFallbackVersion);
+	GetLocalTime(&facts.time);
+
+	return facts;
+}
+
 bool BuildRecord(std::vector<uint8_t>& record, std::string& outError)
 {
 	if (record.size() == ReplayFiles::kRecordSize)
 	{
-		uint32_t declared = 0;
-		memcpy(&declared, record.data() + kOffPayloadSize, sizeof(declared));
+		if (ReplayRecord::HasValidLength(record))
+			return true;
 
-		if (declared == 0 || kOffPayload + declared > ReplayFiles::kRecordSize)
-		{
-			outError = "that replay's length field is out of range";
-			return false;
-		}
-
-		return true;
-	}
-
-	if (record.empty() || record.size() + kOffPayload > ReplayFiles::kRecordSize)
-	{
-		outError = "that replay file is not a length the game can play";
+		outError = "that replay's length field is out of range";
 		return false;
 	}
 
-	std::vector<uint8_t> built(ReplayFiles::kRecordSize, 0);
+	if (ReplayRecord::FromPayload(record, FactsForNow(), record))
+		return true;
 
-	const uint32_t size = static_cast<uint32_t>(record.size());
-	memcpy(built.data() + kOffPayload, record.data(), record.size());
-	memcpy(built.data() + kOffPayloadSize, &size, sizeof(size));
-
-	const int known = ReplayFiles::CurrentVersion();
-	const uint16_t version = static_cast<uint16_t>(known != 0 ? known : kFallbackVersion);
-	memcpy(built.data() + kOffVersion, &version, sizeof(version));
-
-	SYSTEMTIME now = {};
-	GetLocalTime(&now);
-	memcpy(built.data() + kOffTime, &now, sizeof(now));
-	memcpy(built.data() + kOffTailTime, &now, sizeof(now));
-
-	record.swap(built);
-	return true;
+	outError = "that replay file is not a length the game can play";
+	return false;
 }
 
 std::string Matchup(const std::vector<uint8_t>& record, const std::string names[2])

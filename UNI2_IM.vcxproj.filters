@@ -324,7 +324,16 @@
     <ClCompile Include="src\Game\Lobby\RoomStage.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Lobby\RoomSeat.cpp">
+      <Filter>Game\Lobby</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network\Steam\SteamFriends.cpp">
+      <Filter>Network\Steam</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\Steam\PresenceText.cpp">
+      <Filter>Network\Steam</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\Steam\RichPresence.cpp">
       <Filter>Network\Steam</Filter>
     </ClCompile>
     <ClCompile Include="src\Network\Spectate\SpectateCode.cpp">
@@ -900,6 +909,18 @@
     <ClCompile Include="src\Network\GameResults.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Replays\ReplayRescue.cpp">
+      <Filter>Game\Replays</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Replays\ReplayRecord.cpp">
+      <Filter>Game\Replays</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Replays\LiveRecording.cpp">
+      <Filter>Game\Replays</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Network\GameEnding.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network\SideReadout.cpp">
       <Filter>Network</Filter>
     </ClCompile>
@@ -1062,6 +1083,12 @@
     <ClCompile Include="src\Core\Input\PadInput.cpp">
       <Filter>Core\Input</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Input\PointerRule.cpp">
+      <Filter>Core\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Input\WindowsPointer.cpp">
+      <Filter>Core\Input</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Config\interfaces.cpp">
       <Filter>Core\Config</Filter>
     </ClCompile>
@@ -1100,6 +1127,18 @@
     </ClCompile>
     <ClCompile Include="src\Core\StallSampler.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\FramePhases.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\FramePhaseStats.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hooks\CallSiteScan.cpp">
+      <Filter>Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hooks\CallSiteClock.cpp">
+      <Filter>Hooks</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\StallProfile.cpp">
       <Filter>Core</Filter>
@@ -1243,6 +1282,12 @@
       <Filter>Palette</Filter>
     </ClCompile>
     <ClCompile Include="src\Palette\NetworkPick.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\NetworkPickRule.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\NetworkPickSeed.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
     <ClCompile Include="src\Palette\EffectBlock.cpp">
@@ -1551,6 +1596,12 @@
     <ClCompile Include="src\Core\Boot\ProcessTuning.cpp">
       <Filter>Core\Boot</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Boot\CompatLayerText.cpp">
+      <Filter>Core\Boot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Boot\FullscreenOptimizations.cpp">
+      <Filter>Core\Boot</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Boot\BackgroundPriority.cpp">
       <Filter>Core\Boot</Filter>
     </ClCompile>
@@ -1558,6 +1609,24 @@
       <Filter>Core\Boot</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Device\PresentTuning.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ExclusivePlan.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ResetClock.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\SyncedVsync.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\BackgroundWindowCheck.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ResetTimeline.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ExclusiveSupersample.cpp">
       <Filter>D3D9\Device</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Device\SceneScale.cpp">
@@ -2105,7 +2174,16 @@
     <ClInclude Include="src\Game\Lobby\RoomStage.h">
       <Filter>Game\Lobby</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Lobby\RoomSeat.h">
+      <Filter>Game\Lobby</Filter>
+    </ClInclude>
     <ClInclude Include="src\Network\Steam\SteamFriends.h">
+      <Filter>Network\Steam</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\Steam\PresenceText.h">
+      <Filter>Network\Steam</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\Steam\RichPresence.h">
       <Filter>Network\Steam</Filter>
     </ClInclude>
     <ClInclude Include="src\Network\Spectate\SpectateCode.h">
@@ -2687,6 +2765,18 @@
     <ClInclude Include="src\Network\GameResults.h">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Replays\ReplayRescue.h">
+      <Filter>Game\Replays</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Replays\ReplayRecord.h">
+      <Filter>Game\Replays</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Replays\LiveRecording.h">
+      <Filter>Game\Replays</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Network\GameEnding.h">
+      <Filter>Network</Filter>
+    </ClInclude>
     <ClInclude Include="src\Network\SideReadout.h">
       <Filter>Network</Filter>
     </ClInclude>
@@ -2789,6 +2879,12 @@
     <ClInclude Include="src\Core\Input\PadInput.h">
       <Filter>Core\Input</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Input\PointerRule.h">
+      <Filter>Core\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Input\WindowsPointer.h">
+      <Filter>Core\Input</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Config\interfaces.h">
       <Filter>Core\Config</Filter>
     </ClInclude>
@@ -2830,6 +2926,18 @@
     </ClInclude>
     <ClInclude Include="src\Core\StallSampler.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\FramePhases.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\FramePhaseStats.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks\CallSiteScan.h">
+      <Filter>Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks\CallSiteClock.h">
+      <Filter>Hooks</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\StallProfile.h">
       <Filter>Core</Filter>
@@ -3065,6 +3173,12 @@
     <ClInclude Include="src\Palette\NetworkPick.h">
       <Filter>Palette</Filter>
     </ClInclude>
+    <ClInclude Include="src\Palette\NetworkPickRule.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\NetworkPickSeed.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
     <ClInclude Include="src\Palette\EffectBlock.h">
       <Filter>Palette</Filter>
     </ClInclude>
@@ -3287,6 +3401,12 @@
     <ClInclude Include="src\Core\Boot\ProcessTuning.h">
       <Filter>Core\Boot</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Boot\CompatLayerText.h">
+      <Filter>Core\Boot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Boot\FullscreenOptimizations.h">
+      <Filter>Core\Boot</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Boot\BackgroundPriority.h">
       <Filter>Core\Boot</Filter>
     </ClInclude>
@@ -3294,6 +3414,24 @@
       <Filter>Core\Boot</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Device\PresentTuning.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ExclusivePlan.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ResetClock.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\SyncedVsync.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\BackgroundWindowCheck.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ResetTimeline.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ExclusiveSupersample.h">
       <Filter>D3D9\Device</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Device\SceneScale.h">

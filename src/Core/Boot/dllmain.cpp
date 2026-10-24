@@ -4,6 +4,7 @@
 #include "Game/Engine/CodeSignatures.h"
 #include "Core/DpiScaling.h"
 #include "Core/Harness/Harness.h"
+#include "Core/Boot/FullscreenOptimizations.h"
 #include "Core/Boot/ProcessTuning.h"
 #include "Core/Config/Hotkeys.h"
 #include "Core/Config/Settings.h"
@@ -154,6 +155,11 @@ void Stage_ProcessTuning()
 	ProcessTuning::Initialize();
 }
 
+void Stage_FullscreenOptimizations()
+{
+	FullscreenOptimizations::Restore();
+}
+
 void Stage_InputEntry()
 {
 	if (!D3D9Proxy::IsActive())
@@ -275,6 +281,7 @@ DWORD WINAPI InitThread(LPVOID)
 	Modules::RunGuarded("install check", [] { InstallCheck::Run(); });
 	Modules::RunGuarded("ui assets", Stage_UiAssets);
 	Modules::RunGuarded("process tuning", Stage_ProcessTuning);
+	Modules::RunGuarded("fullscreen optimizations", Stage_FullscreenOptimizations);
 	Modules::RunGuarded("input entry point", Stage_InputEntry);
 	Modules::RunGuarded("code signatures", [] { CodeSignatures::Initialize(); });
 	Modules::RunGuarded("file overrides", Stage_FileOverrides);

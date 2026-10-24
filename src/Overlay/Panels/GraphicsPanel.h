@@ -3,6 +3,8 @@
 namespace GraphicsPanel
 {
 	void DrawShadersTab();
+	void DrawPictureQuality();
+	void DrawPostStatus();
 
 	void DrawOverlayAppearance();
 

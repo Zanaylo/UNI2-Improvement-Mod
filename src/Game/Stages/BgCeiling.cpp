@@ -47,6 +47,8 @@ constexpr int kLeastCellSites = 2;
 constexpr int kMostCellSites = 12;
 constexpr int kLeastRandomArrays = 2;
 constexpr int kMostRandomArrays = 6;
+constexpr uint8_t kStageRecordDivisor[] = { 0xb8, 0x93, 0x24, 0x49, 0x92 };
+constexpr int kPoolArrays = 1;
 
 using Bound = CompareTrampoline::Site;
 
@@ -298,6 +300,17 @@ void Extent(uint8_t* at, uint8_t*& low, uint8_t*& high)
 		++high;
 }
 
+bool Seen(const std::vector<uint8_t*>& seen, const uint8_t* low)
+{
+	for (const uint8_t* const held : seen)
+	{
+		if (held == low)
+			return true;
+	}
+
+	return false;
+}
+
 void Cells(const std::vector<uint8_t*>& listSites, std::vector<std::vector<Cell> >& out)
 {
 	std::vector<uint8_t*> seen;
@@ -308,12 +321,7 @@ void Cells(const std::vector<uint8_t*>& listSites, std::vector<std::vector<Cell>
 		uint8_t* high = nullptr;
 		Extent(site, low, high);
 
-		bool already = false;
-
-		for (uint8_t* const held : seen)
-			already = already || held == low;
-
-		if (already)
+		if (Seen(seen, low))
 			continue;
 
 		std::vector<int32_t> disps;
@@ -331,6 +339,24 @@ void Cells(const std::vector<uint8_t*>& listSites, std::vector<std::vector<Cell>
 	}
 }
 
+void FunctionCells(uint8_t* low, uint8_t* high, const std::vector<std::vector<Cell> >& claimed,
+	std::vector<std::vector<Cell> >& out)
+{
+	std::vector<int32_t> disps;
+	CellArrays(low, high, disps);
+
+	for (const int32_t disp : disps)
+	{
+		std::vector<Cell> found;
+		Gather(low, high, disp, found);
+
+		if (found.empty() || Claimed(claimed, found.front().disp) || Claimed(out, found.front().disp))
+			continue;
+
+		out.push_back(found);
+	}
+}
+
 void TableCells(const std::vector<uint8_t*>& tableSites,
 	const std::vector<std::vector<Cell> >& claimed, std::vector<std::vector<Cell> >& out)
 {
@@ -342,33 +368,55 @@ void TableCells(const std::vector<uint8_t*>& tableSites,
 		uint8_t* high = nullptr;
 		Extent(site, low, high);
 
-		bool already = false;
-
-		for (uint8_t* const held : seen)
-			already = already || held == low;
-
-		if (already)
+		if (Seen(seen, low))
 			continue;
 
 		seen.push_back(low);
-
-		std::vector<int32_t> disps;
-		CellArrays(low, high, disps);
-
-		for (const int32_t disp : disps)
-		{
-			std::vector<Cell> found;
-			Gather(low, high, disp, found);
-
-			if (found.empty() || Claimed(claimed, found.front().disp) ||
-				Claimed(out, found.front().disp))
-			{
-				continue;
-			}
-
-			out.push_back(found);
-		}
+		FunctionCells(low, high, claimed, out);
 	}
+}
+
+void DivisorSites(std::vector<uint8_t*>& out)
+{
+	for (size_t at = 0; at + sizeof(kStageRecordDivisor) <= g_textBytes; ++at)
+	{
+		if (memcmp(g_text + at, kStageRecordDivisor, sizeof(kStageRecordDivisor)) == 0)
+			out.push_back(g_text + at);
+	}
+}
+
+void PoolCells(const std::vector<std::vector<Cell> >& claimed, std::vector<std::vector<Cell> >& out)
+{
+	std::vector<uint8_t*> sites;
+	DivisorSites(sites);
+
+	std::vector<uint8_t*> seen;
+
+	for (uint8_t* const site : sites)
+	{
+		uint8_t* low = nullptr;
+		uint8_t* high = nullptr;
+		Extent(site, low, high);
+
+		if (Seen(seen, low))
+			continue;
+
+		seen.push_back(low);
+		FunctionCells(low, high, claimed, out);
+	}
+}
+
+bool WellFormed(const std::vector<std::vector<Cell> >& groups)
+{
+	for (const std::vector<Cell>& one : groups)
+	{
+		const int found = static_cast<int>(one.size());
+
+		if (found < kLeastCellSites || found > kMostCellSites)
+			return false;
+	}
+
+	return true;
 }
 
 bool Restack(const std::vector<Cell>& cells)
@@ -457,23 +505,25 @@ bool BgCeiling::Initialize()
 	std::vector<std::vector<Cell> > randoms;
 	TableCells(tableSites, cells, randoms);
 
+	std::vector<std::vector<Cell> > taken = cells;
+	taken.insert(taken.end(), randoms.begin(), randoms.end());
+
+	std::vector<std::vector<Cell> > pools;
+	PoolCells(taken, pools);
+
 	const int tableCount = static_cast<int>(tableSites.size());
 	const int listCount = static_cast<int>(listSites.size());
 	const int boundCount = static_cast<int>(bounds.size());
 	const int cellCount = static_cast<int>(cells.size());
 	const int randomCount = static_cast<int>(randoms.size());
+	const int poolCount = static_cast<int>(pools.size());
 
 	LOG("BgCeiling: %d table reference(s), %d list reference(s), %d bound check(s), %d picker "
-		"list(s), %d random pick array(s)", tableCount, listCount, boundCount, cellCount,
-		randomCount);
+		"list(s), %d random pick array(s), %d stage pool array(s)", tableCount, listCount, boundCount,
+		cellCount, randomCount, poolCount);
 
-	bool randomsOk = randomCount >= kLeastRandomArrays && randomCount <= kMostRandomArrays;
-
-	for (const std::vector<Cell>& one : randoms)
-	{
-		const int found = static_cast<int>(one.size());
-		randomsOk = randomsOk && found >= kLeastCellSites && found <= kMostCellSites;
-	}
+	const bool randomsOk = randomCount >= kLeastRandomArrays && randomCount <= kMostRandomArrays &&
+		WellFormed(randoms);
 
 	if (!randomsOk)
 	{
@@ -493,13 +543,8 @@ bool BgCeiling::Initialize()
 		return false;
 	}
 
-	bool cellsOk = cellCount == kCellFunctions;
-
-	for (const std::vector<Cell>& one : cells)
-	{
-		const int found = static_cast<int>(one.size());
-		cellsOk = cellsOk && found >= kLeastCellSites && found <= kMostCellSites;
-	}
+	const bool cellsOk = cellCount == kCellFunctions && WellFormed(cells);
+	const bool poolsOk = poolCount == kPoolArrays && WellFormed(pools);
 
 	uint8_t* const empty = static_cast<uint8_t*>(VirtualAlloc(nullptr, kRecordBytes,
 		MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
@@ -542,10 +587,13 @@ bool BgCeiling::Initialize()
 	}
 
 	g_lifted = true;
-	g_restacked = cellsOk;
+	g_restacked = cellsOk && poolsOk;
 	g_table = reinterpret_cast<uintptr_t>(wideTable);
 
 	for (const std::vector<Cell>& one : cells)
+		g_restacked = g_restacked && Restack(one);
+
+	for (const std::vector<Cell>& one : pools)
 		g_restacked = g_restacked && Restack(one);
 
 	int randomsMoved = 0;
@@ -556,9 +604,9 @@ bool BgCeiling::Initialize()
 	sprintf_s(g_status, "%d stage numbers, %d picker entries (was %d)", kWideNumbers,
 		ListEntries(), kStockNumbers);
 
-	LOG("BgCeiling: %s - %d reference(s) repointed, %d bound check(s) lifted, %d picker list(s) "
-		"and %d of %d random pick array(s) moved off the stack", g_status, repointed, lifted,
-		g_restacked ? cellCount : 0, randomsMoved, randomCount);
+	LOG("BgCeiling: %s - %d reference(s) repointed, %d bound check(s) lifted, %d picker list(s), "
+		"%d stage pool array(s) and %d of %d random pick array(s) moved off the stack", g_status, repointed,
+		lifted, g_restacked ? cellCount : 0, g_restacked ? poolCount : 0, randomsMoved, randomCount);
 
 	return true;
 }

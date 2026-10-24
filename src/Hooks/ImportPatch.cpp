@@ -1,5 +1,6 @@
 #include "Hooks/ImportPatch.h"
 
+#include <cstdio>
 #include <cstring>
 
 namespace {
@@ -61,6 +62,49 @@ IMAGE_THUNK_DATA* FindSlot(HMODULE module, const IMAGE_IMPORT_DESCRIPTOR* dll, c
 	return nullptr;
 }
 
+bool NameInDll(HMODULE module, const IMAGE_IMPORT_DESCRIPTOR* dll, uintptr_t slotAddress, char* out, size_t size)
+{
+	if (dll->OriginalFirstThunk == 0)
+		return false;
+
+	const IMAGE_THUNK_DATA* name = At<const IMAGE_THUNK_DATA>(module, dll->OriginalFirstThunk);
+	const IMAGE_THUNK_DATA* slot = At<const IMAGE_THUNK_DATA>(module, dll->FirstThunk);
+
+	for (; name->u1.AddressOfData != 0; ++name, ++slot)
+	{
+		if (reinterpret_cast<uintptr_t>(slot) != slotAddress)
+			continue;
+
+		if (IMAGE_SNAP_BY_ORDINAL(name->u1.Ordinal))
+		{
+			sprintf_s(out, size, "%s#%u", At<const char>(module, dll->Name),
+				static_cast<unsigned>(IMAGE_ORDINAL(name->u1.Ordinal)));
+			return true;
+		}
+
+		const IMAGE_IMPORT_BY_NAME* const byName =
+			At<const IMAGE_IMPORT_BY_NAME>(module, static_cast<DWORD>(name->u1.AddressOfData));
+		sprintf_s(out, size, "%s", reinterpret_cast<const char*>(byName->Name));
+		return true;
+	}
+
+	return false;
+}
+
+}
+
+bool ImportPatch::NameOfSlot(HMODULE module, uintptr_t slotAddress, char* out, size_t size)
+{
+	if (module == nullptr || out == nullptr || size == 0)
+		return false;
+
+	for (const IMAGE_IMPORT_DESCRIPTOR* entry = FirstImport(module); entry != nullptr && entry->Name != 0; ++entry)
+	{
+		if (NameInDll(module, entry, slotAddress, out, size))
+			return true;
+	}
+
+	return false;
 }
 
 bool ImportPatch::Replace(HMODULE module, const char* dllName, const char* functionName, void* replacement,

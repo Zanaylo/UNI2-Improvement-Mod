@@ -1,6 +1,7 @@
 #include "Core/SpikeWatch.h"
 
 #include "Core/Config/interfaces.h"
+#include "Core/FramePhases.h"
 #include "Core/Profiler.h"
 #include "Core/StallSampler.h"
 #include "Core/ThreadRole.h"
@@ -297,4 +298,5 @@ void SpikeWatch::OnPresent()
 		Report(frame);
 
 	StallSampler::OnPresent();
+	FramePhases::OnPresent();
 }

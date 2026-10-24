@@ -6,6 +6,7 @@
 #include "Game/Menus/LobbyAvatar.h"
 #include "Palette/ColourSlotStep.h"
 #include "Palette/ColourSlots.h"
+#include "Palette/NetworkPickSeed.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteLibrary.h"
 #include "Palette/PalettePaint.h"
@@ -108,6 +109,7 @@ void ColourPreview::OnFrame()
 
 	if (scene == GameOffsets::kSceneNetwork)
 	{
+		NetworkPickSeed::OnFrame();
 		LobbyAvatar::OnFrame();
 		return;
 	}
