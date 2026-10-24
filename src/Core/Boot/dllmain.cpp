@@ -5,6 +5,11 @@
 #include "Core/DpiScaling.h"
 #include "Core/Harness/Harness.h"
 #include "Core/Boot/FullscreenOptimizations.h"
+#include "Core/Boot/Standby.h"
+#include "Core/Config/ConfigBoot.h"
+#include "Core/Config/Features.h"
+#include "Core/Config/interfaces.h"
+#include "Game/Display/GraphicsOff.h"
 #include "Core/Boot/ProcessTuning.h"
 #include "Core/Config/Hotkeys.h"
 #include "Core/Config/Settings.h"
@@ -75,6 +80,8 @@ HRESULT WINAPI HookedDirectInput8Create(HINSTANCE hinst, DWORD version, REFIID r
 
 std::string ReadWrapperPathFromIni()
 {
+	ConfigBoot::Prepare();
+
 	char buffer[MAX_PATH] = {};
 	Ini::GetString("Mod", "DinputDllWrapper", "", buffer, sizeof(buffer),
 		Settings::GetIniPath().c_str());
@@ -129,6 +136,10 @@ void Stage_Settings()
 	Settings::LoadSettingsFile();
 	Settings::ApplySettings();
 	Hotkeys::Load();
+	Features::Freeze();
+
+	if (!Features::IsLoaded(FeatureCatalog::Id_Graphics))
+		GraphicsOff::Apply(g_modVals);
 }
 
 void Stage_UpdateCheck()
@@ -190,6 +201,9 @@ void Stage_GameHooks()
 
 void Stage_PaletteShare()
 {
+	if (!Features::IsLoaded(FeatureCatalog::Id_Palettes))
+		return;
+
 	PaletteShare::Initialize();
 }
 
@@ -204,8 +218,11 @@ void Stage_FileOverrides()
 	BgmPicker::Initialize();
 	GameDebug::Prepare();
 	ModFiles::Initialize();
-	StageImport::Initialize();
-	GamePatches::ApplyRemembered();
+
+	if (Features::IsLoaded(FeatureCatalog::Id_Stages))
+		StageImport::Initialize();
+	if (Features::IsLoaded(FeatureCatalog::Id_GamePatches))
+		GamePatches::ApplyRemembered();
 
 	if (ScreenDirector::kOnHold)
 		return;
@@ -233,16 +250,51 @@ void Stage_InputHooks()
 	InputProbe::InstallApiProbes();
 }
 
+void FinishInitialization(const char* done)
+{
+	const DWORD enableHooksStarted = GetTickCount();
+	HookManager::EnableAllHooks();
+
+	if (GetTickCount() - enableHooksStarted >= kSlowStageMs)
+		LOG("stage 'enable all hooks' took %lu ms", GetTickCount() - enableHooksStarted);
+	HookManager::StartIntegrityWatchdog();
+
+	LOG("%s", done);
+	D3D9Wrapper::MarkInitializationFinished();
+	ReclaimCrashHandler();
+	ModuleInventory::LogForeignModules("at startup");
+
+	RecoverIfTheDeviceWasMissed();
+}
+
+DWORD RunStandby()
+{
+	if (!HookManager::Initialize())
+	{
+		LOG("HookManager initialization failed, aborting");
+		return 0;
+	}
+
+	Modules::RunGuarded("d3d9 hooks", Stage_D3D9);
+	Modules::RunGuarded("install check", [] { InstallCheck::Run(); });
+	Modules::RunGuarded("ui assets", Stage_UiAssets);
+
+	FinishInitialization("Initialization finished on standby: only the overlay and the update check are on");
+	return 0;
+}
+
 DWORD WINAPI InitThread(LPVOID)
 {
 	const bool folders = CreateModDirectories();
 	const DWORD folderError = GetLastError();
 
+	ConfigBoot::Prepare();
 	OpenLogger();
 	InstallCrashHandler();
 
 	BootTrace("%s %s starting, loaded as %s from %s, built %s %s", UNI2_IM_NAME, UNI2_IM_VERSION,
 		D3D9Proxy::LoadedAs(), GetModDirectory().c_str(), __DATE__, __TIME__);
+	ConfigBoot::LogSummary();
 
 	if (!folders)
 	{
@@ -253,6 +305,10 @@ DWORD WINAPI InitThread(LPVOID)
 	Compat::Detect();
 
 	Modules::RunGuarded("settings", Stage_Settings);
+	Modules::RunGuarded("standby", [] { Standby::Decide(); });
+
+	if (Standby::IsOn())
+		return RunStandby();
 
 	if (Compat::SafeMode())
 	{
@@ -292,19 +348,7 @@ DWORD WINAPI InitThread(LPVOID)
 	Modules::RunGuarded("movie window", [] { MovieWindow::Install(); });
 	Modules::RunGuarded("test harness", [] { Harness::Start(); });
 
-	const DWORD enableHooksStarted = GetTickCount();
-	HookManager::EnableAllHooks();
-
-	if (GetTickCount() - enableHooksStarted >= kSlowStageMs)
-		LOG("stage 'enable all hooks' took %lu ms", GetTickCount() - enableHooksStarted);
-	HookManager::StartIntegrityWatchdog();
-
-	LOG("Initialization finished");
-	D3D9Wrapper::MarkInitializationFinished();
-	ReclaimCrashHandler();
-	ModuleInventory::LogForeignModules("at startup");
-
-	RecoverIfTheDeviceWasMissed();
+	FinishInitialization("Initialization finished");
 	return 0;
 }
 

@@ -267,7 +267,7 @@ void PresentTuning::Apply(IDirect3D9* d3d9, UINT adapter, D3DPRESENT_PARAMETERS&
 	if (!g_modVals.displayTuning || Compat::SafeMode())
 	{
 		Decide(Compat::SafeMode() ? "safe mode, the host handles the display"
-			: "off, the game's own display settings");
+			: "off, UNI2's native display settings");
 		RewriteMultiSample(parameters);
 		RewriteBackBufferSize(d3d9, adapter, parameters);
 		return;

@@ -79,7 +79,7 @@ int g_idleStarts = 0;
 uint64_t g_selfStartedAt = 0;
 uint32_t g_pinnedScene = SceneWatch::kNone;
 
-char g_reason[128] = "the game's own";
+char g_reason[128] = "UNI2's";
 
 char g_status[256] = "not started";
 
@@ -555,7 +555,7 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 
 		if (resolved < 0)
 		{
-			Explain("the game's own %s", SlotName(asked));
+			Explain("UNI2's %s", SlotName(asked));
 		}
 		else
 		{

@@ -43,10 +43,12 @@ chama sozinho quando você atualiza pela interface.
 
 No jogo, aperte **F1** para abrir a interface. Para desinstalar, apague os dois arquivos.
 
-Na primeira execução o mod cria o `UNI2_IM.ini` com os padrões, na pasta `UNI2-IM` ao lado da DLL.
-Depois ele se conserta sozinho: a cada execução, toda chave ou seção faltando volta com o padrão, e
-nada que você editou é mexido. Uma versão nova acrescenta as configurações novas no seu arquivo.
-Apague o arquivo para voltar ao padrão. Todas as chaves estão em [The ini file](The-ini-file).
+Na primeira execução o mod cria as configurações com os padrões, um arquivo por parte do mod na pasta
+`UNI2-IM\Config`, ao lado da DLL. Depois elas se consertam sozinhas: a cada execução, toda chave ou
+seção faltando volta com o padrão, e nada que você editou é mexido. Uma versão nova acrescenta as
+configurações novas nos seus arquivos. Apague um arquivo para voltar aquela parte ao padrão. O
+`UNI2_IM.ini` de uma versão antiga é dividido nesses arquivos na primeira execução e guardado como
+`UNI2_IM.ini.bak`. Todas as chaves e arquivos estão em [The ini file](The-ini-file).
 
 O medidor de quadros usa a arte de painel e a fonte do próprio jogo. Na primeira execução o mod tira
 esses arquivos do arquivo `d` para `UNI2-IM\Assets`. Não precisa extrair nada na mão, e o download
@@ -86,7 +88,8 @@ ligar de volta, ou para testar se um deles é o problema.
 
 Se nada acontecer, procure a pasta `UNI2-IM` ao lado do `uni2.exe`. Sem a pasta, a DLL nunca
 carregou, então o problema é o passo acima e não o mod. Para tirar um log numa máquina onde ela
-carrega, crie o `UNI2-IM/UNI2_IM.ini` na mão com estas duas linhas e abra o jogo uma vez:
+carrega, crie o `UNI2-IM/UNI2_IM.ini` na mão com estas duas linhas e abra o jogo uma vez. O mod junta
+esse arquivo às configurações dele:
 
 ```ini
 [Debug]
@@ -328,11 +331,14 @@ Option, Display, Improvement Mod Display Settings. São duas opções:
 | **Output resolution** | o tamanho da imagem final enviada para a tela | o esticamento da imagem de 720p, feito pelo filtro de upscale da aba Shaders |
 | **Render resolution** | o palco 3D | o detalhe do palco |
 
-O jogo desenha a cena em 1280x720 e estica até a output resolution. Personagens, efeitos, menus e
-texto são arte de 720p: ficam em 720p e o filtro de upscale amplia, então ficam iguais em qualquer
-nível. O palco é 3D, então a render resolution desenha ele com detalhe de verdade, como o Melty Blood
-Type Lumina e o BlazBlue, e o mod devolve esse detalhe onde o palco aparece. **Ponha as duas na
-resolução da sua tela.**
+O jogo desenha a cena em 1280x720 e estica até a output resolution. O palco é 3D, então a render
+resolution desenha ele com detalhe de verdade, como o Melty Blood Type Lumina e o BlazBlue.
+Personagens, efeitos, menus e texto são arte de 720p. Com **Characters and text at this size too**
+(ligado por padrão) eles também são desenhados na render resolution. Logo abaixo, **Characters** é
+Smooth (bordas suaves) ou Pixels (os pixels da própria arte, ampliados), e **Text** é Smooth (igual ao
+frame meter) ou Sharp (bordas duras). As duas valem na hora. A arte não tem detalhe escondido,
+então menus e HUD ficam tão suaves quanto antes, não mais detalhados. No ini é
+`SpritesAtRenderResolution`, `SmoothCharacters` e `SharpText`. **Ponha as duas na resolução da sua tela.**
 
 As duas precisam reiniciar o jogo, e a render resolution fica desligada enquanto o POTATO MODE estiver
 ligado. Num Radeon RX 7600 em 4K, nenhum nível passou de 17 ms por frame no menu, no treino ou no menu
@@ -350,8 +356,10 @@ de memória e as ferramentas de busca usadas para criar o mod.
 
 ## O arquivo ini
 
-`UNI2_IM.ini`, na pasta `UNI2-IM` ao lado da DLL. Todas as chaves estão em
-[The ini file](The-ini-file), em inglês.
+As configurações ficam em `UNI2-IM\Config`, um arquivo por parte do mod (`Graphics.ini`,
+`Training.ini`, `Netplay.ini`...), e o que o mod guarda para si, como a lista de stages, fica em
+`UNI2-IM\Data`. Em Config > Profiles dá para salvar todas as configurações com um nome e carregar
+depois. Todas as chaves estão em [The ini file](The-ini-file), em inglês.
 
 ## Créditos
 

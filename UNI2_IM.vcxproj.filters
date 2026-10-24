@@ -555,6 +555,9 @@
     <ClCompile Include="src\Game\Files\ModFiles.cpp">
       <Filter>Game\Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Files\ModFileFilter.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Files\ModPacks.cpp">
       <Filter>Game\Files</Filter>
     </ClCompile>
@@ -972,6 +975,33 @@
     <ClCompile Include="src\Core\Config\Settings.cpp">
       <Filter>Core\Config</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Config\ProfileStore.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\ConfigProfiles.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\ConfigSplit.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\ConfigMigrations.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\ConfigLayout.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\ConfigFiles.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\ConfigBoot.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\Features.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Config\FeatureCatalog.cpp">
+      <Filter>Core\Config</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Config\IniDocument.cpp">
       <Filter>Core\Config</Filter>
     </ClCompile>
@@ -1173,6 +1203,12 @@
     <ClCompile Include="src\Overlay\Widgets\BoldText.cpp">
       <Filter>Overlay\Widgets</Filter>
     </ClCompile>
+    <ClCompile Include="src\Overlay\Widgets\Cards.cpp">
+      <Filter>Overlay\Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Widgets\ModStyle.cpp">
+      <Filter>Overlay\Widgets</Filter>
+    </ClCompile>
     <ClCompile Include="src\Overlay\Widgets\MarkdownView.cpp">
       <Filter>Overlay\Widgets</Filter>
     </ClCompile>
@@ -1195,6 +1231,12 @@
       <Filter>Overlay\Framework</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Windows\MainWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\MainTabs.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\StandbyWindow.cpp">
       <Filter>Overlay\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Panels\PlayerCardPanel.cpp">
@@ -1473,6 +1515,12 @@
     <ClCompile Include="src\Training\StageColor.cpp">
       <Filter>Training</Filter>
     </ClCompile>
+    <ClCompile Include="src\Training\TrainingVisibility.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Training\TrainingItems.cpp">
+      <Filter>Training</Filter>
+    </ClCompile>
     <ClCompile Include="src\Training\QuickTraining.cpp">
       <Filter>Training</Filter>
     </ClCompile>
@@ -1596,6 +1644,12 @@
     <ClCompile Include="src\Core\Boot\ProcessTuning.cpp">
       <Filter>Core\Boot</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\Boot\StandbyRule.cpp">
+      <Filter>Core\Boot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Boot\Standby.cpp">
+      <Filter>Core\Boot</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\Boot\CompatLayerText.cpp">
       <Filter>Core\Boot</Filter>
     </ClCompile>
@@ -1635,6 +1689,18 @@
     <ClCompile Include="src\D3D9\Device\ScaledTargets.cpp">
       <Filter>D3D9\Device</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\Device\SmoothMagnification.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ScreenArtSharpening.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ScreenArtRule.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\MagnifyRule.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\ShellOpen.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1657,6 +1723,33 @@
       <Filter>Game\Display</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Display\PotatoStage.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\FontPages.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\FontPageSet.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\CharaSmoothing.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\CharaShaderText.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\SceneLayer.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\SceneLooks.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\SceneLookLevels.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\StageResolution.cpp">
+      <Filter>Game\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Display\StageSteps.cpp">
       <Filter>Game\Display</Filter>
     </ClCompile>
     <ClCompile Include="src\D3D9\Draw\DrawTrace.cpp">
@@ -1819,6 +1912,12 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Panels\ConfigPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\ProfilesPanel.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\ModulesPanel.cpp">
       <Filter>Overlay\Panels</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Panels\PalettesPanel.cpp">
@@ -2067,6 +2166,33 @@
       <Filter>Core\Formats</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Config\Settings.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\ProfileStore.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\ConfigProfiles.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\ConfigSplit.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\ConfigMigrations.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\ConfigLayout.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\ConfigFiles.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\ConfigBoot.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\Features.h">
+      <Filter>Core\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Config\FeatureCatalog.h">
       <Filter>Core\Config</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Config\IniDocument.h">
@@ -2412,6 +2538,9 @@
       <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Files\ModFiles.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\ModFileFilter.h">
       <Filter>Game\Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Audio\OstImport.h">
@@ -2972,6 +3101,12 @@
     <ClInclude Include="src\Overlay\Widgets\BoldText.h">
       <Filter>Overlay\Widgets</Filter>
     </ClInclude>
+    <ClInclude Include="src\Overlay\Widgets\Cards.h">
+      <Filter>Overlay\Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Widgets\ModStyle.h">
+      <Filter>Overlay\Widgets</Filter>
+    </ClInclude>
     <ClInclude Include="src\Overlay\Widgets\MarkdownView.h">
       <Filter>Overlay\Widgets</Filter>
     </ClInclude>
@@ -2994,6 +3129,12 @@
       <Filter>Overlay\Framework</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Windows\MainWindow.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\MainTabs.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\StandbyWindow.h">
       <Filter>Overlay\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Panels\PlayerCardPanel.h">
@@ -3272,6 +3413,12 @@
     <ClInclude Include="src\Training\StageColor.h">
       <Filter>Training</Filter>
     </ClInclude>
+    <ClInclude Include="src\Training\TrainingVisibility.h">
+      <Filter>Training</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Training\TrainingItems.h">
+      <Filter>Training</Filter>
+    </ClInclude>
     <ClInclude Include="src\Training\QuickTraining.h">
       <Filter>Training</Filter>
     </ClInclude>
@@ -3401,6 +3548,12 @@
     <ClInclude Include="src\Core\Boot\ProcessTuning.h">
       <Filter>Core\Boot</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Boot\StandbyRule.h">
+      <Filter>Core\Boot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Boot\Standby.h">
+      <Filter>Core\Boot</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Boot\CompatLayerText.h">
       <Filter>Core\Boot</Filter>
     </ClInclude>
@@ -3440,6 +3593,18 @@
     <ClInclude Include="src\D3D9\Device\ScaledTargets.h">
       <Filter>D3D9\Device</Filter>
     </ClInclude>
+    <ClInclude Include="src\D3D9\Device\SmoothMagnification.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ScreenArtSharpening.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ScreenArtRule.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\MagnifyRule.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\ShellOpen.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -3453,6 +3618,12 @@
       <Filter>D3D9\Post\Shaders</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Post\Shaders\StageDetailShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\TextSharpenShader.h">
+      <Filter>D3D9\Post\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Post\Shaders\ArtUpscaleShader.h">
       <Filter>D3D9\Post\Shaders</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Post\Shaders\ScreenSpaceShader.h">
@@ -3474,6 +3645,36 @@
       <Filter>Game\Display</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Display\PotatoStage.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\FontPages.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\FontPageSet.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\CharaSmoothing.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\CharaShaderText.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\SceneLayer.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\SceneLooks.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\SceneLookLevels.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\StageResolution.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\StageSteps.h">
+      <Filter>Game\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Display\GraphicsOff.h">
       <Filter>Game\Display</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Draw\PrimitiveCount.h">
@@ -3741,6 +3942,12 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Panels\ConfigPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\ProfilesPanel.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\ModulesPanel.h">
       <Filter>Overlay\Panels</Filter>
     </ClInclude>
     <ClInclude Include="src\Overlay\Panels\PalettesPanel.h">

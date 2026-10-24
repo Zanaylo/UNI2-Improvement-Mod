@@ -303,6 +303,23 @@ BOOL CALLBACK StartWriter(PINIT_ONCE, PVOID, PVOID*)
 	return g_wake != nullptr;
 }
 
+struct Routing
+{
+	std::string legacyKey;
+	std::string root;
+	Ini::SectionRouter router = nullptr;
+};
+
+Routing g_routing;
+
+std::string Target(const char* section, const char* path)
+{
+	if (g_routing.router == nullptr || KeyOf(path) != g_routing.legacyKey)
+		return path;
+
+	return g_routing.root + g_routing.router(section);
+}
+
 void Record(File& file, const Op& op)
 {
 	Apply(file.document, op);
@@ -326,7 +343,7 @@ DWORD Ini::GetString(const char* section, const char* key, const char* fallback,
 	{
 		Exclusive lock;
 
-		if (!FileFor(path).document.Find(section, key, value))
+		if (!FileFor(Target(section, path).c_str()).document.Find(section, key, value))
 			value = fallback != nullptr ? fallback : "";
 	}
 
@@ -340,7 +357,7 @@ UINT Ini::GetInt(const char* section, const char* key, int fallback, const char*
 
 	Exclusive lock;
 
-	return static_cast<UINT>(FileFor(path).document.Int(section, key, fallback));
+	return static_cast<UINT>(FileFor(Target(section, path).c_str()).document.Int(section, key, fallback));
 }
 
 DWORD Ini::GetSection(const char* section, char* out, DWORD size, const char* path)
@@ -352,7 +369,7 @@ DWORD Ini::GetSection(const char* section, char* out, DWORD size, const char* pa
 
 	{
 		Exclusive lock;
-		lines = FileFor(path).document.Section(section);
+		lines = FileFor(Target(section, path).c_str()).document.Section(section);
 	}
 
 	std::string block;
@@ -391,7 +408,7 @@ BOOL Ini::Write(const char* section, const char* key, const char* value, const c
 
 	{
 		Exclusive lock;
-		Record(FileFor(path), op);
+		Record(FileFor(Target(section, path).c_str()), op);
 	}
 
 	if (g_wake != nullptr)
@@ -425,4 +442,34 @@ void Ini::FlushOnExit()
 		WriteBytes(item.path, item.text);
 
 	ReleaseSRWLockExclusive(&g_lock);
+}
+
+void Ini::Route(const std::string& legacyPath, const std::string& root, SectionRouter router)
+{
+	Exclusive lock;
+
+	g_routing.legacyKey = legacyPath.empty() ? std::string() : KeyOf(legacyPath.c_str());
+	g_routing.root = root;
+	g_routing.router = router;
+}
+
+std::string Ini::PathFor(const char* section, const char* path)
+{
+	Exclusive lock;
+	return Target(section, path);
+}
+
+void Ini::Forget()
+{
+	Flush();
+
+	Exclusive lock;
+
+	for (auto entry = g_files.begin(); entry != g_files.end();)
+	{
+		if (entry->second.pending.empty())
+			entry = g_files.erase(entry);
+		else
+			++entry;
+	}
 }

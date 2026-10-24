@@ -1,5 +1,6 @@
 ﻿#include "Overlay/Framework/WindowContainer.h"
 
+#include "Core/Boot/Standby.h"
 #include "Core/info.h"
 #include "Core/Config/interfaces.h"
 #include "Game/Debug/GameDebug.h"
@@ -26,9 +27,18 @@
 #include "Overlay/Windows/UpdateNotifierWindow.h"
 #include "Overlay/Windows/HitboxOverlay.h"
 #include "Overlay/Windows/MainWindow.h"
+#include "Overlay/Windows/StandbyWindow.h"
 
 WindowContainer::WindowContainer()
 {
+	m_windows[WindowType_UpdateNotifier] = std::make_unique<UpdateNotifierWindow>("Update available", true);
+
+	if (Standby::IsOn())
+	{
+		m_windows[WindowType_Main] = std::make_unique<StandbyWindow>(UNI2_IM_NAME " is paused", true);
+		return;
+	}
+
 	m_windows[WindowType_Main] = std::make_unique<MainWindow>(
 		UNI2_IM_NAME " " UNI2_IM_VERSION, true);
 
@@ -79,9 +89,6 @@ WindowContainer::WindowContainer()
 
 	if (!ScreenDirector::kOnHold)
 		m_windows[WindowType_Theme] = std::make_unique<ThemeWindow>("Theme", true);
-
-	m_windows[WindowType_UpdateNotifier] = std::make_unique<UpdateNotifierWindow>(
-		"Update available", true);
 
 	if (g_modVals.memoryDebugEnabled)
 		m_windows[WindowType_Debug] = std::make_unique<DebugWindow>("Memory debug", true);

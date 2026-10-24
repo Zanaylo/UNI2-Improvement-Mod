@@ -48,7 +48,7 @@ int g_cursor = -1;
 bool g_ordered = false;
 bool g_pending = false;
 
-char g_status[224] = "the picker's cards are the game's own";
+char g_status[224] = "the picker's cards are UNI2's";
 
 bool ReadWhole(const std::string& path, std::vector<uint8_t>& out)
 {

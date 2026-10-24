@@ -18,7 +18,7 @@
 
 namespace {
 
-constexpr const char* kGame = "The game's own";
+constexpr const char* kGame = "UNI2";
 constexpr const char* kZipFilter = "Sound pack (*.zip)\0*.zip\0All files\0*.*\0";
 constexpr const char* kAudioFilter =
 	"Sound (*.ogg;*.wav;*.mp3)\0*.ogg;*.wav;*.mp3\0All files\0*.*\0";
@@ -247,7 +247,7 @@ void SoundWindow::DrawRow(int index)
 	if (state == CharaSounds::State_Pack)
 		UiText::Good("%s", NameOf(entry->yours).c_str());
 	else
-		UiText::Muted("the game's own");
+		UiText::Muted("UNI2's");
 
 	ImGui::TableNextColumn();
 
@@ -341,7 +341,7 @@ void SoundWindow::DrawNewPack()
 	if (!ImGui::BeginPopupModal(kNewPackPopup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		return;
 
-	UiText::Muted("%s still uses the game's own sounds. Your changes are saved in a pack, so give "
+	UiText::Muted("%s still uses UNI2's sounds. Your changes are saved in a pack, so give "
 		"it a name. The name is also its folder, which is what you send to a friend.",
 		SoundOwners::Name(m_chara));
 
@@ -514,7 +514,7 @@ void SoundWindow::DrawRemovePack()
 	ImGui::TextUnformatted("Delete this pack and everything in it?");
 	UiText::Muted("%s", m_removing.c_str());
 	ImGui::Spacing();
-	UiText::Muted("The game's own sounds are not touched. Characters using it go back to them.");
+	UiText::Muted("UNI2's sounds are not touched. Characters using it go back to them.");
 	ImGui::Spacing();
 
 	if (ImGui::Button("Delete", Ui::Scaled(110.0f, 0.0f)))
@@ -623,7 +623,7 @@ void SoundWindow::DrawPacks()
 		}
 
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Deletes this pack from the mod. The game's own sounds are untouched.");
+			ImGui::SetTooltip("Deletes this pack from the mod. UNI2's sounds are untouched.");
 
 		DrawRemovePack();
 

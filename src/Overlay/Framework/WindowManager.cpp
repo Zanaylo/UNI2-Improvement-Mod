@@ -15,6 +15,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
+#include "Core/Boot/Standby.h"
 #include "D3D9/Device/BackgroundWindowCheck.h"
 #include "D3D9/Device/ResetClock.h"
 #include "Game/Patches/GamePatches.h"
@@ -28,6 +29,7 @@
 #include "Overlay/Hud/SubtitleHud.h"
 #include "Overlay/Windows/HitboxOverlay.h"
 #include "D3D9/Device/GraphicsWrapper.h"
+#include "Overlay/Widgets/ModStyle.h"
 #include "Overlay/Widgets/OverlayFont.h"
 #include "Palette/NetworkPick.h"
 #include "Palette/PaletteChoice.h"
@@ -240,6 +242,7 @@ bool WindowManager::Initialize(HWND window, IDirect3DDevice9* device)
 	OverlayFont::Load();
 
 	ImGui::StyleColorsDark();
+	ModStyle::Apply(ImGui::GetStyle());
 	m_fontScale = ImGui::GetStyle().FontScaleMain;
 	m_baseStyle = ImGui::GetStyle();
 	m_appliedScale = 0.0f;
@@ -594,6 +597,9 @@ void WindowManager::HandleHotkeys()
 				main->IsOpen() ? "open" : "closed");
 		}
 	}
+
+	if (Standby::IsOn())
+		return;
 
 	if (Hotkeys::Pressed(Hotkeys::Action_FreezeFrame))
 		FrameStepper::TogglePaused();

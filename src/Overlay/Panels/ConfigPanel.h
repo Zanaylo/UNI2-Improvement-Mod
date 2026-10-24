@@ -3,4 +3,5 @@
 namespace ConfigPanel
 {
 	void Draw();
+	void Hide();
 }

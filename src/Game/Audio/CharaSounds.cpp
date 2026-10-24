@@ -578,7 +578,7 @@ bool CharaSounds::Play(int index, char* status, int statusSize)
 
 		if (!DataArchive::Read(entry->folder.c_str(), entry->file.c_str(), bytes))
 		{
-			sprintf_s(status, statusSize, "%s is not in the game's own files", entry->file.c_str());
+			sprintf_s(status, statusSize, "%s is not in UNI2's files", entry->file.c_str());
 			return false;
 		}
 
@@ -662,7 +662,7 @@ bool CharaSounds::UseGame(int index, char* status, int statusSize)
 	const std::string name = entry->file;
 	Refresh();
 
-	sprintf_s(status, statusSize, "%s is the game's own again", name.c_str());
+	sprintf_s(status, statusSize, "%s is UNI2's again", name.c_str());
 	return true;
 }
 

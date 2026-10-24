@@ -260,7 +260,15 @@ bool GameArchive::List(const char* folder, std::vector<std::string>& out) const
 
 bool GameArchive::Read(const char* folder, const char* file, std::vector<uint8_t>& out) const
 {
+	size_t size = 0;
+	return ReadHead(folder, file, SIZE_MAX, out, size);
+}
+
+bool GameArchive::ReadHead(const char* folder, const char* file, size_t limit, std::vector<uint8_t>& out,
+	size_t& outSize) const
+{
 	out.clear();
+	outSize = 0;
 
 	if (folder == nullptr || file == nullptr)
 		return false;
@@ -280,16 +288,20 @@ bool GameArchive::Read(const char* folder, const char* file, std::vector<uint8_t
 
 	if (fseek(handle, static_cast<long>(entry->offset), SEEK_SET) == 0)
 	{
-		out.resize(entry->size);
+		out.resize(entry->size < limit ? entry->size : limit);
 		ok = fread(out.data(), 1, out.size(), handle) == out.size();
 	}
 
 	fclose(handle);
 
 	if (!ok)
+	{
 		out.clear();
+		return false;
+	}
 
-	return ok;
+	outSize = entry->size;
+	return true;
 }
 
 int GameArchive::FileCount() const

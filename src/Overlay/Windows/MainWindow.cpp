@@ -1,18 +1,15 @@
 ﻿#include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Windows/MainWindow.h"
+#include "Overlay/Windows/MainTabs.h"
 
 #include "Overlay/Panels/ConfigPanel.h"
-#include "Overlay/Panels/GraphicsPanel.h"
 #include "Overlay/Panels/PalettesPanel.h"
 #include "Overlay/Panels/ReplayPanel.h"
 #include "Overlay/Panels/TrainingPanel.h"
 
-#include "Core/Config/Hotkeys.h"
 #include "Core/info.h"
+#include "Core/Config/Features.h"
 #include "Core/Config/interfaces.h"
-#include "Core/Input/KeyboardCapture.h"
-#include "Core/Config/keycodes.h"
-#include "Core/Input/PadInput.h"
 #include "Core/Config/Settings.h"
 #include "Core/utils.h"
 #include "Game/Lobby/NameCensor.h"
@@ -22,6 +19,7 @@
 #include "Game/Audio/BgmNames.h"
 #include "Screens/ScreenDirector.h"
 #include "Screens/ScreenTheme.h"
+#include "Overlay/Widgets/Cards.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Overlay/Framework/WindowManager.h"
 #include "Game/Files/InstallCheck.h"
@@ -32,6 +30,89 @@
 #include "Game/Subtitles/SubtitleWatch.h"
 
 #include <Windows.h>
+
+#include <cstdio>
+
+namespace {
+
+constexpr float kBaseWidthInFonts = 32.0f;
+constexpr float kHeightShareOfScreen = 0.85f;
+
+IWindow* WindowOf(WindowType type)
+{
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	return container != nullptr ? container->GetWindow(type) : nullptr;
+}
+
+IWindow* LauncherTitle(const char* title, WindowType type)
+{
+	IWindow* const window = WindowOf(type);
+
+	if (window == nullptr)
+		return nullptr;
+
+	if (Cards::TitleWithToggle(title, window->IsOpen()))
+		window->Toggle();
+
+	return window;
+}
+
+struct ModuleWindow
+{
+	FeatureCatalog::Id module;
+	WindowType window;
+};
+
+const ModuleWindow kModuleWindows[] = {
+	{ FeatureCatalog::Id_Music, WindowType_Music },
+	{ FeatureCatalog::Id_VoicesAndSound, WindowType_Sound },
+	{ FeatureCatalog::Id_Subtitles, WindowType_Subtitles },
+	{ FeatureCatalog::Id_GamePatches, WindowType_Patches },
+	{ FeatureCatalog::Id_Palettes, WindowType_Palette },
+	{ FeatureCatalog::Id_Palettes, WindowType_PaletteEditor },
+	{ FeatureCatalog::Id_Stages, WindowType_Stages },
+	{ FeatureCatalog::Id_Stages, WindowType_StageFields },
+	{ FeatureCatalog::Id_NetplayWindow, WindowType_Netplay },
+	{ FeatureCatalog::Id_CharacterArt, WindowType_Misc },
+	{ FeatureCatalog::Id_ModPacks, WindowType_Mods },
+	{ FeatureCatalog::Id_Training, WindowType_PlayerControl },
+};
+
+void CloseHiddenModuleWindows()
+{
+	for (const ModuleWindow& entry : kModuleWindows)
+	{
+		if (Features::Shows(entry.module))
+			continue;
+
+		IWindow* const window = WindowOf(entry.window);
+
+		if (window != nullptr)
+			window->Close();
+	}
+}
+
+MainTabs::Shown TabContents()
+{
+	return {
+		Features::Shows(FeatureCatalog::Id_Training),
+		Features::Shows(FeatureCatalog::Id_Music),
+		Features::Shows(FeatureCatalog::Id_VoicesAndSound),
+		Features::Shows(FeatureCatalog::Id_Subtitles),
+		Features::Shows(FeatureCatalog::Id_NetplayWindow),
+		Features::Shows(FeatureCatalog::Id_GamePatches),
+		Features::Shows(FeatureCatalog::Id_Replays),
+		Features::Shows(FeatureCatalog::Id_ModPacks),
+		WindowOf(WindowType_GameDebug) != nullptr,
+	};
+}
+
+void Description(const char* text)
+{
+	UiText::Muted("%s", text);
+}
+
+}
 
 MainWindow::MainWindow(const std::string& title, bool closable, ImGuiWindowFlags windowFlags)
 	: IWindow(title, closable, windowFlags)
@@ -46,9 +127,9 @@ void MainWindow::BeforeDraw()
 	const float decorations = ImGui::GetFontSize() * 2.0f + style.FramePadding.x * 4.0f +
 		style.ItemInnerSpacing.x * 2.0f;
 
-	const float base = ImGui::GetFontSize() * 32.0f;
+	const float base = ImGui::GetFontSize() * kBaseWidthInFonts;
 
-	const float ceiling = ImGui::GetIO().DisplaySize.y * 0.85f;
+	const float ceiling = ImGui::GetIO().DisplaySize.y * kHeightShareOfScreen;
 
 	ImGui::SetNextWindowSizeConstraints(ImVec2(max(titleWidth + decorations, base), 0.0f),
 		ImVec2(FLT_MAX, ceiling > 0.0f ? ceiling : FLT_MAX));
@@ -56,18 +137,23 @@ void MainWindow::BeforeDraw()
 	ImGui::SetNextWindowSize(ImVec2(base, 0.0f), ImGuiCond_FirstUseEver);
 }
 
+void MainWindow::Draw()
+{
+	DrawPlayerCount();
+	DrawSteamFolderWarning();
+	DrawGameBuildWarning();
+	DrawTabs();
+}
+
 void MainWindow::DrawPlayerCount()
 {
-	ImGui::TextUnformatted("Current online players:");
-	ImGui::SameLine();
-
 	if (!PlayerCount::IsKnown())
 	{
 		UiText::Muted("%s", PlayerCount::GetStatusText());
 		return;
 	}
 
-	UiText::Good("%d", PlayerCount::Get());
+	UiText::Good("%d players online", PlayerCount::Get());
 }
 
 void MainWindow::DrawSteamFolderWarning()
@@ -77,10 +163,10 @@ void MainWindow::DrawSteamFolderWarning()
 	if (steamFolder == nullptr)
 		return;
 
-	UiText::Warn("Steam starts the game from another folder, so the mod does not load when you play "
-		"from Steam. Install the mod in:");
-	UiText::Muted("%s", steamFolder);
-	ImGui::Separator();
+	char text[512] = {};
+	sprintf_s(text, "Steam starts the game from another folder, so the mod does not load when you play "
+		"from Steam. Install the mod in:\n%s", steamFolder);
+	Cards::Problem(text);
 }
 
 void MainWindow::DrawGameBuildWarning()
@@ -90,62 +176,118 @@ void MainWindow::DrawGameBuildWarning()
 	if (age == GameBuild::Age::Supported)
 		return;
 
-	UiText::Warn("%s", age == GameBuild::Age::Older
+	Cards::Problem(age == GameBuild::Age::Older
 		? "This copy of the game is out of date. Game features stay off until it is updated."
 		: "The game was updated. Game features stay off until the mod is updated too.");
-	ImGui::Separator();
 }
 
-void MainWindow::Draw()
+void MainWindow::DrawTabs()
 {
-	DrawSteamFolderWarning();
-	DrawGameBuildWarning();
-	DrawPlayerCount();
-	ImGui::Separator();
-	TrainingPanel::Draw();
-	ImGui::Separator();
-	PalettesPanel::Draw();
-	ImGui::Separator();
-	ReplayPanel::Draw();
-	ImGui::Separator();
-	DrawMusicSection();
-	ImGui::Separator();
-	DrawSoundSection();
-	ImGui::Separator();
-	DrawSubtitlesSection();
-	ImGui::Separator();
-	DrawStagesSection();
-	ImGui::Separator();
-	DrawOnlineSection();
-	ImGui::Separator();
-	DrawPerformanceSection();
-	ImGui::Separator();
-	DrawPatchSection();
-	ImGui::Separator();
-	DrawThemeSection();
-	ImGui::Separator();
-	DrawModsSection();
+	struct Tab
+	{
+		MainTabs::Tab id;
+		const char* label;
+		void (MainWindow::*draw)();
+		void (*hidden)();
+	};
 
+	static constexpr Tab kTabs[] = {
+		{ MainTabs::Tab_Training, "Training", &MainWindow::DrawTrainingTab, nullptr },
+		{ MainTabs::Tab_Visuals, "Visuals", &MainWindow::DrawVisualsTab, nullptr },
+		{ MainTabs::Tab_Audio, "Audio", &MainWindow::DrawAudioTab, nullptr },
+		{ MainTabs::Tab_Online, "Online", &MainWindow::DrawOnlineTab, nullptr },
+		{ MainTabs::Tab_Mod, "Mod", &MainWindow::DrawModTab, nullptr },
+		{ MainTabs::Tab_Config, "Config", &MainWindow::DrawConfigTab, &ConfigPanel::Hide },
+	};
+
+	CloseHiddenModuleWindows();
+	const MainTabs::Shown contents = TabContents();
+
+	if (!ImGui::BeginTabBar("##main", ImGuiTabBarFlags_FittingPolicyShrink))
+		return;
+
+	for (const Tab& tab : kTabs)
+	{
+		if (!MainTabs::Visible(tab.id, contents))
+			continue;
+
+		if (!ImGui::BeginTabItem(tab.label))
+		{
+			if (tab.hidden != nullptr)
+				tab.hidden();
+
+			continue;
+		}
+
+		ImGui::Spacing();
+		(this->*tab.draw)();
+		ImGui::EndTabItem();
+	}
+
+	ImGui::EndTabBar();
+}
+
+void MainWindow::DrawTrainingTab()
+{
+	TrainingPanel::Draw();
+}
+
+void MainWindow::DrawVisualsTab()
+{
+	DrawPerformanceSection();
+	DrawStagesSection();
+	DrawThemeSection();
 	DrawMiscSection();
+	DrawPalettesSection();
+}
+
+void MainWindow::DrawPalettesSection()
+{
+	if (!Features::Shows(FeatureCatalog::Id_Palettes))
+		return;
+
+	PalettesPanel::Draw();
+}
+
+void MainWindow::DrawAudioTab()
+{
+	DrawMusicSection();
+	DrawSoundSection();
+	DrawSubtitlesSection();
+}
+
+void MainWindow::DrawOnlineTab()
+{
+	DrawOnlineSection();
+	DrawPatchSection();
+
+	if (Features::Shows(FeatureCatalog::Id_Replays))
+		ReplayPanel::Draw();
+}
+
+void MainWindow::DrawModTab()
+{
+	DrawModsSection();
 	DrawGameDebugSection();
-	ImGui::Separator();
+}
+
+void MainWindow::DrawConfigTab()
+{
 	ConfigPanel::Draw();
 }
 
 void MainWindow::DrawMusicSection()
 {
-	if (!ImGui::CollapsingHeader("Music"))
+	if (!Features::Shows(FeatureCatalog::Id_Music))
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Music) : nullptr;
+	const Cards::Scope card("##music");
 
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close music" : "Open music"))
-		window->Toggle();
+	if (!card)
+		return;
 
-	ImGui::TextWrapped("Soundpacks, the track list and the rules for what plays where are all in "
-		"that window.");
+	LauncherTitle("Music", WindowType_Music);
+	Description("Soundpacks, the track list and what plays where.");
 
 	if (!BgmControl::IsHooked())
 	{
@@ -173,36 +315,31 @@ void MainWindow::DrawMusicSection()
 
 void MainWindow::DrawSoundSection()
 {
-	if (!ImGui::CollapsingHeader("Voices and sound"))
+	if (!Features::Shows(FeatureCatalog::Id_VoicesAndSound))
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Sound) : nullptr;
+	const Cards::Scope card("##sound");
 
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close voices" : "Open voices"))
-		window->Toggle();
+	if (!card)
+		return;
 
-	ImGui::TextWrapped("Give one character another game's voice without changing anyone else, or "
-		"replace the shared sound effects. Packs are folders you can zip and share.");
-
+	LauncherTitle("Voices and sound", WindowType_Sound);
+	Description("Swap a character's voice or the shared sound effects.");
 	UiText::Muted("%s", SoundPacks::StatusText());
 }
 
 void MainWindow::DrawSubtitlesSection()
 {
-	if (!ImGui::CollapsingHeader("Subtitles"))
+	if (!Features::Shows(FeatureCatalog::Id_Subtitles))
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Subtitles) : nullptr;
+	const Cards::Scope card("##subtitles");
 
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close subtitles" : "Open subtitles"))
-		window->Toggle();
+	if (!card)
+		return;
 
-	ImGui::TextWrapped("Shows what each character says on screen, in the game's own font. Write "
-		"the lines for each character, save them to a file and share it.");
+	LauncherTitle("Subtitles", WindowType_Subtitles);
+	Description("On-screen lines for what each character says.");
 
 	if (!g_modVals.subtitles)
 	{
@@ -215,40 +352,32 @@ void MainWindow::DrawSubtitlesSection()
 
 void MainWindow::DrawPerformanceSection()
 {
-	if (!ImGui::CollapsingHeader("Performance"))
+	const Cards::Scope card("##performance");
+
+	if (!card)
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Performance) : nullptr;
-
-	if (window == nullptr)
+	if (LauncherTitle("Performance and graphics", WindowType_Performance) == nullptr)
 	{
 		UiText::Warn("The performance editor could not be created.");
 		return;
 	}
 
-	if (ImGui::Button(window->IsOpen() ? "Close performance editor" : "Open performance editor"))
-		window->Toggle();
-
-	ImGui::TextWrapped("Frame pacing, POTATO MODE and where each frame's time goes. All their "
-		"settings are in that window.");
+	Description("Resolution, shaders, frame pacing and POTATO MODE.");
 }
 
 void MainWindow::DrawPatchSection()
 {
-	if (!ImGui::CollapsingHeader("Game patches"))
+	if (!Features::Shows(FeatureCatalog::Id_GamePatches))
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Patches) : nullptr;
+	const Cards::Scope card("##patches");
 
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close patches" : "Open patches"))
-		window->Toggle();
+	if (!card)
+		return;
 
-	ImGui::TextWrapped("Play with the battle data of an older game version, so replays recorded "
-		"on it play back the way they were made.");
+	LauncherTitle("Game patches", WindowType_Patches);
+	Description("An older version's battle data, so its replays play back right.");
 
 	const GamePatches::Patch* const active = GamePatches::Get(GamePatches::ActiveIndex());
 
@@ -266,24 +395,19 @@ void MainWindow::DrawThemeSection()
 	if (ScreenDirector::kOnHold)
 		return;
 
-	if (!ImGui::CollapsingHeader("Theme"))
+	const Cards::Scope card("##theme");
+
+	if (!card)
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Theme) : nullptr;
-
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close theme" : "Open theme"))
-		window->Toggle();
-
-	ImGui::TextWrapped("A theme draws another French-Bread game's screens over UNI2's. Every UNI2 "
-		"option stays where it is.");
+	LauncherTitle("Theme", WindowType_Theme);
+	Description("Another French-Bread game's screens over UNI2's.");
 
 	const ScreenTheme::Theme* const theme = ScreenTheme::Active();
 
 	if (theme == nullptr)
 	{
-		UiText::Muted("Using the game's own screens.");
+		UiText::Muted("Using UNI2's screens.");
 		return;
 	}
 
@@ -293,91 +417,80 @@ void MainWindow::DrawThemeSection()
 
 void MainWindow::DrawStagesSection()
 {
-	if (!ImGui::CollapsingHeader("Stages"))
+	if (!Features::Shows(FeatureCatalog::Id_Stages))
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Stages) : nullptr;
+	const Cards::Scope card("##stages");
 
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close stages" : "Open stages"))
-		window->Toggle();
+	if (!card)
+		return;
 
-	ImGui::TextWrapped("Play the two stages the game hides from its lists, and install stages from "
-		"other French-Bread games you own.");
-
+	LauncherTitle("Stages", WindowType_Stages);
+	Description("Hidden stages, and stages from other French-Bread games you own.");
 	UiText::Good("%d/%d stages.", StageLibrary::Total(), BgCeiling::Numbers());
 }
 
 void MainWindow::DrawOnlineSection()
 {
-	if (!ImGui::CollapsingHeader("Online"))
+	if (!Features::Shows(FeatureCatalog::Id_NetplayWindow))
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Netplay) : nullptr;
+	const Cards::Scope card("##online");
 
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close netplay" : "Open netplay"))
-		window->Toggle();
+	if (!card)
+		return;
 
-	ImGui::TextWrapped("Rollback and ping as the game counts them, who is in the room and everyone "
-		"you have played. The Privacy tab replaces the other player's name everywhere, and room "
-		"names in the room search, for screenshots or streams, and can hide IR.");
+	LauncherTitle("Netplay", WindowType_Netplay);
+	Description("Rollback, ping, the room, your match history and privacy.");
 
 	if (g_modVals.censorNames)
-		UiText::Good("Opponent names are being replaced with \"%s\".",
-			NameCensor::Mask());
+		UiText::Good("Opponent names are being replaced with \"%s\".", NameCensor::Mask());
 }
 
 void MainWindow::DrawMiscSection()
 {
-	if (!ImGui::CollapsingHeader("Misc"))
+	if (!Features::Shows(FeatureCatalog::Id_CharacterArt))
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Misc) : nullptr;
+	const Cards::Scope card("##misc");
 
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close misc" : "Open misc"))
-		window->Toggle();
+	if (!card)
+		return;
 
-	ImGui::TextWrapped("Another art for each character on every screen, and the MELTY BLOOD TYPE LUMINA "
-		"announcers.");
+	LauncherTitle("Character art and announcers", WindowType_Misc);
+	Description("Alternate character art and the MELTY BLOOD TYPE LUMINA announcers.");
 }
 
 void MainWindow::DrawGameDebugSection()
 {
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr ? container->GetWindow(WindowType_GameDebug) : nullptr;
-
-	if (window == nullptr || !ImGui::CollapsingHeader("Game debug options"))
+	if (WindowOf(WindowType_GameDebug) == nullptr)
 		return;
 
-	if (ImGui::Button(window->IsOpen() ? "Close game debug options" : "Open game debug options"))
-		window->Toggle();
+	const Cards::Scope card("##gamedebug");
 
-	ImGui::TextWrapped("Logs and switches French Bread left in the battle scripts.");
+	if (!card)
+		return;
+
+	LauncherTitle("Game debug options", WindowType_GameDebug);
+	Description("French Bread's own debug logs and switches.");
 }
 
 void MainWindow::DrawModsSection()
 {
-	if (!ImGui::CollapsingHeader("Mods"))
+	if (!Features::Shows(FeatureCatalog::Id_ModPacks))
 		return;
 
-	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
-	IWindow* const window = container != nullptr
-		? container->GetWindow(WindowType_Mods) : nullptr;
+	const Cards::Scope card("##mods");
 
-	if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close mods" : "Open mods"))
-		window->Toggle();
+	if (!card)
+		return;
 
-	ImGui::TextWrapped("Folders in UNI2-IM\\Packs that replace the game's own files, like a voice, "
-		"a screen or a stage. Turn them on or off without restarting.");
+	LauncherTitle("Mods", WindowType_Mods);
+	Description("Folders in UNI2-IM\\Packs that replace game files.");
 
 	if (ModPacks::Count() > 0)
 	{
-		UiText::Good("%d of %d mod(s) on, %d file(s).", ModPacks::EnabledCount(),
-			ModPacks::Count(), ModPacks::FileCount());
+		UiText::Good("%d of %d mod(s) on, %d file(s).", ModPacks::EnabledCount(), ModPacks::Count(),
+			ModPacks::FileCount());
 	}
 }

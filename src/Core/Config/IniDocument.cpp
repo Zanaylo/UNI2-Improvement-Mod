@@ -282,3 +282,55 @@ std::string IniDocument::Text() const
 
 	return text;
 }
+
+std::vector<std::string> IniDocument::SectionNames() const
+{
+	std::vector<std::string> names;
+
+	for (const Line& line : m_lines)
+	{
+		const std::string trimmed = Trimmed(line.text);
+
+		if (!IsHeader(trimmed))
+			continue;
+
+		const std::string name = HeaderName(trimmed);
+		bool seen = false;
+
+		for (const std::string& known : names)
+			seen = seen || Same(known, name);
+
+		if (!seen)
+			names.push_back(name);
+	}
+
+	return names;
+}
+
+std::string IniDocument::SectionText(const std::string& section) const
+{
+	const std::string wanted = Trimmed(section);
+	std::string text;
+	bool inside = false;
+
+	for (const Line& line : m_lines)
+	{
+		const std::string trimmed = Trimmed(line.text);
+		const std::string ending = line.ending.empty() ? kNewLine : line.ending;
+
+		if (IsHeader(trimmed))
+		{
+			inside = Same(HeaderName(trimmed), wanted);
+
+			if (inside && text.empty())
+				text = line.text + ending;
+
+			continue;
+		}
+
+		if (inside)
+			text += line.text + ending;
+	}
+
+	return text;
+}

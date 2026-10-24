@@ -10,9 +10,9 @@ problem happened, not a later one.
 | `crash_<date>_<time>_<kind>.dmp` | a crash or hang dump, the ten newest kept |
 | `UNI2_IM_meter_<date>_<time>_NN.csv` | frame meter traces, only with `[Debug] MeterTrace = 1` |
 
-Both logs are off until you turn them on. The session log needs `[Debug] Logging = 1` in `UNI2_IM.ini`.
-The network log has a tick box, **Write the network log**, in the Netplay window's Network log tab, or
-`[Netplay] NetLog = 1` in the same file.
+Both logs are off until you turn them on. The session log needs `[Debug] Logging = 1` in
+`UNI2-IM\Config\Debug.ini`. The network log has a tick box, **Write the network log**, in the Netplay
+window's Network log tab, or `[Netplay] NetLog = 1` in `UNI2-IM\Config\Netplay.ini`.
 
 ## A match felt worse with the mod
 

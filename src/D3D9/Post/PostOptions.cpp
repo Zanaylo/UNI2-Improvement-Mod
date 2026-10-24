@@ -17,7 +17,7 @@ struct Preset
 const Preset kPresets[AntiAlias::Level_COUNT] = {
 	{
 		"Off",
-		"No filter. You see the game's own picture.",
+		"No filter. You see UNI2's picture.",
 		{ 0.0f, 0.0f, 0.0f, 0.0f },
 	},
 	{
@@ -52,7 +52,7 @@ struct Kernel
 const Kernel kKernels[SharpenMode::Kind_COUNT] = {
 	{
 		"Off",
-		"No filter. You see the game's own picture.",
+		"No filter. You see UNI2's picture.",
 		nullptr,
 	},
 	{

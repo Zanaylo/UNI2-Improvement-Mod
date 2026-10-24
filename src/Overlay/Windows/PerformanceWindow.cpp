@@ -9,6 +9,7 @@
 #include "D3D9/Device/DeviceHooks.h"
 #include "D3D9/Device/Dxvk.h"
 #include "D3D9/Device/GraphicsWrapper.h"
+#include "Core/Config/Features.h"
 #include "D3D9/Device/PresentTuning.h"
 #include "D3D9/Device/ScaledTargets.h"
 #include "Game/Engine/Camera.h"
@@ -18,6 +19,11 @@
 #include "Game/Display/InternalResolution.h"
 #include "Game/Display/PotatoMode.h"
 #include "Game/Display/PotatoStage.h"
+#include "Game/Display/SceneLayer.h"
+#include "Game/Display/SceneLookLevels.h"
+#include "Game/Display/SceneLooks.h"
+#include "Game/Display/StageResolution.h"
+#include "Game/Display/StageSteps.h"
 #include "Game/Display/PumpWait.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Overlay/Panels/GraphicsPanel.h"
@@ -39,6 +45,36 @@ constexpr float kDisplaySyncBiasMinMs = 0.0f;
 constexpr float kDisplaySyncBiasMaxMs = 12.0f;
 
 const ImVec4 kGoodColour = ImVec4(0.45f, 0.80f, 0.50f, 1.0f);
+
+void DrawLookChoice(const char* label, int level, const char* (*name)(int), void (*apply)(int))
+{
+	ImGui::PushID(label);
+	ImGui::TextUnformatted(label);
+
+	for (int candidate = 0; candidate < SceneLookLevels::kCount; ++candidate)
+	{
+		ImGui::SameLine();
+		ImGui::PushID(candidate);
+
+		if (ImGui::RadioButton(name(candidate), level == candidate) && candidate != level)
+			apply(candidate);
+
+		ImGui::PopID();
+	}
+
+	ImGui::PopID();
+}
+
+void DrawSceneLooks()
+{
+	DrawLookChoice("Characters", SceneLooks::GetCharacterLevel(), &SceneLookLevels::CharacterName,
+		&SceneLooks::ApplyCharacter);
+	UiText::Help("Smooth softens the edges of the character art. Pixels shows the art's own pixels, enlarged. "
+		"Applies right away.");
+
+	DrawLookChoice("Text", SceneLooks::GetTextLevel(), &SceneLookLevels::TextName, &SceneLooks::ApplyText);
+	UiText::Help("Smooth draws the game's text like the frame meter. Sharp gives it hard edges. Applies right away.");
+}
 const ImVec4 kWarnColour = ImVec4(0.95f, 0.55f, 0.45f, 1.0f);
 
 struct Option
@@ -482,37 +518,39 @@ void PerformanceWindow::Draw()
 	if (!ImGui::BeginTabBar("##performance"))
 		return;
 
+	const bool graphics = Features::Shows(FeatureCatalog::Id_Graphics);
+
 	if (ImGui::BeginTabItem("Performance"))
 	{
 		DrawPerformanceTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("POTATO MODE"))
+	if (graphics && ImGui::BeginTabItem("POTATO MODE"))
 	{
 		DrawPotatoTab();
 		ImGui::EndTabItem();
 	}
 
-	if (!PotatoMode::IsActive() && ImGui::BeginTabItem("Improvements"))
+	if (graphics && !PotatoMode::IsActive() && ImGui::BeginTabItem("Improvements"))
 	{
 		DrawImprovementsTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Shaders"))
+	if (graphics && ImGui::BeginTabItem("Shaders"))
 	{
 		GraphicsPanel::DrawShadersTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("dgVoodoo"))
+	if (graphics && ImGui::BeginTabItem("dgVoodoo"))
 	{
 		GraphicsPanel::DrawDgVoodoo();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("DXVK"))
+	if (graphics && ImGui::BeginTabItem("DXVK"))
 	{
 		GraphicsPanel::DrawDxvk();
 		ImGui::EndTabItem();
@@ -652,7 +690,7 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	ImGui::EndDisabled();
 
-	Help("Turns vsync on for you, even with the game's own vsync off, so no line splits the picture. "
+	Help("Turns vsync on for you, even with UNI2's vsync off, so no line splits the picture. "
 		"Costs at most the frame lead in input lag. Needs \"Line frames up with the screen\" on. "
 		"Applies after an alt-tab or a restart. Default: on.");
 
@@ -1040,7 +1078,7 @@ void PerformanceWindow::DrawPotatoTab()
 		"Everything else applies right away. In exclusive fullscreen the size is rounded up to a "
 		"mode your monitor has, so a 4:3 mode will letterbox or stretch.");
 
-	changed = DrawPotatoStage() || changed;
+	changed = DrawStageResolution() || changed;
 
 	ImGui::Spacing();
 
@@ -1105,7 +1143,7 @@ void PerformanceWindow::DrawImprovementsTab()
 
 	Muted("%s", Improvements::Describe(Improvements::GetLevel()));
 
-	changed = DrawInternalResolution() || changed;
+	changed = DrawStageResolution() || changed;
 
 	GraphicsPanel::DrawPictureQuality();
 
@@ -1121,40 +1159,46 @@ void PerformanceWindow::DrawImprovementsTab()
 	Profiler::Reset();
 }
 
-bool PerformanceWindow::DrawInternalResolution()
+bool PerformanceWindow::DrawStageResolution()
 {
 	ImGui::Spacing();
-	ImGui::SeparatorText("Render resolution");
+	ImGui::SeparatorText("Stage resolution");
 
-	const int level = InternalResolution::GetLevel();
+	const int level = StageResolution::GetLevel();
 	bool changed = false;
 
-	for (int candidate = 0; candidate < InternalResolution::Level_COUNT; ++candidate)
+	for (int candidate = 0; candidate < StageSteps::kCount; ++candidate)
 	{
 		if (candidate > 0)
 			ImGui::SameLine();
 
 		ImGui::PushID(candidate);
 
-		if (ImGui::RadioButton(InternalResolution::GetLevelName(candidate), level == candidate) &&
-			candidate != level)
+		if (ImGui::RadioButton(StageResolution::GetLevelName(candidate), level == candidate) && candidate != level)
 		{
-			InternalResolution::Apply(candidate);
+			StageResolution::Apply(candidate);
 			changed = true;
 		}
 
 		ImGui::PopID();
 	}
 
-	Help("The size the game draws its 3D stage at. The game's own is 1280x720. Characters, effects, "
-		"menus and text are 720p art and stay at 720p, enlarged by the upscale filter, so they look "
-		"the same at every level; only the stage gains detail. Set it to the output resolution. Needs "
-		"a restart. Off while POTATO MODE is on or Stage quality is lowered.");
+	Help("The size the 3D stage is drawn at. Lower is lighter, higher is sharper. Match the output "
+		"resolution. Game default: 720p. Needs a restart.");
 
-	Muted("%s", InternalResolution::Describe(InternalResolution::GetLevel()));
+	bool wholeScene = SceneLayer::GetLevel() == SceneLayer::Level_RenderResolution;
 
-	if (PotatoStage::GetLevel() != PotatoStage::Level_Off)
-		Warn("Stage quality on the POTATO MODE tab is lowered, so this waits until it is Off.");
+	if (ImGui::Checkbox("Characters and text at this size too", &wholeScene))
+	{
+		SceneLayer::Apply(wholeScene ? SceneLayer::Level_RenderResolution : SceneLayer::Level_Native);
+		changed = true;
+	}
+
+	Help("Draws characters, effects, menus and text at the stage resolution instead of 720p. Only above "
+		"720p. Game default: off. Needs a restart.");
+
+	if (wholeScene)
+		DrawSceneLooks();
 
 	DrawScaledTargetsState();
 	return changed;
@@ -1179,39 +1223,6 @@ void PerformanceWindow::DrawDiagnostics()
 		"drawing inside the window, the camera matrices, each player's position and every draw "
 		"call. Press it when something looks out of place, then send the newest file in "
 		"UNI2-IM\\Logs.");
-}
-
-bool PerformanceWindow::DrawPotatoStage()
-{
-	ImGui::Spacing();
-	ImGui::SeparatorText("Stage quality");
-
-	const int level = PotatoStage::GetLevel();
-	bool changed = false;
-
-	for (int candidate = 0; candidate < PotatoStage::Level_COUNT; ++candidate)
-	{
-		if (candidate > 0)
-			ImGui::SameLine();
-
-		ImGui::PushID(candidate);
-
-		if (ImGui::RadioButton(PotatoStage::GetLevelName(candidate), level == candidate) && candidate != level)
-		{
-			PotatoStage::Apply(candidate);
-			changed = true;
-		}
-
-		ImGui::PopID();
-	}
-
-	Help("The size the 3D stage is drawn at, at every POTATO MODE level, Off included. Characters, "
-		"effects and menus stay at the game's own 720p. The stage is often the heaviest part of a "
-		"frame on a weak graphics card. Needs a restart.");
-
-	Muted("%s", PotatoStage::Describe(PotatoStage::GetLevel()));
-	DrawScaledTargetsState();
-	return changed;
 }
 
 bool PerformanceWindow::DrawPotatoHeight()

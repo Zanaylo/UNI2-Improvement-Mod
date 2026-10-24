@@ -1,9 +1,36 @@
 # The ini file
 
-`UNI2_IM.ini` sits in the `UNI2-IM` folder next to the DLL. The mod fills it in on every run. A
-missing key or section is added with its default, and a key you edited is left alone. Delete the
-file to start over. The file always lists every setting your build knows, and keys from a new
-version show up on the next launch.
+The settings sit in `UNI2-IM\Config`, one file per part of the mod, and what the mod keeps for
+itself sits in `UNI2-IM\Data`. The mod fills them in on every run. A missing key or section is added
+with its default, and a key you edited is left alone. Delete a file to put that part back to its
+defaults. The files always list every setting your build knows, and keys from a new version show up
+on the next launch.
+
+| File | Sections |
+|---|---|
+| `Config\Mod.ini` | `[Mod]`, `[Overlay]`, `[Theme]`, `[Compat]`, and any section not listed here |
+| `Config\Keybinds.ini` | `[Keybinds]`, `[PadKeybinds]`, `[Input]` |
+| `Config\Modules.ini` | `[Modules]`, `[Mods]` |
+| `Config\Training.ini` | `[Training]`, `[FrameMeter]`, `[HudOpacity]` |
+| `Config\Graphics.ini` | `[Graphics]`, `[Video]`, `[dgVoodoo]`, `[DXVK]` |
+| `Config\Netplay.ini` | `[Netplay]`, `[Privacy]`, `[Spectate]` |
+| `Config\Audio.ini` | `[Music]`, `[Sounds]`, `[Subtitles]` |
+| `Config\Palettes.ini` | `[Palette]` |
+| `Config\Replays.ini` | `[Replays]` |
+| `Config\Stages.ini` | `[Stages]` |
+| `Config\Debug.ini` | `[Debug]`, `[GameDebug]` |
+| `Data\Stages.ini` | `[StageLibrary]`, `[StageIcons]`, `[Extras]` |
+| `Data\Palettes.ini` | `[PaletteChoice]`, `[PaletteSlots]` |
+| `Data\Portraits.ini` | `[Portraits]` |
+
+**Coming from an older version.** On the first start the old `UNI2_IM.ini` is split into these files
+and kept as `UNI2_IM.ini.bak`. On the way, settings that a newer version retired are taken out and the
+fixes recorded under `SettingsRevision` are applied; the log lists every change. Nothing you set is
+lost. A `UNI2_IM.ini` you put back later, even one with only two lines, is merged into the files on
+the next start: its values win, and it is kept as the next backup (`.bak2`, `.bak3`...).
+
+**Profiles.** Config > Profiles saves every setting under a name, in `Config\Profiles\<name>`, and
+loads it back on the next start. `Data` is not part of a profile.
 
 ## `[Mod]`
 
@@ -11,7 +38,7 @@ version show up on the next launch.
 |---|---|---|
 | `DinputDllWrapper` | empty | Full path to another `dinput8.dll` to chain-load. Empty uses the system one. |
 | `CheckForUpdates` | `1` | Checks GitHub once, in the background, for a newer release. Nothing is downloaded until you press **Update now**. |
-| `SettingsRevision` | `5` | Which release's defaults this file was last updated to. The mod uses it to fix a setting whose old default turned out to be unsafe. Do not edit it. |
+| `SettingsRevision` | `6` | Which revision of the settings these files were last brought up to. The mod uses it to retire old keys and to fix a setting whose old default turned out to be unsafe. Do not edit it. |
 
 ## `[Keybinds]`
 
@@ -171,7 +198,10 @@ restores them. Change the other keys only if you want to push one further than t
 | `PotatoHeight` | `360` | The size the Potato level uses, as the height of a 16:9 picture: 480, 360, 240 or 144. |
 | `PotatoStage` | `0` | The stage quality on the POTATO MODE tab, at every `PotatoMode` level including off: 0 off (1280x720), 1 540p, 2 360p, 3 270p. Takes the place of `InternalResolution` while it is set. Needs a restart. |
 | `Supersample` | `0` | The output resolution on the Improvements tab, the size of the picture sent to your screen: 0 off (the game's own Display option), 1 1080p, 2 1440p, 3 4K. Ignored while `PotatoMode` is set, because both set the drawing size. |
-| `InternalResolution` | `0` | The render resolution on the Improvements tab, the size the game draws its 3D stage at: 0 off (1280x720), 1 1080p, 2 1440p, 3 4K. Characters, effects and menus stay at 720p. Set it to the same size as `Supersample`. Needs a restart, off while `PotatoMode` or `PotatoStage` is set. |
+| `InternalResolution` | `0` | The render resolution on the Improvements tab, the size the game draws its 3D stage at: 0 off (1280x720), 1 1080p, 2 1440p, 3 4K. Set it to the same size as `Supersample`. Needs a restart, off while `PotatoMode` or `PotatoStage` is set. |
+| `SpritesAtRenderResolution` | `1` | Characters and text at this size too: 1 draws characters, effects, menus and text at `InternalResolution` too; 0 keeps them a 720p picture. Only above 720p. Needs a restart. |
+| `SmoothCharacters` | `1` | With `SpritesAtRenderResolution`: 1 smooths the edges of the character art, 0 shows its own pixels, enlarged. Applies right away. |
+| `SharpText` | `0` | With `SpritesAtRenderResolution`: 0 draws the game's text smooth, like the frame meter; 1 gives it hard edges. Applies right away. |
 | `Sharpen` | `0` | Sharpening on the finished frame, 0 to 100. 0 is off, 40-60 is the useful range. Applies right away and works at any drawing size, POTATO MODE included. |
 | `SharpenMode` | `0` | Which sharpening method: 0 off, 1 contrast adaptive, 2 FidelityFX RCAS. |
 | `UpscaleFilter` | `0` | Which filter scales the scene up to your window, instead of the engine's bilinear: 0 off, 1 bicubic, 2 Lanczos, 3 FidelityFX EASU. Only works when the back buffer is larger than 1280x720. |

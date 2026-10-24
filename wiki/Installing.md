@@ -16,11 +16,12 @@ folder. The mod also runs it for you when you update from the overlay.
 
 Press **F1** in game to open the overlay. To uninstall, delete both files.
 
-The first time the mod runs, it writes `UNI2_IM.ini` with the default values, in the `UNI2-IM` folder
-next to the DLL. After that it repairs itself: on every run, any missing key or section is added with
-its default, and nothing you edited is touched. So a new version adds its settings to your file, and
-a file you cut down to two lines gets filled back in. Delete it to go back to the defaults. Every key
-is listed on [The ini file](The-ini-file).
+The first time the mod runs, it writes its settings with the default values, one file per part of the
+mod in `UNI2-IM\Config`, next to the DLL. After that they repair themselves: on every run, any missing
+key or section is added with its default, and nothing you edited is touched. So a new version adds its
+settings to your files, and a file you cut down to two lines gets filled back in. Delete a file to put
+that part back to its defaults. A `UNI2_IM.ini` from an older version is split into these files on the
+first start and kept as `UNI2_IM.ini.bak`. Every key and file is listed on [The ini file](The-ini-file).
 
 The frame meter uses the game's own panel art and font. On the first run the mod copies them from the
 game's `d` archive into `UNI2-IM\Assets`, so you do not extract anything by hand and the download has
@@ -28,6 +29,14 @@ no game data. Delete the folder and it is rebuilt. If the archive cannot be read
 works with flat colours.
 
 To chain-load another `dinput8.dll` wrapper, put its full path in `[Mod] DinputDllWrapper`.
+
+## When UNI2 updates
+
+The mod only works with the game version it was made for. When Steam updates UNI2, the mod pauses
+itself on the next start: a notice opens, nothing in the game is changed, and the mod only looks for
+its own update, again every 15 minutes while the game is open. When the fixed version is out it
+offers it, and installs it once you press **Update**. `[Compat] AllowUnsupportedGame = 1` in
+`Config\Mod.ini` runs the mod anyway, at your own risk.
 
 ## Linux and Steam Deck (Proton)
 
@@ -61,7 +70,7 @@ or to check whether one of them is causing a problem.
 If nothing happens at all, look for a `UNI2-IM` folder next to `uni2.exe`. If there is no folder, the
 DLL never loaded, so the problem is the step above, not the mod. To get a log from a machine where it
 does load, create `UNI2-IM/UNI2_IM.ini` by hand with only these two lines and start the game once. The
-mod fills in the rest:
+mod merges it into its settings files and fills in the rest:
 
 ```ini
 [Debug]

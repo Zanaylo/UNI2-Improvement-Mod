@@ -19,6 +19,7 @@ namespace ScaledTargets
 	bool IsScaled(IDirect3DSurface9* surface);
 	bool IsScaledTexture(const IDirect3DBaseTexture9* texture);
 	bool BoundIsScaled();
+	bool ScalesSceneLayer();
 	int CollectSurfaces(IDirect3DSurface9** out, int capacity);
 
 	LONG ToScaledX(LONG value);

@@ -19,7 +19,7 @@ constexpr const char* const kSources[] = { "MS\\x86\\", "x86\\", "" };
 constexpr const char* const kLibraries[] = { "D3D9.dll", "D3D8.dll", "D3DImm.dll", "DDraw.dll" };
 constexpr int kMostFps = 360;
 
-constexpr const char* const kResolutionLabels[] = { "The game's own", "1920x1080", "2560x1440",
+constexpr const char* const kResolutionLabels[] = { "Native", "1920x1080", "2560x1440",
 	"3840x2160", "Desktop" };
 constexpr const char* const kResolutionValues[] = { "unforced", "h:1920, v:1080", "h:2560, v:1440",
 	"h:3840, v:2160", "desktop" };
@@ -29,7 +29,7 @@ constexpr const char* const kScalingLabels[] = { "Unspecified", "Centered", "Str
 constexpr const char* const kScalingValues[] = { "unspecified", "centered", "stretched",
 	"centered_ar", "stretched_ar" };
 
-constexpr const char* const kFilteringLabels[] = { "The game's own", "Point", "Bilinear",
+constexpr const char* const kFilteringLabels[] = { "Native", "Point", "Bilinear",
 	"Trilinear", "Anisotropic 16x" };
 constexpr const char* const kFilteringValues[] = { "appdriven", "pointsampled", "bilinear",
 	"trilinear", "16" };

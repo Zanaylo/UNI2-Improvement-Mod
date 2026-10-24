@@ -18,7 +18,7 @@ struct Step
 constexpr Step kSteps[Improvements::Level_COUNT] = {
 	{
 		"Off",
-		"The game's own Display option, untouched.",
+		"UNI2's Display option, untouched.",
 		0, 0,
 	},
 	{

@@ -12,6 +12,8 @@ public:
 	bool Find(const std::string& section, const std::string& key, std::string& value) const;
 	int Int(const std::string& section, const std::string& key, int fallback) const;
 	std::vector<std::string> Section(const std::string& section) const;
+	std::vector<std::string> SectionNames() const;
+	std::string SectionText(const std::string& section) const;
 
 	void Set(const std::string& section, const std::string& key, const std::string& value);
 	void Remove(const std::string& section, const std::string& key);

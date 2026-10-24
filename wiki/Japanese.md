@@ -33,7 +33,7 @@
 
 ゲーム中に **F1** でオーバーレイを開きます。アンインストールは 2 ファイルを削除するだけです。
 
-`UNI2_IM.ini` は初回起動時に `UNI2-IM` フォルダーへ既定値で作られます。その後は起動のたびに、足りないキーやセクションだけが既定値で追加されます。編集した値はそのままです。削除すれば既定値に戻ります。各キーの説明は [The ini file](The-ini-file) にあります。
+設定は初回起動時に `UNI2-IM\Config` フォルダーへ、MOD の機能ごとに一つずつのファイルとして既定値で作られます。その後は起動のたびに、足りないキーやセクションだけが既定値で追加されます。編集した値はそのままです。ファイルを削除すると、その機能の設定が既定値に戻ります。古いバージョンの `UNI2_IM.ini` は初回起動時にこれらのファイルへ分けられ、`UNI2_IM.ini.bak` として残ります。各キーとファイルの説明は [The ini file](The-ini-file) にあります。
 
 ## Linux / Steam Deck (Proton)
 
@@ -212,7 +212,7 @@ Performance ウィンドウのタブです。60 fps が出ない PC 向けです
 | **Output resolution** | 画面に送る最終画像のサイズ | 720p の画像の引き伸ばし (Shaders タブのアップスケールフィルター) |
 | **Render resolution** | 3D ステージ | ステージの細部 |
 
-ゲームはシーンを 1280x720 で描き、Output resolution まで引き伸ばします。キャラクター、エフェクト、メニュー、文字は 720p の絵なので 720p のまま描かれ、アップスケールフィルターで拡大されます。ステージは 3D なので、Render resolution で本当に細かく描かれ、ステージが見える場所にその細部が戻されます。**両方を画面の解像度に合わせてください。**
+ゲームはシーンを 1280x720 で描き、Output resolution まで引き伸ばします。ステージは 3D なので、Render resolution で本当に細かく描かれます。キャラクター、エフェクト、メニュー、文字は 720p の絵です。**Characters and text at this size too** (初期設定でオン) では、これらも Render resolution で描かれます。その下の **Characters** は Smooth (滑らかな輪郭) か Pixels (絵のピクセルをそのまま拡大)、**Text** は Smooth (フレームメーターと同じ) か Sharp (くっきりした輪郭) です。どちらもすぐに反映されます。絵にない細部は増えないので、メニューと HUD は以前と同じ滑らかさです。ini では `SpritesAtRenderResolution`、`SmoothCharacters`、`SharpText` です。**両方を画面の解像度に合わせてください。**
 
 どちらも再起動が必要で、POTATO MODE 中は Render resolution は無効です。ini では `Supersample` と `InternalResolution` です。
 
@@ -224,7 +224,7 @@ Performance ウィンドウのタブです。60 fps が出ない PC 向けです
 
 ## ini ファイル
 
-DLL の隣の `UNI2-IM` フォルダーにある `UNI2_IM.ini` です。全キーの説明は [The ini file](The-ini-file) (英語) にあります。
+設定は DLL の隣の `UNI2-IM\Config` に、MOD が自分で管理するデータ（ステージ一覧など）は `UNI2-IM\Data` にあります。Config > Profiles で全設定を名前を付けて保存し、後で読み込めます。全キーの説明は [The ini file](The-ini-file) (英語) にあります。
 
 ## クレジット
 

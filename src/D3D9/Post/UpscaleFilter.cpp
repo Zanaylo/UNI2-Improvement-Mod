@@ -19,7 +19,7 @@ struct Kernel
 const Kernel kKernels[UpscaleFilter::Kind_COUNT] = {
 	{
 		"Off",
-		"The game's own bilinear stretch. No extra pass is drawn.",
+		"UNI2's native bilinear stretch. No extra pass is drawn.",
 		nullptr,
 		true,
 	},

@@ -157,7 +157,7 @@ void Gather(std::vector<Listed>& out)
 		row.key = stage->number;
 		row.shown = true;
 		row.name = stage->name.empty() ? stage->folder : stage->name;
-		row.from = "the game's own, bg\\" + stage->folder;
+		row.from = "UNI2, bg\\" + stage->folder;
 		row.yours = false;
 
 		std::string replacement;
@@ -473,7 +473,7 @@ void StagesPanel::DrawArcsys()
 
 void StagesPanel::DrawCustom()
 {
-	UiText::Muted("Install a stage of your own");
+	UiText::Muted("Install a stage");
 
 	ImGui::BeginDisabled(StageImport::IsBusy());
 
@@ -545,7 +545,7 @@ void StagesPanel::DrawReplace()
 
 	ImGui::SameLine();
 	UiText::Help("The stage keeps its number, card, walls and selection flags, so it needs no free "
-		"number. Only the look changes. An opponent without it sees the game's own stage."
+		"number. Only the look changes. An opponent without it sees UNI2's stage."
 		"\n\nRestore, under Installed stages, brings the game's stage back.");
 
 	std::string picked;
@@ -776,7 +776,7 @@ void StagesPanel::DrawTuning(int key, int slot)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Untick to show this stage in the game's own colour, without the mod's "
+		ImGui::SetTooltip("Untick to show this stage in UNI2's colour, without the mod's "
 			"Brightness or Glow. Your values are kept for when you tick it again.");
 	}
 
@@ -954,7 +954,7 @@ void StagesPanel::DrawPorted()
 			ImGui::EndDisabled();
 
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-				ImGui::SetTooltip("Deletes Mods\\bg\\bg%03d, so the game's own stage comes back.", row.slot);
+				ImGui::SetTooltip("Deletes Mods\\bg\\bg%03d, so UNI2's stage comes back.", row.slot);
 
 			ImGui::SameLine();
 		}
@@ -1036,8 +1036,8 @@ void StagesPanel::DrawHelp()
 
 	ImGui::SeparatorText("Hidden stages");
 
-	UiText::Muted("The game has two stages it never lists: the altar brought over from UNI and its "
-		"own debug stage. Tick one to put it back on the list.");
+	UiText::Muted("The game has two stages it never lists: the altar brought over from UNI and a "
+		"debug stage. Tick one to put it back on the list.");
 
 	ImGui::SeparatorText("The picker");
 
@@ -1061,12 +1061,12 @@ void StagesPanel::DrawHelp()
 
 	ImGui::SeparatorText("The list");
 
-	UiText::Muted("A green name is the stage playing right now. The game's own stages can be "
+	UiText::Muted("A green name is the stage playing right now. UNI2's stages can be "
 		"recoloured but not removed. Their Advanced changes are kept in Mods\\bg\\own.");
 
 	ImGui::SeparatorText("Replacing a game stage");
 
-	UiText::Muted("Add stages can put a stage folder in place of one of the game's own. It keeps the "
+	UiText::Muted("Add stages can put a stage folder in place of one of UNI2's. It keeps the "
 		"game's number, card and walls. Restore brings the game's stage back.");
 
 	ImGui::SeparatorText("Online");
@@ -1074,8 +1074,8 @@ void StagesPanel::DrawHelp()
 	UiText::Muted("An added stage is only on your machine, so an opponent is never offered it: they get "
 		"the game's first stage while you keep playing on yours. A stage they ask for that this game "
 		"does not have plays as the game's first stage here. A replaced stage keeps the game's number, "
-		"so an opponent without it sees the game's own. In a Player Match room the same holds for every "
-		"member. Online, Random picks only from the game's own stages. Colour settings are never sent.");
+		"so an opponent without it sees UNI2's. In a Player Match room the same holds for every "
+		"member. Online, Random picks only from UNI2's stages. Colour settings are never sent.");
 
 	UiText::Muted("%s", OnlineStage::StatusText());
 	UiText::Muted("Rooms: %s", RoomStage::StatusText());

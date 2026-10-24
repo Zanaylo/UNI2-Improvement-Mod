@@ -4,6 +4,8 @@
 #include "Core/logger.h"
 #include "D3D9/Device/ScaledTargets.h"
 #include "D3D9/Device/ScreenSpaceShader.h"
+#include "D3D9/Device/SmoothMagnification.h"
+#include "D3D9/Device/ScreenArtSharpening.h"
 #include "D3D9/Draw/PrimitiveCount.h"
 #include "Hooks/GameHook.h"
 
@@ -363,10 +365,14 @@ HRESULT PretransformedDraws::DrawPrimitive(IDirect3DDevice9* device, D3DPRIMITIV
 	UINT startVertex, UINT primitiveCount, DrawPrimitive_t unscaled)
 {
 	Profiler::Scope scope(Profiler::Section_DrawScaled);
+	SmoothMagnification smooth(device);
+	ScreenArtSharpening sharpArt(device);
 	ShaderSwap swap(device);
 
 	if (swap.Apply(ScaledTargets::ScaleX(), ScaledTargets::ScaleY()))
 		return unscaled(device, type, startVertex, primitiveCount);
+
+	sharpArt.Withdraw();
 
 	const UINT vertexCount = PrimitiveVertexCount(type, primitiveCount);
 	BoundStream stream(device);
@@ -388,10 +394,14 @@ HRESULT PretransformedDraws::DrawIndexedPrimitive(IDirect3DDevice9* device, D3DP
 	DrawIndexedPrimitive_t unscaled)
 {
 	Profiler::Scope scope(Profiler::Section_DrawScaled);
+	SmoothMagnification smooth(device);
+	ScreenArtSharpening sharpArt(device);
 	ShaderSwap swap(device);
 
 	if (swap.Apply(ScaledTargets::ScaleX(), ScaledTargets::ScaleY()))
 		return unscaled(device, type, baseVertex, minVertex, vertexCount, startIndex, primitiveCount);
+
+	sharpArt.Withdraw();
 
 	const INT firstVertex = baseVertex + static_cast<INT>(minVertex);
 	BoundStream stream(device);
@@ -416,9 +426,16 @@ HRESULT PretransformedDraws::DrawPrimitiveUP(IDirect3DDevice9* device, D3DPRIMIT
 	UINT primitiveCount, const void* vertices, UINT stride, DrawPrimitiveUP_t original)
 {
 	Profiler::Scope scope(Profiler::Section_DrawScaled);
+	SmoothMagnification smooth(device);
+	ScreenArtSharpening sharpArt(device);
 	ShaderSwap swap(device);
 
-	if (swap.Apply(ScaledTargets::ScaleX(), ScaledTargets::ScaleY()) || vertices == nullptr || !FitsStride(stride))
+	if (swap.Apply(ScaledTargets::ScaleX(), ScaledTargets::ScaleY()))
+		return original(device, type, primitiveCount, vertices, stride);
+
+	sharpArt.Withdraw();
+
+	if (vertices == nullptr || !FitsStride(stride))
 		return original(device, type, primitiveCount, vertices, stride);
 
 	const UINT vertexCount = PrimitiveVertexCount(type, primitiveCount);
@@ -434,9 +451,19 @@ HRESULT PretransformedDraws::DrawIndexedPrimitiveUP(IDirect3DDevice9* device, D3
 	const void* vertices, UINT stride, DrawIndexedPrimitiveUP_t original)
 {
 	Profiler::Scope scope(Profiler::Section_DrawScaled);
+	SmoothMagnification smooth(device);
+	ScreenArtSharpening sharpArt(device);
 	ShaderSwap swap(device);
 
-	if (swap.Apply(ScaledTargets::ScaleX(), ScaledTargets::ScaleY()) || vertices == nullptr || !FitsStride(stride))
+	if (swap.Apply(ScaledTargets::ScaleX(), ScaledTargets::ScaleY()))
+	{
+		return original(device, type, minVertex, vertexCount, primitiveCount, indices, indexFormat, vertices,
+			stride);
+	}
+
+	sharpArt.Withdraw();
+
+	if (vertices == nullptr || !FitsStride(stride))
 	{
 		return original(device, type, minVertex, vertexCount, primitiveCount, indices, indexFormat, vertices,
 			stride);

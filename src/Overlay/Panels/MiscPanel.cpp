@@ -23,7 +23,7 @@ namespace {
 
 constexpr int kPortraitColumns = 2;
 constexpr int kLastFighter = 27;
-constexpr const char* kGameArt = "Game's own";
+constexpr const char* kGameArt = "UNI2";
 constexpr const char* kToDownload = "  (download)";
 constexpr const char* kEveryoneHint = "Pick one style";
 constexpr int kGameOption = 0;
@@ -164,7 +164,7 @@ void MiscPanel::DrawPortraitStyle()
 	}
 
 	ImGui::SameLine();
-	UiText::Help("Gives every character the same kind of art. A character without it wears the game's own.");
+	UiText::Help("Gives every character the same kind of art. A character without it wears UNI2's.");
 
 	const int steps = ComboNav::WheelSteps();
 

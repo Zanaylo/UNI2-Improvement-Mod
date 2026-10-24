@@ -56,6 +56,19 @@ bool DataArchive::Read(const char* folder, const char* file, std::vector<uint8_t
 	return true;
 }
 
+bool DataArchive::ReadHead(const char* folder, const char* file, size_t limit, std::vector<uint8_t>& out,
+	size_t& outSize)
+{
+	out.clear();
+	outSize = 0;
+
+	if (folder == nullptr || file == nullptr || !IsAvailable())
+		return false;
+
+	std::lock_guard<std::mutex> guard(g_lock);
+	return Opened().ReadHead(folder, file, limit, out, outSize);
+}
+
 bool DataArchive::List(const char* folder, std::vector<std::string>& out)
 {
 	out.clear();

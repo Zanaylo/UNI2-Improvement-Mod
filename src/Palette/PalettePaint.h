@@ -4,6 +4,13 @@
 
 namespace PalettePaint
 {
+	constexpr int kCharaWithDoppel = 27;
+
+	constexpr bool HasDoppel(int chara)
+	{
+		return chara == kCharaWithDoppel;
+	}
+
 	constexpr int kPlayers = 2;
 	constexpr int kColours = 256;
 	constexpr int kBytes = kColours * 4;

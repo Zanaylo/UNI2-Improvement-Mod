@@ -18,10 +18,9 @@ private:
 	void DrawMetricsTab();
 
 	bool DrawPotatoHeight();
-	bool DrawPotatoStage();
 	void DrawScaledTargetsState();
 	void DrawPotatoState();
-	bool DrawInternalResolution();
+	bool DrawStageResolution();
 	void DrawWhatIsHappening();
 	void DrawDiagnostics();
 	bool DrawOptions();

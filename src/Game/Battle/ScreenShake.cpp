@@ -74,7 +74,7 @@ void Summarise()
 
 	if (g_percent >= ScreenShake::kFullPercent)
 	{
-		strncpy_s(g_status, "the game's own screen shake", _TRUNCATE);
+		strncpy_s(g_status, "UNI2's native screen shake", _TRUNCATE);
 		return;
 	}
 
@@ -84,7 +84,7 @@ void Summarise()
 		return;
 	}
 
-	sprintf_s(g_status, "screen shake at %d%% of the game's own", g_percent);
+	sprintf_s(g_status, "screen shake at %d%% of UNI2's", g_percent);
 }
 
 }

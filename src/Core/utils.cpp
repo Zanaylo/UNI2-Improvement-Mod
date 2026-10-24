@@ -100,7 +100,9 @@ void MoveStrays(const std::string& root)
 	if (!Exists(root + "\\Assets") && Exists(base + "UNI2_IM_assets"))
 		MoveFileA((base + "UNI2_IM_assets").c_str(), (root + "\\Assets").c_str());
 
-	if (Exists(base + "UNI2_IM.ini") && !Exists(root + "\\UNI2_IM.ini"))
+	const bool configured = Exists(root + "\\UNI2_IM.ini") || Exists(root + "\\Config\\Mod.ini");
+
+	if (Exists(base + "UNI2_IM.ini") && !configured)
 		MoveFileA((base + "UNI2_IM.ini").c_str(), (root + "\\UNI2_IM.ini").c_str());
 
 	const char* const patterns[] = { "UNI2_IM_*.log", "UNI2_IM_state_*.csv", "UNI2_IM_*.dmp" };

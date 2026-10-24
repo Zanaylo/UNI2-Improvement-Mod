@@ -18,7 +18,7 @@ struct Step
 constexpr Step kSteps[PotatoStage::Level_COUNT] = {
 	{
 		"Off",
-		"The stage at the game's own 1280x720, the size it is drawn at without the mod.",
+		"The stage at UNI2's native 1280x720, the size it is drawn at without the mod.",
 		InternalResolution::kBaseWidth, InternalResolution::kBaseHeight,
 	},
 	{

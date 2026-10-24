@@ -64,6 +64,27 @@ bool RadioRow(const char* id, int count, const char* (*name)(int), int current, 
 	return changed;
 }
 
+bool SliderOnRelease(const char* label, float* value, float lowest, float highest, const char* format,
+	const char* key)
+{
+	float* const pending = ImGui::GetStateStorage()->GetFloatRef(ImGui::GetID(label), *value);
+
+	Ui::SetItemWidth(kSliderWidth);
+	ImGui::SliderFloat(label, pending, lowest, highest, format);
+
+	if (ImGui::IsItemDeactivatedAfterEdit())
+	{
+		*value = *pending;
+		Settings::SaveFloat("Overlay", key, *value);
+		return true;
+	}
+
+	if (!ImGui::IsItemActive())
+		*pending = *value;
+
+	return false;
+}
+
 bool SavedSlider(const char* label, int* value, int lowest, int highest, const char* key,
 	const char* format)
 {
@@ -277,7 +298,7 @@ void DrawDgVoodooChoices()
 
 	if (DgVoodoo::Chosen(DgVoodoo::Choice_Filtering) != 0)
 	{
-		Warn("Forcing a filter breaks the character colours. Keep it on The game's own.");
+		Warn("Forcing a filter breaks the character colours. Keep it on Native.");
 	}
 
 	for (int i = 0; i < DgVoodoo::Flag_COUNT; ++i)
@@ -366,19 +387,10 @@ void GraphicsPanel::DrawOverlayAppearance()
 {
 	ImGui::SeparatorText("Overlay appearance");
 
-	Ui::SetItemWidth(kSliderWidth);
-	ImGui::SliderFloat("Overlay scale", &g_modVals.uiScale, 0.5f, 4.0f, "%.2fx");
+	SliderOnRelease("Overlay scale", &g_modVals.uiScale, 0.5f, 4.0f, "%.2fx", "UiScale");
+	SliderOnRelease("Font size", &g_modVals.fontSize, 10.0f, 32.0f, "%.0f px", "FontSize");
 
-	if (ImGui::IsItemDeactivatedAfterEdit())
-		Settings::SaveFloat("Overlay", "UiScale", g_modVals.uiScale);
-
-	Ui::SetItemWidth(kSliderWidth);
-	ImGui::SliderFloat("Font size", &g_modVals.fontSize, 10.0f, 32.0f, "%.0f px");
-
-	if (ImGui::IsItemDeactivatedAfterEdit())
-		Settings::SaveFloat("Overlay", "FontSize", g_modVals.fontSize);
-
-	Help("Both apply right away. To use your own .ttf font, set [Overlay] FontPath in the ini.");
+	Help("Applied when you let go of the slider. To use your own .ttf font, set [Overlay] FontPath in the ini.");
 
 	Muted("%s", OverlayFont::GetStatusText());
 	Muted("Japanese and other scripts fall back to %s", OverlayFont::GetFallbackText());
@@ -473,7 +485,7 @@ void GraphicsPanel::DrawDgVoodoo()
 		"The mod copies the dlls into UNI2-IM\\dgVoodoo and writes dgVoodoo.conf from these "
 		"options. Nothing in the game folder is touched.\n\n"
 		"Forcing texture filtering or anti-aliasing can break the character colours. Keep them on "
-		"the game's own or off unless you know you want them.\n\n"
+		"UNI2's or off unless you know you want them.\n\n"
 		"Only one Direct3D wrapper can run at a time; turning this on turns DXVK off.");
 
 	if (g_dgVoodooNote[0] != 0)

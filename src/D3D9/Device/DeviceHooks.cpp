@@ -9,7 +9,11 @@
 #include "Core/Harness/CleanFrame.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Core/Boot/Standby.h"
+#include "Game/Display/CharaSmoothing.h"
+#include "Core/Config/Features.h"
 #include "D3D9/Device/ExclusiveSupersample.h"
+#include "Web/UpdateInstall.h"
 #include "D3D9/Device/ResetClock.h"
 #include "D3D9/Device/GraphicsWrapper.h"
 #include "Game/Engine/GameOffsets.h"
@@ -347,6 +351,7 @@ HRESULT STDMETHODCALLTYPE HookedDrawPrimitive(IDirect3DDevice9* device, D3DPRIMI
 			g_drawPrimitiveHook.Original());
 	}
 
+	CharaSmoothing::BeforeDraw(device);
 	return g_drawPrimitiveHook.Original()(device, type, startVertex, primitiveCount);
 }
 
@@ -381,6 +386,8 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
 		return scaled;
 	}
 
+	CharaSmoothing::BeforeDraw(device);
+
 	const bool smoothed = StageDetail::SmoothReducedComposite(device);
 	const HRESULT result = DrawIndexed(device, type, baseVertexIndex, minVertexIndex, numVertices, startIndex,
 		primitiveCount);
@@ -408,6 +415,7 @@ HRESULT STDMETHODCALLTYPE HookedDrawPrimitiveUP(IDirect3DDevice9* device, D3DPRI
 			g_drawPrimitiveUPHook.Original());
 	}
 
+	CharaSmoothing::BeforeDraw(device);
 	return g_drawPrimitiveUPHook.Original()(device, type, primitiveCount, vertexData, stride);
 }
 
@@ -426,6 +434,7 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitiveUP(IDirect3DDevice9* device,
 			primitiveCount, indexData, indexFormat, vertexData, stride, g_drawIndexedPrimitiveUPHook.Original());
 	}
 
+	CharaSmoothing::BeforeDraw(device);
 	return g_drawIndexedPrimitiveUPHook.Original()(device, type, minVertexIndex, numVertices, primitiveCount,
 		indexData, indexFormat, vertexData, stride);
 }
@@ -533,6 +542,25 @@ bool FrozenFrameCouldBeReplayed()
 		FrameStepper::SuppressesTicks();
 }
 
+HRESULT PresentOnStandby(IDirect3DDevice9* device, const RECT* sourceRect, const RECT* destRect,
+	HWND destWindowOverride, const RGNDATA* dirtyRegion)
+{
+	if (device == g_device)
+	{
+		Standby::OnFrame();
+		UpdateInstall::OnFrame();
+		RetryOverlay(device);
+		WindowManager::GetInstance().Render();
+	}
+
+	const HRESULT result = g_presentHook.Original()(device, sourceRect, destRect, destWindowOverride, dirtyRegion);
+
+	if (device == g_device && result == D3DERR_DEVICELOST)
+		InterlockedExchange(&g_deviceLost, 1);
+
+	return result;
+}
+
 HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* sourceRect,
 	const RECT* destRect, HWND destWindowOverride, const RGNDATA* dirtyRegion)
 {
@@ -558,6 +586,9 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 		SpikeWatch::OnPresent();
 		return lost;
 	}
+
+	if (Standby::IsOn())
+		return PresentOnStandby(device, sourceRect, destRect, destWindowOverride, dirtyRegion);
 
 	DrawTrace::OnPresentBegin(sourceRect, destRect);
 	CleanFrame::OnPresentBegin();
@@ -585,7 +616,8 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 				FrozenFrame::Capture(device);
 		}
 
-		PostChain::Apply(device);
+		if (Features::IsLoaded(FeatureCatalog::Id_Graphics))
+			PostChain::Apply(device);
 
 		{
 			Profiler::Scope scope(Profiler::Section_PresentMeterHud);
@@ -682,6 +714,32 @@ bool HookVTableEntry(void** vtable, int index, GameHook<Fn>& hook, Handler handl
 
 }
 
+namespace {
+
+void HookDrawing(IDirect3DDevice9* device, void** vtable)
+{
+	HookVTableEntry(vtable, kSetTextureIndex, g_setTextureHook, &HookedSetTexture);
+
+	HookVTableEntry(vtable, kClearIndex, g_clearHook, &HookedClear);
+
+	HookVTableEntry(vtable, kDrawPrimitiveIndex, g_drawPrimitiveHook, &HookedDrawPrimitive);
+	HookVTableEntry(vtable, kDrawIndexedPrimitiveIndex, g_drawIndexedPrimitiveHook, &HookedDrawIndexedPrimitive);
+	HookVTableEntry(vtable, kDrawPrimitiveUPIndex, g_drawPrimitiveUPHook, &HookedDrawPrimitiveUP);
+	HookVTableEntry(vtable, kDrawIndexedPrimitiveUPIndex, g_drawIndexedPrimitiveUPHook, &HookedDrawIndexedPrimitiveUP);
+	SpikeWatch::AttachDevice(device, vtable);
+}
+
+void AttachRendering(IDirect3DDevice9* device)
+{
+	BgGrade::Initialize();
+	BgGrade::Attach(device);
+
+	ScaledTargets::Attach(device);
+	PretransformedDraws::Attach(device);
+}
+
+}
+
 bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS& presentParameters, HWND focusWindow)
 {
 	LOG("Device hooks: asked to install on device 0x%p, window 0x%p", static_cast<void*>(device),
@@ -725,15 +783,8 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 	const bool reset = HookVTableEntry(vtable, kResetIndex, g_resetHook, &HookedReset);
 	const bool present = HookVTableEntry(vtable, kPresentIndex, g_presentHook, &HookedPresent);
 
-	HookVTableEntry(vtable, kSetTextureIndex, g_setTextureHook, &HookedSetTexture);
-
-	HookVTableEntry(vtable, kClearIndex, g_clearHook, &HookedClear);
-
-	HookVTableEntry(vtable, kDrawPrimitiveIndex, g_drawPrimitiveHook, &HookedDrawPrimitive);
-	HookVTableEntry(vtable, kDrawIndexedPrimitiveIndex, g_drawIndexedPrimitiveHook, &HookedDrawIndexedPrimitive);
-	HookVTableEntry(vtable, kDrawPrimitiveUPIndex, g_drawPrimitiveUPHook, &HookedDrawPrimitiveUP);
-	HookVTableEntry(vtable, kDrawIndexedPrimitiveUPIndex, g_drawIndexedPrimitiveUPHook, &HookedDrawIndexedPrimitiveUP);
-	SpikeWatch::AttachDevice(device, vtable);
+	if (!Standby::IsOn())
+		HookDrawing(device, vtable);
 
 	if (!reset || !present)
 	{
@@ -741,11 +792,8 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 		return false;
 	}
 
-	BgGrade::Initialize();
-	BgGrade::Attach(device);
-
-	ScaledTargets::Attach(device);
-	PretransformedDraws::Attach(device);
+	if (!Standby::IsOn())
+		AttachRendering(device);
 
 	LogSwapChain(device, "at install");
 	g_installed = true;

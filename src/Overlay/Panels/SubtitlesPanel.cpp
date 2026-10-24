@@ -91,7 +91,7 @@ void SubtitlesPanel::DrawGameDrawn()
 		return;
 	}
 
-	UiText::Muted("Also turn on the game's own Subtitles option (Options, then Game settings). The "
+	UiText::Muted("Also turn on UNI2's Subtitles option (Options, then Game settings). The "
 		"game checks it before drawing a line. This session it asked for %d line(s) and drew %d "
 		"of yours.", SubtitleText::Asked(), SubtitleText::Answers());
 

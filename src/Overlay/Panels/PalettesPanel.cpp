@@ -171,8 +171,8 @@ void DrawPaletteOptions()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Groups the colours by part (hair, skin, boots), the same way the game's "
-			"own colour screen does.");
+		ImGui::SetTooltip("Groups the colours by part (hair, skin, boots), the same way UNI2's "
+			"colour screen does.");
 	}
 
 	if (ImGui::Checkbox("Flash the entry on the character", &g_modVals.paletteFlashEntry))
@@ -190,7 +190,7 @@ void DrawPaletteOptions()
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Hides the colours this character's sprites never use, and the green that "
-			"fills unused slots. Colours the game's own colour screen offers are always kept.");
+			"fills unused slots. Colours UNI2's colour screen offers are always kept.");
 	}
 
 	if (ImGui::Checkbox("Extended colour slots", &g_modVals.paletteExtendedSlots))

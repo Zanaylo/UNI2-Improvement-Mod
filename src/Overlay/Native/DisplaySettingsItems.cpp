@@ -8,7 +8,11 @@
 #include "Game/Display/Improvements.h"
 #include "Game/Display/InternalResolution.h"
 #include "Game/Display/PotatoMode.h"
-#include "Game/Display/PotatoStage.h"
+#include "Game/Display/SceneLayer.h"
+#include "Game/Display/SceneLookLevels.h"
+#include "Game/Display/SceneLooks.h"
+#include "Game/Display/StageResolution.h"
+#include "Game/Display/StageSteps.h"
 #include "Game/Menus/OptionMenu.h"
 
 #include <atomic>
@@ -63,17 +67,23 @@ const Setting kSettings[] = {
 	{ "Output resolution", "The size of the picture sent to your screen. Set it to your screen. Needs a restart.",
 		Improvements::Level_COUNT, &Improvements::GetLevelName, Improvements::Level_Off,
 		&Improvements::GetLevel, &Improvements::Apply },
-	{ "Render resolution", "The size the stage is drawn at. Match the output. Needs a restart.",
-		InternalResolution::Level_COUNT, &InternalResolution::GetLevelName, InternalResolution::Level_Off,
-		&InternalResolution::GetLevel, &InternalResolution::Apply },
+	{ "Stage resolution", "The size the stage is drawn at. Lower is lighter, higher is sharper. Needs a restart.",
+		StageSteps::kCount, &StageResolution::GetLevelName, StageSteps::kGame,
+		&StageResolution::GetLevel, &StageResolution::Apply },
+	{ "Characters and text", "Draw characters and text at the stage resolution too. Needs a restart.",
+		SceneLayer::Level_COUNT, &SceneLayer::GetLevelName, SceneLayer::Level_Native,
+		&SceneLayer::GetLevel, &SceneLayer::Apply },
+	{ "Character edges", "Smooth softens the character art. Pixels shows its own pixels, enlarged.",
+		SceneLookLevels::kCount, &SceneLookLevels::CharacterName, SceneLookLevels::Character_Smooth,
+		&SceneLooks::GetCharacterLevel, &SceneLooks::ApplyCharacter },
+	{ "Text edges", "Smooth draws the text like the frame meter. Sharp gives it hard edges.",
+		SceneLookLevels::kCount, &SceneLookLevels::TextName, SceneLookLevels::Text_Smooth,
+		&SceneLooks::GetTextLevel, &SceneLooks::ApplyText },
 	{ "POTATO MODE", "Draw less to keep 60 fps on a weak PC. Gameplay does not change.",
 		PotatoMode::Level_COUNT, &PotatoMode::GetLevelName, PotatoMode::Level_Off,
 		&PotatoMode::GetLevel, &PotatoMode::Apply },
 	{ "Potato resolution", "The size the frame is drawn at on the Potato level.",
 		kHeightCount, &HeightName, kDefaultHeight, &ReadHeight, &WriteHeight },
-	{ "Stage quality", "Draws the stage smaller. Characters stay at 720p. Needs a restart.",
-		PotatoStage::Level_COUNT, &PotatoStage::GetLevelName, PotatoStage::Level_Off,
-		&PotatoStage::GetLevel, &PotatoStage::Apply },
 	{ "Upscale filter", "The filter that stretches the 1280x720 scene to your window.",
 		UpscaleFilter::Kind_COUNT, &UpscaleFilter::GetName, UpscaleFilter::Kind_Off,
 		&PostStages::GetUpscaleFilter, &PostStages::SetUpscaleFilter },

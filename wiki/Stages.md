@@ -154,7 +154,7 @@ stage's original values.
 **Every stage keeps its own settings file**, `settings.ini`, with its colour, glow, size, position
 and camera. A port's is in its own folder, `UNI2-IM\Mods\bg\bgNNN\settings.ini`, so it goes wherever
 the stage goes and is deleted with it. The game's own stages keep theirs in
-`UNI2-IM\Mods\bg\own\bgNNN\settings.ini`. Settings an older build left in `UNI2_IM.ini`
+`UNI2-IM\Mods\bg\own\bgNNN\settings.ini`. Settings an older build left in the ini (now `Config\Mod.ini`)
 (`[StageColour]`, `[StagePlacement]`) move into these files the next time the game starts, and are
 taken out of the ini. A line whose stage is no longer installed stays in the ini.
 

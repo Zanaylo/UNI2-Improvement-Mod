@@ -89,7 +89,7 @@ void DummyScriptGuideWindow::Draw()
 
 	ImGui::Spacing();
 	ImGui::TextWrapped("P2 also has a Slot, with Write to slot and Read from slot. Its Play writes "
-		"the slot and uses the game's own playback, so the playback menu options work too (repeat, "
+		"the slot and uses UNI2's playback, so the playback menu options work too (repeat, "
 		"on reversal, after a restart). P1 has no slot because the game only plays recordings on the "
 		"dummy. P1's Play goes through Player Control instead.");
 

@@ -13,9 +13,18 @@ protected:
 	void BeforeDraw() override;
 
 private:
+	void DrawPlayerCount();
 	void DrawSteamFolderWarning();
 	void DrawGameBuildWarning();
-	void DrawPlayerCount();
+	void DrawTabs();
+
+	void DrawTrainingTab();
+	void DrawVisualsTab();
+	void DrawAudioTab();
+	void DrawOnlineTab();
+	void DrawModTab();
+	void DrawConfigTab();
+
 	void DrawMusicSection();
 	void DrawSoundSection();
 	void DrawSubtitlesSection();
@@ -25,7 +34,7 @@ private:
 	void DrawThemeSection();
 	void DrawStagesSection();
 	void DrawModsSection();
+	void DrawPalettesSection();
 	void DrawMiscSection();
 	void DrawGameDebugSection();
-
 };

@@ -1,10 +1,12 @@
 #include "Game/Files/ModFiles.h"
 
+#include "Core/Config/Features.h"
 #include "Core/FileIndex.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Debug/GameDebug.h"
 #include "Game/Files/DataSearchPath.h"
+#include "Game/Files/ModFileFilter.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Customize/PortraitLayer.h"
 #include "Game/Files/ModPacks.h"
@@ -464,19 +466,29 @@ bool Rebuild()
 
 	FileIndex built;
 
-	ModPacks::Layer(built);
-	PortraitLayer::Layer(built);
+	if (Features::IsLoaded(FeatureCatalog::Id_ModPacks))
+		ModPacks::Layer(built);
+
+	if (Features::IsLoaded(FeatureCatalog::Id_CharacterArt))
+		PortraitLayer::Layer(built);
+
 	GameDebug::Layer(built);
 
+	const bool stagesOn = Features::IsLoaded(FeatureCatalog::Id_Stages);
+
 	for (const FileIndex::Map::value_type& entry : own.Entries())
-		built.Add(entry.first, entry.second);
+	{
+		if (ModFileFilter::Keeps(entry.first, stagesOn))
+			built.Add(entry.first, entry.second);
+	}
 
 	BgmPicker::Layer(built);
 
 	InterlockedExchange(&g_own, own.Count());
 
 	IndexUserMusic(built);
-	IndexSoundPacks(built);
+	if (Features::IsLoaded(FeatureCatalog::Id_VoicesAndSound))
+		IndexSoundPacks(built);
 
 	const bool localised = AnyLocalised(built);
 

@@ -1,5 +1,6 @@
 #include "D3D9/Device/ScaledTargets.h"
 
+#include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "D3D9/Device/ScaledDeviceState.h"
 #include "D3D9/Device/TargetSizeMask.h"
@@ -48,6 +49,7 @@ int g_targetCount = 0;
 
 bool g_attached = false;
 bool g_active = false;
+bool g_wholeScene = false;
 unsigned g_width = InternalResolution::kBaseWidth;
 unsigned g_height = InternalResolution::kBaseHeight;
 float g_scaleX = 1.0f;
@@ -89,7 +91,7 @@ bool IsStageFormat(D3DFORMAT format)
 bool ShouldScale(UINT width, UINT height, D3DFORMAT format)
 {
 	return g_active && width == InternalResolution::kBaseWidth && height == InternalResolution::kBaseHeight &&
-		IsStageFormat(format);
+		(IsStageFormat(format) || g_wholeScene);
 }
 
 void ForgetLocked(const void* identity)
@@ -344,6 +346,8 @@ bool WantedSize(unsigned& width, unsigned& height)
 void ChooseSize()
 {
 	g_active = WantedSize(g_width, g_height);
+	g_wholeScene = g_active && g_modVals.spritesAtRenderResolution &&
+		PotatoStage::GetLevel() == PotatoStage::Level_Off && g_width > InternalResolution::kBaseWidth;
 	g_scaleX = static_cast<float>(g_width) / static_cast<float>(InternalResolution::kBaseWidth);
 	g_scaleY = static_cast<float>(g_height) / static_cast<float>(InternalResolution::kBaseHeight);
 }
@@ -469,6 +473,11 @@ bool ScaledTargets::IsScaledTexture(const IDirect3DBaseTexture9* texture)
 	}
 
 	return false;
+}
+
+bool ScaledTargets::ScalesSceneLayer()
+{
+	return g_wholeScene;
 }
 
 bool ScaledTargets::BoundIsScaled()

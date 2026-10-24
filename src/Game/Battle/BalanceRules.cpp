@@ -103,7 +103,7 @@ void Summarise()
 
 	if (!g_active[0])
 	{
-		strncpy_s(g_status, "off, using the game's own numbers", _TRUNCATE);
+		strncpy_s(g_status, "off, using UNI2's numbers", _TRUNCATE);
 		return;
 	}
 

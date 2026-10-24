@@ -1,6 +1,7 @@
 ﻿#include "Overlay/Windows/NetplayWindow.h"
 
 #include "Core/Config/Settings.h"
+#include "Core/Config/Features.h"
 #include "Core/Config/interfaces.h"
 #include "Game/Tables/CharaTables.h"
 #include "Game/Lobby/IrHider.h"
@@ -133,12 +134,7 @@ void NetplayWindow::Draw()
 
 	if (ImGui::BeginTabItem("Privacy"))
 	{
-		DrawPrivacyTab();
-		ImGui::Separator();
-		DrawRoomNamePrivacy();
-		ImGui::Separator();
-		DrawIrPrivacy();
-		ImGui::Separator();
+		DrawCensorship();
 		DrawSteamPresence();
 		ImGui::EndTabItem();
 	}
@@ -155,7 +151,7 @@ void NetplayWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Netcode"))
+	if (Features::Shows(FeatureCatalog::Id_NetcodePatches) && ImGui::BeginTabItem("Netcode"))
 	{
 		DrawNetcodeTab();
 		ImGui::EndTabItem();
@@ -405,7 +401,7 @@ void NetplayWindow::DrawNetcodeTab()
 	ImGui::Separator();
 	ImGui::BeginDisabled(NetcodeChoice::IsGameOwn(m_netcode));
 
-	if (ImGui::Button("Use the game's own netcode"))
+	if (ImGui::Button("Use UNI2's native netcode"))
 	{
 		m_netcode = NetcodeChoice::GameOwn();
 		changed = true;
@@ -439,7 +435,7 @@ void NetplayWindow::DrawInputDelay()
 	}
 
 	ImGui::EndDisabled();
-	UiText::Help("Same as the game's own Input lag option. More delay means fewer rollbacks but slower controls.\n"
+	UiText::Help("Same as UNI2's Input lag option. More delay means fewer rollbacks but slower controls.\n"
 		"Applies from your next match.");
 
 	if (!canChange)
@@ -475,7 +471,7 @@ void NetplayWindow::DrawNetcodeStatus()
 	const NetcodeChoice::Values running = RunningNetcode();
 
 	if (NetcodeChoice::IsGameOwn(running))
-		UiText::Muted("Running now: the game's own netcode.");
+		UiText::Muted("Running now: UNI2's native netcode.");
 	else
 		UiText::Good("Running now: the mod's netcode changes.");
 
@@ -907,13 +903,26 @@ void NetplayWindow::DrawIrPrivacy()
 	ImGui::Text("%ld IR number(s) hidden this run.", IrHider::NumbersHidden());
 }
 
+void NetplayWindow::DrawCensorship()
+{
+	if (!Features::Shows(FeatureCatalog::Id_Privacy))
+		return;
+
+	DrawPrivacyTab();
+	ImGui::Separator();
+	DrawRoomNamePrivacy();
+	ImGui::Separator();
+	DrawIrPrivacy();
+	ImGui::Separator();
+}
+
 void NetplayWindow::DrawSteamPresence()
 {
 	ImGui::TextUnformatted("Steam status");
 
 	bool show = g_modVals.steamRichPresence;
 
-	if (ImGui::Checkbox("Show what I am doing to Steam friends", &show))
+	if (ImGui::Checkbox("Use enhanced rich presence", &show))
 	{
 		g_modVals.steamRichPresence = show;
 		Settings::SaveInt("Privacy", "SteamRichPresence", show ? 1 : 0);

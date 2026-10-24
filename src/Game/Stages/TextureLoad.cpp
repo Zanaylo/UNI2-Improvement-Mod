@@ -3,6 +3,7 @@
 #include "Core/Profiler.h"
 #include "Core/SpikeWatch.h"
 #include "Core/logger.h"
+#include "Game/Display/FontPages.h"
 #include "Game/Stages/BgMipmaps.h"
 #include "Game/Stages/StageCapture.h"
 #include "Game/Stages/StageCards.h"
@@ -46,6 +47,7 @@ HRESULT WINAPI HookedCreateTexture(void* device, const void* source, UINT bytes,
 
 	StageCapture::Adopt(source, bytes, *texture);
 	StageCards::OnTexture(source, bytes, *texture);
+	FontPages::OnTexture(source, bytes, *texture);
 
 	return result;
 }

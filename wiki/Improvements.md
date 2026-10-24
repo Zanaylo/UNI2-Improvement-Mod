@@ -9,11 +9,13 @@ Improvement Mod Display Settings. It is the opposite of POTATO MODE: the game is
 | **Output resolution** | the finished picture sent to your screen | the stretch of the game's 720p picture, done by the upscale filter on the Shaders tab |
 | **Render resolution** | the 3D stage | stage detail: small text, window frames and carvings |
 
-The game draws its scene at 1280x720 and stretches it to the output resolution. Characters, effects,
-menus and text are 720p art, so drawing them bigger only enlarges their pixels; they stay at 720p and
-the upscale filter enlarges them, so they look the same at every level. The stage is 3D, so the
-render resolution draws it with real detail, the way Melty Blood Type Lumina and BlazBlue do, and the
-mod puts that detail back wherever the stage shows.
+The game draws its scene at 1280x720 and stretches it to the output resolution. The stage is 3D, so
+the render resolution draws it with real detail, the way Melty Blood Type Lumina and BlazBlue do.
+Characters, effects, menus and text are 720p art. With **Characters and text at this size too** (on by
+default) they are drawn at the render resolution as well. Under it, **Characters** is Smooth (soft
+edges) or Pixels (the art's own pixels, enlarged), and **Text** is Smooth (like the frame meter) or
+Sharp (hard edges). Both apply right away. Art has no hidden detail, so menus and the HUD look as
+smooth as before, not more detailed.
 
 **Set both to your screen's resolution.** On a 4K screen: output 4K, render 4K. On a 1440p screen:
 output 1440p, render 1440p.
@@ -38,9 +40,13 @@ Windowed and borderless only. In the ini it is `Supersample`.
 | 1440p | 2560x1440 |
 | 4K | 3840x2160 |
 
-Where something covers the stage (a character, an effect, a menu panel), that pixel comes from the
-720p picture, so it looks exactly as it does with the setting off. With the upscale filter Off, the
-mod uses bicubic for this. In the ini it is `InternalResolution`.
+In the ini it is `InternalResolution`.
+
+**Characters and text at this size too** draws everything else at the render resolution as well. Off,
+characters, effects and menus stay a 720p picture: where something covers the stage, that pixel comes
+from the 720p picture, and with the upscale filter Off the mod uses bicubic for it. Measured on a 4K
+screen: still 60 fps with no frame over 18 ms in training, about 2 MB more memory. Needs a restart. In
+the ini it is `SpritesAtRenderResolution`.
 
 It changes only what is drawn: gameplay, timing and what your opponent sees are untouched, and no
 byte of the game is changed.

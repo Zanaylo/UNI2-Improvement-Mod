@@ -17,7 +17,7 @@ struct Step
 constexpr Step kSteps[InternalResolution::Level_COUNT] = {
 	{
 		"Off",
-		"The game's own 1280x720 stage.",
+		"UNI2's native 1280x720 stage.",
 		InternalResolution::kBaseWidth, InternalResolution::kBaseHeight,
 	},
 	{

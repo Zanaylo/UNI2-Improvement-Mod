@@ -20,6 +20,8 @@
 #include "Game/Engine/OnlineState.h"
 #include "Overlay/Framework/WindowManager.h"
 #include "Overlay/Panels/GraphicsPanel.h"
+#include "Overlay/Panels/ModulesPanel.h"
+#include "Overlay/Panels/ProfilesPanel.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Web/UpdateCheck.h"
 
@@ -193,12 +195,6 @@ void DrawHudTab()
 
 void DrawConfigSection()
 {
-	if (!ImGui::CollapsingHeader("Config"))
-	{
-		SetBindCapture(-1, false);
-		return;
-	}
-
 	if (!ImGui::BeginTabBar("##config"))
 		return;
 
@@ -227,6 +223,18 @@ void DrawConfigSection()
 	if (ImGui::BeginTabItem("Hud"))
 	{
 		DrawHudTab();
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("Modules"))
+	{
+		ModulesPanel::Draw();
+		ImGui::EndTabItem();
+	}
+
+	if (ImGui::BeginTabItem("Profiles"))
+	{
+		ProfilesPanel::Draw();
 		ImGui::EndTabItem();
 	}
 
@@ -559,4 +567,9 @@ void DrawBindConflicts()
 void ConfigPanel::Draw()
 {
 	DrawConfigSection();
+}
+
+void ConfigPanel::Hide()
+{
+	SetBindCapture(-1, false);
 }

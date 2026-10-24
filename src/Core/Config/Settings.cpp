@@ -2,7 +2,7 @@
 
 #include "Core/Config/IniStore.h"
 #include "Core/Profiler.h"
-#include "Core/Config/default_ini.h"
+#include "Core/Config/ConfigMigrations.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Config/keycodes.h"
 #include "Core/logger.h"
@@ -26,12 +26,11 @@
 #include <cstdlib>
 #include <cctype>
 #include <cstring>
+#include <vector>
 
 namespace {
 
 const char* const kIniFileName = "UNI2_IM.ini";
-
-constexpr int kSettingsRevision = 5;
 
 int ClampRange(int value, int lowest, int highest)
 {
@@ -73,22 +72,6 @@ float ReadIniFloat(const char* section, const char* key, float defaultValue, con
 int ReadIniInt(const char* section, const char* key, int defaultValue, const std::string& path)
 {
 	return static_cast<int>(Ini::GetInt(section, key, defaultValue, path.c_str()));
-}
-
-bool WriteShippedIni(const std::string& path)
-{
-
-	FILE* file = nullptr;
-	if (fopen_s(&file, path.c_str(), "w") != 0 || file == nullptr)
-		return false;
-
-	const int count = static_cast<int>(sizeof(kDefaultIniLines) / sizeof(kDefaultIniLines[0]));
-
-	for (int i = 0; i < count; ++i)
-		fprintf(file, "%s\n", kDefaultIniLines[i]);
-
-	fclose(file);
-	return true;
 }
 
 std::string ReadFileText(const std::string& path)
@@ -180,11 +163,13 @@ void AppendSectionHeader(const char* section, const std::string& path, const std
 
 void EnsureSectionHeader(const char* section, const std::string& path)
 {
-	const std::string text = ReadFileText(path);
+	const std::string file = Ini::PathFor(section, path.c_str());
+	const std::string text = ReadFileText(file);
+
 	if (HasSectionHeader(text, section))
 		return;
 
-	AppendSectionHeader(section, path, text);
+	AppendSectionHeader(section, file, text);
 }
 
 const char* const kMissingMarker = "\x01";
@@ -232,59 +217,57 @@ int CompleteIniFile(const std::string& path)
 	return added;
 }
 
-void MigrateIni(int from, const std::string& path)
+class RoutedStore
 {
-	if (from < 2)
+public:
+	explicit RoutedStore(const std::string& path)
+		: m_path(path)
 	{
-		Ini::Write("Netplay", "Diagnostics", "0", path.c_str());
-		LOG("Settings: [Netplay] Diagnostics was turned off - it reaches into the netcode and is "
-			"a diagnostic, not a feature");
 	}
 
-	if (from < 3)
+	bool Find(const char* section, const char* key, std::string& value) const
 	{
-		Ini::Write("Netplay", "RoomRosterFix", "0", path.c_str());
-		Ini::Write("Netplay", "RepublishPingLocation", "0", path.c_str());
-		Ini::Write("Netplay", "SafeOnline", nullptr, path.c_str());
-		Ini::Write("Netplay", "Diagnostics", nullptr, path.c_str());
-		LOG("Settings: RoomRosterFix and RepublishPingLocation are off, they write into the game's own room state");
+		if (!KeyExists(section, key, m_path))
+			return false;
+
+		value = ReadIniString(section, key, "", m_path);
+		return true;
 	}
 
-	if (from < 4)
+	void Set(const char* section, const char* key, const std::string& value) const
 	{
-		Ini::Write("Netplay", "NetLog", "0", path.c_str());
-		Ini::Write("Netplay", "CaptureGgpoLog", "0", path.c_str());
-		LOG("Settings: the network log is off unless you turn it on, it is for a report");
+		EnsureSectionHeader(section, m_path);
+		Ini::Write(section, key, value.c_str(), m_path.c_str());
 	}
 
-	if (from < 5 && ReadIniString("Keybinds", "RestartGame", "", path).empty())
+	void Remove(const char* section, const char* key) const
 	{
-		Ini::Write("Keybinds", "RestartGame", "Ctrl+F5", path.c_str());
-		LOG("Settings: Ctrl+F5 now restarts the game, as in MBTL IM");
+		Ini::Write(section, key, nullptr, m_path.c_str());
 	}
 
-	char revision[16] = {};
-	sprintf_s(revision, "%d", kSettingsRevision);
-	Ini::Write("Mod", "SettingsRevision", revision, path.c_str());
+private:
+	std::string m_path;
+};
 
-	LOG("Settings: brought the ini up from revision %d to %d", from, kSettingsRevision);
-}
-
-void WriteDefaultIni(const std::string& path)
+void BringUpToDate(const std::string& path)
 {
-	if (WriteShippedIni(path))
+	const int revision = ReadIniInt("Mod", "SettingsRevision", 0, path);
+
+	if (revision >= ConfigMigrations::kCurrent)
 		return;
 
-#define SETTING_STRING(member, section, key, defaultValue) \
-	Ini::Write(section, key, defaultValue, path.c_str());
-#define SETTING_FLOAT(member, section, key, defaultValue) \
-	{ char buf[64] = {}; sprintf_s(buf, "%g", defaultValue); Ini::Write(section, key, buf, path.c_str()); }
-#define SETTING_INT(member, section, key, defaultValue) \
-	{ char buf[64] = {}; sprintf_s(buf, "%d", defaultValue); Ini::Write(section, key, buf, path.c_str()); }
-#include "Core/Config/settings.def"
-#undef SETTING_STRING
-#undef SETTING_FLOAT
-#undef SETTING_INT
+	RoutedStore store(path);
+	std::vector<std::string> notes;
+	const int reached = ConfigMigrations::Apply(store, revision, notes);
+
+	for (const std::string& note : notes)
+		LOG("Settings: %s", note.c_str());
+
+	char text[16] = {};
+	sprintf_s(text, "%d", reached);
+	Ini::Write("Mod", "SettingsRevision", text, path.c_str());
+
+	LOG("Settings: brought the settings up from revision %d to %d", revision, reached);
 }
 
 }
@@ -355,23 +338,12 @@ void Settings::SaveFloat(const char* section, const char* key, float value)
 bool Settings::LoadSettingsFile()
 {
 	const std::string path = GetIniPath();
-	const bool fresh = GetFileAttributesA(path.c_str()) == INVALID_FILE_ATTRIBUTES;
-	const int revision = fresh ? kSettingsRevision : ReadIniInt("Mod", "SettingsRevision", 0, path);
+	const int added = CompleteIniFile(path);
 
-	if (fresh)
-	{
-		LOG("Settings file not found, writing defaults to %s", path.c_str());
-		WriteDefaultIni(path);
-	}
-	else
-	{
-		const int added = CompleteIniFile(path);
-		if (added > 0)
-			LOG("Completed the ini with %d missing key%s", added, added == 1 ? "" : "s");
+	if (added > 0)
+		LOG("Completed the settings with %d missing key%s", added, added == 1 ? "" : "s");
 
-		if (revision < kSettingsRevision)
-			MigrateIni(revision, path);
-	}
+	BringUpToDate(path);
 
 #define SETTING_STRING(member, section, key, defaultValue) \
 	g_settings.member = ReadIniString(section, key, defaultValue, path);

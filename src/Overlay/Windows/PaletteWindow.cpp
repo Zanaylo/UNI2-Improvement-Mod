@@ -1205,7 +1205,7 @@ void PaletteWindow::Bare(int player)
 	m_applied[player] = false;
 	m_chosen[player] = -1;
 
-	sprintf_s(m_status[player], "The game's own colours.");
+	sprintf_s(m_status[player], "UNI2's colours.");
 }
 
 bool PaletteWindow::Save(int player)
@@ -1487,7 +1487,8 @@ void PaletteWindow::PullBaseline(int player, bool force)
 
 	uint8_t theirs[LivePalette::kBytes] = {};
 
-	m_hasCompanion[player] = PalettePaint::ReadCompanionColours(player, theirs);
+	m_hasCompanion[player] = PalettePaint::HasDoppel(m_chara[player]) &&
+		PalettePaint::ReadCompanionColours(player, theirs);
 
 	if (m_hasCompanion[player])
 		memcpy(m_companionBase[player], theirs, sizeof(theirs));

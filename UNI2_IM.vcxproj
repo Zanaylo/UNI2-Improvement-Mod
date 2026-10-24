@@ -239,6 +239,7 @@
     <ClCompile Include="src\Game\Audio\BgmPicker.cpp" />
     <ClCompile Include="src\Game\Audio\BgmSelectFile.cpp" />
     <ClCompile Include="src\Game\Files\ModFiles.cpp" />
+    <ClCompile Include="src\Game\Files\ModFileFilter.cpp" />
     <ClCompile Include="src\Game\Files\ModPacks.cpp" />
     <ClCompile Include="src\Overlay\Panels\ModsPanel.cpp" />
     <ClCompile Include="src\Overlay\Windows\ModsWindow.cpp" />
@@ -378,6 +379,15 @@
     <ClCompile Include="src\Overlay\Windows\SoundWindow.cpp" />
     <ClCompile Include="src\Overlay\Windows\ThemeWindow.cpp" />
     <ClCompile Include="src\Core\Config\Settings.cpp" />
+    <ClCompile Include="src\Core\Config\ProfileStore.cpp" />
+    <ClCompile Include="src\Core\Config\ConfigProfiles.cpp" />
+    <ClCompile Include="src\Core\Config\ConfigSplit.cpp" />
+    <ClCompile Include="src\Core\Config\ConfigMigrations.cpp" />
+    <ClCompile Include="src\Core\Config\ConfigLayout.cpp" />
+    <ClCompile Include="src\Core\Config\ConfigFiles.cpp" />
+    <ClCompile Include="src\Core\Config\ConfigBoot.cpp" />
+    <ClCompile Include="src\Core\Config\Features.cpp" />
+    <ClCompile Include="src\Core\Config\FeatureCatalog.cpp" />
     <ClCompile Include="src\Core\Config\IniDocument.cpp" />
     <ClCompile Include="src\Core\Config\IniStore.cpp" />
     <ClCompile Include="src\Core\logger.cpp" />
@@ -445,6 +455,8 @@
     <ClCompile Include="src\Overlay\Hud\NotificationBar.cpp" />
     <ClCompile Include="src\Overlay\Widgets\UiText.cpp" />
     <ClCompile Include="src\Overlay\Widgets\BoldText.cpp" />
+    <ClCompile Include="src\Overlay\Widgets\Cards.cpp" />
+    <ClCompile Include="src\Overlay\Widgets\ModStyle.cpp" />
     <ClCompile Include="src\Overlay\Widgets\MarkdownView.cpp" />
     <ClCompile Include="src\Overlay\Widgets\UiScale.cpp" />
     <ClCompile Include="src\Overlay\Widgets\OverlayFont.cpp" />
@@ -453,6 +465,8 @@
     <ClCompile Include="src\Overlay\Widgets\CharaPreview.cpp" />
     <ClCompile Include="src\Overlay\Framework\IWindow.cpp" />
     <ClCompile Include="src\Overlay\Windows\MainWindow.cpp" />
+    <ClCompile Include="src\Overlay\Windows\MainTabs.cpp" />
+    <ClCompile Include="src\Overlay\Windows\StandbyWindow.cpp" />
     <ClCompile Include="src\Overlay\Panels\PlayerCardPanel.cpp" />
     <ClCompile Include="src\Overlay\Panels\ColorCustomizePanel.cpp" />
     <ClCompile Include="src\Overlay\Windows\PaletteWindow.cpp" />
@@ -545,6 +559,8 @@
     <ClCompile Include="src\Training\FrameStepper.cpp" />
     <ClCompile Include="src\Training\StopTime.cpp" />
     <ClCompile Include="src\Training\StageColor.cpp" />
+    <ClCompile Include="src\Training\TrainingVisibility.cpp" />
+    <ClCompile Include="src\Training\TrainingItems.cpp" />
     <ClCompile Include="src\Training\QuickTraining.cpp" />
     <ClCompile Include="src\Training\Dummy\DummyScript.cpp" />
     <ClCompile Include="src\Training\Meter\StateRecorder.cpp" />
@@ -586,6 +602,8 @@
     <ClCompile Include="src\Core\StateTimer.cpp" />
     <ClCompile Include="src\Core\SampleTotals.cpp" />
     <ClCompile Include="src\Core\Boot\ProcessTuning.cpp" />
+    <ClCompile Include="src\Core\Boot\StandbyRule.cpp" />
+    <ClCompile Include="src\Core\Boot\Standby.cpp" />
     <ClCompile Include="src\Core\Boot\CompatLayerText.cpp" />
     <ClCompile Include="src\Core\Boot\FullscreenOptimizations.cpp" />
     <ClCompile Include="src\Core\Boot\BackgroundPriority.cpp" />
@@ -599,6 +617,10 @@
     <ClCompile Include="src\D3D9\Device\ExclusiveSupersample.cpp" />
     <ClCompile Include="src\D3D9\Device\SceneScale.cpp" />
     <ClCompile Include="src\D3D9\Device\ScaledTargets.cpp" />
+    <ClCompile Include="src\D3D9\Device\SmoothMagnification.cpp" />
+    <ClCompile Include="src\D3D9\Device\ScreenArtSharpening.cpp" />
+    <ClCompile Include="src\D3D9\Device\ScreenArtRule.cpp" />
+    <ClCompile Include="src\D3D9\Device\MagnifyRule.cpp" />
     <ClCompile Include="src\Core\ShellOpen.cpp" />
     <ClCompile Include="src\D3D9\Device\ScreenSpaceShader.cpp" />
     <ClCompile Include="src\D3D9\Device\StageDetail.cpp" />
@@ -607,6 +629,15 @@
     <ClCompile Include="src\D3D9\Device\PretransformedDraws.cpp" />
     <ClCompile Include="src\Game\Display\InternalResolution.cpp" />
     <ClCompile Include="src\Game\Display\PotatoStage.cpp" />
+    <ClCompile Include="src\Game\Display\FontPages.cpp" />
+    <ClCompile Include="src\Game\Display\FontPageSet.cpp" />
+    <ClCompile Include="src\Game\Display\CharaSmoothing.cpp" />
+    <ClCompile Include="src\Game\Display\CharaShaderText.cpp" />
+    <ClCompile Include="src\Game\Display\SceneLayer.cpp" />
+    <ClCompile Include="src\Game\Display\SceneLooks.cpp" />
+    <ClCompile Include="src\Game\Display\SceneLookLevels.cpp" />
+    <ClCompile Include="src\Game\Display\StageResolution.cpp" />
+    <ClCompile Include="src\Game\Display\StageSteps.cpp" />
     <ClCompile Include="src\D3D9\Draw\DrawTrace.cpp" />
     <ClCompile Include="src\D3D9\Draw\TargetDump.cpp" />
     <ClCompile Include="src\D3D9\Draw\DrawQueueProbe.cpp" />
@@ -661,6 +692,8 @@
     <ClCompile Include="src\Game\Engine\CodeSignatures.cpp" />
     <ClCompile Include="src\Core\ThreadRole.cpp" />
     <ClCompile Include="src\Overlay\Panels\ConfigPanel.cpp" />
+    <ClCompile Include="src\Overlay\Panels\ProfilesPanel.cpp" />
+    <ClCompile Include="src\Overlay\Panels\ModulesPanel.cpp" />
     <ClCompile Include="src\Overlay\Panels\PalettesPanel.cpp" />
     <ClCompile Include="src\Overlay\Panels\NetworkPalettePanel.cpp" />
     <ClCompile Include="src\Overlay\Panels\ReplayPanel.cpp" />
@@ -712,6 +745,15 @@
     <ClInclude Include="src\Core\Formats\ImageOps.h" />
     <ClInclude Include="src\Core\Formats\DdsImage.h" />
     <ClInclude Include="src\Core\Config\Settings.h" />
+    <ClInclude Include="src\Core\Config\ProfileStore.h" />
+    <ClInclude Include="src\Core\Config\ConfigProfiles.h" />
+    <ClInclude Include="src\Core\Config\ConfigSplit.h" />
+    <ClInclude Include="src\Core\Config\ConfigMigrations.h" />
+    <ClInclude Include="src\Core\Config\ConfigLayout.h" />
+    <ClInclude Include="src\Core\Config\ConfigFiles.h" />
+    <ClInclude Include="src\Core\Config\ConfigBoot.h" />
+    <ClInclude Include="src\Core\Config\Features.h" />
+    <ClInclude Include="src\Core\Config\FeatureCatalog.h" />
     <ClInclude Include="src\Core\Config\IniDocument.h" />
     <ClInclude Include="src\Core\Config\IniStore.h" />
     <ClInclude Include="src\Core\Harness\Harness.h" />
@@ -827,6 +869,7 @@
     <ClInclude Include="src\Game\Audio\BgmPicker.h" />
     <ClInclude Include="src\Game\Audio\BgmSelectFile.h" />
     <ClInclude Include="src\Game\Files\ModFiles.h" />
+    <ClInclude Include="src\Game\Files\ModFileFilter.h" />
     <ClInclude Include="src\Game\Audio\OstImport.h" />
     <ClInclude Include="src\Game\Stages\BgListOverride.h" />
     <ClInclude Include="src\Game\Stages\BgObjectFix.h" />
@@ -1013,6 +1056,8 @@
     <ClInclude Include="src\Overlay\Hud\NotificationBar.h" />
     <ClInclude Include="src\Overlay\Widgets\UiText.h" />
     <ClInclude Include="src\Overlay\Widgets\BoldText.h" />
+    <ClInclude Include="src\Overlay\Widgets\Cards.h" />
+    <ClInclude Include="src\Overlay\Widgets\ModStyle.h" />
     <ClInclude Include="src\Overlay\Widgets\MarkdownView.h" />
     <ClInclude Include="src\Overlay\Widgets\UiScale.h" />
     <ClInclude Include="src\Overlay\Widgets\OverlayFont.h" />
@@ -1021,6 +1066,8 @@
     <ClInclude Include="src\Overlay\Widgets\CharaPreview.h" />
     <ClInclude Include="src\Overlay\Framework\IWindow.h" />
     <ClInclude Include="src\Overlay\Windows\MainWindow.h" />
+    <ClInclude Include="src\Overlay\Windows\MainTabs.h" />
+    <ClInclude Include="src\Overlay\Windows\StandbyWindow.h" />
     <ClInclude Include="src\Overlay\Panels\PlayerCardPanel.h" />
     <ClInclude Include="src\Overlay\Panels\ColorCustomizePanel.h" />
     <ClInclude Include="src\Overlay\Windows\PaletteWindow.h" />
@@ -1113,6 +1160,8 @@
     <ClInclude Include="src\Training\FrameStepper.h" />
     <ClInclude Include="src\Training\StopTime.h" />
     <ClInclude Include="src\Training\StageColor.h" />
+    <ClInclude Include="src\Training\TrainingVisibility.h" />
+    <ClInclude Include="src\Training\TrainingItems.h" />
     <ClInclude Include="src\Training\QuickTraining.h" />
     <ClInclude Include="src\Training\Dummy\DummyScript.h" />
     <ClInclude Include="src\Training\Meter\StateRecorder.h" />
@@ -1156,6 +1205,8 @@
     <ClInclude Include="src\Core\SampleTotals.h" />
     <ClInclude Include="src\Core\Config\default_ini.h" />
     <ClInclude Include="src\Core\Boot\ProcessTuning.h" />
+    <ClInclude Include="src\Core\Boot\StandbyRule.h" />
+    <ClInclude Include="src\Core\Boot\Standby.h" />
     <ClInclude Include="src\Core\Boot\CompatLayerText.h" />
     <ClInclude Include="src\Core\Boot\FullscreenOptimizations.h" />
     <ClInclude Include="src\Core\Boot\BackgroundPriority.h" />
@@ -1169,11 +1220,17 @@
     <ClInclude Include="src\D3D9\Device\ExclusiveSupersample.h" />
     <ClInclude Include="src\D3D9\Device\SceneScale.h" />
     <ClInclude Include="src\D3D9\Device\ScaledTargets.h" />
+    <ClInclude Include="src\D3D9\Device\SmoothMagnification.h" />
+    <ClInclude Include="src\D3D9\Device\ScreenArtSharpening.h" />
+    <ClInclude Include="src\D3D9\Device\ScreenArtRule.h" />
+    <ClInclude Include="src\D3D9\Device\MagnifyRule.h" />
     <ClInclude Include="src\Core\ShellOpen.h" />
     <ClInclude Include="src\D3D9\Device\ScreenSpaceShader.h" />
     <ClInclude Include="src\D3D9\Device\StageDetail.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\ScreenSpaceShader3.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\StageDetailShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\TextSharpenShader.h" />
+    <ClInclude Include="src\D3D9\Post\Shaders\ArtUpscaleShader.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\ScreenSpaceShader.h" />
     <ClInclude Include="src\D3D9\Device\GameCaller.h" />
     <ClInclude Include="src\D3D9\Device\TargetSizeMask.h" />
@@ -1181,6 +1238,16 @@
     <ClInclude Include="src\D3D9\Device\PretransformedDraws.h" />
     <ClInclude Include="src\Game\Display\InternalResolution.h" />
     <ClInclude Include="src\Game\Display\PotatoStage.h" />
+    <ClInclude Include="src\Game\Display\FontPages.h" />
+    <ClInclude Include="src\Game\Display\FontPageSet.h" />
+    <ClInclude Include="src\Game\Display\CharaSmoothing.h" />
+    <ClInclude Include="src\Game\Display\CharaShaderText.h" />
+    <ClInclude Include="src\Game\Display\SceneLayer.h" />
+    <ClInclude Include="src\Game\Display\SceneLooks.h" />
+    <ClInclude Include="src\Game\Display\SceneLookLevels.h" />
+    <ClInclude Include="src\Game\Display\StageResolution.h" />
+    <ClInclude Include="src\Game\Display\StageSteps.h" />
+    <ClInclude Include="src\Game\Display\GraphicsOff.h" />
     <ClInclude Include="src\D3D9\Draw\PrimitiveCount.h" />
     <ClInclude Include="src\D3D9\Draw\DrawTrace.h" />
     <ClInclude Include="src\D3D9\Draw\TargetDump.h" />
@@ -1270,6 +1337,8 @@
     <ClInclude Include="src\Core\CrossThread.h" />
     <ClInclude Include="src\Core\ThreadRole.h" />
     <ClInclude Include="src\Overlay\Panels\ConfigPanel.h" />
+    <ClInclude Include="src\Overlay\Panels\ProfilesPanel.h" />
+    <ClInclude Include="src\Overlay\Panels\ModulesPanel.h" />
     <ClInclude Include="src\Overlay\Panels\PalettesPanel.h" />
     <ClInclude Include="src\Overlay\Panels\NetworkPalettePanel.h" />
     <ClInclude Include="src\Overlay\Panels\ReplayPanel.h" />
@@ -1445,16 +1514,10 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 
-  <Target Name="CopyResources" AfterTargets="Build">
-    <Copy SourceFiles="$(ProjectDir)resource\UNI2_IM.ini" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="!Exists('$(OutDir)UNI2_IM.ini')" />
-  </Target>
-
   <Target Name="DeployToGame" AfterTargets="Build"
           Condition="'$(DeployToGame)'!='false' And Exists('$(GameDir)uni2.exe')">
     <Copy SourceFiles="$(OutDir)$(TargetName).dll;$(OutDir)$(TargetName).pdb"
           DestinationFolder="$(GameDir)" ContinueOnError="true" />
-    <Copy SourceFiles="$(ProjectDir)resource\UNI2_IM.ini" DestinationFolder="$(GameDir)"
-          Condition="!Exists('$(GameDir)UNI2_IM.ini')" ContinueOnError="true" />
 
     <WriteLinesToFile File="$(GameDir)steam_appid.txt" Lines="$(SteamAppId)" Overwrite="true"
                       Condition="!Exists('$(GameDir)steam_appid.txt')" ContinueOnError="true" />

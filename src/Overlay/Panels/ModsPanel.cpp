@@ -132,7 +132,7 @@ void ModsPanel::DrawOwnRow()
 	ImGui::TextDisabled("--");
 
 	ImGui::TableNextColumn();
-	ImGui::TextColored(kOwnText, "Your own files");
+	ImGui::TextColored(kOwnText, "Your files");
 
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("%s", ModFiles::Root());
@@ -276,7 +276,7 @@ void ModsPanel::DrawFooter()
 
 void ModsPanel::DrawHelp()
 {
-	ImGui::TextWrapped("A mod is a folder that uses the game's own file paths. For example, a mod "
+	ImGui::TextWrapped("A mod is a folder that uses UNI2's file paths. For example, a mod "
 		"that replaces Hyde's voice only holds se\\battle_se\\chr000. Install a zip or drop the "
 		"folder in yourself. It shows up in the list within a second, with no restart.");
 
@@ -297,9 +297,9 @@ void ModsPanel::DrawHelp()
 	ImGui::Spacing();
 	ImGui::TextWrapped("Files are looked up in this order:");
 	ImGui::BulletText("a loaded game patch");
-	ImGui::BulletText("Your own files (the top row, the Mods folder)");
+	ImGui::BulletText("Your files (the top row, the Mods folder)");
 	ImGui::BulletText("this list, top to bottom");
-	ImGui::BulletText("the game's own d archive, for everything else");
+	ImGui::BulletText("UNI2's d archive, for everything else");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Stages are different");

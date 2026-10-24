@@ -9,24 +9,30 @@ When something does not work, set
     [Debug]
     Logging = 1
 
-in UNI2-IM\UNI2_IM.ini and run the game once. The log lands in UNI2-IM\Logs
+in UNI2-IM\Config\Debug.ini and run the game once. The log lands in UNI2-IM\Logs
 next to the game and says what the mod loaded, what it is running on, every hook
 it installed and where, and anything that faulted. Nothing is written without
 that setting. The logs are plain text and contain nothing personal beyond the
 Steam ID of whoever you played.
 
-That ini is created on first run and completes itself after that: any key or
-section it is missing is added with its default on every launch, and nothing you
-edited is changed. If the mod never loads at all there is no folder to look in -
-you can create UNI2-IM\UNI2_IM.ini with just the two lines above and the mod
-fills in the rest.
+The settings live in UNI2-IM\Config, one file per part of the mod (Graphics.ini,
+Training.ini, Netplay.ini and so on), and what the mod keeps for itself, like
+the stage list, lives in UNI2-IM\Data. They are created on first run and
+complete themselves after that: any key or section that is missing is added with
+its default on every launch, and nothing you edited is changed. A UNI2_IM.ini
+from an older version is split into those files on the first start, corrected
+for the current version, and kept as UNI2_IM.ini.bak.
+
+If the mod never loads at all there is no folder to look in - you can create
+UNI2-IM\UNI2_IM.ini with just the two lines above. On the next start it is merged
+into the Config files and kept as a backup.
 
 
 INSTALL
 -------
 
 1. Close the game.
-2. Copy dinput8.dll and UNI2_IM.ini next to uni2.exe, usually
+2. Copy dinput8.dll next to uni2.exe, usually
 
      ...\steamapps\common\UNDER NIGHT IN-BIRTH II Sys Celes\
 
@@ -34,6 +40,10 @@ INSTALL
 
 To uninstall, delete dinput8.dll. Nothing else is touched and no game file is
 modified.
+
+When UNI2 updates, the mod pauses itself: it shows a notice, changes nothing
+in the game, and only looks for its own update, again every 15 minutes. When
+the fixed version is out it offers it, and installs it once you agree.
 
 
 LINUX AND STEAM DECK (PROTON)

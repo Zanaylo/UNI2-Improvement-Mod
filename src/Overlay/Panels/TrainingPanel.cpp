@@ -34,6 +34,8 @@
 #include "Training/Meter/FrameMeter.h"
 #include "Training/QuickTraining.h"
 #include "Training/StageColor.h"
+#include "Training/TrainingItems.h"
+#include "Training/TrainingVisibility.h"
 
 #include <Windows.h>
 #include <imgui.h>
@@ -44,6 +46,9 @@ namespace {
 void DrawTrainingSection();
 void DrawTrainingBlockedReason();
 void DrawHitboxControls();
+bool Shows(TrainingItems::Item item);
+void DrawPlayerControlToggle();
+void DrawPauseControls();
 void DrawHitboxTypeControls();
 void DrawFrameMeterControls();
 void DrawFrameStepControls();
@@ -83,15 +88,7 @@ void DrawTrainingSection()
 	}
 
 	DrawHitboxControls();
-
-	if (WindowContainer* const container = WindowManager::GetInstance().GetContainer())
-	{
-		IWindow* const panel = container->GetWindow(WindowType_PlayerControl);
-
-		bool open = panel != nullptr && panel->IsOpen();
-		if (panel != nullptr && ImGui::Checkbox("Player Control", &open))
-			open ? panel->Open() : panel->Close();
-	}
+	DrawPlayerControlToggle();
 
 	ImGui::Spacing();
 	DrawFrameStepControls();
@@ -118,14 +115,28 @@ void DrawTrainingBlockedReason()
 		: "Only in a match: training, replay, single player or local versus.");
 }
 
-void DrawHitboxControls()
+bool Shows(TrainingItems::Item item)
 {
+	return TrainingVisibility::IsAvailable(item);
+}
+
+void DrawHitboxViewerToggle()
+{
+	if (!Shows(TrainingItems::Item_HitboxViewer))
+		return;
+
 	bool open = HitboxOverlay::IsShown();
 	if (ImGui::Checkbox("Hitbox viewer", &open))
 		HitboxOverlay::SetShown(open);
 
 	ImGui::SameLine();
 	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.toggleHitboxKey));
+}
+
+void DrawFrameMeterToggle()
+{
+	if (!Shows(TrainingItems::Item_FrameMeter))
+		return;
 
 	bool meterVisible = FrameMeterHud::IsVisible();
 	if (ImGui::Checkbox("Frame meter", &meterVisible))
@@ -133,6 +144,12 @@ void DrawHitboxControls()
 
 	ImGui::SameLine();
 	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.toggleFrameMeterKey));
+}
+
+void DrawGrdPopupToggle()
+{
+	if (!Shows(TrainingItems::Item_GrdPopups))
+		return;
 
 	bool grdVisible = GrdPopupHud::IsVisible();
 	if (ImGui::Checkbox("GRD popups", &grdVisible))
@@ -140,6 +157,12 @@ void DrawHitboxControls()
 
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Shows each GRD gain or loss, in blocks, above the GRD gauge.\nOffline training only.");
+}
+
+void DrawGrdTimerToggle()
+{
+	if (!Shows(TrainingItems::Item_GrdTimer))
+		return;
 
 	bool grdTimerVisible = GrdPopupHud::IsTimerVisible();
 	if (ImGui::Checkbox("GRD timer", &grdTimerVisible))
@@ -147,6 +170,12 @@ void DrawHitboxControls()
 
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Shows the seconds left before the GRD circle closes, in the middle of the gauge.\nOffline training only.");
+}
+
+void DrawHealthToggle()
+{
+	if (!Shows(TrainingItems::Item_HealthValues))
+		return;
 
 	bool healthVisible = HealthReadout::IsVisible();
 	if (ImGui::Checkbox("Health values", &healthVisible))
@@ -157,6 +186,12 @@ void DrawHitboxControls()
 		ImGui::SetTooltip("Shows the exact health under each health bar, and how much the trailing "
 			"bar still has to drop. Offline only.");
 	}
+}
+
+void DrawProrationToggle()
+{
+	if (!Shows(TrainingItems::Item_Proration))
+		return;
 
 	bool prorationVisible = ProrationHud::IsVisible();
 	if (ImGui::Checkbox("Proration info", &prorationVisible))
@@ -167,6 +202,12 @@ void DrawHitboxControls()
 		ImGui::SetTooltip("Shows the proration the combo timer and the move count put on the next "
 			"hit, under the game's Damage info.\nOffline training only.");
 	}
+}
+
+void DrawHideHudToggle()
+{
+	if (!Shows(TrainingItems::Item_HideHud))
+		return;
 
 	bool hudHidden = BattleCockpit::IsHidden();
 	if (ImGui::Checkbox("Hide the HUD", &hudHidden))
@@ -177,6 +218,12 @@ void DrawHitboxControls()
 		ImGui::SetTooltip("Hides the gauges, the timer and the round markers, like the game does "
 			"during a cinematic. Health values still show either way.");
 	}
+}
+
+void DrawHideFightersToggle()
+{
+	if (!Shows(TrainingItems::Item_HideCharacters))
+		return;
 
 	bool fightersHidden = CleanFrame::FightersHidden();
 	ImGui::BeginDisabled(OnlineState::IsOnline());
@@ -191,8 +238,64 @@ void DrawHitboxControls()
 			"and it turns off when the game closes.");
 }
 
+void DrawHitboxControls()
+{
+	DrawHitboxViewerToggle();
+	DrawFrameMeterToggle();
+	DrawGrdPopupToggle();
+	DrawGrdTimerToggle();
+	DrawHealthToggle();
+	DrawProrationToggle();
+	DrawHideHudToggle();
+	DrawHideFightersToggle();
+}
+
+void DrawPauseControls()
+{
+	if (!Shows(TrainingItems::Item_FrameStep))
+		return;
+
+	bool paused = FrameStepper::IsPaused();
+	if (ImGui::Checkbox("Pause", &paused))
+		FrameStepper::SetPaused(paused);
+
+	ImGui::SameLine();
+	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.freezeFrameKey));
+
+	ImGui::BeginDisabled(!paused);
+
+	if (ImGui::Button("Next frame"))
+		FrameStepper::RequestStep(1);
+
+	ImGui::SameLine();
+	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.stepForwardKey));
+
+	ImGui::EndDisabled();
+
+	DrawFreezeModeCombo();
+}
+
+void DrawPlayerControlToggle()
+{
+	if (!Shows(TrainingItems::Item_PlayerControl))
+		return;
+
+	WindowContainer* const container = WindowManager::GetInstance().GetContainer();
+	IWindow* const panel = container != nullptr ? container->GetWindow(WindowType_PlayerControl) : nullptr;
+
+	if (panel == nullptr)
+		return;
+
+	bool open = panel->IsOpen();
+	if (ImGui::Checkbox("Player Control", &open))
+		open ? panel->Open() : panel->Close();
+}
+
 void DrawHitboxTypeControls()
 {
+	if (!Shows(TrainingItems::Item_HitboxTypes))
+		return;
+
 	WindowContainer* container = WindowManager::GetInstance().GetContainer();
 	if (container == nullptr)
 		return;
@@ -287,6 +390,9 @@ void DrawHitboxTypeControls()
 
 void DrawFrameMeterControls()
 {
+	if (!Shows(TrainingItems::Item_FrameMeterOptions))
+		return;
+
 	if (!ImGui::TreeNode("Frame meter options"))
 		return;
 
@@ -393,24 +499,7 @@ void DrawFrameStepControls()
 	if (!FrameStepper::IsImplemented())
 		return;
 
-	bool paused = FrameStepper::IsPaused();
-	if (ImGui::Checkbox("Pause", &paused))
-		FrameStepper::SetPaused(paused);
-
-	ImGui::SameLine();
-	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.freezeFrameKey));
-
-	ImGui::BeginDisabled(!paused);
-
-	if (ImGui::Button("Next frame"))
-		FrameStepper::RequestStep(1);
-
-	ImGui::SameLine();
-	ImGui::TextDisabled("(%s)", GetNameFromVirtualKey(g_modVals.stepForwardKey));
-
-	ImGui::EndDisabled();
-
-	DrawFreezeModeCombo();
+	DrawPauseControls();
 	DrawAutoPauseControls();
 	DrawTimingControls();
 	DrawDummyScriptControls();
@@ -509,6 +598,9 @@ int ManualResumeDelay(const FrameMeter::AutoPauseConfig& config)
 
 void DrawTimingControls()
 {
+	if (!Shows(TrainingItems::Item_Timing))
+		return;
+
 	FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
 	const FrameMeter::AutoPauseConfig before = config;
 
@@ -568,6 +660,9 @@ void DrawTimingControls()
 
 void DrawAutoPauseControls()
 {
+	if (!Shows(TrainingItems::Item_AutoPause))
+		return;
+
 	FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
 	FrameStepper::SetManualResumeDelay(ManualResumeDelay(config));
 	const FrameMeter::AutoPauseConfig before = config;
@@ -644,6 +739,9 @@ void DrawAutoPauseControls()
 
 void DrawExtrasControls()
 {
+	if (!Shows(TrainingItems::Item_Extras))
+		return;
+
 	FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
 	const FrameMeter::AutoPauseConfig before = config;
 
@@ -696,6 +794,9 @@ ScriptTab g_tabs[2] =
 
 void DrawDummyScriptControls()
 {
+	if (!Shows(TrainingItems::Item_DummyScript))
+		return;
+
 	if (!ImGui::TreeNode("Dummy script"))
 		return;
 
@@ -1006,7 +1107,7 @@ void DrawFreezeModeCombo()
 			? "Replays always pause with Tick stop.\nHitstun Stop keeps the game running, and in a "
 			  "replay that would keep playing the recording behind a frozen picture."
 			: "Tick stop freezes the whole game, menus included, and shows the last frame.\n"
-			  "Hitstun Stop uses the game's own hitstop. Menus keep working, but effects look "
+			  "Hitstun Stop uses UNI2's hitstop. Menus keep working, but effects look "
 			  "wrong while paused.");
 	}
 
@@ -1019,6 +1120,9 @@ void DrawFreezeModeCombo()
 
 void DrawQuickTrainingControls()
 {
+	if (!Shows(TrainingItems::Item_TrainingShortcut))
+		return;
+
 	if (!ImGui::TreeNode("Training shortcut"))
 		return;
 

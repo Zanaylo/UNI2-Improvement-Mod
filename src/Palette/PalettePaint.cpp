@@ -385,6 +385,10 @@ void PalettePaint::StageCompanion(int player, const uint8_t* colours)
 	NoteChange();
 }
 
+static_assert(PalettePaint::HasDoppel(27), "Zohar summons the doppel");
+static_assert(!PalettePaint::HasDoppel(2), "Waldstein has no doppel");
+static_assert(!PalettePaint::HasDoppel(-1), "nobody has no doppel");
+
 bool PalettePaint::HasCompanion(int player)
 {
 	return player >= 0 && player < kPlayers && g_players[player].hasCompanion;

@@ -5,6 +5,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
+#include "Game/Display/CharaSmoothing.h"
 #include "Game/Stages/Bbtag/BbtagDefaults.h"
 #include "Game/Stages/Bbtag/BbtagStage.h"
 #include "Game/Stages/BgShaderText.h"
@@ -106,7 +107,7 @@ bool Flows(int stage)
 	return StageLibrary::Of(stage, entry) && (Arcsys(entry.game) || From(entry.game, FbGameFolder::Game_MBAA));
 }
 
-char g_status[224] = "the game's own curve, unchanged";
+char g_status[224] = "UNI2's curve, unchanged";
 volatile long g_altered = 0;
 volatile long g_flowing = 0;
 volatile long g_lighting = 0;
@@ -610,6 +611,17 @@ HRESULT CreateEffectGraded(void* device, const void* source, UINT bytes,
 		LOG("BgGrade: %s", g_status);
 	}
 
+	if (source != nullptr && bytes != 0 && CharaSmoothing::Rewrite(static_cast<const char*>(source), bytes, rewritten))
+	{
+		const HRESULT smoothed = g_createEffectHook.Original()(device, rewritten.data(),
+			static_cast<UINT>(rewritten.size()), defines, include, flags, pool, effect, errors);
+
+		CharaSmoothing::NoteCompiled(SUCCEEDED(smoothed));
+
+		if (SUCCEEDED(smoothed))
+			return smoothed;
+	}
+
 	return g_createEffectHook.Original()(device, source, bytes, defines, include, flags, pool, effect, errors);
 }
 
@@ -718,7 +730,7 @@ bool BgGrade::Initialize()
 	if (entry == nullptr || !g_createEffectHook.Install(entry, &HookedCreateEffect))
 	{
 		strncpy_s(g_status, "the shader compiler could not be hooked, so the stage keeps the "
-			"game's own colours", _TRUNCATE);
+			"UNI2's colours", _TRUNCATE);
 		LOG("BgGrade: %s", g_status);
 		return false;
 	}

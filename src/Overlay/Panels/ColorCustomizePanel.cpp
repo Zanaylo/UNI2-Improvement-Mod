@@ -635,7 +635,7 @@ void ColorCustomizePanel::DrawExport()
 	PaletteFile::Info info = {};
 	sprintf_s(info.name, "%s custom %d", CharaTables::Name(m_chara), m_slot + 1);
 	strncpy_s(info.creator, "Custom Color", _TRUNCATE);
-	strncpy_s(info.description, "Built from the game's own colour customiser.", _TRUNCATE);
+	strncpy_s(info.description, "Built from UNI2's colour customiser.", _TRUNCATE);
 
 	const std::string folder = GetModPalettePath(PaletteManager::GetCharaName(m_chara));
 	CreateDirectoryA(folder.c_str(), nullptr);

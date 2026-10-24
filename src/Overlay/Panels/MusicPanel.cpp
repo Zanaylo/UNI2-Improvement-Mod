@@ -271,7 +271,7 @@ void MusicPanel::DrawStatus()
 		if (ImGui::SmallButton("Give it back"))
 			BgmControl::Release();
 
-		UiText::Muted("The game's own music is on hold until you stop or give it back.");
+		UiText::Muted("UNI2's music is on hold until you stop or give it back.");
 
 		if (BgmCatalog::ShuffleEnabled())
 			UiText::Muted("The randomizer picks the next screen's music, so your pick ends there.");
@@ -508,7 +508,7 @@ void MusicPanel::DrawPackDraftTable(int count)
 
 void MusicPanel::DrawMyMusic()
 {
-	UiText::Muted("Add your own music");
+	UiText::Muted("Add your music");
 	UiText::Help("Pick an MP3, OGG or WAV file. It is copied into the mod and listed in Browse "
 		"and in the game's Stage & BGM Select. "
 		"Anything that isn't OGG Vorbis is converted, and the copy in Music\\.cache can be deleted "
@@ -610,8 +610,8 @@ void MusicPanel::DrawMyMusicRow(const UserMusic::Entry& entry)
 void MusicPanel::DrawMyMusicTable()
 {
 	UiText::Help("Loop from is the point, in seconds, where the track restarts when it ends. At 0 "
-		"the whole track repeats, intro included. Set it past the intro to loop like the game's "
-		"own music; soundpacks save this as the track's loop point.");
+		"the whole track repeats, intro included. Set it past the intro to loop like UNI2's "
+		"music; soundpacks save this as the track's loop point.");
 
 	if (!ImGui::BeginTable("##usermusic", 5,
 		ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp |
