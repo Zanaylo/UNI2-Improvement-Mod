@@ -245,6 +245,9 @@
     <ClCompile Include="src\Overlay\Windows\ModsWindow.cpp" />
     <ClCompile Include="src\Game\Audio\OstImport.cpp" />
     <ClCompile Include="src\Game\Stages\BgListOverride.cpp" />
+    <ClCompile Include="src\Game\Stages\PickerOrder.cpp" />
+    <ClCompile Include="src\Game\Stages\BgTable.cpp" />
+    <ClCompile Include="src\Game\Stages\SquirrelText.cpp" />
     <ClCompile Include="src\Game\Stages\BgObjectFix.cpp" />
     <ClCompile Include="src\Game\Stages\ObjectList.cpp" />
     <ClCompile Include="src\Game\Stages\Bbtag\BbtagArt.cpp" />
@@ -410,6 +413,7 @@
     <ClCompile Include="src\Core\Harness\FrameGrab.cpp" />
     <ClCompile Include="src\Core\Harness\HarnessChannel.cpp" />
     <ClCompile Include="src\Core\Harness\CleanFrame.cpp" />
+    <ClCompile Include="src\Core\Harness\CleanFrameRule.cpp" />
     <ClCompile Include="src\Core\Harness\StageCommands.cpp" />
     <ClCompile Include="src\Core\Harness\PaletteCommands.cpp" />
     <ClCompile Include="src\Core\Harness\PerfCommands.cpp" />
@@ -623,6 +627,8 @@
     <ClCompile Include="src\D3D9\Device\MagnifyRule.cpp" />
     <ClCompile Include="src\Core\ShellOpen.cpp" />
     <ClCompile Include="src\D3D9\Device\ScreenSpaceShader.cpp" />
+    <ClCompile Include="src\D3D9\Device\SampledStages.cpp" />
+    <ClCompile Include="src\D3D9\Device\ShaderSamplers.cpp" />
     <ClCompile Include="src\D3D9\Device\StageDetail.cpp" />
     <ClCompile Include="src\D3D9\Device\TargetSizeMask.cpp" />
     <ClCompile Include="src\D3D9\Device\ScaledDeviceState.cpp" />
@@ -762,6 +768,7 @@
     <ClInclude Include="src\Core\Harness\FrameGrab.h" />
     <ClInclude Include="src\Core\Harness\HarnessChannel.h" />
     <ClInclude Include="src\Core\Harness\CleanFrame.h" />
+    <ClInclude Include="src\Core\Harness\CleanFrameRule.h" />
     <ClInclude Include="src\Core\Harness\StageCommands.h" />
     <ClInclude Include="src\Core\Harness\PaletteCommands.h" />
     <ClInclude Include="src\Core\Harness\PerfCommands.h" />
@@ -872,6 +879,9 @@
     <ClInclude Include="src\Game\Files\ModFileFilter.h" />
     <ClInclude Include="src\Game\Audio\OstImport.h" />
     <ClInclude Include="src\Game\Stages\BgListOverride.h" />
+    <ClInclude Include="src\Game\Stages\PickerOrder.h" />
+    <ClInclude Include="src\Game\Stages\BgTable.h" />
+    <ClInclude Include="src\Game\Stages\SquirrelText.h" />
     <ClInclude Include="src\Game\Stages\BgObjectFix.h" />
     <ClInclude Include="src\Game\Stages\ObjectList.h" />
     <ClInclude Include="src\Game\Stages\Bbtag\BbtagArt.h" />
@@ -1226,6 +1236,8 @@
     <ClInclude Include="src\D3D9\Device\MagnifyRule.h" />
     <ClInclude Include="src\Core\ShellOpen.h" />
     <ClInclude Include="src\D3D9\Device\ScreenSpaceShader.h" />
+    <ClInclude Include="src\D3D9\Device\SampledStages.h" />
+    <ClInclude Include="src\D3D9\Device\ShaderSamplers.h" />
     <ClInclude Include="src\D3D9\Device\StageDetail.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\ScreenSpaceShader3.h" />
     <ClInclude Include="src\D3D9\Post\Shaders\StageDetailShader.h" />

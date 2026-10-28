@@ -573,6 +573,15 @@
     <ClCompile Include="src\Game\Stages\BgListOverride.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Stages\PickerOrder.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\BgTable.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\SquirrelText.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Stages\BgObjectFix.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
@@ -1066,6 +1075,9 @@
       <Filter>Core\Harness</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Harness\CleanFrame.cpp">
+      <Filter>Core\Harness</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Harness\CleanFrameRule.cpp">
       <Filter>Core\Harness</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Harness\StageCommands.cpp">
@@ -1707,6 +1719,12 @@
     <ClCompile Include="src\D3D9\Device\ScreenSpaceShader.cpp">
       <Filter>D3D9\Device</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\Device\SampledStages.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="src\D3D9\Device\ShaderSamplers.cpp">
+      <Filter>D3D9\Device</Filter>
+    </ClCompile>
     <ClCompile Include="src\D3D9\Device\StageDetail.cpp">
       <Filter>D3D9\Device</Filter>
     </ClCompile>
@@ -2219,6 +2237,9 @@
     <ClInclude Include="src\Core\Harness\CleanFrame.h">
       <Filter>Core\Harness</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Harness\CleanFrameRule.h">
+      <Filter>Core\Harness</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Harness\StageCommands.h">
       <Filter>Core\Harness</Filter>
     </ClInclude>
@@ -2547,6 +2568,15 @@
       <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\BgListOverride.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\PickerOrder.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\BgTable.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\SquirrelText.h">
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\BgObjectFix.h">
@@ -3609,6 +3639,12 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Device\ScreenSpaceShader.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\SampledStages.h">
+      <Filter>D3D9\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="src\D3D9\Device\ShaderSamplers.h">
       <Filter>D3D9\Device</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Device\StageDetail.h">

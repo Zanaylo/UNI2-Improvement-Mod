@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace ModFiles
 {
 	bool Initialize();
@@ -12,6 +14,8 @@ namespace ModFiles
 	int Count();
 	int OwnCount();
 	int Hits();
+
+	bool Find(const char* gamePath, std::string& out);
 
 	const char* Root();
 	const char* LoadText();

@@ -1076,7 +1076,6 @@ void Unreplace(const Job& job)
 {
 	DeleteTree(StageLibrary::FolderOf(job.id));
 
-	BgListOverride::Restore(job.id);
 	StageReplacements::Forget(job.id);
 	sprintf_s(g_status, "stage %d is the game's own again", job.id);
 
@@ -1328,7 +1327,6 @@ void RestoreStale()
 
 	for (int number : stale)
 	{
-		BgListOverride::Restore(number);
 		StageReplacements::Forget(number);
 
 		LOG("StageImport: stage %d lost its stage.txt, so it is the game's own again", number);
@@ -1386,18 +1384,49 @@ bool OwnField(int id, const char* key, std::string& out)
 		&& StageArchive::Field(block, key, out);
 }
 
-void SyncList(Compositions& made)
+std::vector<int> OwnedSlots()
 {
-	std::vector<StageLibrary::Entry> entries;
-	StageLibrary::Snapshot(entries);
-
-	const int budget = StageLibrary::SlotBudget();
-
-	std::vector<BgListOverride::Slotted> ours;
 	std::vector<int> owned;
+	const int budget = StageLibrary::SlotBudget();
 
 	for (int index = 0; index < budget; ++index)
 		owned.push_back(StageLibrary::SlotAt(index));
+
+	return owned;
+}
+
+std::vector<std::string> LibraryFiles(const std::vector<StageLibrary::Entry>& entries)
+{
+	std::vector<std::string> files;
+
+	for (const StageLibrary::Entry& entry : entries)
+	{
+		char folder[16] = {};
+		sprintf_s(folder, "bg%03d", entry.id);
+		files.push_back(folder);
+	}
+
+	return files;
+}
+
+void SyncList(Compositions& made)
+{
+	RestoreStale();
+
+	std::vector<StageLibrary::Entry> entries;
+	StageLibrary::Snapshot(entries);
+
+	const std::vector<std::string> ourFiles = LibraryFiles(entries);
+	const std::vector<BgListOverride::Reworked> reworked = Reworks();
+
+	BgListOverride::Settle(OwnedSlots(), ourFiles, reworked);
+	StageLibrary::Reserve(BgListOverride::Taken(ourFiles));
+	StageLibrary::Snapshot(entries);
+
+	const int budget = StageLibrary::SlotBudget();
+	const std::vector<int> owned = OwnedSlots();
+
+	std::vector<BgListOverride::Slotted> ours;
 
 	for (const StageLibrary::Entry& known : entries)
 	{
@@ -1415,8 +1444,10 @@ void SyncList(Compositions& made)
 		ours.push_back(one);
 	}
 
-	RestoreStale();
-	BgListOverride::Sync(ours, owned, Reworks());
+	BgListOverride::Sync(ours, owned, ourFiles, reworked);
+
+	if (!BgListOverride::Served())
+		ModFiles::Rescan();
 }
 
 void Apply()
@@ -1465,7 +1496,6 @@ void Rehome()
 		moved.slot = -1;
 
 		StageLibrary::Erase(entry.id);
-		BgListOverride::Restore(entry.id);
 		StageLibrary::Put(moved);
 
 		LOG("StageImport: '%s' sat on bg%03d, which is the game's own, and is bg%03d now",

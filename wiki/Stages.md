@@ -20,8 +20,45 @@ UNI2 ships two stages it never offers:
 
 Tick one and it joins the picker. Untick it and it leaves.
 
-The picker is built from `BgSelectList` in `BgList.txt`, and that is what the mod edits. The stage
-records also have flags that look like they hide these stages, but clearing them alone does nothing.
+The picker is built from `BgSelectList` in `BgList.txt`. The stage records also have flags that look
+like they hide these stages, but clearing them alone does nothing.
+
+## Your own stage list, and stages from mod packs
+
+The mod never rewrites a `BgList.txt` you or a mod pack made. At every start it builds the stage list
+the game reads from these, each laid over the one before:
+
+1. UNI2's own list.
+2. Every mod pack that has `bg\BgList.txt` or `bg\BgList_str.txt`, in the order of the Mods tab.
+3. Your own `UNI2-IM\Mods\bg\BgList.txt` and `BgList_str.txt`.
+4. The stages you installed with the mod.
+
+A pack or your file can be a whole `BgList.txt` or just one `Bg_NNN = { ... }` block. Each block
+adds that stage or changes it, and leaves every other stage alone. A stage number a pack or your
+file uses is never given to a stage the mod installs.
+
+To change the order of the picker, or take a stage out of it, you can write a `BgSelectList` in your
+own `Mods\bg\BgList.txt`. When it changes, the picker follows it: the stages it lists, in that order,
+and no others. Use the numbers you see in `UNI2-IM\Generated\BgList.txt`.
+
+A mod pack's `BgSelectList` works the same way. The picker follows the highest list: yours, or else
+the pack highest in the Mods tab that has one. A pack's list also keeps the stages you installed with
+the mod, after the ones it lists. Turn the pack off or remove its list, and the picker goes back to
+the stage table's own order.
+
+Or edit `[StagePicker]` in `UNI2-IM\Config\Stages.ini`. Stages are written by folder name (`bg005`,
+`bg052`), or by number for a stage that has no folder (`99`):
+
+- `Order = bg003, bg001, bg052`: these come first, in this order. Every other stage keeps its place
+  next to its neighbours.
+- `Hidden = bg010`: these are left out of the picker.
+- `Added = 99`: these are put in the picker even though no list has them.
+
+The first start with this version moves your old `Mods\bg\BgList.txt` aside as `BgList.txt.old`.
+Everything you changed in it by hand is kept: its order and the stages you took out go to
+`[StagePicker]`, and the stages you added, your edits to UNI2's stages and your stage names go to a
+new `Mods\bg\BgList.txt` and `BgList_str.txt`. The list the game reads is in `UNI2-IM\Generated`;
+editing it does nothing, it is written again at every start.
 
 ## Porting a stage
 
@@ -85,6 +122,12 @@ repaints the cells as the cursor moves, so you always see the right card.
 The cards are written to disk when a stage is installed, so **a stage added before this feature
 must be added again once**. If the mod cannot paint the cards (for example, when the sheet is in
 video memory), the Stages panel tells you and the picker looks like it did before.
+
+The mod never replaces a picker sheet you or a mod pack made. If `grpdat\CSel\stage_thumb01.dds` is
+in a mod pack or in `UNI2-IM\Mods`, the game uses that one, and the mod only paints its ports' cards
+on top of it. Older versions kept a copy of UNI2's own sheet in `Mods\grpdat\CSel` and put it back
+at every start. The first start with this version deletes that copy if it is still identical to
+UNI2's.
 
 ## Colour
 

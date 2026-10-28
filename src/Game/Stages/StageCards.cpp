@@ -5,6 +5,7 @@
 #include "Game/Stages/BgListOverride.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/SceneWatch.h"
+#include "Game/Files/ModFiles.h"
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StageThumb.h"
 #include "Hooks/GameHook.h"
@@ -31,7 +32,7 @@ constexpr int kSecondSheet = 24;
 constexpr int kWindow = 9;
 constexpr int kPerFrame = 4;
 constexpr size_t kCachedCards = 24;
-constexpr const char* kSheetFile = "Mods\\grpdat\\CSel\\stage_thumb01.dds";
+constexpr long kNoRevision = -1;
 
 using Setup_t = int(__fastcall*)(void*, void*);
 
@@ -41,6 +42,7 @@ void* volatile g_picker = nullptr;
 IDirect3DTexture9* volatile g_sheet = nullptr;
 
 std::vector<uint8_t> g_wanted;
+long g_wantedRevision = kNoRevision;
 std::vector<int> g_order;
 std::map<int, std::vector<uint8_t> > g_cards;
 int g_holds[StageThumb::kCells] = {};
@@ -80,9 +82,22 @@ bool ReadWhole(const std::string& path, std::vector<uint8_t>& out)
 	return false;
 }
 
+void WantLoadedSheet()
+{
+	const long revision = ModFiles::Revision();
+
+	if (revision == g_wantedRevision && !g_wanted.empty())
+		return;
+
+	g_wantedRevision = revision;
+
+	if (!StageThumb::PickerSheet(g_wanted))
+		g_wanted.clear();
+}
+
 int __fastcall HookedSetup(void* self, void* unused)
 {
-	ReadWhole(GetModRootPath(kSheetFile), g_wanted);
+	WantLoadedSheet();
 	g_cards.clear();
 
 	const int result = g_setupHook.Original()(self, unused);
@@ -258,8 +273,10 @@ void StageCards::OnTexture(const void* source, unsigned int bytes, IDirect3DText
 
 bool StageCards::Initialize()
 {
-	StageThumb::ServeSheet();
-	ReadWhole(GetModRootPath(kSheetFile), g_wanted);
+	if (StageThumb::RetireLeftoverSheet())
+		ModFiles::Rescan();
+
+	WantLoadedSheet();
 
 	const uintptr_t address = CodeSignatures::Address(GameOffsets::kFnStageSelectSetup);
 

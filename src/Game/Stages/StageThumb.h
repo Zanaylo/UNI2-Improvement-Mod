@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "Game/Files/FbGameFolder.h"
 
@@ -16,7 +17,8 @@ namespace StageThumb
 	int FirstFreeCell();
 	int CellFor(int slot);
 
-	bool ServeSheet();
+	bool RetireLeftoverSheet();
+	bool PickerSheet(std::vector<uint8_t>& out);
 
 	std::string CardPath(int id);
 	bool HasCard(int id);

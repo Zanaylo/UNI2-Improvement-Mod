@@ -1,9 +1,16 @@
 #include "Game/Stages/BgListOverride.h"
 
+#include "Core/Config/Features.h"
+#include "Core/Config/IniStore.h"
+#include "Core/Config/Settings.h"
+#include "Core/FileIndex.h"
+#include "Core/Formats/Deflate.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Files/DataArchive.h"
-#include "Game/Stages/StageArchive.h"
+#include "Game/Files/ModPacks.h"
+#include "Game/Stages/BgTable.h"
+#include "Game/Stages/PickerOrder.h"
 #include "Game/Stages/StageNote.h"
 
 #include <Windows.h>
@@ -11,143 +18,90 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <vector>
 
 namespace {
 
 constexpr const char* kList = "BgList.txt";
 constexpr const char* kNames = "BgList_str.txt";
+constexpr const char* kServedList = "bg\\BgList.txt";
+constexpr const char* kServedNames = "bg\\BgList_str.txt";
+constexpr const char* kUserFolder = "Mods\\bg\\";
+constexpr const char* kPackFolder = "\\bg\\";
+constexpr const char* kComposedFolder = "Generated";
+constexpr const char* kRetiredSuffix = ".old";
+constexpr const char* kSection = "StagePicker";
+constexpr const char* kOrderKey = "Order";
+constexpr const char* kHiddenKey = "Hidden";
+constexpr const char* kAddedKey = "Added";
+constexpr const char* kLayeredKey = "Layered";
+constexpr const char* kLearnKey = "LearnFromOrder";
+constexpr const char* kFollowedListKey = "ModsListStamp";
+constexpr const char* kOn = "1";
+constexpr DWORD kStoredBytes = 16384;
 
-std::string Root()
+struct TableLayer
 {
-	return GetModRootPath("Mods\\bg");
+	std::string folder;
+	bool yours;
+	BgTable::Text text;
+};
+
+struct Inputs
+{
+	std::vector<BgListOverride::Slotted> ours;
+	std::vector<int> owned;
+	std::vector<std::string> ourFiles;
+	std::vector<BgListOverride::Reworked> reworked;
+};
+
+SRWLOCK g_lock = SRWLOCK_INIT;
+BgTable::Text g_composed;
+std::vector<int> g_standard;
+Inputs g_inputs;
+bool g_synced = false;
+bool g_committed = false;
+bool g_served = false;
+bool g_restart = false;
+
+bool Contains(const std::vector<int>& numbers, int number)
+{
+	return std::find(numbers.begin(), numbers.end(), number) != numbers.end();
 }
 
-std::string Path(const char* leaf)
+bool ContainsText(const std::vector<std::string>& texts, const std::string& text)
 {
-	return Root() + "\\" + leaf;
+	return std::find(texts.begin(), texts.end(), text) != texts.end();
 }
 
-bool Read(const char* leaf, std::string& out)
+std::string UserPath(const char* leaf)
+{
+	return GetModRootPath(std::string(kUserFolder) + leaf);
+}
+
+std::string ComposedPath(const char* leaf)
+{
+	return GetModRootPath(std::string(kComposedFolder) + "\\" + leaf);
+}
+
+bool Exists(const std::string& path)
+{
+	return GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES;
+}
+
+bool ReadText(const std::string& path, std::string& out)
 {
 	std::vector<uint8_t> blob;
 
-	if (ReadWholeFile(Path(leaf), blob) && !blob.empty())
-	{
-		out.assign(blob.begin(), blob.end());
-		return true;
-	}
-
-	if (!DataArchive::Read("bg", leaf, blob) || blob.empty())
+	if (!ReadWholeFile(path, blob) || blob.empty())
 		return false;
 
 	out.assign(blob.begin(), blob.end());
 	return true;
 }
 
-bool Write(const char* leaf, const std::string& text, bool& changed)
+bool WriteText(const std::string& path, const std::string& text)
 {
-	std::vector<uint8_t> was;
-
-	if (ReadWholeFile(Path(leaf), was) && was.size() == text.size()
-		&& memcmp(was.data(), text.data(), text.size()) == 0)
-	{
-		return true;
-	}
-
-	CreateDirectoryTree(Root());
-
-	FILE* handle = nullptr;
-
-	if (fopen_s(&handle, Path(leaf).c_str(), "wb") != 0 || handle == nullptr)
-		return false;
-
-	const size_t written = fwrite(text.data(), 1, text.size(), handle);
-	fclose(handle);
-
-	changed = changed || written == text.size();
-
-	return written == text.size();
-}
-
-std::string Tag(int number)
-{
-	char tag[16] = {};
-	sprintf_s(tag, "Bg_%03d", number);
-
-	return tag;
-}
-
-size_t TableEnd(const std::string& list)
-{
-	const size_t table = list.find("<-");
-	const size_t open = table == std::string::npos ? table : list.find('{', table);
-	const size_t end = open == std::string::npos
-		? std::string::npos : StageArchive::MatchPair(list, open);
-
-	return end == std::string::npos ? end : end - 1;
-}
-
-bool Span(const std::string& list, int number, size_t& start, size_t& end)
-{
-	start = list.find(Tag(number));
-	const size_t open = start == std::string::npos ? start : list.find('{', start);
-
-	if (open == std::string::npos)
-		return false;
-
-	end = StageArchive::MatchPair(list, open);
-
-	if (end == std::string::npos)
-		return false;
-
-	while (start > 0 && (list[start - 1] == '\t' || list[start - 1] == ' '))
-		--start;
-
-	while (end < list.size() && (list[end] == '\r' || list[end] == '\n'))
-		++end;
-
-	return true;
-}
-
-void DropEntry(std::string& list, int number)
-{
-	size_t start = 0;
-	size_t end = 0;
-
-	if (Span(list, number, start, end))
-		list.erase(start, end - start);
-}
-
-void EntryNumbers(const std::string& list, std::vector<int>& out)
-{
-	const std::string mark = "Bg_";
-
-	for (size_t at = list.find(mark); at != std::string::npos; at = list.find(mark, at + 1))
-	{
-		const size_t digits = at + mark.size();
-
-		if (digits + 3 > list.size())
-			return;
-
-		if (isdigit(static_cast<unsigned char>(list[digits])) == 0 ||
-			isdigit(static_cast<unsigned char>(list[digits + 1])) == 0 ||
-			isdigit(static_cast<unsigned char>(list[digits + 2])) == 0)
-		{
-			continue;
-		}
-
-		size_t after = digits + 3;
-
-		while (after < list.size() && (list[after] == ' ' || list[after] == '\t'))
-			++after;
-
-		if (after >= list.size() || list[after] != '=')
-			continue;
-
-		out.push_back(atoi(list.substr(digits, 3).c_str()));
-	}
+	return WriteWholeFile(path, std::vector<uint8_t>(text.begin(), text.end()));
 }
 
 bool Original(const char* leaf, std::string& out)
@@ -161,295 +115,577 @@ bool Original(const char* leaf, std::string& out)
 	return true;
 }
 
-bool ListedNumbers(const std::string& list, std::vector<int>& out, size_t& first, size_t& last)
+std::string Stored(const char* key)
 {
-	const size_t open = list.find("BgSelectList");
+	std::vector<char> value(kStoredBytes, 0);
+	Ini::GetString(kSection, key, "", value.data(), kStoredBytes, Settings::GetIniPath().c_str());
 
-	first = open == std::string::npos ? open : list.find('[', open);
-	last = first == std::string::npos ? first : list.find(']', first);
+	return value.data();
+}
 
-	if (last == std::string::npos)
-		return false;
+void Store(const char* key, const std::string& value)
+{
+	Settings::SaveString(kSection, key, value.c_str());
+}
 
-	for (size_t at = first + 1; at < last; ++at)
+std::string NameKey(int number)
+{
+	char key[16] = {};
+	sprintf_s(key, "Name%03d", number);
+
+	return key;
+}
+
+PickerOrder::Choices LoadChoices()
+{
+	PickerOrder::Choices choices;
+	choices.order = PickerOrder::Split(Stored(kOrderKey));
+	choices.hidden = PickerOrder::Split(Stored(kHiddenKey));
+	choices.added = PickerOrder::Split(Stored(kAddedKey));
+
+	return choices;
+}
+
+void SaveChoices(const PickerOrder::Choices& choices)
+{
+	Store(kOrderKey, PickerOrder::Join(choices.order));
+	Store(kHiddenKey, PickerOrder::Join(choices.hidden));
+	Store(kAddedKey, PickerOrder::Join(choices.added));
+}
+
+bool Layered()
+{
+	return Stored(kLayeredKey) == kOn;
+}
+
+bool ReadLayer(const std::string& folder, BgTable::Text& layer)
+{
+	const bool list = ReadText(folder + kList, layer.list);
+	const bool names = ReadText(folder + kNames, layer.names);
+
+	return list || names;
+}
+
+std::vector<TableLayer> Sources()
+{
+	std::vector<TableLayer> sources;
+
+	if (Features::IsLoaded(FeatureCatalog::Id_ModPacks))
 	{
-		if (isdigit(static_cast<unsigned char>(list[at])) == 0)
-			continue;
-
-		out.push_back(atoi(list.c_str() + at));
-
-		while (at < last && isdigit(static_cast<unsigned char>(list[at])) != 0)
-			++at;
+		for (const std::string& folder : ModPacks::EnabledFolders())
+			sources.push_back({ folder + kPackFolder, false, {} });
 	}
 
+	if (Layered())
+		sources.push_back({ GetModRootPath(kUserFolder), true, {} });
+
+	return sources;
+}
+
+std::vector<TableLayer> Layers(const std::vector<std::string>& ourFiles)
+{
+	std::vector<TableLayer> layers;
+
+	for (TableLayer& layer : Sources())
+	{
+		if (!ReadLayer(layer.folder, layer.text))
+		{
+			LOG("BgListOverride: %s has no %s or %s", layer.folder.c_str(), kList, kNames);
+			continue;
+		}
+
+		std::vector<int> wanted;
+		const bool lists = BgTable::Listed(layer.text.list, wanted);
+
+		LOG("BgListOverride: %s holds %d stage(s), %d name(s) and %s", layer.folder.c_str(),
+			static_cast<int>(BgTable::Numbers(layer.text.list).size()),
+			static_cast<int>(BgTable::Named(layer.text.names).size()), lists ? "a BgSelectList" : "no BgSelectList");
+
+		const std::vector<int> dropped = BgTable::DropKeyed(layer.text, ourFiles);
+
+		if (!dropped.empty())
+		{
+			LOG("BgListOverride: %d stage(s) in %s%s are copies of the mod's own stages, the mod places those itself",
+				static_cast<int>(dropped.size()), layer.folder.c_str(), kList);
+		}
+
+		layers.push_back(layer);
+	}
+
+	return layers;
+}
+
+std::vector<BgTable::Text> Texts(const std::vector<TableLayer>& layers)
+{
+	std::vector<BgTable::Text> texts;
+
+	for (const TableLayer& layer : layers)
+		texts.push_back(layer.text);
+
+	return texts;
+}
+
+std::vector<PickerOrder::Keyed> Keyed(const std::string& list, const std::vector<int>& numbers)
+{
+	std::vector<PickerOrder::Keyed> keyed;
+
+	for (int number : numbers)
+		keyed.push_back({ number, BgTable::Key(list, number) });
+
+	return keyed;
+}
+
+bool Retire(const std::string& path)
+{
+	if (!Exists(path))
+		return true;
+
+	return MoveFileExA(path.c_str(), (path + kRetiredSuffix).c_str(), MOVEFILE_REPLACE_EXISTING) != 0;
+}
+
+std::vector<int> Foreign(const std::string& list, const std::vector<int>& own, const std::vector<int>& owned,
+	const std::vector<std::string>& ourFiles)
+{
+	std::vector<int> foreign;
+
+	for (int number : BgTable::Numbers(list))
+	{
+		if (Contains(own, number) || Contains(owned, number) || ContainsText(ourFiles, BgTable::Key(list, number)))
+			continue;
+
+		foreign.push_back(number);
+	}
+
+	return foreign;
+}
+
+void Rework(BgTable::Text& composed, const std::vector<BgListOverride::Reworked>& reworked)
+{
+	for (const BgListOverride::Reworked& one : reworked)
+	{
+		std::string entry;
+
+		if (!BgTable::Entry(composed.list, one.number, entry))
+			continue;
+
+		BgTable::Put(composed.list, one.number, StageNote::Rework(entry, one.note));
+
+		if (!one.shiftJisName.empty())
+			BgTable::SetName(composed.names, one.number, one.shiftJisName);
+	}
+}
+
+std::vector<int> Seat(BgTable::Text& composed, const std::vector<BgListOverride::Slotted>& ours)
+{
+	std::vector<int> seated;
+
+	for (const BgListOverride::Slotted& one : ours)
+	{
+		std::string taken;
+
+		if (BgTable::Entry(composed.list, one.number, taken))
+		{
+			LOG("BgListOverride: Bg_%03d is defined by a mod pack or Mods\\bg\\BgList.txt, so the stage the "
+				"mod would put there waits", one.number);
+			continue;
+		}
+
+		BgTable::Put(composed.list, one.number, one.entry);
+		BgTable::SetName(composed.names, one.number, one.shiftJisName);
+		seated.push_back(one.number);
+	}
+
+	return seated;
+}
+
+std::string Stamp(const std::vector<int>& listed)
+{
+	std::string joined;
+
+	for (int number : listed)
+		joined += std::to_string(number) + ",";
+
+	char stamp[16] = {};
+	sprintf_s(stamp, "%08X", Deflate::Crc32(reinterpret_cast<const uint8_t*>(joined.data()), joined.size()));
+
+	return stamp;
+}
+
+void FollowList(const std::vector<TableLayer>& layers, const BgTable::Text& composed, const std::vector<int>& seated)
+{
+	std::vector<int> listed;
+	const int top = BgTable::TopListing(Texts(layers), listed);
+	const std::string stamp = top < 0 ? std::string() : Stamp(listed);
+
+	if (stamp == Stored(kFollowedListKey))
+		return;
+
+	Store(kFollowedListKey, stamp);
+
+	if (top < 0)
+	{
+		SaveChoices(PickerOrder::Choices());
+		Store(kLearnKey, std::string());
+
+		LOG("BgListOverride: no mod pack or Mods\\bg\\BgList.txt has a BgSelectList any more, the picker goes "
+			"back to the stage table's own order");
+		return;
+	}
+
+	const TableLayer& followed = layers[top];
+	const std::vector<int> numbers = PickerOrder::Followed(listed, followed.yours ? std::vector<int>() : seated);
+
+	Store(kOrderKey, PickerOrder::Join(BgTable::Keys(followed.text.list, composed.list, numbers)));
+	Store(kLearnKey, kOn);
+
+	LOG("BgListOverride: %s%s has a new BgSelectList, the picker follows it", followed.folder.c_str(), kList);
+}
+
+PickerOrder::Choices ChoicesFor(const std::vector<PickerOrder::Keyed>& standard,
+	const std::vector<PickerOrder::Keyed>& defined)
+{
+	PickerOrder::Choices choices = LoadChoices();
+
+	if (Stored(kLearnKey) != kOn)
+		return choices;
+
+	choices = PickerOrder::Learn(standard, defined, choices.order);
+	SaveChoices(choices);
+	Store(kLearnKey, std::string());
+
+	LOG("BgListOverride: the old list's order is kept, %d stage(s) hidden and %d added by it",
+		static_cast<int>(choices.hidden.size()), static_cast<int>(choices.added.size()));
+
+	return choices;
+}
+
+void NameListed(BgTable::Text& composed, const std::vector<int>& listed)
+{
+	for (int number : listed)
+	{
+		if (BgTable::HasName(composed.names, number))
+			continue;
+
+		std::string name = Stored(NameKey(number).c_str());
+
+		if (name.empty())
+			name = BgTable::Name(composed.list, number);
+
+		if (!name.empty())
+			BgTable::SetName(composed.names, number, name);
+	}
+}
+
+bool WriteComposed(const char* leaf, const std::string& text, bool& changed)
+{
+	const std::string path = ComposedPath(leaf);
+	std::string was;
+
+	if (ReadText(path, was) && was == text)
+		return true;
+
+	CreateDirectoryTree(GetModRootPath(kComposedFolder));
+
+	if (!WriteText(path, text))
+		return false;
+
+	changed = true;
 	return true;
 }
 
-void WriteListed(std::string& list, const std::vector<int>& numbers, size_t first, size_t last)
-{
-	std::string rebuilt = " ";
-
-	for (size_t i = 0; i < numbers.size(); ++i)
-	{
-		char text[16] = {};
-		sprintf_s(text, "%d", numbers[i]);
-
-		rebuilt += text;
-		rebuilt += i + 1 < numbers.size() ? ", " : " ";
-	}
-
-	list.replace(first + 1, last - first - 1, rebuilt);
-}
-
-void Arrange(std::vector<int>& numbers, const std::vector<int>& own)
-{
-	std::vector<int> arranged;
-
-	for (int number : own)
-	{
-		if (std::find(numbers.begin(), numbers.end(), number) != numbers.end())
-			arranged.push_back(number);
-	}
-
-	for (int number : numbers)
-	{
-		if (std::find(own.begin(), own.end(), number) == own.end())
-			arranged.push_back(number);
-	}
-
-	numbers.swap(arranged);
-}
-
-void PlaceListed(std::string& list, int number, bool listed, const std::vector<int>& own)
-{
-	std::vector<int> numbers;
-	size_t first = 0;
-	size_t last = 0;
-
-	if (!ListedNumbers(list, numbers, first, last))
-		return;
-
-	numbers.erase(std::remove(numbers.begin(), numbers.end(), number), numbers.end());
-
-	if (listed)
-		numbers.push_back(number);
-
-	Arrange(numbers, own);
-	WriteListed(list, numbers, first, last);
-}
-
-void SetListed(std::string& list, int number, bool listed)
-{
-	PlaceListed(list, number, listed, std::vector<int>());
-}
-
-bool LineOf(const std::string& names, int number, size_t& start, size_t& end)
-{
-	char wanted[8] = {};
-	sprintf_s(wanted, "%03d", number);
-
-	for (size_t at = 0; at != std::string::npos; at = names.find('\n', at + 1))
-	{
-		const size_t line = at == 0 ? 0 : at + 1;
-
-		if (names.compare(line, 3, wanted) != 0)
-			continue;
-
-		size_t after = line + 3;
-
-		while (after < names.size() && (names[after] == ' ' || names[after] == '\t'))
-			++after;
-
-		if (after >= names.size() || names[after] != '=')
-			continue;
-
-		start = line;
-		end = names.find('\n', line);
-		end = end == std::string::npos ? names.size() : end + 1;
-		return true;
-	}
-
-	return false;
-}
-
-void SetName(std::string& names, int number, const std::string& shiftJisName)
-{
-	char line[256] = {};
-	sprintf_s(line, "%03d = %s\r\n", number, shiftJisName.c_str());
-
-	size_t start = 0;
-	size_t end = 0;
-
-	if (LineOf(names, number, start, end))
-	{
-		names.replace(start, end - start, line);
-		return;
-	}
-
-	if (!names.empty() && names.back() != '\n')
-		names += "\r\n";
-
-	names += line;
-}
-
-void ClearName(std::string& names, int number)
-{
-	size_t start = 0;
-	size_t end = 0;
-
-	if (LineOf(names, number, start, end))
-		names.erase(start, end - start);
-}
-
-bool NameIs(const std::string& names, int number, const std::string& wanted)
-{
-	size_t start = 0;
-	size_t end = 0;
-
-	if (!LineOf(names, number, start, end))
-		return false;
-
-	std::string line = names.substr(start, end - start);
-
-	while (!line.empty() && (line.back() == '\r' || line.back() == '\n'))
-		line.pop_back();
-
-	const size_t equals = line.find('=');
-	std::string value = equals == std::string::npos ? std::string() : line.substr(equals + 1);
-
-	while (!value.empty() && (value.front() == ' ' || value.front() == '\t'))
-		value.erase(0, 1);
-
-	return value == wanted;
-}
-
-bool HasName(const std::string& names, int number)
-{
-	size_t start = 0;
-	size_t end = 0;
-
-	return LineOf(names, number, start, end);
-}
-
-std::string NameIn(const std::string& list, int number)
-{
-	std::string block;
-	std::string name;
-
-	if (!StageArchive::Block(list, Tag(number), block) ||
-		!StageArchive::Field(block, "Name", name))
-	{
-		return std::string();
-	}
-
-	if (!name.empty() && name.front() == '"')
-		name = name.substr(1, name.size() - (name.back() == '"' ? 2 : 1));
-
-	return name;
-}
-
-void Restock(std::string& list, std::string& names, const std::vector<int>& owned)
-{
-	std::string original;
-	std::string originalNames;
-
-	if (!Original(kList, original) || !Original(kNames, originalNames))
-		return;
-
-	const size_t table = TableEnd(list);
-
-	if (table == std::string::npos)
-		return;
-
-	std::vector<int> numbers;
-	EntryNumbers(original, numbers);
-
-	std::vector<int> lost;
-	std::string added;
-
-	for (int number : numbers)
-	{
-		if (std::find(owned.begin(), owned.end(), number) != owned.end())
-			continue;
-
-		size_t start = 0;
-		size_t end = 0;
-
-		if (Span(list, number, start, end) || !Span(original, number, start, end))
-			continue;
-
-		added += original.substr(start, end - start);
-		lost.push_back(number);
-	}
-
-	if (lost.empty())
-		return;
-
-	list.insert(table, added);
-
-	std::vector<int> listed;
-	size_t first = 0;
-	size_t last = 0;
-	ListedNumbers(original, listed, first, last);
-
-	for (int number : lost)
-	{
-		if (std::find(listed.begin(), listed.end(), number) != listed.end())
-			PlaceListed(list, number, true, listed);
-
-		size_t start = 0;
-		size_t end = 0;
-
-		if (!HasName(names, number) && LineOf(originalNames, number, start, end))
-		{
-			if (!names.empty() && names.back() != '\n')
-				names += "\r\n";
-
-			names += originalNames.substr(start, end - start);
-		}
-
-		LOG("BgListOverride: stage %d had gone from the table and is put back", number);
-	}
-}
-
-void Rework(std::string& list, std::string& names, const std::vector<BgListOverride::Reworked>& reworked)
-{
-	std::string original;
-
-	if (reworked.empty() || !Original(kList, original))
-		return;
-
-	for (const BgListOverride::Reworked& one : reworked)
-	{
-		size_t start = 0;
-		size_t end = 0;
-		size_t ownStart = 0;
-		size_t ownEnd = 0;
-
-		if (!Span(list, one.number, start, end) || !Span(original, one.number, ownStart, ownEnd))
-			continue;
-
-		list.replace(start, end - start,
-			StageNote::Rework(original.substr(ownStart, ownEnd - ownStart), one.note));
-
-		if (!one.shiftJisName.empty())
-			SetName(names, one.number, one.shiftJisName);
-	}
-}
-
-bool g_restart = false;
-
-bool Commit(const std::string& list, const std::string& names)
+bool Commit(const BgTable::Text& composed)
 {
 	bool changed = false;
 
-	if (!Write(kList, list, changed) || !Write(kNames, names, changed))
+	if (!WriteComposed(kList, composed.list, changed) || !WriteComposed(kNames, composed.names, changed))
 		return false;
 
-	g_restart = g_restart || changed;
+	g_restart = g_restart || (changed && g_committed);
+	g_committed = true;
+
 	return true;
 }
 
+void Remember(const BgTable::Text& composed, const std::vector<int>& standard, const Inputs& inputs)
+{
+	AcquireSRWLockExclusive(&g_lock);
+
+	g_composed = composed;
+	g_standard = standard;
+	g_inputs = inputs;
+	g_synced = true;
+
+	ReleaseSRWLockExclusive(&g_lock);
+}
+
+BgTable::Text Loaded()
+{
+	BgTable::Text text;
+
+	if (ReadText(ComposedPath(kList), text.list))
+	{
+		ReadText(ComposedPath(kNames), text.names);
+		return text;
+	}
+
+	if (!ReadText(UserPath(kList), text.list))
+		Original(kList, text.list);
+
+	return text;
+}
+
+template <typename Use>
+auto WithCurrent(Use use) -> decltype(use(BgTable::Text()))
+{
+	AcquireSRWLockShared(&g_lock);
+
+	if (g_synced)
+	{
+		auto answer = use(g_composed);
+		ReleaseSRWLockShared(&g_lock);
+		return answer;
+	}
+
+	ReleaseSRWLockShared(&g_lock);
+
+	return use(Loaded());
+}
+
+}
+
+void BgListOverride::Settle(const std::vector<int>& owned, const std::vector<std::string>& ourFiles,
+	const std::vector<Reworked>& reworked)
+{
+	if (Layered())
+		return;
+
+	BgTable::Text old;
+	ReadText(UserPath(kList), old.list);
+	ReadText(UserPath(kNames), old.names);
+
+	BgTable::Text original;
+
+	if (!Original(kList, original.list) || !Original(kNames, original.names))
+		return;
+
+	BgTable::Text made = original;
+	Rework(made, reworked);
+
+	const std::vector<int> own = BgTable::Numbers(original.list);
+	const std::vector<int> foreign = Foreign(old.list, own, owned, ourFiles);
+	const BgTable::Text theirs = BgTable::Fragment(old, foreign);
+	const BgTable::Text edits = BgTable::Edits(old, original, made, own);
+	const BgTable::Text kept = { theirs.list + edits.list, theirs.names + edits.names };
+
+	if (!Retire(UserPath(kList)) || !Retire(UserPath(kNames)))
+	{
+		LOG("BgListOverride: the old Mods\\bg\\BgList.txt could not be moved aside (error %lu), so the stage "
+			"table stays as it was until the next start", GetLastError());
+		return;
+	}
+
+	std::vector<int> listed;
+
+	if (BgTable::Listed(old.list, listed))
+	{
+		std::vector<std::string> keys;
+
+		for (int number : listed)
+			keys.push_back(BgTable::Key(old.list, number));
+
+		Store(kOrderKey, PickerOrder::Join(keys));
+		Store(kLearnKey, kOn);
+	}
+
+	if (!kept.list.empty())
+		WriteText(UserPath(kList), kept.list);
+
+	if (!kept.names.empty())
+		WriteText(UserPath(kNames), kept.names);
+
+	Store(kLayeredKey, kOn);
+
+	LOG("BgListOverride: the stage table is composed from layers now; the old Mods\\bg\\BgList.txt %s, "
+		"%d stage(s) of its own, %d hand edit(s) of the game's stages and %d name(s) kept in a new one",
+		old.list.empty() ? "was not there" : "is BgList.txt.old", static_cast<int>(foreign.size()),
+		static_cast<int>(BgTable::Numbers(edits.list).size()), static_cast<int>(BgTable::Named(kept.names).size()));
+}
+
+std::vector<int> BgListOverride::Taken(const std::vector<std::string>& ourFiles)
+{
+	std::string original;
+	Original(kList, original);
+
+	const std::vector<int> own = BgTable::Numbers(original);
+	std::vector<int> taken;
+
+	for (const TableLayer& layer : Layers(ourFiles))
+	{
+		for (int number : BgTable::Numbers(layer.text.list))
+		{
+			if (!Contains(own, number) && !Contains(taken, number))
+				taken.push_back(number);
+		}
+	}
+
+	return taken;
+}
+
+bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned,
+	const std::vector<std::string>& ourFiles, const std::vector<Reworked>& reworked)
+{
+	BgTable::Text composed;
+
+	if (!Original(kList, composed.list) || !Original(kNames, composed.names))
+		return false;
+
+	const std::vector<TableLayer> layers = Layers(ourFiles);
+
+	for (const TableLayer& layer : layers)
+		BgTable::Stack(composed, layer.text);
+
+	const std::vector<int> layered = BgTable::Numbers(composed.list);
+
+	for (int number : owned)
+	{
+		if (!Contains(layered, number))
+			BgTable::ClearName(composed.names, number);
+	}
+
+	Rework(composed, reworked);
+
+	std::vector<int> standard;
+
+	if (!BgTable::Listed(composed.list, standard))
+		return false;
+
+	const std::vector<int> seated = Seat(composed, ours);
+
+	for (int number : seated)
+	{
+		if (!Contains(standard, number))
+			standard.push_back(number);
+	}
+
+	FollowList(layers, composed, seated);
+
+	const std::vector<PickerOrder::Keyed> keyedStandard = Keyed(composed.list, standard);
+	const std::vector<PickerOrder::Keyed> keyedDefined = Keyed(composed.list, BgTable::Numbers(composed.list));
+	const std::vector<int> arranged = PickerOrder::Arrange(keyedStandard, keyedDefined,
+		ChoicesFor(keyedStandard, keyedDefined));
+
+	NameListed(composed, arranged);
+	BgTable::SetListed(composed.list, arranged);
+
+	Remember(composed, standard, { ours, owned, ourFiles, reworked });
+
+	LOG("BgListOverride: %d layer(s) over the game's table, %d of the mod's stages, %d listed",
+		static_cast<int>(layers.size()), static_cast<int>(ours.size()), static_cast<int>(arranged.size()));
+
+	return Commit(composed);
+}
+
+void BgListOverride::Layer(FileIndex& into)
+{
+	const std::string list = ComposedPath(kList);
+	const std::string names = ComposedPath(kNames);
+
+	into.Remove(FileIndex::Key(std::string(kServedList)));
+	into.Remove(FileIndex::Key(std::string(kServedNames)));
+
+	g_served = Exists(list) && Exists(names);
+
+	if (!g_served)
+		return;
+
+	into.Add(FileIndex::Key(std::string(kServedList)), list);
+	into.Add(FileIndex::Key(std::string(kServedNames)), names);
+}
+
+bool BgListOverride::Served()
+{
+	return g_served;
+}
+
+bool BgListOverride::IsTable(const std::string& key)
+{
+	return key == FileIndex::Key(std::string(kServedList)) || key == FileIndex::Key(std::string(kServedNames));
+}
+
+bool BgListOverride::Show(int number, bool shown, const std::string& shiftJisName)
+{
+	AcquireSRWLockShared(&g_lock);
+
+	const bool synced = g_synced;
+	const std::string key = synced ? BgTable::Key(g_composed.list, number) : std::string();
+	const bool standard = Contains(g_standard, number);
+	const Inputs inputs = g_inputs;
+
+	ReleaseSRWLockShared(&g_lock);
+
+	if (!synced)
+		return false;
+
+	PickerOrder::Choices choices = LoadChoices();
+	PickerOrder::Show(choices, key, shown, standard);
+	SaveChoices(choices);
+
+	if (shown && !shiftJisName.empty())
+		Store(NameKey(number).c_str(), shiftJisName);
+
+	LOG("BgListOverride: stage %d %s the picker list", number, shown ? "joins" : "leaves");
+
+	return Sync(inputs.ours, inputs.owned, inputs.ourFiles, inputs.reworked);
+}
+
+bool BgListOverride::IsListed(int number)
+{
+	return WithCurrent([number](const BgTable::Text& text)
+	{
+		std::vector<int> listed;
+
+		return BgTable::Listed(text.list, listed) && Contains(listed, number);
+	});
+}
+
+bool BgListOverride::Body(int number, std::string& out)
+{
+	return WithCurrent([number, &out](const BgTable::Text& text)
+	{
+		return BgTable::Entry(text.list, number, out);
+	});
+}
+
+bool BgListOverride::SelectOrder(std::vector<int>& out)
+{
+	return WithCurrent([&out](const BgTable::Text& text)
+	{
+		return BgTable::Listed(text.list, out);
+	});
+}
+
+bool BgListOverride::OwnName(int number, std::string& out)
+{
+	out = WithCurrent([number](const BgTable::Text& text)
+	{
+		return BgTable::Name(text.list, number);
+	});
+
+	return !out.empty();
+}
+
+bool BgListOverride::OwnNumbers(std::vector<int>& out)
+{
+	std::string original;
+
+	if (!Original(kList, original))
+	{
+		out.clear();
+		return false;
+	}
+
+	out = BgTable::Numbers(original);
+	return !out.empty();
 }
 
 int BgListOverride::HighestOwnCard()
@@ -482,284 +718,7 @@ int BgListOverride::HighestOwnCard()
 	return highest;
 }
 
-bool BgListOverride::OwnNumbers(std::vector<int>& out)
-{
-	out.clear();
-
-	std::string original;
-
-	if (!Original(kList, original))
-		return false;
-
-	EntryNumbers(original, out);
-
-	return !out.empty();
-}
-
-bool BgListOverride::Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned,
-	const std::vector<Reworked>& reworked)
-{
-	std::string list;
-	std::string names;
-
-	if (!Read(kList, list) || !Read(kNames, names))
-		return false;
-
-	Restock(list, names, owned);
-
-	for (int number : owned)
-	{
-		DropEntry(list, number);
-		ClearName(names, number);
-	}
-
-	Rework(list, names, reworked);
-
-	std::vector<int> order;
-	size_t open = 0;
-	size_t close = 0;
-
-	if (!ListedNumbers(list, order, open, close))
-		return false;
-
-	order.erase(std::remove_if(order.begin(), order.end(), [&owned](int number)
-		{ return std::find(owned.begin(), owned.end(), number) != owned.end(); }), order.end());
-
-	std::string original;
-	std::vector<int> own;
-	size_t ownFirst = 0;
-	size_t ownLast = 0;
-
-	if (Original(kList, original) && ListedNumbers(original, own, ownFirst, ownLast))
-		Arrange(order, own);
-
-	const size_t table = TableEnd(list);
-
-	if (table == std::string::npos)
-		return false;
-
-	std::string added;
-
-	for (const Slotted& one : ours)
-	{
-		added += one.entry;
-		added += "\r\n";
-
-		SetName(names, one.number, one.shiftJisName);
-		order.push_back(one.number);
-	}
-
-	list.insert(table, added);
-
-	std::vector<int> moved;
-
-	if (!ListedNumbers(list, moved, open, close))
-		return false;
-
-	WriteListed(list, order, open, close);
-
-	LOG("BgListOverride: the picker list carries %d of ours now",
-		static_cast<int>(ours.size()));
-
-	return Commit(list, names);
-}
-
-bool BgListOverride::Add(int number, const std::string& entry, const std::string& shiftJisName)
-{
-	std::string list;
-	std::string names;
-
-	if (!Read(kList, list) || !Read(kNames, names))
-		return false;
-
-	DropEntry(list, number);
-	SetListed(list, number, true);
-
-	const size_t close = TableEnd(list);
-
-	if (close == std::string::npos)
-		return false;
-
-	list.insert(close, entry + "\r\n");
-	SetName(names, number, shiftJisName);
-
-	return Commit(list, names);
-}
-
-bool BgListOverride::Drop(int number)
-{
-	std::string list;
-	std::string names;
-
-	if (!Read(kList, list) || !Read(kNames, names))
-		return false;
-
-	DropEntry(list, number);
-	SetListed(list, number, false);
-	ClearName(names, number);
-
-	return Commit(list, names);
-}
-
-bool BgListOverride::Restore(int number)
-{
-	std::string list;
-	std::string names;
-	std::string ownList;
-	std::string ownNames;
-
-	if (!Read(kList, list) || !Read(kNames, names) || !Original(kList, ownList)
-		|| !Original(kNames, ownNames))
-	{
-		return false;
-	}
-
-	size_t start = 0;
-	size_t end = 0;
-
-	if (!Span(ownList, number, start, end))
-		return false;
-
-	const std::string entry = ownList.substr(start, end - start);
-
-	DropEntry(list, number);
-
-	const size_t close = TableEnd(list);
-
-	if (close == std::string::npos)
-		return false;
-
-	list.insert(close, entry);
-
-	std::vector<int> ownOrder;
-	size_t first = 0;
-	size_t last = 0;
-
-	ListedNumbers(ownList, ownOrder, first, last);
-	PlaceListed(list, number, std::find(ownOrder.begin(), ownOrder.end(), number) != ownOrder.end(),
-		ownOrder);
-
-	ClearName(names, number);
-
-	if (LineOf(ownNames, number, start, end))
-	{
-		if (!names.empty() && names.back() != '\n')
-			names += "\r\n";
-
-		names += ownNames.substr(start, end - start);
-	}
-
-	LOG("BgListOverride: stage %d is the game's own again", number);
-
-	return Commit(list, names);
-}
-
-bool BgListOverride::Show(int number, bool shown, const std::string& shiftJisName)
-{
-	std::string list;
-	std::string names;
-
-	if (!Read(kList, list) || !Read(kNames, names))
-		return false;
-
-	SetListed(list, number, shown);
-
-	if (shown && !HasName(names, number))
-	{
-		const std::string own = shiftJisName.empty() ? NameIn(list, number) : shiftJisName;
-
-		if (!own.empty())
-			SetName(names, number, own);
-	}
-
-	LOG("BgListOverride: stage %d %s the picker list", number, shown ? "joins" : "leaves");
-
-	return Commit(list, names);
-}
-
-bool BgListOverride::IsListed(int number)
-{
-	std::string list;
-
-	if (!Read(kList, list))
-		return false;
-
-	std::vector<int> numbers;
-	size_t first = 0;
-	size_t last = 0;
-
-	if (!ListedNumbers(list, numbers, first, last))
-		return false;
-
-	return std::find(numbers.begin(), numbers.end(), number) != numbers.end();
-}
-
-bool BgListOverride::Body(int number, std::string& out)
-{
-	std::string list;
-
-	if (!Read(kList, list))
-		return false;
-
-	return StageArchive::Block(list, Tag(number), out);
-}
-
-bool BgListOverride::SelectOrder(std::vector<int>& out)
-{
-	out.clear();
-
-	std::string list;
-
-	if (!Read(kList, list))
-		return false;
-
-	size_t first = 0;
-	size_t last = 0;
-
-	return ListedNumbers(list, out, first, last);
-}
-
 bool BgListOverride::NeedsRestart()
 {
 	return g_restart;
-}
-
-bool BgListOverride::OwnName(int number, std::string& out)
-{
-	std::string list;
-
-	if (!Read(kList, list))
-		return false;
-
-	out = NameIn(list, number);
-	return !out.empty();
-}
-
-bool BgListOverride::SetNames(const std::vector<std::pair<int, std::string> >& named)
-{
-	std::string names;
-
-	if (!Read(kNames, names))
-		return false;
-
-	bool changed = false;
-
-	for (const std::pair<int, std::string>& entry : named)
-	{
-		if (entry.second.empty() || NameIs(names, entry.first, entry.second))
-			continue;
-
-		SetName(names, entry.first, entry.second);
-		changed = true;
-
-		LOG("BgListOverride: stage %d is '%s' in the picker now", entry.first,
-			entry.second.c_str());
-	}
-
-	if (!changed)
-		return true;
-
-	std::string list;
-
-	return Read(kList, list) && Commit(list, names);
 }

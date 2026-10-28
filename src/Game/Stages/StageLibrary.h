@@ -28,6 +28,7 @@ namespace StageLibrary
 	void Load();
 
 	bool GameOwns(int number);
+	void Reserve(const std::vector<int>& taken);
 	bool Bindable(int slot);
 	int SlotBudget();
 	int SlotAt(int index);

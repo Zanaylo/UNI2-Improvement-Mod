@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include <utility>
 #include <vector>
+
+class FileIndex;
 
 namespace BgListOverride
 {
@@ -20,14 +21,19 @@ namespace BgListOverride
 		std::string shiftJisName;
 	};
 
-	bool Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned,
+	void Settle(const std::vector<int>& owned, const std::vector<std::string>& ourFiles,
 		const std::vector<Reworked>& reworked);
 
-	bool Add(int number, const std::string& entry, const std::string& shiftJisName);
+	std::vector<int> Taken(const std::vector<std::string>& ourFiles);
 
-	bool Drop(int number);
+	bool Sync(const std::vector<Slotted>& ours, const std::vector<int>& owned,
+		const std::vector<std::string>& ourFiles, const std::vector<Reworked>& reworked);
 
-	bool Restore(int number);
+	void Layer(FileIndex& into);
+
+	bool Served();
+
+	bool IsTable(const std::string& key);
 
 	bool Show(int number, bool shown, const std::string& shiftJisName);
 
@@ -42,8 +48,6 @@ namespace BgListOverride
 	bool OwnNumbers(std::vector<int>& out);
 
 	int HighestOwnCard();
-
-	bool SetNames(const std::vector<std::pair<int, std::string> >& named);
 
 	bool NeedsRestart();
 }

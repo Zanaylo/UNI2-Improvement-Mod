@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 class FileIndex;
 
@@ -34,6 +35,7 @@ namespace ModPacks
 	bool Move(int index, int delta);
 
 	void Layer(FileIndex& into);
+	std::vector<std::string> EnabledFolders();
 
 	bool Install(const std::string& zip, char* status, int statusSize);
 	int StageOwner(int number, int except);

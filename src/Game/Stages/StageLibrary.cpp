@@ -42,6 +42,13 @@ bool g_ownedKnown = false;
 bool g_slotsFromOwned = false;
 bool g_owned[StageLibrary::kSlotLast + 1] = {};
 int g_ownEntries = kOwnEntries;
+bool g_taken[StageLibrary::kSlotLast + 1] = {};
+int g_takenCount = 0;
+
+bool Taken(int number)
+{
+	return number >= 0 && number <= StageLibrary::kSlotLast && g_taken[number];
+}
 
 void LearnOwned()
 {
@@ -437,7 +444,7 @@ int FirstFree(const std::vector<int>& reserved)
 {
 	for (int id = StageLibrary::kSlotFirst; id <= StageLibrary::kIdLast; ++id)
 	{
-		if (StageLibrary::GameOwns(id) || Known(id))
+		if (StageLibrary::GameOwns(id) || Known(id) || Taken(id))
 			continue;
 
 		if (std::find(reserved.begin(), reserved.end(), id) != reserved.end())
@@ -702,10 +709,45 @@ bool StageLibrary::GameOwns(int number)
 	return number >= 0 && number <= kSlotLast && g_owned[number];
 }
 
+void StageLibrary::Reserve(const std::vector<int>& taken)
+{
+	bool marked[kSlotLast + 1] = {};
+	int count = 0;
+
+	for (int number : taken)
+	{
+		if (number < 0 || number > kSlotLast || marked[number])
+			continue;
+
+		marked[number] = true;
+		++count;
+	}
+
+	AcquireSRWLockExclusive(&g_lock);
+
+	const bool same = memcmp(marked, g_taken, sizeof(marked)) == 0;
+
+	if (!same)
+	{
+		memcpy(g_taken, marked, sizeof(marked));
+		g_takenCount = count;
+		g_slots.clear();
+		Assign();
+	}
+
+	ReleaseSRWLockExclusive(&g_lock);
+
+	if (!same)
+	{
+		LOG("StageLibrary: %d stage number(s) belong to mod packs or Mods\\bg\\BgList.txt, the mod's "
+			"stages go around them", count);
+	}
+}
+
 bool StageLibrary::Bindable(int slot)
 {
 	return slot >= kSlotFirst && slot <= kSlotLast && slot < BgCeiling::Numbers() &&
-		!GameOwns(slot);
+		!GameOwns(slot) && !Taken(slot);
 }
 
 int StageLibrary::SlotBudget()
@@ -713,7 +755,7 @@ int StageLibrary::SlotBudget()
 	LearnOwned();
 
 	const int slots = static_cast<int>(Slots().size());
-	const int room = BgCeiling::ListEntries() - g_ownEntries;
+	const int room = BgCeiling::ListEntries() - g_ownEntries - g_takenCount;
 
 	return slots < room ? slots : room;
 }

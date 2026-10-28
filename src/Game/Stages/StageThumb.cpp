@@ -5,6 +5,7 @@
 #include "Core/Formats/PngImage.h"
 #include "Core/utils.h"
 #include "Game/Files/DataArchive.h"
+#include "Game/Files/ModFiles.h"
 #include "Game/Files/MbtlCipher.h"
 #include "Game/Stages/BgListOverride.h"
 #include "Game/Stages/StageArchive.h"
@@ -74,7 +75,9 @@ constexpr const char* kFolderThumbs[] = { "Thumbnail.png", "Thumbnail.dds" };
 
 constexpr const char* kOurFolder = "CSel";
 constexpr const char* kCardFolder = "Mods\\CSel";
-constexpr const char* kOurSheets[] = { "stage_thumb00.dds", "stage_thumb01.dds" };
+constexpr const char* kPickerSheet = "stage_thumb01.dds";
+constexpr const char* kPickerSheetPath = "grpdat\\CSel\\stage_thumb01.dds";
+constexpr const char* kLeftoverSheet = "Mods\\grpdat\\CSel\\stage_thumb01.dds";
 
 constexpr const char* kMbtlArchive = "data010.bin";
 
@@ -187,14 +190,6 @@ Rect Focused(const Image& image, const Rect& band, int width)
 	return out;
 }
 
-std::string OurPath(int sheet)
-{
-	char leaf[64] = {};
-	sprintf_s(leaf, "Mods\\grpdat\\CSel\\%s", kOurSheets[sheet]);
-
-	return GetModRootPath(leaf);
-}
-
 bool DfciSheet(const std::string& gameFolder, std::vector<uint8_t>& blob)
 {
 	std::string path = gameFolder;
@@ -203,35 +198,6 @@ bool DfciSheet(const std::string& gameFolder, std::vector<uint8_t>& blob)
 		path.push_back('\\');
 
 	return ReadWholeFile(path + kDfciSheet, blob) && !blob.empty();
-}
-
-bool OurSheet(int sheet, std::vector<uint8_t>& blob)
-{
-	if (ReadWholeFile(OurPath(sheet), blob) && !blob.empty())
-		return true;
-
-	return DataArchive::Read(kOurFolder, kOurSheets[sheet], blob) && !blob.empty();
-}
-
-bool Write(int sheet, const std::vector<uint8_t>& blob)
-{
-	const std::string path = OurPath(sheet);
-	const size_t leaf = path.rfind('\\');
-
-	if (leaf == std::string::npos)
-		return false;
-
-	CreateDirectoryTree(path.substr(0, leaf));
-
-	FILE* handle = nullptr;
-
-	if (fopen_s(&handle, path.c_str(), "wb") != 0 || handle == nullptr)
-		return false;
-
-	const size_t written = fwrite(blob.data(), 1, blob.size(), handle);
-	fclose(handle);
-
-	return written == blob.size();
 }
 
 bool ReadAt(FILE* handle, uint32_t offset, size_t size, std::vector<uint8_t>& out)
@@ -477,26 +443,8 @@ bool Carded(int id)
 	return id >= StageLibrary::kSlotFirst && id <= StageLibrary::kIdLast;
 }
 
-bool EnsureSheet()
-{
-	std::vector<uint8_t> vanilla;
-
-	if (!DataArchive::Read(kOurFolder, kOurSheets[1], vanilla) || vanilla.empty())
-		return false;
-
-	std::vector<uint8_t> ours;
-
-	if (ReadWholeFile(OurPath(1), ours) && ours == vanilla)
-		return true;
-
-	LOG("StageThumb: the picker's second sheet is ours to serve now, so the cards can be painted");
-
-	return Write(1, vanilla);
-}
-
 bool SaveCard(const Image& card, int id)
 {
-	EnsureSheet();
 	CreateDirectoryTree(GetModRootPath(kCardFolder));
 
 	FILE* handle = nullptr;
@@ -665,9 +613,39 @@ bool TakeMbtl(const std::string& gameFolder, int sourceCell, int number)
 
 }
 
-bool StageThumb::ServeSheet()
+bool StageThumb::RetireLeftoverSheet()
 {
-	return EnsureSheet();
+	const std::string path = GetModRootPath(kLeftoverSheet);
+	std::vector<uint8_t> leftover;
+
+	if (!ReadWholeFile(path, leftover) || leftover.empty())
+		return false;
+
+	std::vector<uint8_t> vanilla;
+
+	if (!DataArchive::Read(kOurFolder, kPickerSheet, vanilla) || leftover != vanilla)
+		return false;
+
+	if (!DeleteFileA(path.c_str()))
+		return false;
+
+	LOG("StageThumb: removed the copy of the game's picker sheet older versions kept in Mods, so a "
+		"pack's or the player's own stage_thumb01.dds is the one the game reads");
+	return true;
+}
+
+bool StageThumb::PickerSheet(std::vector<uint8_t>& out)
+{
+	std::string path;
+
+	if (ModFiles::Find(kPickerSheetPath, path) && ReadWholeFile(path, out) && !out.empty())
+	{
+		LOG("StageThumb: the picker sheet is %s", path.c_str());
+		return true;
+	}
+
+	LOG("StageThumb: the picker sheet is the game's own");
+	return DataArchive::Read(kOurFolder, kPickerSheet, out) && !out.empty();
 }
 
 int StageThumb::FirstFreeCell()

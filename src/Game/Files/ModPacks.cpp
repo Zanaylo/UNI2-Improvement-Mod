@@ -6,6 +6,7 @@
 #include "Core/Formats/ZipArchive.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Stages/BgListOverride.h"
 
 #include <Windows.h>
 
@@ -157,6 +158,9 @@ void Weigh()
 
 		for (const FileIndex::Map::value_type& entry : pack.files.Entries())
 		{
+			if (BgListOverride::IsTable(entry.first))
+				continue;
+
 			const std::string* const already = seen.Find(entry.first);
 
 			if (already != nullptr)
@@ -355,6 +359,19 @@ void ModPacks::Layer(FileIndex& into)
 		for (const FileIndex::Map::value_type& entry : g_packs[i].files.Entries())
 			into.Add(entry.first, entry.second);
 	}
+}
+
+std::vector<std::string> ModPacks::EnabledFolders()
+{
+	std::vector<std::string> folders;
+
+	for (size_t i = g_packs.size(); i-- > 0;)
+	{
+		if (g_packs[i].info.enabled)
+			folders.push_back(g_packs[i].info.path);
+	}
+
+	return folders;
 }
 
 bool ModPacks::Install(const std::string& zip, char* status, int statusSize)

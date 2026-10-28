@@ -13,6 +13,7 @@
 #include "Game/Audio/BgmPicker.h"
 #include "Game/Audio/SoundPacks.h"
 #include "Game/Audio/UserMusic.h"
+#include "Game/Stages/BgListOverride.h"
 #include "Hooks/GameHook.h"
 #include "Hooks/HookManager.h"
 
@@ -73,7 +74,6 @@ bool g_packsStirred = false;
 volatile long g_revision = 0;
 uint64_t g_fingerprint = 0;
 
-constexpr const char* kBookkeeping[] = { "bg\\bglist.txt", "bg\\bglist_str.txt" };
 constexpr const char* kStageSettingsLeaf = "\\settings.ini";
 bool g_slotsLogged = false;
 
@@ -426,12 +426,6 @@ void ArmSearchPath()
 
 bool Bookkeeping(const std::string& key)
 {
-	for (const char* generated : kBookkeeping)
-	{
-		if (key == generated)
-			return true;
-	}
-
 	return EndsWithNoCase(key, kStageSettingsLeaf);
 }
 
@@ -481,6 +475,9 @@ bool Rebuild()
 		if (ModFileFilter::Keeps(entry.first, stagesOn))
 			built.Add(entry.first, entry.second);
 	}
+
+	if (stagesOn)
+		BgListOverride::Layer(built);
 
 	BgmPicker::Layer(built);
 
@@ -679,6 +676,23 @@ int ModFiles::Count()
 int ModFiles::Hits()
 {
 	return static_cast<int>(g_hits);
+}
+
+bool ModFiles::Find(const char* gamePath, std::string& out)
+{
+	const std::string key = Normalise(gamePath);
+
+	if (key.empty())
+		return false;
+
+	AcquireSRWLockShared(&g_filesLock);
+	const std::string* const found = g_files.Find(key);
+
+	if (found != nullptr)
+		out = *found;
+
+	ReleaseSRWLockShared(&g_filesLock);
+	return found != nullptr;
 }
 
 const char* ModFiles::Root()
