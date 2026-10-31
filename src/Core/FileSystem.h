@@ -9,3 +9,5 @@ bool ReadWholeFile(const std::string& path, std::vector<uint8_t>& out, size_t mi
 bool WriteWholeFile(const std::string& path, const std::vector<uint8_t>& data);
 
 bool SameFolder(const std::string& left, const std::string& right);
+
+std::vector<std::string> ListFileNames(const std::string& folder);

@@ -9,6 +9,7 @@
 #include "Game/Engine/SceneWatch.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Replays/ReplayArchive.h"
+#include "Game/Replays/ReplayPatchPlan.h"
 #include "Game/Replays/ReplayRecord.h"
 #include "Game/Lobby/SteamNames.h"
 #include "Hooks/GameHook.h"
@@ -1140,13 +1141,57 @@ void MatchPatchToRecord(const std::vector<uint8_t>& record)
 	GamePatches::OnReplayStarting(when);
 }
 
+const char* PatchName(int index)
+{
+	const GamePatches::Patch* const patch = GamePatches::Get(index);
+	return patch != nullptr ? patch->name.c_str() : "another build";
 }
 
-bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError)
+bool RefusePatch(int wanted, bool patchAlreadyLoaded, std::string& outError)
+{
+	const std::string name = PatchName(wanted);
+
+	outError = patchAlreadyLoaded
+		? "this replay is from " + name + ", but the game could not switch to it, so it was not started"
+		: "this replay is from " + name + ", but the game started on something else. Load that first";
+
+	LOG("replay files: %s", outError.c_str());
+	return false;
+}
+
+bool LoadPatchFirst(const std::string& path, int wanted, std::string& outError)
+{
+	GamePatches::ApplyForReset(wanted);
+
+	if (!GameRestart::SoftReset())
+	{
+		outError = GameRestart::StatusText();
+		return false;
+	}
+
+	g_queuedPath = path;
+	g_queuedPhase = Queue_WaitStart;
+	g_queuedWait = kQueueFrames;
+	g_queuedSettle = 0;
+
+	_snprintf_s(g_status, _TRUNCATE, "loading %s for this replay, it starts by itself", PatchName(wanted));
+	LOG("replay files: %s", g_status);
+	return true;
+}
+
+void Play(std::vector<uint8_t>& record, const std::string names[2])
+{
+	_snprintf_s(g_status, _TRUNCATE, "playing %s", Matchup(record, names).c_str());
+
+	g_playbackRecord.swap(record);
+	InterlockedExchange(&g_playbackRequest, 1);
+}
+
+bool Launch(const std::string& path, bool patchAlreadyLoaded, std::string& outError)
 {
 	outError.clear();
 
-	if (!CanPlay())
+	if (!ReplayFiles::CanPlay())
 	{
 		outError = GameState::IsInMatch()
 			? "leave the match first"
@@ -1157,7 +1202,7 @@ bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError
 	std::vector<uint8_t> record;
 	std::string names[2];
 
-	if (!ReadRecordFile(path, record, names, outError))
+	if (!ReplayFiles::ReadRecordFile(path, record, names, outError))
 		return false;
 
 	if (!BuildRecord(record, outError))
@@ -1167,42 +1212,29 @@ bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError
 
 	const int wanted = GamePatches::ReplayWanted();
 
-	if (wanted >= 0 && !GamePatches::TablesAgreeWith(wanted))
+	ReplayPatchPlan::View view;
+	view.wantsPatch = wanted >= 0;
+	view.tablesAgree = view.wantsPatch && GamePatches::TablesAgreeWith(wanted);
+	view.patchAlreadyLoaded = patchAlreadyLoaded;
+	view.canReset = GameRestart::CanSoftReset();
+
+	switch (ReplayPatchPlan::Next(view))
 	{
-		const GamePatches::Patch* const target = GamePatches::Get(wanted);
-		const char* const name = target != nullptr ? target->name.c_str() : "another build";
-
-		if (!GameRestart::CanSoftReset())
-		{
-			outError = std::string("this replay is from ") + name +
-				", but the game started on something else. Load that first";
-			return false;
-		}
-
-		GamePatches::ApplyForReset(wanted);
-
-		if (!GameRestart::SoftReset())
-		{
-			outError = GameRestart::StatusText();
-			return false;
-		}
-
-		g_queuedPath = path;
-		g_queuedPhase = Queue_WaitStart;
-		g_queuedWait = kQueueFrames;
-		g_queuedSettle = 0;
-
-		_snprintf_s(g_status, _TRUNCATE, "loading %s for this replay, it starts by itself", name);
-		LOG("replay files: %s", g_status);
+	case ReplayPatchPlan::Move::LoadPatchFirst:
+		return LoadPatchFirst(path, wanted, outError);
+	case ReplayPatchPlan::Move::Refuse:
+		return RefusePatch(wanted, patchAlreadyLoaded, outError);
+	default:
+		Play(record, names);
 		return true;
 	}
+}
 
-	_snprintf_s(g_status, _TRUNCATE, "playing %s", Matchup(record, names).c_str());
+}
 
-	g_playbackRecord.swap(record);
-	InterlockedExchange(&g_playbackRequest, 1);
-
-	return true;
+bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError)
+{
+	return Launch(path, false, outError);
 }
 
 namespace {
@@ -1396,8 +1428,11 @@ void PumpQueued()
 
 	std::string error;
 
-	if (!ReplayFiles::RequestPlayback(path, error))
-		LOG("replay files: the queued replay would not start - %s", error.c_str());
+	if (Launch(path, true, error))
+		return;
+
+	_snprintf_s(g_status, _TRUNCATE, "the replay did not start: %s", error.c_str());
+	LOG("replay files: the queued replay would not start - %s", error.c_str());
 }
 
 }

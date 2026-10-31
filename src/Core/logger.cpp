@@ -2,6 +2,7 @@
 
 #include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
+#include "Core/TimeStamp.h"
 #include "Core/utils.h"
 
 #include <Windows.h>
@@ -68,18 +69,6 @@ void FlushRepeats()
 bool LoggingEnabledInIni()
 {
 	return Ini::GetInt("Debug", "Logging", 0, Settings::GetIniPath().c_str()) != 0;
-}
-
-std::string MakeSessionStamp()
-{
-	SYSTEMTIME time = {};
-	GetLocalTime(&time);
-
-	char stamp[32] = {};
-	sprintf_s(stamp, "%04d%02d%02d_%02d%02d%02d",
-		time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond);
-
-	return stamp;
 }
 
 void PruneOldFiles(const char* pattern, int keep)
@@ -203,7 +192,7 @@ void OpenLogger()
 		return;
 #endif
 
-	g_sessionStamp = MakeSessionStamp();
+	g_sessionStamp = LocalTimeStamp();
 
 	PruneOldFiles("UNI2_IM_*.log", kMaxSessionLogs);
 

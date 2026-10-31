@@ -969,6 +969,9 @@
     <ClCompile Include="src\Game\Replays\ReplayRecord.cpp">
       <Filter>Game\Replays</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Replays\ReplayPatchPlan.cpp">
+      <Filter>Game\Replays</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Replays\LiveRecording.cpp">
       <Filter>Game\Replays</Filter>
     </ClCompile>
@@ -1087,6 +1090,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\FileSystem.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\TimeStamp.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\GameBuild.cpp">
@@ -1468,6 +1474,12 @@
       <Filter>Game\Battle</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Engine\SaveData.cpp">
+      <Filter>Game\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Engine\SaveBackup.cpp">
+      <Filter>Game\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Engine\SaveBackupNames.cpp">
       <Filter>Game\Engine</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Engine\SceneExit.cpp">
@@ -2996,6 +3008,9 @@
     <ClInclude Include="src\Game\Replays\ReplayRecord.h">
       <Filter>Game\Replays</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Replays\ReplayPatchPlan.h">
+      <Filter>Game\Replays</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Replays\LiveRecording.h">
       <Filter>Game\Replays</Filter>
     </ClInclude>
@@ -3081,6 +3096,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\FileSystem.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\TimeStamp.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\GameBuild.h">
@@ -3255,6 +3273,12 @@
       <Filter>Game\Battle</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Engine\SaveData.h">
+      <Filter>Game\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Engine\SaveBackup.h">
+      <Filter>Game\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Engine\SaveBackupNames.h">
       <Filter>Game\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Engine\SceneExit.h">

@@ -44,6 +44,7 @@
 #include "Hooks/HookManager.h"
 #include "Hooks/InputProbe.h"
 #include "Hooks/hooks_input.h"
+#include "Game/Engine/SaveBackup.h"
 #include "Network/NetplayTick.h"
 #include "Network/PaletteShare.h"
 #include "Overlay/Framework/WindowManager.h"
@@ -307,6 +308,7 @@ DWORD WINAPI InitThread(LPVOID)
 	Compat::Detect();
 
 	Modules::RunGuarded("settings", Stage_Settings);
+	Modules::RunGuarded("save backup", [] { SaveBackup::TakeDaily(); });
 	Modules::RunGuarded("standby", [] { Standby::Decide(); });
 
 	if (Standby::IsOn())

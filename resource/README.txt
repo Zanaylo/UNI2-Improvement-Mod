@@ -212,5 +212,11 @@ IF SOMETHING GOES WRONG
 
 Delete dinput8.dll and the game is exactly as it was.
 
+Your save is copied the first time you start the game each day, into
+UNI2-IM\Backups\Saves\{account}\, and the last 10 days are kept. If your custom colours or
+settings are lost, close the game, turn off Steam Cloud for UNDER NIGHT IN-BIRTH II
+(Properties, General), copy the newest good backup over Save\{account}\SYS-DATA and
+rename it to SYS-DATA. Then start the game.
+
 Worth reporting: what you were doing, which characters, and the status line or a
 screenshot of the mod window.

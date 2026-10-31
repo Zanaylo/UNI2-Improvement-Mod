@@ -69,3 +69,24 @@ bool SameFolder(const std::string& left, const std::string& right)
 	return first.dwVolumeSerialNumber == second.dwVolumeSerialNumber &&
 		first.nFileIndexHigh == second.nFileIndexHigh && first.nFileIndexLow == second.nFileIndexLow;
 }
+
+std::vector<std::string> ListFileNames(const std::string& folder)
+{
+	std::vector<std::string> names;
+
+	WIN32_FIND_DATAA found = {};
+	const HANDLE search = FindFirstFileA((folder + "\\*").c_str(), &found);
+
+	if (search == INVALID_HANDLE_VALUE)
+		return names;
+
+	do
+	{
+		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+			names.push_back(found.cFileName);
+	}
+	while (FindNextFileA(search, &found) != 0);
+
+	FindClose(search);
+	return names;
+}

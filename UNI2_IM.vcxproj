@@ -376,6 +376,7 @@
     <ClCompile Include="src\Network\GameResults.cpp" />
     <ClCompile Include="src\Game\Replays\ReplayRescue.cpp" />
     <ClCompile Include="src\Game\Replays\ReplayRecord.cpp" />
+    <ClCompile Include="src\Game\Replays\ReplayPatchPlan.cpp" />
     <ClCompile Include="src\Game\Replays\LiveRecording.cpp" />
     <ClCompile Include="src\Network\GameEnding.cpp" />
     <ClCompile Include="src\Network\SideReadout.cpp" />
@@ -416,6 +417,7 @@
     <ClCompile Include="src\Core\Boot\ModuleInventory.cpp" />
     <ClCompile Include="src\Core\utils.cpp" />
     <ClCompile Include="src\Core\FileSystem.cpp" />
+    <ClCompile Include="src\Core\TimeStamp.cpp" />
     <ClCompile Include="src\Core\GameBuild.cpp" />
     <ClCompile Include="src\Core\AsyncFileDialog.cpp" />
     <ClCompile Include="src\Core\Formats\TextEncoding.cpp" />
@@ -543,6 +545,8 @@
     <ClCompile Include="src\Game\Customize\PatParts.cpp" />
     <ClCompile Include="src\Game\Battle\ScriptReload.cpp" />
     <ClCompile Include="src\Game\Engine\SaveData.cpp" />
+    <ClCompile Include="src\Game\Engine\SaveBackup.cpp" />
+    <ClCompile Include="src\Game\Engine\SaveBackupNames.cpp" />
     <ClCompile Include="src\Game\Engine\SceneExit.cpp" />
     <ClCompile Include="src\Game\Engine\SceneWatch.cpp" />
     <ClCompile Include="src\Game\Menus\CharaSelectProbe.cpp" />
@@ -1020,6 +1024,7 @@
     <ClInclude Include="src\Network\GameResults.h" />
     <ClInclude Include="src\Game\Replays\ReplayRescue.h" />
     <ClInclude Include="src\Game\Replays\ReplayRecord.h" />
+    <ClInclude Include="src\Game\Replays\ReplayPatchPlan.h" />
     <ClInclude Include="src\Game\Replays\LiveRecording.h" />
     <ClInclude Include="src\Network\GameEnding.h" />
     <ClInclude Include="src\Network\SideReadout.h" />
@@ -1049,6 +1054,7 @@
     <ClInclude Include="src\Core\Boot\ModuleInventory.h" />
     <ClInclude Include="src\Core\utils.h" />
     <ClInclude Include="src\Core\FileSystem.h" />
+    <ClInclude Include="src\Core\TimeStamp.h" />
     <ClInclude Include="src\Core\GameBuild.h" />
     <ClInclude Include="src\Core\AsyncFileDialog.h" />
     <ClInclude Include="src\Core\Formats\TextEncoding.h" />
@@ -1107,6 +1113,8 @@
     <ClInclude Include="src\Game\Customize\PatParts.h" />
     <ClInclude Include="src\Game\Battle\ScriptReload.h" />
     <ClInclude Include="src\Game\Engine\SaveData.h" />
+    <ClInclude Include="src\Game\Engine\SaveBackup.h" />
+    <ClInclude Include="src\Game\Engine\SaveBackupNames.h" />
     <ClInclude Include="src\Game\Engine\SceneExit.h" />
     <ClInclude Include="src\Game\Engine\SceneWatch.h" />
     <ClInclude Include="src\Game\Menus\CharaSelectProbe.h" />
