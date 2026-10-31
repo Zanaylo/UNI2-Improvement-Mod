@@ -7,6 +7,7 @@ const char* const kDefaultIniLines[] = {
 	"[Mod]",
 	"DinputDllWrapper =",
 	"CheckForUpdates = 1",
+	"Language = auto",
 	"SettingsRevision = 6",
 	"",
 	"[Keybinds]",

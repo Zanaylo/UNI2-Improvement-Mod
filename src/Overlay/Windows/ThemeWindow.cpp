@@ -7,6 +7,7 @@
 #include "Overlay/Widgets/UiText.h"
 #include "Screens/ScreenDirector.h"
 #include "Screens/ScreenTheme.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -34,9 +35,9 @@ void ThemeWindow::Draw()
 	if (count == 0)
 	{
 		UiText::Muted("No themes installed.");
-		ImGui::TextWrapped("Looked in: %s", ScreenTheme::Root());
+		ImGui::TextWrapped(Tr("Looked in: %s"), ScreenTheme::Root());
 
-		if (ImGui::Button("Rescan folder"))
+		if (ImGui::Button(TrLabel("Rescan folder")))
 		{
 			ScreenTheme::Reload();
 			ScreenDirector::Invalidate();
@@ -83,7 +84,7 @@ void ThemeWindow::DrawCursorSearch()
 
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%06x", static_cast<unsigned>(candidate.rva));
+		ImGui::Text(Tr("0x%06x"), static_cast<unsigned>(candidate.rva));
 		ImGui::TableNextColumn();
 		ImGui::Text("%u", candidate.value);
 		ImGui::TableNextColumn();
@@ -153,12 +154,12 @@ void ThemeWindow::DrawControls(int active)
 {
 	bool drawn = ScreenDirector::IsDrawn();
 
-	if (ImGui::Checkbox("Draw the theme", &drawn))
+	if (ImGui::Checkbox(TrLabel("Draw the theme"), &drawn))
 		ScreenDirector::SetDrawn(drawn);
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Rescan folder"))
+	if (ImGui::Button(TrLabel("Rescan folder")))
 	{
 		ScreenTheme::Reload();
 		ScreenDirector::Invalidate();
@@ -167,7 +168,7 @@ void ThemeWindow::DrawControls(int active)
 	ImGui::SameLine();
 	ImGui::BeginDisabled(active < 0);
 
-	if (ImGui::Button("Back to the game's screens"))
+	if (ImGui::Button(TrLabel("Back to the game's screens")))
 	{
 		ScreenTheme::Clear();
 		ScreenDirector::Invalidate();

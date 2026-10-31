@@ -1,5 +1,6 @@
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Windows/DummyScriptGuideWindow.h"
+#include "Core/Text/Language.h"
 
 namespace {
 
@@ -35,16 +36,16 @@ void DummyScriptGuideWindow::BeforeDraw()
 
 void DummyScriptGuideWindow::Draw()
 {
-	ImGui::SeparatorText("What this is");
+	ImGui::SeparatorText(Tr("What this is"));
 
-	ImGui::TextWrapped("Type what a character should do instead of recording it. There is a tab for "
-		"each side, each with a separate script, and Play runs it one step per frame.");
+	ImGui::TextWrapped(Tr("Type what a character should do instead of recording it. There is a tab for "
+		"each side, each with a separate script, and Play runs it one step per frame."));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("The notation");
+	ImGui::SeparatorText(Tr("The notation"));
 
-	ImGui::TextWrapped("One step per line. Anything after a step on the same line is ignored, so "
-		"notes are free.");
+	ImGui::TextWrapped(Tr("One step per line. Anything after a step on the same line is ignored, so "
+		"notes are free."));
 
 	ImGui::Spacing();
 
@@ -65,43 +66,43 @@ void DummyScriptGuideWindow::Draw()
 	}
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("Directions are numpad numbers from the dummy's point of view: 4 is back, "
-		"6 is forward, and they swap when the sides swap. Buttons are A, B, C and D.");
+	ImGui::TextWrapped(Tr("Directions are numpad numbers from the dummy's point of view: 4 is back, "
+		"6 is forward, and they swap when the sides swap. Buttons are A, B, C and D."));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("An example");
+	ImGui::SeparatorText(Tr("An example"));
 
-	ImGui::TextUnformatted("W12\n[4]\nW30\n]4[\n236C");
-	ImGui::TextWrapped("Wait twelve frames, hold back for thirty, let go, then quarter-circle C.");
-
-	ImGui::Spacing();
-	ImGui::SeparatorText("One tab per side");
-
-	ImGui::TextWrapped("Each side has a separate script, name and saved list. The two run independently, "
-		"so start both and a whole scenario plays out.");
+	ImGui::TextUnformatted(Tr("W12\n[4]\nW30\n]4[\n236C"));
+	ImGui::TextWrapped(Tr("Wait twelve frames, hold back for thirty, let go, then quarter-circle C."));
 
 	ImGui::Spacing();
+	ImGui::SeparatorText(Tr("One tab per side"));
 
-	ImGui::BulletText("Play: runs the script on that side.");
-	ImGui::BulletText("Save: keeps it under that side's character, by the name in the box.");
-	ImGui::BulletText("The list: the scripts saved for that side's character.");
-	ImGui::BulletText("Delete: removes the one picked in the list.");
+	ImGui::TextWrapped(Tr("Each side has a separate script, name and saved list. The two run independently, "
+		"so start both and a whole scenario plays out."));
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("P2 also has a Slot, with Write to slot and Read from slot. Its Play writes "
+
+	ImGui::BulletText(Tr("Play: runs the script on that side."));
+	ImGui::BulletText(Tr("Save: keeps it under that side's character, by the name in the box."));
+	ImGui::BulletText(Tr("The list: the scripts saved for that side's character."));
+	ImGui::BulletText(Tr("Delete: removes the one picked in the list."));
+
+	ImGui::Spacing();
+	ImGui::TextWrapped(Tr("P2 also has a Slot, with Write to slot and Read from slot. Its Play writes "
 		"the slot and uses UNI2's playback, so the playback menu options work too (repeat, "
 		"on reversal, after a restart). P1 has no slot because the game only plays recordings on the "
-		"dummy. P1's Play goes through Player Control instead.");
+		"dummy. P1's Play goes through Player Control instead."));
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("The number beside Play is how many frames the script is, or what went wrong "
-		"if it would not parse.");
+	ImGui::TextWrapped(Tr("The number beside Play is how many frames the script is, or what went wrong "
+		"if it would not parse."));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Playing it back");
+	ImGui::SeparatorText(Tr("Playing it back"));
 
-	ImGui::TextWrapped("Play is usually all you need. Use Write to slot when you want the game's "
+	ImGui::TextWrapped(Tr("Play is usually all you need. Use Write to slot when you want the game's "
 		"playback settings: write the slot, then set the dummy's action to recorded playback in the "
 		"training menu. If the slot was never recorded into, the mod fills it in so it is no longer "
-		"greyed out.");
+		"greyed out."));
 }

@@ -22,8 +22,10 @@
 #include "Overlay/Panels/GraphicsPanel.h"
 #include "Overlay/Panels/ModulesPanel.h"
 #include "Overlay/Panels/ProfilesPanel.h"
+#include "Overlay/Widgets/LanguageCombo.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Web/UpdateCheck.h"
+#include "Core/Text/Language.h"
 
 #include <Windows.h>
 #include <imgui.h>
@@ -60,14 +62,14 @@ void DrawBackgroundKeyboard()
 	ImGui::BeginDisabled(!BackgroundKeyboard::IsAvailable());
 
 	bool background = BackgroundKeyboard::IsEnabled();
-	if (ImGui::Checkbox("Keep the keyboard working when the game is in the background", &background))
+	if (ImGui::Checkbox(TrLabel("Keep the keyboard working when the game is in the background"), &background))
 		BackgroundKeyboard::SetEnabled(background);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("The game stops reading the keyboard when you click another window. Turn this "
+		ImGui::SetTooltip(Tr("The game stops reading the keyboard when you click another window. Turn this "
 			"on and your keys keep reaching it, even while you type somewhere else.\n"
-			"Controllers always work in the background.");
+			"Controllers always work in the background."));
 	}
 
 	ImGui::EndDisabled();
@@ -75,15 +77,15 @@ void DrawBackgroundKeyboard()
 
 void DrawKeyboardTab()
 {
-	ImGui::TextWrapped("The game puts the keyboard and the first controller on the same side, so in "
+	ImGui::TextWrapped(Tr("The game puts the keyboard and the first controller on the same side, so in "
 		"local versus they control the same character. Pick a side for the keyboard here and the "
-		"controller moves to the other one. Your key settings are not changed.");
+		"controller moves to the other one. Your key settings are not changed."));
 
 	ImGui::Spacing();
 
 	if (!KeyboardSeat::IsAvailable())
 	{
-		ImGui::TextDisabled("The game is not mapped yet.");
+		ImGui::TextDisabled(Tr("The game is not mapped yet."));
 		return;
 	}
 
@@ -92,7 +94,7 @@ void DrawKeyboardTab()
 
 	Ui::SetItemWidth(160.0f);
 
-	if (ImGui::BeginCombo("Keyboard plays", KeyboardSeat::GetSeatName(current)))
+	if (ImGui::BeginCombo(TrLabel("Keyboard plays"), KeyboardSeat::GetSeatName(current)))
 	{
 		for (int seat : seats)
 		{
@@ -105,23 +107,23 @@ void DrawKeyboardTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Game default leaves the keyboard where the game puts it.\n"
-			"1P and 2P keep your keys as they are and move the controller to the other side.");
+		ImGui::SetTooltip(Tr("Game default leaves the keyboard where the game puts it.\n"
+			"1P and 2P keep your keys as they are and move the controller to the other side."));
 	}
 
 	bool route = KeyboardSeat::GetRouteSides();
-	if (ImGui::Checkbox("Hold the side during a match", &route))
+	if (ImGui::Checkbox(TrLabel("Hold the side during a match"), &route))
 		KeyboardSeat::SetRouteSides(route);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Keeps you on the side you picked for the whole match. When off, the game "
-			"decides who goes where and only the controller moves.");
+		ImGui::SetTooltip(Tr("Keeps you on the side you picked for the whole match. When off, the game "
+			"decides who goes where and only the controller moves."));
 	}
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("If a second keyboard player is set up in the game's options, those keys "
-		"will work on the controller's side. Set Keyboard Player Number to 1 there to turn them off.");
+	ImGui::TextWrapped(Tr("If a second keyboard player is set up in the game's options, those keys "
+		"will work on the controller's side. Set Keyboard Player Number to 1 there to turn them off."));
 
 	DrawBackgroundKeyboard();
 
@@ -129,7 +131,7 @@ void DrawKeyboardTab()
 	ImGui::TextDisabled("%s", KeyboardSeat::GetStatus());
 
 	if (OnlineState::IsOnline())
-		ImGui::TextDisabled("Online: the sides are left alone until the match ends.");
+		ImGui::TextDisabled(Tr("Online: the sides are left alone until the match ends."));
 }
 
 void DrawHudOpacityRow(HudLayers::Element element)
@@ -153,21 +155,21 @@ void DrawHudOpacityRow(HudLayers::Element element)
 
 void DrawInputHistorySettings()
 {
-	ImGui::SeparatorText("Input history");
+	ImGui::SeparatorText(Tr("Input history"));
 
 	bool behind = InputHistoryView::IsBehind();
 
-	if (ImGui::Checkbox("Behind the characters", &behind))
+	if (ImGui::Checkbox(TrLabel("Behind the characters"), &behind))
 		InputHistoryView::SetBehind(behind);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Draws the input list behind the characters instead of over them.\nGame default: over them.");
+		ImGui::SetTooltip(Tr("Draws the input list behind the characters instead of over them.\nGame default: over them."));
 
 	int rows = InputHistoryView::Rows();
 
 	Ui::SetItemWidth(160.0f);
 
-	if (ImGui::SliderInt("Rows", &rows, InputHistoryView::kGameRows, InputHistoryView::kMostRows))
+	if (ImGui::SliderInt(TrLabel("Rows"), &rows, InputHistoryView::kGameRows, InputHistoryView::kMostRows))
 		InputHistoryView::SetRows(rows);
 
 	if (ImGui::IsItemDeactivatedAfterEdit())
@@ -175,15 +177,15 @@ void DrawInputHistorySettings()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("How many inputs the list shows. More rows are drawn smaller, so the list keeps "
-			"the same height.\nGame default: 16.");
+		ImGui::SetTooltip(Tr("How many inputs the list shows. More rows are drawn smaller, so the list keeps "
+			"the same height.\nGame default: 16."));
 	}
 }
 
 void DrawHudTab()
 {
-	ImGui::TextWrapped("How solid each part of the screen is during a fight. 100%% is the game as it is. "
-		"Also in the game's menu under Option, Display, Improvement Mod - HUD Opacity.");
+	ImGui::TextWrapped(Tr("How solid each part of the screen is during a fight. 100%% is the game as it is. "
+		"Also in the game's menu under Option, Display, Improvement Mod - HUD Opacity."));
 
 	ImGui::Spacing();
 
@@ -198,13 +200,13 @@ void DrawConfigSection()
 	if (!ImGui::BeginTabBar("##config"))
 		return;
 
-	if (ImGui::BeginTabItem("General"))
+	if (ImGui::BeginTabItem(TrLabel("General")))
 	{
 		DrawConfigGeneralTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Keybinds"))
+	if (ImGui::BeginTabItem(TrLabel("Keybinds")))
 	{
 		DrawKeybindsTab();
 		ImGui::EndTabItem();
@@ -214,25 +216,25 @@ void DrawConfigSection()
 		SetBindCapture(-1, false);
 	}
 
-	if (ImGui::BeginTabItem("Keyboard"))
+	if (ImGui::BeginTabItem(TrLabel("Keyboard")))
 	{
 		DrawKeyboardTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Hud"))
+	if (ImGui::BeginTabItem(TrLabel("Hud")))
 	{
 		DrawHudTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Modules"))
+	if (ImGui::BeginTabItem(TrLabel("Modules")))
 	{
 		ModulesPanel::Draw();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Profiles"))
+	if (ImGui::BeginTabItem(TrLabel("Profiles")))
 	{
 		ProfilesPanel::Draw();
 		ImGui::EndTabItem();
@@ -244,20 +246,22 @@ void DrawConfigSection()
 void DrawConfigGeneralTab()
 {
 	ImGui::Text("%s %s", UNI2_IM_NAME, UNI2_IM_VERSION);
-	ImGui::Text("%.1f FPS", ImGui::GetIO().Framerate);
+	ImGui::Text(Tr("%.1f FPS"), ImGui::GetIO().Framerate);
 
-	if (ImGui::Checkbox("Check for updates on start", &g_modVals.checkForUpdates))
+	LanguageCombo::Draw();
+
+	if (ImGui::Checkbox(TrLabel("Check for updates on start"), &g_modVals.checkForUpdates))
 		Settings::SaveInt("Mod", "CheckForUpdates", g_modVals.checkForUpdates ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Checks GitHub once for a newer release when the game starts. Nothing is "
-			"downloaded unless you ask.");
+		ImGui::SetTooltip(Tr("Checks GitHub once for a newer release when the game starts. Nothing is "
+			"downloaded unless you ask."));
 	}
 
 	ImGui::BeginDisabled(UpdateCheck::IsChecking());
 
-	if (ImGui::Button("Check now"))
+	if (ImGui::Button(TrLabel("Check now")))
 		UpdateCheck::Refresh();
 
 	ImGui::EndDisabled();
@@ -266,13 +270,13 @@ void DrawConfigGeneralTab()
 	{
 		ImGui::SameLine();
 
-		if (ImGui::Button("Show the update"))
+		if (ImGui::Button(TrLabel("Show the update")))
 			WindowManager::GetInstance().OpenUpdateNotifier();
 	}
 
 	UiText::Muted("%s", UpdateCheck::GetStatusText());
 
-	if (ImGui::Checkbox("Show hitboxes and frame meter in the pause menu",
+	if (ImGui::Checkbox(TrLabel("Show hitboxes and frame meter in the pause menu"),
 		&g_modVals.drawWhilePaused))
 	{
 		Settings::SaveInt("Overlay", "DrawWhileGamePaused", g_modVals.drawWhilePaused ? 1 : 0);
@@ -280,17 +284,17 @@ void DrawConfigGeneralTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("The hitboxes and frame meter normally hide when you open the game's pause "
-			"menu. Turn this on to keep them on screen while the match is paused.");
+		ImGui::SetTooltip(Tr("The hitboxes and frame meter normally hide when you open the game's pause "
+			"menu. Turn this on to keep them on screen while the match is paused."));
 	}
 
 	bool& blockMouse = WindowManager::GetInstance().GetBlockGameMouse();
-	if (ImGui::Checkbox("Block mouse input to the game", &blockMouse))
+	if (ImGui::Checkbox(TrLabel("Block mouse input to the game"), &blockMouse))
 		Settings::SaveInt("Overlay", "BlockGameMouse", blockMouse ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("The game ignores the mouse, so clicking the overlay never affects it.\n"
-			"Saved as soon as it changes.");
+		ImGui::SetTooltip(Tr("The game ignores the mouse, so clicking the overlay never affects it.\n"
+			"Saved as soon as it changes."));
 
 	int shake = ScreenShake::GetIntensity();
 
@@ -298,7 +302,7 @@ void DrawConfigGeneralTab()
 
 	Ui::SetItemWidth(160.0f);
 
-	if (ImGui::SliderInt("Screen shake strength", &shake, 0, ScreenShake::kFullPercent,
+	if (ImGui::SliderInt(TrLabel("Screen shake strength"), &shake, 0, ScreenShake::kFullPercent,
 		"%d%%"))
 		ScreenShake::SetIntensity(shake);
 
@@ -310,9 +314,9 @@ void DrawConfigGeneralTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Scales every screen shake in the game (Wald's walk, heavy hits, "
+		ImGui::SetTooltip(Tr("Scales every screen shake in the game (Wald's walk, heavy hits, "
 			"cutscenes). Shakes keep their length and timing and only move less. 100%% is the "
-			"game's default and 0 turns shaking off.");
+			"game's default and 0 turns shaking off."));
 	}
 
 	ImGui::EndDisabled();
@@ -320,41 +324,41 @@ void DrawConfigGeneralTab()
 	if (!ScreenShake::IsAvailable())
 		UiText::Warn("%s", ScreenShake::StatusText());
 
-	if (ImGui::Checkbox("Advanced stage options", &g_modVals.advancedStages))
+	if (ImGui::Checkbox(TrLabel("Advanced stage options"), &g_modVals.advancedStages))
 		Settings::SaveInt("Stages", "AdvancedOptions", g_modVals.advancedStages ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Shows Light and Size on the stage list, and the placement sliders under "
+		ImGui::SetTooltip(Tr("Shows Light and Size on the stage list, and the placement sliders under "
 			"it. Light only affects glowing (additive) parts, which UNI2's stages do not have. "
-			"The right Size is different on every stage.");
+			"The right Size is different on every stage."));
 	}
 
 	GraphicsPanel::DrawOverlayAppearance();
 
-	ImGui::SeparatorText("Holding the next-frame key");
+	ImGui::SeparatorText(Tr("Holding the next-frame key"));
 
 	Ui::SetItemWidth(160.0f);
-	ImGui::SliderInt("Wait before repeating", &g_modVals.stepRepeatDelayMs, 0, 1000, "%d ms");
+	ImGui::SliderInt(TrLabel("Wait before repeating"), &g_modVals.stepRepeatDelayMs, 0, 1000, "%d ms");
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveInt("Training", "StepRepeatDelayMs", g_modVals.stepRepeatDelayMs);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("How long to hold the key before it starts stepping by itself. A tap always "
-			"steps one frame.");
+		ImGui::SetTooltip(Tr("How long to hold the key before it starts stepping by itself. A tap always "
+			"steps one frame."));
 	}
 
 	Ui::SetItemWidth(160.0f);
-	ImGui::SliderInt("Between steps", &g_modVals.stepRepeatIntervalMs, 16, 500, "%d ms");
+	ImGui::SliderInt(TrLabel("Between steps"), &g_modVals.stepRepeatIntervalMs, 16, 500, "%d ms");
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveInt("Training", "StepRepeatIntervalMs", g_modVals.stepRepeatIntervalMs);
 
 	if (ImGui::IsItemHovered())
 	{
 
-		ImGui::SetTooltip("Time between steps while the key is held (%d a second). It rounds to "
-			"whole frames, so at 60 Hz anything from 34 to 49 ms steps every third frame.",
+		ImGui::SetTooltip(Tr("Time between steps while the key is held (%d a second). It rounds to "
+			"whole frames, so at 60 Hz anything from 34 to 49 ms steps every third frame."),
 			1000 / (g_modVals.stepRepeatIntervalMs > 0 ? g_modVals.stepRepeatIntervalMs : 1));
 	}
 
@@ -388,7 +392,7 @@ void DrawKeybindsTab()
 		ImGui::TextDisabled("%s", g_bindPad ? "Press a pad button, or Escape to cancel."
 			: "Press the key you want, or Escape to cancel.");
 	else
-		ImGui::TextDisabled("Saved to UNI2_IM.ini as soon as something is bound.");
+		ImGui::TextDisabled(Tr("Saved to UNI2_IM.ini as soon as something is bound."));
 
 	DrawBindConflicts();
 }
@@ -445,9 +449,9 @@ void CaptureBind()
 
 void DrawFunctionBinds()
 {
-	ImGui::TextUnformatted("Function");
+	ImGui::TextUnformatted(Tr("Function"));
 	ImGui::SameLine();
-	ImGui::TextDisabled("hold it with another key or button for shortcuts");
+	ImGui::TextDisabled(Tr("hold it with another key or button for shortcuts"));
 
 	const bool keyCapturing = g_bindCapture == kFunctionRow && !g_bindPad;
 	const bool padCapturing = g_bindCapture == kFunctionRow && g_bindPad;
@@ -478,7 +482,7 @@ void DrawFunctionBinds()
 	ImGui::PopID();
 
 	if (key == 0)
-		ImGui::TextDisabled("Without a function key, a keyboard bind marked Fn cannot fire.");
+		ImGui::TextDisabled(Tr("Without a function key, a keyboard bind marked Fn cannot fire."));
 }
 
 void DrawBindRow(Hotkeys::Action action)
@@ -503,12 +507,12 @@ void DrawBindRow(Hotkeys::Action action)
 	bool needsFunction = Hotkeys::GetKeyNeedsFunction(action);
 	bool needsCtrl = Hotkeys::GetKeyNeedsCtrl(action);
 
-	if (ImGui::Checkbox("Fn", &needsFunction))
+	if (ImGui::Checkbox(TrLabel("Fn"), &needsFunction))
 		Hotkeys::SetKey(action, key, needsFunction, needsCtrl);
 
 	ImGui::SameLine();
 
-	if (ImGui::Checkbox("Ctrl", &needsCtrl))
+	if (ImGui::Checkbox(TrLabel("Ctrl"), &needsCtrl))
 		Hotkeys::SetKey(action, key, needsFunction, needsCtrl);
 
 	ImGui::TableNextColumn();
@@ -527,7 +531,7 @@ void DrawBindRow(Hotkeys::Action action)
 
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("Clear"))
+	if (ImGui::SmallButton(TrLabel("Clear")))
 	{
 		Hotkeys::SetKey(action, 0, false, false);
 		Hotkeys::SetPadButton(action, PadInput::kNone);
@@ -555,7 +559,7 @@ void DrawBindConflicts()
 				continue;
 			}
 
-			ImGui::TextColored(ImVec4(0.95f, 0.55f, 0.45f, 1.0f), "%s and %s are both %s.",
+			ImGui::TextColored(ImVec4(0.95f, 0.55f, 0.45f, 1.0f), Tr("%s and %s are both %s."),
 				Hotkeys::GetLabel(mine), Hotkeys::GetLabel(theirs),
 				GetNameFromVirtualKey(Hotkeys::GetKey(mine)));
 		}

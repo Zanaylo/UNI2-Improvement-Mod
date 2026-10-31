@@ -46,6 +46,20 @@ in the game, and only looks for its next update, again every 15 minutes. When
 the fixed version is out it offers it, and installs it once you agree.
 
 
+LANGUAGE
+--------
+
+The mod speaks English, Portuguese and Spanish. On the first start it follows
+the language Windows shows its own menus in, and English for anything else.
+To pick one yourself, open the mod (F1), go to Config and choose it under
+Language, or set
+
+    [Mod]
+    Language = auto
+
+in UNI2-IM\Config\Mod.ini: auto, en, pt or es.
+
+
 LINUX AND STEAM DECK (PROTON)
 -----------------------------
 

@@ -9,6 +9,7 @@
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Overlay/Panels/RestartPrompt.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -56,7 +57,7 @@ void ModsPanel::Draw()
 	if (!ImGui::BeginTabBar("##modstabs"))
 		return;
 
-	if (ImGui::BeginTabItem("Mods"))
+	if (ImGui::BeginTabItem(TrLabel("Mods")))
 	{
 		DrawTools();
 		DrawList();
@@ -64,7 +65,7 @@ void ModsPanel::Draw()
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Help"))
+	if (ImGui::BeginTabItem(TrLabel("Help")))
 	{
 		DrawHelp();
 		ImGui::EndTabItem();
@@ -75,17 +76,17 @@ void ModsPanel::Draw()
 
 void ModsPanel::DrawTools()
 {
-	if (ImGui::Button("Install a zip...") && !m_install.IsRunning())
+	if (ImGui::Button(TrLabel("Install a zip...")) && !m_install.IsRunning())
 		m_install.BeginOpen("Choose a mod", kZipFilter);
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Open the folder"))
+	if (ImGui::Button(TrLabel("Open the folder")))
 		Open(ModPacks::Root());
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Rescan"))
+	if (ImGui::Button(TrLabel("Rescan")))
 	{
 		ModPacks::Scan();
 		ModFiles::Rescan();
@@ -140,7 +141,7 @@ void ModsPanel::DrawUserRow()
 	ImGui::TextDisabled("--");
 
 	ImGui::TableNextColumn();
-	ImGui::TextColored(kUserText, "Your files");
+	ImGui::TextColored(kUserText, Tr("Your files"));
 
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("%s", ModFiles::Root());
@@ -153,7 +154,7 @@ void ModsPanel::DrawUserRow()
 
 	ImGui::TableNextColumn();
 
-	if (ImGui::SmallButton("Open"))
+	if (ImGui::SmallButton(TrLabel("Open")))
 		Open(ModFiles::Root());
 }
 
@@ -208,7 +209,7 @@ void ModsPanel::DrawRow(int index)
 	ImGui::TableNextColumn();
 	ImGui::BeginDisabled(index == 0);
 
-	if (ImGui::SmallButton("Up"))
+	if (ImGui::SmallButton(TrLabel("Up")))
 	{
 		m_moved = index;
 		m_delta = -1;
@@ -218,7 +219,7 @@ void ModsPanel::DrawRow(int index)
 	ImGui::SameLine();
 	ImGui::BeginDisabled(index + 1 >= ModPacks::Count());
 
-	if (ImGui::SmallButton("Down"))
+	if (ImGui::SmallButton(TrLabel("Down")))
 	{
 		m_moved = index;
 		m_delta = 1;
@@ -278,7 +279,7 @@ void ModsPanel::DrawStageInstall(const ModPacks::Pack& pack, int number)
 	ImGui::SameLine();
 	ImGui::BeginDisabled(StageImport::IsBusy());
 
-	if (ImGui::SmallButton("Install as a stage"))
+	if (ImGui::SmallButton(TrLabel("Install as a stage")))
 	{
 		const std::string folder = pack.path + "\\bg\\" + PackStages::FolderName(number);
 		const bool started = StageImport::InstallFolder(folder.c_str(), pack.name.c_str());
@@ -291,7 +292,7 @@ void ModsPanel::DrawStageInstall(const ModPacks::Pack& pack, int number)
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		ImGui::SetTooltip("Builds the stage from its model and adds it to your stages.");
+		ImGui::SetTooltip(Tr("Builds the stage from its model and adds it to your stages."));
 }
 
 void ModsPanel::DrawMusic(const ModPacks::Pack& pack)
@@ -332,74 +333,74 @@ void ModsPanel::DrawFooter()
 
 void ModsPanel::DrawHelp()
 {
-	ImGui::TextWrapped("A mod is a folder that uses UNI2's file paths. For example, a mod "
+	ImGui::TextWrapped(Tr("A mod is a folder that uses UNI2's file paths. For example, a mod "
 		"that replaces Hyde's voice only holds se\\battle_se\\chr000. Install a zip or drop the "
-		"folder in yourself. It shows up in the list within a second, with no restart.");
+		"folder in yourself. It shows up in the list within a second, with no restart."));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Turning a mod off");
+	ImGui::SeparatorText(Tr("Turning a mod off"));
 
-	ImGui::TextWrapped("The game uses its original file again the next time it loads it, on the next "
+	ImGui::TextWrapped(Tr("The game uses its original file again the next time it loads it, on the next "
 		"match or screen. Nothing is copied over the game and the d archive is never touched, so "
-		"removing every mod leaves your install exactly as Steam put it.");
+		"removing every mod leaves your install exactly as Steam put it."));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("When two mods change the same file");
+	ImGui::SeparatorText(Tr("When two mods change the same file"));
 
-	ImGui::TextWrapped("The mod higher in the list wins that file only. The rest of the lower mod "
+	ImGui::TextWrapped(Tr("The mod higher in the list wins that file only. The rest of the lower mod "
 		"still applies. The row tells you when this happens and names the winning mod, so use Up "
-		"and Down to choose which one wins.");
+		"and Down to choose which one wins."));
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("Files are looked up in this order:");
-	ImGui::BulletText("a loaded game patch");
-	ImGui::BulletText("Your files (the top row, the Mods folder)");
-	ImGui::BulletText("this list, top to bottom");
-	ImGui::BulletText("UNI2's d archive, for everything else");
+	ImGui::TextWrapped(Tr("Files are looked up in this order:"));
+	ImGui::BulletText(Tr("a loaded game patch"));
+	ImGui::BulletText(Tr("Your files (the top row, the Mods folder)"));
+	ImGui::BulletText(Tr("this list, top to bottom"));
+	ImGui::BulletText(Tr("UNI2's d archive, for everything else"));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Stages are different");
+	ImGui::SeparatorText(Tr("Stages are different"));
 
-	ImGui::TextWrapped("The game reads its stage list only when it starts, so a stage from a mod "
+	ImGui::TextWrapped(Tr("The game reads its stage list only when it starts, so a stage from a mod "
 		"appears after a restart. Every bg\\bgNNN folder with a bg.fbx.bin is added, with the values "
-		"from its stage.txt. If two mods use the same number, the higher one is used.");
+		"from its stage.txt. If two mods use the same number, the higher one is used."));
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("A folder with only a model to convert gets an Install as a stage button "
-		"instead.");
+	ImGui::TextWrapped(Tr("A folder with only a model to convert gets an Install as a stage button "
+		"instead."));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Music");
+	ImGui::SeparatorText(Tr("Music"));
 
-	ImGui::TextWrapped("Every mod's Bgm\\bgm.txt is added to the game's music list, with yours, after "
+	ImGui::TextWrapped(Tr("Every mod's Bgm\\bgm.txt is added to the game's music list, with yours, after "
 		"a restart. If two mods use the same slot, the higher one keeps it and the other track moves "
-		"to a free slot, so both can be played. The mod's grpdat\\CSel\\bgmselect.txt follows the move.");
+		"to a free slot, so both can be played. The mod's grpdat\\CSel\\bgmselect.txt follows the move."));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Making a mod");
+	ImGui::SeparatorText(Tr("Making a mod"));
 
-	ImGui::TextWrapped("Put your files at the same paths the game uses, and add a mod.ini to give "
-		"it a name. A folder without one still works and is listed by its folder name.");
-
-	ImGui::Spacing();
-	ImGui::TextUnformatted("[Mod]\nName = Hyde speaks UNI\nAuthor = you\nVersion = 1.0\n"
-		"Note = His UNI[st] voice, all 96 lines.");
+	ImGui::TextWrapped(Tr("Put your files at the same paths the game uses, and add a mod.ini to give "
+		"it a name. A folder without one still works and is listed by its folder name."));
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("A stage can have a section, named after its folder, to set its name "
-		"and its picture in your mod's stage select sheet:");
+	ImGui::TextUnformatted(Tr("[Mod]\nName = Hyde speaks UNI\nAuthor = you\nVersion = 1.0\n"
+		"Note = His UNI[st] voice, all 96 lines."));
 
 	ImGui::Spacing();
-	ImGui::TextUnformatted("[bg068]\nName = Garden at Night\nCard = 30");
+	ImGui::TextWrapped(Tr("A stage can have a section, named after its folder, to set its name "
+		"and its picture in your mod's stage select sheet:"));
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("To share a mod, send the folder. Your switches and order stay in your "
-		"ini.");
+	ImGui::TextUnformatted(Tr("[bg068]\nName = Garden at Night\nCard = 30"));
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Online");
+	ImGui::TextWrapped(Tr("To share a mod, send the folder. Your switches and order stay in your "
+		"ini."));
 
-	ImGui::TextWrapped("Mods stay loaded when you play online. Art and sound only change what you "
+	ImGui::Spacing();
+	ImGui::SeparatorText(Tr("Online"));
+
+	ImGui::TextWrapped(Tr("Mods stay loaded when you play online. Art and sound only change what you "
 		"see, but a mod with data or script files changes gameplay and will desync with the other "
-		"player.");
+		"player."));
 }

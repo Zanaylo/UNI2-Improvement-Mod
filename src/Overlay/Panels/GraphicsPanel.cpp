@@ -24,6 +24,7 @@
 #include "Training/StageColor.h"
 
 #include "Overlay/Widgets/UiScale.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -53,7 +54,7 @@ bool RadioRow(const char* id, int count, const char* (*name)(int), int current, 
 		if (candidate > 0)
 			ImGui::SameLine();
 
-		if (!ImGui::RadioButton(name(candidate), current == candidate) || candidate == current)
+		if (!ImGui::RadioButton(TrLabel(name(candidate)), current == candidate) || candidate == current)
 			continue;
 
 		outChosen = candidate;
@@ -70,7 +71,7 @@ bool SliderOnRelease(const char* label, float* value, float lowest, float highes
 	float* const pending = ImGui::GetStateStorage()->GetFloatRef(ImGui::GetID(label), *value);
 
 	Ui::SetItemWidth(kSliderWidth);
-	ImGui::SliderFloat(label, pending, lowest, highest, format);
+	ImGui::SliderFloat(TrLabel(label), pending, lowest, highest, format);
 
 	if (ImGui::IsItemDeactivatedAfterEdit())
 	{
@@ -90,7 +91,7 @@ bool SavedSlider(const char* label, int* value, int lowest, int highest, const c
 {
 	Ui::SetItemWidth(kSliderWidth);
 
-	const bool changed = ImGui::SliderInt(label, value, lowest, highest, format);
+	const bool changed = ImGui::SliderInt(TrLabel(label), value, lowest, highest, format);
 
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveInt("Graphics", key, *value);
@@ -100,7 +101,7 @@ bool SavedSlider(const char* label, int* value, int lowest, int highest, const c
 
 void DrawUpscaleFilter()
 {
-	ImGui::SeparatorText("Upscale filter");
+	ImGui::SeparatorText(Tr("Upscale filter"));
 
 	const int current = PostStages::GetUpscaleFilter();
 	int chosen = current;
@@ -118,7 +119,7 @@ void DrawUpscaleFilter()
 
 void DrawAntiAliasing()
 {
-	ImGui::SeparatorText("Anti-aliasing");
+	ImGui::SeparatorText(Tr("Anti-aliasing"));
 
 	const int current = PostStages::GetAntiAliasing();
 	int chosen = current;
@@ -135,11 +136,11 @@ void DrawAntiAliasing()
 
 void DrawBloom()
 {
-	ImGui::SeparatorText("Bloom");
+	ImGui::SeparatorText(Tr("Bloom"));
 
 	bool bloom = PostStages::IsBloomOn();
 
-	if (ImGui::Checkbox("Bloom", &bloom))
+	if (ImGui::Checkbox(TrLabel("Bloom"), &bloom))
 		PostStages::SetBloom(bloom);
 
 	Help("Makes the bright parts of the picture glow: stage neon, the moon, EXS and super "
@@ -158,7 +159,7 @@ void DrawBloom()
 
 void DrawSharpening()
 {
-	ImGui::SeparatorText("Sharpening");
+	ImGui::SeparatorText(Tr("Sharpening"));
 
 	const int mode = PostStages::GetSharpening();
 	int chosen = mode;
@@ -182,11 +183,11 @@ void DrawSharpening()
 
 void DrawLook()
 {
-	ImGui::SeparatorText("Colour and display");
+	ImGui::SeparatorText(Tr("Colour and display"));
 
 	bool look = PostStages::IsLookOn();
 
-	if (ImGui::Checkbox("Colour and display", &look))
+	if (ImGui::Checkbox(TrLabel("Colour and display"), &look))
 		PostStages::SetLook(look);
 
 	Help("Adjusts the colours of the finished frame. When it is off, the sliders below do "
@@ -197,7 +198,7 @@ void DrawLook()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Reset"))
+	if (ImGui::Button(TrLabel("Reset")))
 		PostChain::ResetLook();
 
 	ImGui::Indent();
@@ -214,7 +215,7 @@ void DrawLook()
 	SavedSlider("Vignette", &g_modVals.lookVignette, 0, 100, "LookVignette", "%d%%");
 	SavedSlider("Scanlines", &g_modVals.lookScanlines, 0, 100, "LookScanlines", "%d%%");
 
-	if (ImGui::Checkbox("Dither", &g_modVals.lookDither))
+	if (ImGui::Checkbox(TrLabel("Dither"), &g_modVals.lookDither))
 		Settings::SaveInt("Graphics", "LookDither", g_modVals.lookDither ? 1 : 0);
 
 	Help("Adds a tiny bit of noise to hide banding in smooth gradients.");
@@ -224,15 +225,15 @@ void DrawLook()
 
 void DrawShaderPacks()
 {
-	ImGui::SeparatorText("Shader pack");
+	ImGui::SeparatorText(Tr("Shader pack"));
 
 	const int selected = ShaderPack::GetSelected();
 
 	Ui::SetItemWidth(kSliderWidth);
 
-	if (ImGui::BeginCombo("Pack", selected < 0 ? "Off" : ShaderPack::GetName(selected)))
+	if (ImGui::BeginCombo(TrLabel("Pack"), selected < 0 ? "Off" : ShaderPack::GetName(selected)))
 	{
-		if (ImGui::Selectable("Off", selected < 0))
+		if (ImGui::Selectable(TrLabel("Off"), selected < 0))
 			ShaderPack::Select(-1);
 
 		ComboNav::KeepSelectedInView(selected < 0);
@@ -262,7 +263,7 @@ void DrawShaderPacks()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Rescan"))
+	if (ImGui::Button(TrLabel("Rescan")))
 		ShaderPack::Refresh();
 
 	Help("Put a shader in the Shaders folder next to the ini and pick it here. It runs last, over "
@@ -314,7 +315,7 @@ void DrawDgVoodooChoices()
 
 	Ui::SetItemWidth(kSliderWidth);
 
-	if (ImGui::SliderInt("Frame limit", &limit, 0, 360, limit == 0 ? "off" : "%d fps"))
+	if (ImGui::SliderInt(TrLabel("Frame limit"), &limit, 0, 360, limit == 0 ? "off" : "%d fps"))
 		DgVoodoo::SetFpsLimit(limit);
 
 	if (ImGui::IsItemDeactivatedAfterEdit())
@@ -325,7 +326,7 @@ void DrawDgVoodooChoices()
 
 bool GraphicsPanel::DrawEverythingOff()
 {
-	if (!ImGui::Button("Everything off"))
+	if (!ImGui::Button(TrLabel("Everything off")))
 	{
 		Help("Turns off every graphics option in the mod: output and render resolution, shaders, "
 			"back buffer multisampling, Character Visual Improvements, the empty stage and POTATO MODE. "
@@ -385,7 +386,7 @@ void GraphicsPanel::DrawPostStatus()
 
 void GraphicsPanel::DrawOverlayAppearance()
 {
-	ImGui::SeparatorText("Overlay appearance");
+	ImGui::SeparatorText(Tr("Overlay appearance"));
 
 	SliderOnRelease("Overlay scale", &g_modVals.uiScale, 0.5f, 4.0f, "%.2fx", "UiScale");
 	SliderOnRelease("Font size", &g_modVals.fontSize, 10.0f, 32.0f, "%.0f px", "FontSize");
@@ -417,7 +418,7 @@ void GraphicsPanel::DrawOverlayAppearance()
 		Good("Real pixels at %d DPI.", dpi);
 	}
 
-	if (ImGui::Checkbox("Let the mod handle display scaling", &g_modVals.dpiAware))
+	if (ImGui::Checkbox(TrLabel("Let the mod handle display scaling"), &g_modVals.dpiAware))
 		Settings::SaveInt("Overlay", "DpiAware", g_modVals.dpiAware ? 1 : 0);
 
 	Help("Restart the game to apply. The game was not made for it, so it is off by default.");
@@ -429,16 +430,16 @@ void GraphicsPanel::DrawOverlayAppearance()
 
 void GraphicsPanel::DrawMousePointer()
 {
-	ImGui::SeparatorText("Mouse pointer");
+	ImGui::SeparatorText(Tr("Mouse pointer"));
 
 	const char* const modes[] = { "Automatic", "Always the mod's", "Always the Windows pointer" };
 
 	Ui::SetItemWidth(kSliderWidth);
 
-	if (ImGui::Combo("Overlay pointer", &g_modVals.overlayCursor, modes, IM_ARRAYSIZE(modes)))
+	if (ImGui::Combo(TrLabel("Overlay pointer"), &g_modVals.overlayCursor, modes, IM_ARRAYSIZE(modes)))
 		Settings::SaveInt("Overlay", "SoftwareCursor", g_modVals.overlayCursor);
 
-	if (ImGui::Checkbox("Keep the Windows pointer visible", &g_modVals.keepWindowsPointer))
+	if (ImGui::Checkbox(TrLabel("Keep the Windows pointer visible"), &g_modVals.keepWindowsPointer))
 		Settings::SaveInt("Overlay", "KeepWindowsPointer", g_modVals.keepWindowsPointer ? 1 : 0);
 
 	Help("The game hides the mouse pointer. This keeps it on screen. Restart the game to apply. "
@@ -455,7 +456,7 @@ void GraphicsPanel::DrawMousePointer()
 
 void GraphicsPanel::DrawDgVoodoo()
 {
-	ImGui::SeparatorText("dgVoodoo");
+	ImGui::SeparatorText(Tr("dgVoodoo"));
 
 	std::string picked;
 
@@ -466,7 +467,7 @@ void GraphicsPanel::DrawDgVoodoo()
 
 	ImGui::BeginDisabled(!DgVoodoo::IsInstalled());
 
-	if (ImGui::Checkbox("Run the game through dgVoodoo", &enabled))
+	if (ImGui::Checkbox(TrLabel("Run the game through dgVoodoo"), &enabled))
 	{
 		DgVoodoo::SetEnabled(enabled);
 
@@ -477,7 +478,7 @@ void GraphicsPanel::DrawDgVoodoo()
 	ImGui::EndDisabled();
 	ImGui::SameLine();
 
-	if (ImGui::Button("Pick the dgVoodoo folder...") && !g_dgVoodooDialog.IsRunning())
+	if (ImGui::Button(TrLabel("Pick the dgVoodoo folder...")) && !g_dgVoodooDialog.IsRunning())
 		g_dgVoodooDialog.BeginFolder("Pick the folder you extracted dgVoodoo2 into");
 
 	Help("Download dgVoodoo2 yourself and extract it. Press \"Pick the dgVoodoo folder...\", tick "
@@ -506,7 +507,7 @@ void GraphicsPanel::DrawDgVoodoo()
 
 void GraphicsPanel::DrawDxvk()
 {
-	ImGui::SeparatorText("DXVK");
+	ImGui::SeparatorText(Tr("DXVK"));
 
 	std::string picked;
 
@@ -517,7 +518,7 @@ void GraphicsPanel::DrawDxvk()
 
 	ImGui::BeginDisabled(!Dxvk::IsInstalled());
 
-	if (ImGui::Checkbox("Run the game through DXVK", &enabled))
+	if (ImGui::Checkbox(TrLabel("Run the game through DXVK"), &enabled))
 	{
 		Dxvk::SetEnabled(enabled);
 
@@ -528,7 +529,7 @@ void GraphicsPanel::DrawDxvk()
 	ImGui::EndDisabled();
 	ImGui::SameLine();
 
-	if (ImGui::Button("Pick the DXVK folder...") && !g_dxvkDialog.IsRunning())
+	if (ImGui::Button(TrLabel("Pick the DXVK folder...")) && !g_dxvkDialog.IsRunning())
 		g_dxvkDialog.BeginFolder("Pick the folder you extracted DXVK into");
 
 	Help("Download DXVK yourself (github.com/doitsujin/dxvk) and extract it. Press \"Pick the DXVK "

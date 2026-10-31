@@ -33,6 +33,7 @@
 #include "Network/Spectate/SpectateViewer.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <cstdarg>
 #include <cstdio>
@@ -61,11 +62,11 @@ void Metric(const char* label, const char* format, ...)
 
 	va_list args;
 	va_start(args, format);
-	vsnprintf(value, sizeof(value), format, args);
+	vsnprintf(value, sizeof(value), Tr(format), args);
 	va_end(args);
 
 	ImGui::TableNextColumn();
-	ImGui::TextUnformatted(label);
+	ImGui::TextUnformatted(Tr(label));
 	ImGui::TableNextColumn();
 	ImGui::TextUnformatted(value);
 }
@@ -132,14 +133,14 @@ void NetplayWindow::Draw()
 	if (!ImGui::BeginTabBar("##netplaytabs"))
 		return;
 
-	if (ImGui::BeginTabItem("Privacy"))
+	if (ImGui::BeginTabItem(TrLabel("Privacy")))
 	{
 		DrawCensorship();
 		DrawSteamPresence();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Rollback"))
+	if (ImGui::BeginTabItem(TrLabel("Rollback")))
 	{
 		DrawRollbackTab();
 		ImGui::Separator();
@@ -151,19 +152,19 @@ void NetplayWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
-	if (Features::Shows(FeatureCatalog::Id_NetcodePatches) && ImGui::BeginTabItem("Netcode"))
+	if (Features::Shows(FeatureCatalog::Id_NetcodePatches) && ImGui::BeginTabItem(TrLabel("Netcode")))
 	{
 		DrawNetcodeTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Network log"))
+	if (ImGui::BeginTabItem(TrLabel("Network log")))
 	{
 		DrawNetworkLogTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Opponents"))
+	if (ImGui::BeginTabItem(TrLabel("Opponents")))
 	{
 		DrawOpponentsTab();
 		ImGui::EndTabItem();
@@ -251,7 +252,7 @@ void NetplayWindow::DrawMeasuredPings()
 
 void NetplayWindow::DrawStartCapture()
 {
-	ImGui::TextUnformatted("Match start");
+	ImGui::TextUnformatted(Tr("Match start"));
 	UiText::Help("Rollback in the first 15 seconds of an online match.");
 
 	const int count = RollbackStats::StartCount();
@@ -294,24 +295,24 @@ void NetplayWindow::DrawStartCapture()
 
 	PlotSeries("Start re-simulated/s", resimulated, Maximum(resimulated, 5.0f), overlay);
 
-	ImGui::Text("First 5 s: %d re-simulated frames     After that: %d", firstFiveSeconds, afterFiveSeconds);
+	ImGui::Text(Tr("First 5 s: %d re-simulated frames     After that: %d"), firstFiveSeconds, afterFiveSeconds);
 
 	if (firstFiveSeconds > afterFiveSeconds * 2 && afterFiveSeconds >= 0)
 		UiText::Warn("Most re-simulation came at the start. The connection settled after that.");
 
-	if (ImGui::Button("Capture the next match start"))
+	if (ImGui::Button(TrLabel("Capture the next match start")))
 		RollbackStats::ClearStartCapture();
 }
 
 void NetplayWindow::DrawReplayUpload()
 {
-	ImGui::TextUnformatted("Replay upload");
+	ImGui::TextUnformatted(Tr("Replay upload"));
 	UiText::Help("Normally the game freezes until the replay finishes uploading. "
 		"With this on, it uploads in the background and you move on right away.");
 
 	bool background = g_modVals.backgroundReplayUpload;
 
-	if (ImGui::Checkbox("Upload replays in the background", &background))
+	if (ImGui::Checkbox(TrLabel("Upload replays in the background"), &background))
 	{
 		g_modVals.backgroundReplayUpload = background;
 		Settings::SaveInt("Netplay", "BackgroundReplayUpload", background ? 1 : 0);
@@ -320,18 +321,18 @@ void NetplayWindow::DrawReplayUpload()
 	const int pending = BackgroundUpload::Pending();
 
 	if (pending > 0)
-		ImGui::Text("%d upload(s) still running.", pending);
+		ImGui::Text(Tr("%d upload(s) still running."), pending);
 }
 
 void NetplayWindow::DrawSpectatorCatchUp()
 {
-	ImGui::TextUnformatted("Watching a room match");
+	ImGui::TextUnformatted(Tr("Watching a room match"));
 	UiText::Help("If your game falls behind while you watch (an alt-tab, a hitch), it runs faster for a moment "
 		"to catch up instead of losing the connection. Needs the game's vsync off. Game default: off.");
 
 	bool catchUp = g_modVals.spectatorCatchUp;
 
-	if (ImGui::Checkbox("Catch up when watching falls behind", &catchUp))
+	if (ImGui::Checkbox(TrLabel("Catch up when watching falls behind"), &catchUp))
 	{
 		g_modVals.spectatorCatchUp = catchUp;
 		Settings::SaveInt(kNetplaySection, "SpectatorCatchUp", catchUp ? 1 : 0);
@@ -341,14 +342,14 @@ void NetplayWindow::DrawSpectatorCatchUp()
 		UiText::Muted("Catching up now.");
 
 	ImGui::Spacing();
-	ImGui::TextUnformatted("Playing a versus match");
+	ImGui::TextUnformatted(Tr("Playing a versus match"));
 	UiText::Help("If your game falls behind the opponent's, it runs the late frames faster to catch up, "
 		"so the opponent does not have to slow down for you. Needs the game's vsync off. Game default: off, "
 		"the player ahead waits instead.");
 
 	bool versus = g_modVals.versusCatchUp;
 
-	if (ImGui::Checkbox("Run late frames to catch up in versus", &versus))
+	if (ImGui::Checkbox(TrLabel("Run late frames to catch up in versus"), &versus))
 	{
 		g_modVals.versusCatchUp = versus;
 		Settings::SaveInt(kNetplaySection, "VersusCatchUp", versus ? 1 : 0);
@@ -357,14 +358,14 @@ void NetplayWindow::DrawSpectatorCatchUp()
 
 void NetplayWindow::DrawRoomWatch()
 {
-	ImGui::TextUnformatted("Joining a room match in progress");
+	ImGui::TextUnformatted(Tr("Joining a room match in progress"));
 	UiText::Help("Adds 'Watch Match in Progress' to the room menu while a match you can watch is running; "
 		"your game fast-forwards to the players. The first player needs mod 0.7.5 or newer with this on too. "
 		"Game default: you can only watch from the start.");
 
 	bool share = g_modVals.joinInProgress;
 
-	if (ImGui::Checkbox("Join room matches in progress", &share))
+	if (ImGui::Checkbox(TrLabel("Join room matches in progress"), &share))
 	{
 		g_modVals.joinInProgress = share;
 		Settings::SaveInt(kNetplaySection, "JoinInProgress", share ? 1 : 0);
@@ -373,7 +374,7 @@ void NetplayWindow::DrawRoomWatch()
 	if (!ModPresence::InRoom())
 		return;
 
-	if (RoomWatchViewer::IsBusy() && ImGui::Button("Stop watching"))
+	if (RoomWatchViewer::IsBusy() && ImGui::Button(TrLabel("Stop watching")))
 		RoomWatchViewer::Leave();
 
 	UiText::Muted("%s", RoomWatchViewer::StatusText());
@@ -401,7 +402,7 @@ void NetplayWindow::DrawNetcodeTab()
 	ImGui::Separator();
 	ImGui::BeginDisabled(NetcodeChoice::IsGameDefault(m_netcode));
 
-	if (ImGui::Button("Use UNI2's native netcode"))
+	if (ImGui::Button(TrLabel("Use UNI2's native netcode")))
 	{
 		m_netcode = NetcodeChoice::GameDefaults();
 		changed = true;
@@ -428,7 +429,7 @@ void NetplayWindow::DrawInputDelay()
 	ImGui::BeginDisabled(!canChange);
 	Ui::SetItemWidth(kSliderWidth);
 
-	if (ImGui::SliderInt("Input delay", &frames, InputDelayRule::kFewestFrames, InputDelayRule::kMostFrames,
+	if (ImGui::SliderInt(TrLabel("Input delay"), &frames, InputDelayRule::kFewestFrames, InputDelayRule::kMostFrames,
 		"%d frames", ImGuiSliderFlags_AlwaysClamp))
 	{
 		InputDelay::SetFrames(frames);
@@ -444,22 +445,22 @@ void NetplayWindow::DrawInputDelay()
 
 bool NetplayWindow::DrawNetcodeOptions()
 {
-	bool changed = ImGui::Checkbox("Smooth the round trip the time sync reads", &m_netcode.smoothRoundTrip);
+	bool changed = ImGui::Checkbox(TrLabel("Smooth the round trip the time sync reads"), &m_netcode.smoothRoundTrip);
 	UiText::Help("A shaky ping makes the game wait when it doesn't need to. This evens the ping out first.\n"
 		"Game default: off.");
 
 	Ui::SetItemWidth(kSliderWidth);
-	ImGui::SliderInt("Time sync check", &m_netcode.timeSyncInterval, TimeSyncTuning::kShortestInterval,
+	ImGui::SliderInt(TrLabel("Time sync check"), &m_netcode.timeSyncInterval, TimeSyncTuning::kShortestInterval,
 		TimeSyncTuning::kGameInterval, "every %d frames", ImGuiSliderFlags_AlwaysClamp);
 	changed |= ImGui::IsItemDeactivatedAfterEdit();
 	UiText::Help("How often the game checks if you're ahead of the opponent and waits for them.\n"
 		"Game default: every 240 frames (4 s).");
 
-	changed |= ImGui::Checkbox("Keep the game's follow-up holds", &m_netcode.timeSyncTail);
+	changed |= ImGui::Checkbox(TrLabel("Keep the game's follow-up holds"), &m_netcode.timeSyncTail);
 	UiText::Help("After waiting once, the game keeps waiting a bit more for a while. Off removes those extra waits.\n"
 		"Game default: on.");
 
-	changed |= ImGui::Checkbox("Hold for half the lead, as stock GGPO", &m_netcode.timeSyncHalveGap);
+	changed |= ImGui::Checkbox(TrLabel("Hold for half the lead, as stock GGPO"), &m_netcode.timeSyncHalveGap);
 	UiText::Help("The game waits out your whole lead, so both sides can end up taking turns waiting. "
 		"This waits only half, like normal GGPO.\nGame default: off.");
 
@@ -481,12 +482,12 @@ void NetplayWindow::DrawNetcodeStatus()
 
 void NetplayWindow::DrawNetworkLogTab()
 {
-	ImGui::TextUnformatted("Network log");
+	ImGui::TextUnformatted(Tr("Network log"));
 	UiText::Help("Saves connection info to a file. Send it when you report a connection problem.");
 
 	bool logging = NetLog::IsEnabled();
 
-	if (ImGui::Checkbox("Write the network log", &logging))
+	if (ImGui::Checkbox(TrLabel("Write the network log"), &logging))
 	{
 		NetLog::SetEnabled(logging);
 		g_modVals.netLog = logging;
@@ -501,7 +502,7 @@ void NetplayWindow::DrawNetworkLogTab()
 
 	bool ggpo = GgpoLogCapture::IsEnabled();
 
-	if (ImGui::Checkbox("Include GGPO's lines", &ggpo))
+	if (ImGui::Checkbox(TrLabel("Include GGPO's lines"), &ggpo))
 	{
 		GgpoLogCapture::SetEnabled(ggpo);
 		g_modVals.netLogGgpo = GgpoLogCapture::IsEnabled();
@@ -517,7 +518,7 @@ void NetplayWindow::DrawNetworkLogTab()
 		UiText::Warn("The file reached 8 MB, so GGPO's lines have stopped. The mod's lines carry on.");
 
 	ImGui::Separator();
-	ImGui::TextUnformatted("How the mod stays out of the connection");
+	ImGui::TextUnformatted(Tr("How the mod stays out of the connection"));
 
 	UiText::Muted("Steam listener: %s, %d event kind(s)", SteamWatch::IsRegistered() ? "on" : "not yet",
 		SteamWatch::Registered());
@@ -527,7 +528,7 @@ void NetplayWindow::DrawNetworkLogTab()
 		NetGate::PeerBytesThisSession());
 
 	ImGui::Separator();
-	ImGui::TextUnformatted("Connection");
+	ImGui::TextUnformatted(Tr("Connection"));
 
 	const NetLink::Snapshot& link = NetLink::Current();
 
@@ -563,7 +564,7 @@ void NetplayWindow::DrawNetworkLogTab()
 
 void NetplayWindow::DrawRoomTab()
 {
-	ImGui::TextUnformatted("During a match");
+	ImGui::TextUnformatted(Tr("During a match"));
 	UiText::Help("During a match the mod leaves the room and the connection alone. Always on.");
 
 	if (NetGate::MayTouchRoom())
@@ -573,12 +574,12 @@ void NetplayWindow::DrawRoomTab()
 
 	ImGui::Separator();
 
-	ImGui::TextUnformatted("Ghost members");
+	ImGui::TextUnformatted(Tr("Ghost members"));
 	UiText::Help("Players who crash, alt-F4 or get kicked stay stuck in the room list. This removes them.\n"
 		"Off by default.");
 
 	bool fix = RoomRoster::IsFixEnabled();
-	if (ImGui::Checkbox("Remove players who disconnect or get kicked", &fix))
+	if (ImGui::Checkbox(TrLabel("Remove players who disconnect or get kicked"), &fix))
 	{
 		RoomRoster::SetFixEnabled(fix);
 		g_modVals.roomRosterFix = fix;
@@ -592,7 +593,7 @@ void NetplayWindow::DrawRoomTab()
 
 	ImGui::Separator();
 
-	ImGui::TextUnformatted("Who in the room has the mod");
+	ImGui::TextUnformatted(Tr("Who in the room has the mod"));
 	UiText::Help("Shows who in the room has the mod. Sends nothing.");
 
 	if (!ModPresence::InRoom())
@@ -621,7 +622,7 @@ void NetplayWindow::DrawRoomTab()
 
 	ImGui::Separator();
 
-	ImGui::TextUnformatted("Your opponent's mod");
+	ImGui::TextUnformatted(Tr("Your opponent's mod"));
 	UiText::Help("Shows if your opponent has the mod. Palettes are only sent to opponents who do.");
 
 	switch (ModHandshake::GetPeerState())
@@ -639,12 +640,12 @@ void NetplayWindow::DrawRoomTab()
 
 	ImGui::Separator();
 
-	ImGui::TextUnformatted("Room ping");
+	ImGui::TextUnformatted(Tr("Room ping"));
 	UiText::Help("Keeps the ping other players see for you accurate.\n"
 		"Off by default. Never runs during a match.");
 
 	bool republish = RoomPing::IsEnabled();
-	if (ImGui::Checkbox("Update my ping location every 30 s", &republish))
+	if (ImGui::Checkbox(TrLabel("Update my ping location every 30 s"), &republish))
 	{
 		RoomPing::SetEnabled(republish);
 		g_modVals.republishPingLocation = republish;
@@ -657,7 +658,7 @@ void NetplayWindow::DrawRoomTab()
 
 	if (NetLink::Lobby() != 0 && RoomPing::GetPublishCount() > 0)
 	{
-		ImGui::Text("Room %llu, last update %u s ago", static_cast<unsigned long long>(NetLink::Lobby()),
+		ImGui::Text(Tr("Room %llu, last update %u s ago"), static_cast<unsigned long long>(NetLink::Lobby()),
 			RoomPing::GetSecondsSinceLastPublish());
 	}
 
@@ -696,17 +697,17 @@ void NetplayWindow::DrawRoomTab()
 
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
-		ImGui::Text("%llu", static_cast<unsigned long long>(event.user));
+		ImGui::Text(Tr("%llu"), static_cast<unsigned long long>(event.user));
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%02x %s", event.rawFlags, flags);
+		ImGui::Text(Tr("0x%02x %s"), event.rawFlags, flags);
 		ImGui::TableNextColumn();
 
 		if (event.rewritten)
 			UiText::Good("removed by the mod");
 		else if ((event.rawFlags & RoomRoster::StateChange_Entered) != 0)
-			ImGui::TextUnformatted("joined");
+			ImGui::TextUnformatted(Tr("joined"));
 		else
-			ImGui::TextUnformatted("game handled it");
+			ImGui::TextUnformatted(Tr("game handled it"));
 	}
 
 	ImGui::EndTable();
@@ -733,7 +734,7 @@ void NetplayWindow::DrawOpponentsTab()
 {
 	const int count = OpponentLog::Count();
 
-	ImGui::Text("%d opponent(s) recorded", count);
+	ImGui::Text(Tr("%d opponent(s) recorded"), count);
 	UiText::Help("Everyone you played online. Saved only on your PC.\n"
 		"Win rate counts each game. Older matches aren't counted.");
 
@@ -769,19 +770,19 @@ void NetplayWindow::DrawOpponentsTab()
 		ImGui::TextUnformatted(entry->name[0] != '\0' ? entry->name : "[unknown]");
 
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("%llu", static_cast<unsigned long long>(entry->steamId));
+			ImGui::SetTooltip(Tr("%llu"), static_cast<unsigned long long>(entry->steamId));
 
 		ImGui::TableNextColumn();
 		ImGui::Text("%d", entry->encounters);
 		ImGui::TableNextColumn();
 		DrawWinRate(*entry);
 		ImGui::TableNextColumn();
-		ImGui::Text("%s vs %s", CharacterName(entry->lastCharaLeft),
+		ImGui::Text(Tr("%s vs %s"), CharacterName(entry->lastCharaLeft),
 			CharacterName(entry->lastCharaRight));
 		ImGui::TableNextColumn();
 
 		if (entry->bestPing > 0)
-			ImGui::Text("%d ms (best %d)", entry->lastPing, entry->bestPing);
+			ImGui::Text(Tr("%d ms (best %d)"), entry->lastPing, entry->bestPing);
 		else
 			ImGui::TextUnformatted("-");
 
@@ -816,12 +817,12 @@ bool DrawPrivacyStatus(bool available, bool enabled, const char* status)
 
 void NetplayWindow::DrawPrivacyTab()
 {
-	ImGui::TextUnformatted("Other people's names");
+	ImGui::TextUnformatted(Tr("Other people's names"));
 	UiText::Help("Hides player names everywhere: rooms, lobby, player card, replays and the health bars.");
 
 	bool censor = NameCensor::IsEnabled();
 
-	if (ImGui::Checkbox("Hide other players' names", &censor))
+	if (ImGui::Checkbox(TrLabel("Hide other players' names"), &censor))
 	{
 		NameCensor::SetEnabled(censor);
 		g_modVals.censorNames = censor;
@@ -833,7 +834,7 @@ void NetplayWindow::DrawPrivacyTab()
 
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
 
-	if (ImGui::InputText("Shown instead", mask, sizeof(mask),
+	if (ImGui::InputText(TrLabel("Shown instead"), mask, sizeof(mask),
 		ImGuiInputTextFlags_EnterReturnsTrue) && mask[0] != 0)
 	{
 		NameCensor::SetMask(mask);
@@ -844,7 +845,7 @@ void NetplayWindow::DrawPrivacyTab()
 
 	bool coversName = NameCensor::CoversMyName();
 
-	if (ImGui::Checkbox("Cover my name too", &coversName))
+	if (ImGui::Checkbox(TrLabel("Cover my name too"), &coversName))
 	{
 		NameCensor::SetCoversMyName(coversName);
 		g_modVals.censorMyName = coversName;
@@ -856,17 +857,17 @@ void NetplayWindow::DrawPrivacyTab()
 	if (!DrawPrivacyStatus(NameCensor::IsAvailable(), NameCensor::IsEnabled(), NameCensor::StatusText()))
 		return;
 
-	ImGui::Text("%d name(s) covered this run.", NameCensor::Count());
+	ImGui::Text(Tr("%d name(s) covered this run."), NameCensor::Count());
 }
 
 void NetplayWindow::DrawRoomNamePrivacy()
 {
-	ImGui::TextUnformatted("Room names");
+	ImGui::TextUnformatted(Tr("Room names"));
 	UiText::Help("Replaces room names in the room search with your \"Shown instead\" text. Only on your screen.");
 
 	bool rooms = RoomNameCensor::IsEnabled();
 
-	if (ImGui::Checkbox("Hide room names in the room search", &rooms))
+	if (ImGui::Checkbox(TrLabel("Hide room names in the room search"), &rooms))
 	{
 		RoomNameCensor::SetEnabled(rooms);
 		g_modVals.censorRoomNames = rooms;
@@ -879,18 +880,18 @@ void NetplayWindow::DrawRoomNamePrivacy()
 		return;
 	}
 
-	ImGui::Text("%d room name(s) covered this run.", RoomNameCensor::Count());
+	ImGui::Text(Tr("%d room name(s) covered this run."), RoomNameCensor::Count());
 }
 
 void NetplayWindow::DrawIrPrivacy()
 {
-	ImGui::TextUnformatted("IR");
+	ImGui::TextUnformatted(Tr("IR"));
 	UiText::Help("Hides every IR number, including the change after ranked matches. "
 		"Only on your screen. Your IR still counts.");
 
 	bool hide = IrHider::IsEnabled();
 
-	if (ImGui::Checkbox("Hide IR", &hide))
+	if (ImGui::Checkbox(TrLabel("Hide IR"), &hide))
 	{
 		IrHider::SetEnabled(hide);
 		g_modVals.hideIr = hide;
@@ -900,7 +901,7 @@ void NetplayWindow::DrawIrPrivacy()
 	if (!DrawPrivacyStatus(IrHider::IsAvailable(), IrHider::IsEnabled(), IrHider::StatusText()))
 		return;
 
-	ImGui::Text("%ld IR number(s) hidden this run.", IrHider::NumbersHidden());
+	ImGui::Text(Tr("%ld IR number(s) hidden this run."), IrHider::NumbersHidden());
 }
 
 void NetplayWindow::DrawCensorship()
@@ -918,11 +919,11 @@ void NetplayWindow::DrawCensorship()
 
 void NetplayWindow::DrawSteamPresence()
 {
-	ImGui::TextUnformatted("Steam status");
+	ImGui::TextUnformatted(Tr("Steam status"));
 
 	bool show = g_modVals.steamRichPresence;
 
-	if (ImGui::Checkbox("Use enhanced rich presence", &show))
+	if (ImGui::Checkbox(TrLabel("Use enhanced rich presence"), &show))
 	{
 		g_modVals.steamRichPresence = show;
 		Settings::SaveInt("Privacy", "SteamRichPresence", show ? 1 : 0);
@@ -965,14 +966,14 @@ void DrawViewerRow(const SpectateHost::Viewer& viewer)
 
 	if (viewer.state == SpectateHost::Viewer_Accepted)
 	{
-		if (ImGui::SmallButton("Kick"))
+		if (ImGui::SmallButton(TrLabel("Kick")))
 			SpectateHost::Kick(viewer.id);
 
 		ImGui::PopID();
 		return;
 	}
 
-	if (ImGui::SmallButton("Let in"))
+	if (ImGui::SmallButton(TrLabel("Let in")))
 		SpectateHost::Approve(viewer.id);
 
 	ImGui::SameLine();
@@ -994,18 +995,18 @@ void NetplayWindow::DrawSpectateTab()
 
 void NetplayWindow::DrawSpectateHost()
 {
-	ImGui::TextUnformatted("Let people watch you");
+	ImGui::TextUnformatted(Tr("Let people watch you"));
 	UiText::Help("Lets Steam friends with the mod watch your online matches. They join at your next match.");
 
 	bool allowed = SpectateHost::IsAllowed();
 
-	if (ImGui::Checkbox("Allow spectators", &allowed))
+	if (ImGui::Checkbox(TrLabel("Allow spectators"), &allowed))
 		SpectateHost::SetAllowed(allowed);
 
 	int most = SpectateHost::MaxViewers();
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
 
-	if (ImGui::SliderInt("Viewers at most", &most, 1, SpectateHost::kMostViewers))
+	if (ImGui::SliderInt(TrLabel("Viewers at most"), &most, 1, SpectateHost::kMostViewers))
 		SpectateHost::SetMaxViewers(most);
 
 	UiText::Muted("%s", SpectateHost::StatusText());
@@ -1029,7 +1030,7 @@ void NetplayWindow::DrawSpectateHost()
 
 void NetplayWindow::DrawSpectateWatch()
 {
-	ImGui::TextUnformatted("Watch someone");
+	ImGui::TextUnformatted(Tr("Watch someone"));
 	UiText::Help("Pick a friend to watch. You can't be in your room while watching.");
 
 	std::vector<SteamFriends::Friend> friends;
@@ -1042,7 +1043,7 @@ void NetplayWindow::DrawSpectateWatch()
 	{
 		ImGui::PushID(buddy.value);
 
-		if (ImGui::SmallButton("Watch"))
+		if (ImGui::SmallButton(TrLabel("Watch")))
 			SpectateViewer::Watch(buddy.id);
 
 		ImGui::SameLine();
@@ -1058,6 +1059,6 @@ void NetplayWindow::DrawSpectateWatch()
 
 	ImGui::Text("%s: %s", SteamNames::Resolve(SpectateViewer::Host()).c_str(), SpectateViewer::StatusText());
 
-	if (ImGui::Button("Stop watching"))
+	if (ImGui::Button(TrLabel("Stop watching")))
 		SpectateViewer::Leave();
 }

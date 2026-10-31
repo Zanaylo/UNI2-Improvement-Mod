@@ -645,7 +645,8 @@ FrameMeter::State Classify(int player, const PlayerState::State& state)
 		tracked.inMove = false;
 	}
 
-	const bool held = !tracked.canAct &&
+	const bool systemAttack = (state.moveCodeEx[2] & GameOffsets::kMoveCode2SystemAttack) != 0;
+	const bool held = !tracked.canAct && !systemAttack &&
 		(state.stunTimer > 0 || state.inReaction || tracked.stunReleased);
 
 	if (!held)
@@ -661,7 +662,7 @@ FrameMeter::State Classify(int player, const PlayerState::State& state)
 		tracked.airKind = FrameMeter::State::None;
 	}
 
-	if (tracked.canAct)
+	if (tracked.canAct || systemAttack)
 		tracked.heldPending = false;
 
 	const bool trulyFree = tracked.canAct && state.cancelFree;

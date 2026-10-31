@@ -5,6 +5,7 @@
 #include "Overlay/Widgets/ComboNav.h"
 
 #include "Overlay/Widgets/UiScale.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -49,7 +50,7 @@ void PlayerCardPanel::Draw()
 {
 	if (!PlayerCard::IsAvailable())
 	{
-		ImGui::TextDisabled("The game has not built its player card yet.");
+		ImGui::TextDisabled(Tr("The game has not built its player card yet."));
 		return;
 	}
 
@@ -59,7 +60,7 @@ void PlayerCardPanel::Draw()
 
 	int ip = 0;
 	if (PlayerCard::GetIp(ip))
-		ImGui::Text("IP  %d", ip);
+		ImGui::Text(Tr("IP  %d"), ip);
 
 	ImGui::Separator();
 	DrawTitle();
@@ -86,7 +87,7 @@ void PlayerCardPanel::DrawTitle()
 	if (!m_titlePulled)
 		PullTitle();
 
-	ImGui::TextUnformatted("Plate title");
+	ImGui::TextUnformatted(Tr("Plate title"));
 
 	ImGui::SetNextItemWidth(-1.0f);
 
@@ -97,26 +98,26 @@ void PlayerCardPanel::DrawTitle()
 	const bool overflows = used > PlayerCard::kTitleMaxBytes;
 
 	if (overflows)
-		ImGui::TextColored(kWarning, "%zu / %zu, the end will be cut off",
+		ImGui::TextColored(kWarning, Tr("%zu / %zu, the end will be cut off"),
 			used, PlayerCard::kTitleMaxBytes);
 	else
-		ImGui::TextDisabled("%zu / %zu", used, PlayerCard::kTitleMaxBytes);
+		ImGui::TextDisabled(Tr("%zu / %zu"), used, PlayerCard::kTitleMaxBytes);
 
-	if (submitted || ImGui::Button("Apply title"))
+	if (submitted || ImGui::Button(TrLabel("Apply title")))
 		PushTitle();
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Reload from game"))
+	if (ImGui::Button(TrLabel("Reload from game")))
 		PullTitle();
 }
 
 void PlayerCardPanel::DrawPlate()
 {
-	ImGui::TextUnformatted("Plate");
+	ImGui::TextUnformatted(Tr("Plate"));
 
 	if (!PlateCatalog::IsLoaded())
-		ImGui::TextDisabled("Could not read the game's plate lists. Showing ids only.");
+		ImGui::TextDisabled(Tr("Could not read the game's plate lists. Showing ids only."));
 
 	for (int layer = 0; layer < PlayerCard::kLayerCount; ++layer)
 		DrawLayer(static_cast<PlayerCard::PlateLayer>(layer));
@@ -187,7 +188,7 @@ void PlayerCardPanel::DrawLayer(PlayerCard::PlateLayer layer)
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Set"))
+	if (ImGui::Button(TrLabel("Set")))
 	{
 		if (!PlayerCard::EquipPlate(layer, m_pendingId[index]))
 		{

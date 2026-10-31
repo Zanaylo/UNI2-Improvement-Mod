@@ -8,6 +8,7 @@
 #include "Palette/PaletteManager.h"
 #include "Training/Meter/InputLagMeter.h"
 #include "Training/Dummy/PlayerControl.h"
+#include "Core/Text/Language.h"
 
 namespace {
 
@@ -123,9 +124,9 @@ void DrawLagHistoryTable()
 
 		ImGui::TableNextColumn();
 		if (sample.trusted)
-			ImGui::Text("+-%.1f ms", sample.worstGapMs);
+			ImGui::Text(Tr("+-%.1f ms"), sample.worstGapMs);
 		else
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f), "sampler stalled %.0f ms",
+			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.3f, 1.0f), Tr("sampler stalled %.0f ms"),
 				sample.worstGapMs);
 	}
 
@@ -150,7 +151,7 @@ void PlayerControlWindow::Draw()
 {
 	if (!GameState::AllowsTrainingTools())
 	{
-		ImGui::TextDisabled("in a match only");
+		ImGui::TextDisabled(Tr("in a match only"));
 		return;
 	}
 
@@ -183,12 +184,12 @@ void PlayerControlWindow::DrawSide(int player)
 	const int chara = PaletteManager::GetCharaNumber(player);
 	const int dummy = PlayerControl::GetDummySide();
 
-	ImGui::Text("P%d  %s", player + 1, PaletteManager::GetCharaName(chara));
+	ImGui::Text(Tr("P%d  %s"), player + 1, PaletteManager::GetCharaName(chara));
 
 	if (player == dummy)
 	{
 		ImGui::SameLine();
-		ImGui::TextDisabled("(dummy)");
+		ImGui::TextDisabled(Tr("(dummy)"));
 	}
 
 	PlayerControl::Input input = {};
@@ -214,8 +215,8 @@ void PlayerControlWindow::DrawButtonCalibration()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Presses each button to learn your layout, so scripts and Player Control use "
-			"the right A/B/C/D even with custom buttons. Takes a few seconds. Do not press anything.");
+		ImGui::SetTooltip(Tr("Presses each button to learn your layout, so scripts and Player Control use "
+			"the right A/B/C/D even with custom buttons. Takes a few seconds. Do not press anything."));
 	}
 
 	ImGui::SameLine();
@@ -225,7 +226,7 @@ void PlayerControlWindow::DrawButtonCalibration()
 void PlayerControlWindow::DrawKeyboard()
 {
 	ImGui::Spacing();
-	ImGui::SeparatorText("My controls drive");
+	ImGui::SeparatorText(Tr("My controls drive"));
 
 	const int home = PlayerControl::GetHomeSide();
 	const int away = home == 0 ? 1 : 0;
@@ -237,11 +238,11 @@ void PlayerControlWindow::DrawKeyboard()
 
 	int mode = static_cast<int>(PlayerControl::GetMode());
 
-	if (ImGui::RadioButton("P1", &mode, forP1))
+	if (ImGui::RadioButton(TrLabel("P1"), &mode, forP1))
 		PlayerControl::SetMode(forP1);
 
 	ImGui::SameLine();
-	if (ImGui::RadioButton("P2", &mode, forP2))
+	if (ImGui::RadioButton(TrLabel("P2"), &mode, forP2))
 		PlayerControl::SetMode(forP2);
 
 	if (mode == PlayerControl::Mode_Both)
@@ -253,11 +254,11 @@ void PlayerControlWindow::DrawKeyboard()
 	switch (mode)
 	{
 	case PlayerControl::Mode_Mine:
-		ImGui::TextDisabled("Normal controls.");
+		ImGui::TextDisabled(Tr("Normal controls."));
 		break;
 
 	case PlayerControl::Mode_Other:
-		ImGui::TextDisabled("Your controls play P%d. P%d stands still.", away + 1, home + 1);
+		ImGui::TextDisabled(Tr("Your controls play P%d. P%d stands still."), away + 1, home + 1);
 		break;
 
 	default:
@@ -271,19 +272,19 @@ void PlayerControlWindow::DrawKeyboard()
 	const int trusted = InputLagMeter::GetTrustedCount();
 
 	if (last >= 0.0f)
-		ImGui::Text("Input lag: %.1f ms", last);
+		ImGui::Text(Tr("Input lag: %.1f ms"), last);
 	else
-		ImGui::TextDisabled("Input lag: press a key or a button to measure");
+		ImGui::TextDisabled(Tr("Input lag: press a key or a button to measure"));
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Time from pressing a key or button to the game registering it. Display "
+		ImGui::SetTooltip(Tr("Time from pressing a key or button to the game registering it. Display "
 			"lag is not included.\n\n"
 			"The keyboard and pads are read about a thousand times a second, not once a frame like "
-			"the game does, so the result is not rounded to 16.7 ms.");
+			"the game does, so the result is not rounded to 16.7 ms."));
 
 	if (average >= 0.0f)
 	{
-		ImGui::Text("Average %.1f ms over %d (about %.1f frames at 60 Hz)", average, trusted,
+		ImGui::Text(Tr("Average %.1f ms over %d (about %.1f frames at 60 Hz)"), average, trusted,
 			average / (1000.0f / 60.0f));
 	}
 
@@ -295,12 +296,12 @@ void PlayerControlWindow::DrawKeyboard()
 
 	if (rate > 0)
 	{
-		ImGui::TextDisabled("sampler %d Hz, watching the keyboard and %d pad(s)", rate,
+		ImGui::TextDisabled(Tr("sampler %d Hz, watching the keyboard and %d pad(s)"), rate,
 			xinputPads + directInputPads);
 	}
 
 	ImGui::SameLine();
-	if (ImGui::SmallButton("clear history##inputlag"))
+	if (ImGui::SmallButton(TrLabel("clear history##inputlag")))
 		InputLagMeter::Reset();
 
 	DrawLagHistoryTable();

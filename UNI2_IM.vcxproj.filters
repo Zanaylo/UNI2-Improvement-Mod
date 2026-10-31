@@ -19,6 +19,12 @@
     <Filter Include="Core\Input">
       <UniqueIdentifier>{3370b467-1f15-127a-d992-4e1fe1113ea4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Text">
+      <UniqueIdentifier>{40283212-4446-4c55-ae23-5cfcd4890b45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Text\Catalogs">
+      <UniqueIdentifier>{bdd90593-a640-c0af-c6ef-7b5f136512b7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="D3D9">
       <UniqueIdentifier>{126d8768-1125-f82f-157c-9df5afd0fa57}</UniqueIdentifier>
     </Filter>
@@ -176,6 +182,27 @@
     </ClCompile>
     <ClCompile Include="src\Overlay\Windows\MiscWindow.cpp">
       <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Text\Language.cpp">
+      <Filter>Core\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Text\LanguagePick.cpp">
+      <Filter>Core\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Text\LanguageCatalog.cpp">
+      <Filter>Core\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Text\LabelText.cpp">
+      <Filter>Core\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Text\Catalogs\MainPortuguese.cpp">
+      <Filter>Core\Text\Catalogs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Text\Catalogs\MainSpanish.cpp">
+      <Filter>Core\Text\Catalogs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Widgets\LanguageCombo.cpp">
+      <Filter>Overlay\Widgets</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Panels\MiscPanel.cpp">
       <Filter>Overlay\Panels</Filter>
@@ -2069,6 +2096,27 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Core\Text\Language.h">
+      <Filter>Core\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Text\LanguageId.h">
+      <Filter>Core\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Text\LanguagePick.h">
+      <Filter>Core\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Text\LanguageCatalog.h">
+      <Filter>Core\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Text\LabelText.h">
+      <Filter>Core\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Text\Catalogs\MainCatalogs.h">
+      <Filter>Core\Text\Catalogs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Widgets\LanguageCombo.h">
+      <Filter>Overlay\Widgets</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Customize\AnnouncerScroll.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>

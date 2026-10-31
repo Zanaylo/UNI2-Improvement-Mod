@@ -4,6 +4,7 @@
 #include "Core/Config/ProfileStore.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -35,7 +36,7 @@ void DrawSave()
 	ImGui::SameLine();
 	ImGui::BeginDisabled(!valid);
 
-	if (ImGui::Button("Save current settings") && ProfileStore::Save(g_name))
+	if (ImGui::Button(TrLabel("Save current settings")) && ProfileStore::Save(g_name))
 		Refresh();
 
 	ImGui::EndDisabled();
@@ -50,12 +51,12 @@ void DrawProfile(const std::string& name)
 	ImGui::TextUnformatted(name.c_str());
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("Load"))
+	if (ImGui::SmallButton(TrLabel("Load")))
 		ProfileStore::Load(name);
 
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("Delete") && ProfileStore::Delete(name))
+	if (ImGui::SmallButton(TrLabel("Delete")) && ProfileStore::Delete(name))
 		Refresh();
 
 	ImGui::PopID();

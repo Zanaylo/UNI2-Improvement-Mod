@@ -32,6 +32,7 @@
 #include "Palette/PalettePaint.h"
 
 #include "Overlay/Widgets/UiScale.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -228,7 +229,7 @@ void PaletteWindow::DrawPlayer(int player)
 
 	if (chara < 0)
 	{
-		ImGui::TextDisabled("nobody in this slot yet");
+		ImGui::TextDisabled(Tr("nobody in this slot yet"));
 		return;
 	}
 
@@ -237,7 +238,7 @@ void PaletteWindow::DrawPlayer(int player)
 
 	if (!StockPalettes::Load(chara))
 	{
-		ImGui::TextDisabled("this character's colour files could not be read");
+		ImGui::TextDisabled(Tr("this character's colour files could not be read"));
 		return;
 	}
 
@@ -268,11 +269,11 @@ void PaletteWindow::DrawPlayer(int player)
 		}
 		else if (name[0] != 0)
 		{
-			ImGui::TextDisabled("wearing '%s', which they chose", name);
+			ImGui::TextDisabled(Tr("wearing '%s', which they chose"), name);
 		}
 		else
 		{
-			ImGui::TextDisabled("wearing the colours they picked in the game");
+			ImGui::TextDisabled(Tr("wearing the colours they picked in the game"));
 		}
 
 		ImGui::Separator();
@@ -286,7 +287,7 @@ void PaletteWindow::DrawPlayer(int player)
 		return;
 	}
 
-	if (ImGui::BeginTabItem("Character"))
+	if (ImGui::BeginTabItem(TrLabel("Character")))
 	{
 		DrawParts(player);
 
@@ -297,7 +298,7 @@ void PaletteWindow::DrawPlayer(int player)
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Effects"))
+	if (ImGui::BeginTabItem(TrLabel("Effects")))
 	{
 		DrawEffects(player);
 		ImGui::EndTabItem();
@@ -305,7 +306,7 @@ void PaletteWindow::DrawPlayer(int player)
 
 	m_summonTabOpen[player] = false;
 
-	if (m_hasCompanion[player] && ImGui::BeginTabItem("Doppel"))
+	if (m_hasCompanion[player] && ImGui::BeginTabItem(TrLabel("Doppel")))
 	{
 		m_summonTabOpen[player] = true;
 		DrawSummon(player);
@@ -385,7 +386,7 @@ void PaletteWindow::DrawGroupedSwatches(int player, int chara, int parts)
 
 	ImGui::PushID(parts);
 
-	if (ImGui::CollapsingHeader("Everything else"))
+	if (ImGui::CollapsingHeader(TrLabel("Everything else")))
 		DrawGrid(player, rest, restCount);
 
 	ImGui::PopID();
@@ -424,7 +425,7 @@ void PaletteWindow::DrawFlatSwatches(int player, int chara)
 
 	if (count == 0)
 	{
-		ImGui::TextDisabled("every entry looks unused. Untick Filter junk colours to see them.");
+		ImGui::TextDisabled(Tr("every entry looks unused. Untick Filter junk colours to see them."));
 		return;
 	}
 
@@ -435,11 +436,11 @@ void PaletteWindow::DrawParts(int player)
 {
 	LivePalette::Colours& colours = m_colours[player];
 
-	if (!ImGui::CollapsingHeader("Whole parts"))
+	if (!ImGui::CollapsingHeader(TrLabel("Whole parts")))
 		return;
 
-	ImGui::TextWrapped("Changes a whole part at once. The shading stays and only the colour "
-		"changes.");
+	ImGui::TextWrapped(Tr("Changes a whole part at once. The shading stays and only the colour "
+		"changes."));
 
 	const int count = StockPalettes::GetCount(colours.chara);
 
@@ -559,7 +560,7 @@ void PaletteWindow::DrawParts(int player)
 		{
 			ImGui::SameLine();
 
-			if (ImGui::SmallButton("x"))
+			if (ImGui::SmallButton(TrLabel("x")))
 			{
 				Record(player);
 				colours.picked[part] = false;
@@ -567,7 +568,7 @@ void PaletteWindow::DrawParts(int player)
 			}
 
 			if (ImGui::IsItemHovered())
-				ImGui::SetTooltip("Back to the stock colour.");
+				ImGui::SetTooltip(Tr("Back to the stock colour."));
 		}
 
 		ImGui::PopID();
@@ -612,7 +613,7 @@ void PaletteWindow::DrawGrid(int player, const unsigned char* entries, int count
 		}
 
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("entry %d%s", i, changed ? " (changed)" : "");
+			ImGui::SetTooltip(Tr("entry %d%s"), i, changed ? " (changed)" : "");
 
 		if (((n + 1) % kPerRow) != 0 && n + 1 < count)
 			ImGui::SameLine();
@@ -626,7 +627,7 @@ void PaletteWindow::DrawPicker(int player)
 	LivePalette::Colours& colours = m_colours[player];
 	const int selected = m_selected[player];
 
-	ImGui::Text("entry %d%s", selected, colours.edited[selected] ? "  (changed)" : "");
+	ImGui::Text(Tr("entry %d%s"), selected, colours.edited[selected] ? "  (changed)" : "");
 
 	float picked[3] = {
 		m_composed[player][selected * 4 + 0] / 255.0f,
@@ -657,12 +658,12 @@ void PaletteWindow::DrawPicker(int player)
 
 	ImGui::BeginDisabled(m_historyCount[player] == 0);
 
-	const bool undo = ImGui::Button("Undo");
+	const bool undo = ImGui::Button(TrLabel("Undo"));
 
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Undo the last change. %d left.", m_historyCount[player]);
+		ImGui::SetTooltip(Tr("Undo the last change. %d left."), m_historyCount[player]);
 
 	if (undo)
 		Undo(player);
@@ -671,14 +672,14 @@ void PaletteWindow::DrawPicker(int player)
 
 	ImGui::BeginDisabled(!m_applied[player]);
 
-	const bool remove = ImGui::Button("Remove");
+	const bool remove = ImGui::Button(TrLabel("Remove"));
 
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Goes back to the game's colours and keeps your edits. This character "
-			"will not wear it automatically next match.");
+		ImGui::SetTooltip(Tr("Goes back to the game's colours and keeps your edits. This character "
+			"will not wear it automatically next match."));
 	}
 
 	if (remove)
@@ -696,7 +697,7 @@ void PaletteWindow::DrawPicker(int player)
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Reset"))
+	if (ImGui::Button(TrLabel("Reset")))
 	{
 		Record(player);
 		LivePalette::Reset(m_colours[player], m_chara[player]);
@@ -708,7 +709,7 @@ void PaletteWindow::DrawPicker(int player)
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Re-read"))
+	if (ImGui::Button(TrLabel("Re-read")))
 	{
 
 		PalettePaint::Clear(player);
@@ -721,16 +722,16 @@ void PaletteWindow::DrawPicker(int player)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Reads the character's colours from the game again. Use it if they "
-			"changed colour after you opened this. Your edits are kept.");
+		ImGui::SetTooltip(Tr("Reads the character's colours from the game again. Use it if they "
+			"changed colour after you opened this. Your edits are kept."));
 	}
 
 	if (!m_applied[player])
-		ImGui::TextDisabled("not worn");
+		ImGui::TextDisabled(Tr("not worn"));
 	else if (PalettePaint::IsPainting(player))
-		ImGui::TextDisabled("worn");
+		ImGui::TextDisabled(Tr("worn"));
 	else
-		ImGui::TextDisabled("applied, waiting for this character to appear");
+		ImGui::TextDisabled(Tr("applied, waiting for this character to appear"));
 }
 
 void PaletteWindow::DrawEffects(int player)
@@ -749,16 +750,16 @@ void PaletteWindow::DrawEffects(int player)
 
 	if (count == 0)
 	{
-		ImGui::TextDisabled("this character's effects are not tinted from its palette");
+		ImGui::TextDisabled(Tr("this character's effects are not tinted from its palette"));
 		return;
 	}
 
-	ImGui::Text("%d entries, %d seen drawn, %d changed", count,
+	ImGui::Text(Tr("%d entries, %d seen drawn, %d changed"), count,
 		EffectPaint::GetObservedCount(player), EffectPaint::GetEditedCount(player));
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Reset effects"))
+	if (ImGui::Button(TrLabel("Reset effects")))
 		EffectPaint::Clear(player);
 
 	ImGui::BeginChild("effects", Ui::Scaled(0.0f, 150.0f), ImGuiChildFlags_Borders);
@@ -810,7 +811,7 @@ void PaletteWindow::DrawEffects(int player)
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("entry %d, used by %d part%s%s%s%s", entry,
+			ImGui::SetTooltip(Tr("entry %d, used by %d part%s%s%s%s"), entry,
 				PartColourTable::GetPartCount(chara, entry),
 				PartColourTable::GetPartCount(chara, entry) == 1 ? "" : "s",
 				observed ? "" : ", not seen yet so the palette colour is shown",
@@ -832,7 +833,7 @@ void PaletteWindow::DrawEffects(int player)
 
 	if (entry < 0)
 	{
-		ImGui::TextDisabled("pick one to change it");
+		ImGui::TextDisabled(Tr("pick one to change it"));
 		return;
 	}
 
@@ -845,7 +846,7 @@ void PaletteWindow::DrawEffects(int player)
 		memcpy(rgb, m_composed[player] + entry * 4, 3);
 	}
 
-	ImGui::Text("entry %d%s", entry, EffectPaint::IsEdited(player, entry) ? "  (changed)" : "");
+	ImGui::Text(Tr("entry %d%s"), entry, EffectPaint::IsEdited(player, entry) ? "  (changed)" : "");
 
 	float picked[3] = { rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f };
 
@@ -863,7 +864,7 @@ void PaletteWindow::DrawEffects(int player)
 		EffectPaint::SetEntry(player, entry, chosen);
 	}
 
-	if (EffectPaint::IsEdited(player, entry) && ImGui::Button("Back to the game's colour"))
+	if (EffectPaint::IsEdited(player, entry) && ImGui::Button(TrLabel("Back to the game's colour")))
 		EffectPaint::ClearEntry(player, entry);
 }
 
@@ -893,7 +894,7 @@ void PaletteWindow::DrawFiles(int player)
 	if (editingName)
 		ImGui::EndDisabled();
 
-	ImGui::TextUnformatted("Name");
+	ImGui::TextUnformatted(Tr("Name"));
 
 	Ui::SetItemWidth(170.0f);
 	ImGui::InputText("##name", m_name[player], sizeof(m_name[player]));
@@ -907,7 +908,7 @@ void PaletteWindow::DrawFiles(int player)
 
 	ImGui::BeginDisabled(!nameOk);
 
-	const bool save = ImGui::Button("Save");
+	const bool save = ImGui::Button(TrLabel("Save"));
 
 	ImGui::EndDisabled();
 
@@ -922,7 +923,7 @@ void PaletteWindow::DrawFiles(int player)
 			SelectFile(player, (std::string(m_name[player]) + PaletteFile::kExtension).c_str());
 	}
 
-	ImGui::TextUnformatted("Author");
+	ImGui::TextUnformatted(Tr("Author"));
 
 	Ui::SetItemWidth(170.0f);
 	ImGui::InputText("##author", m_creator[player], sizeof(m_creator[player]));
@@ -930,12 +931,12 @@ void PaletteWindow::DrawFiles(int player)
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveString("Palette", "Creator", m_creator[player]);
 
-	ImGui::TextUnformatted("Description");
+	ImGui::TextUnformatted(Tr("Description"));
 
 	Ui::SetItemWidth(340.0f);
 	ImGui::InputText("##description", m_description[player], sizeof(m_description[player]));
 
-	ImGui::TextUnformatted("Character Palette");
+	ImGui::TextUnformatted(Tr("Character Palette"));
 
 	const char* const chosen = m_chosen[player] >= 0 && m_chosen[player] < m_fileCount[player]
 		? m_files[player][m_chosen[player]].c_str() : kDefaultPalette;
@@ -1001,7 +1002,7 @@ void PaletteWindow::DrawFiles(int player)
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Rescan"))
+	if (ImGui::Button(TrLabel("Rescan")))
 		RefreshFiles(player);
 
 	DrawColourSlot(player);
@@ -1054,7 +1055,7 @@ void PaletteWindow::DrawFiles(int player)
 		ImGui::SetTooltip("%s", ExportTooltip(hasBase, hasDoppel));
 
 	if (!nameOk && m_name[player][0] != '\0')
-		ImGui::TextDisabled("that name cannot be a filename");
+		ImGui::TextDisabled(Tr("that name cannot be a filename"));
 	else if (m_status[player][0] != '\0')
 		ImGui::TextDisabled("%s", m_status[player]);
 }
@@ -1092,13 +1093,13 @@ void PaletteWindow::Undo(int player)
 
 void PaletteWindow::DrawColourSlot(int player)
 {
-	ImGui::TextUnformatted("Colour slot");
+	ImGui::TextUnformatted(Tr("Colour slot"));
 
 	const int chara = m_chara[player];
 
 	if (m_chosen[player] < 0 || m_chosen[player] >= m_fileCount[player])
 	{
-		ImGui::TextDisabled("Save or pick a palette to give it a slot.");
+		ImGui::TextDisabled(Tr("Save or pick a palette to give it a slot."));
 		return;
 	}
 
@@ -1145,10 +1146,10 @@ void PaletteWindow::DrawColourSlot(int player)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Picking this colour at character select puts this palette on.\n"
+		ImGui::SetTooltip(Tr("Picking this colour at character select puts this palette on.\n"
 			"A palette with no colour is an extended slot: keep pressing right past the game's last "
 			"colour to reach it.\nPlayers without the mod see the game's colour - the first one for an "
-			"extended slot.\nChanging palette during a match still wins until the next match.");
+			"extended slot.\nChanging palette during a match still wins until the next match."));
 	}
 }
 
@@ -1558,7 +1559,7 @@ void PaletteWindow::DrawSummonGrid(int player, const unsigned char* entries, int
 		}
 
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("entry %d%s", i, changed ? " (changed)" : "");
+			ImGui::SetTooltip(Tr("entry %d%s"), i, changed ? " (changed)" : "");
 
 		if (((n + 1) % kPerRow) != 0 && n + 1 < count)
 			ImGui::SameLine();
@@ -1572,7 +1573,7 @@ void PaletteWindow::DrawSummonPicker(int player)
 	const int selected = m_companionSelected[player];
 	SummonEdit& summon = m_summon[player];
 
-	ImGui::Text("entry %d%s", selected, summon.edited[selected] ? "  (changed)" : "");
+	ImGui::Text(Tr("entry %d%s"), selected, summon.edited[selected] ? "  (changed)" : "");
 
 	const uint8_t* const shown = m_companion[player] + selected * 4;
 
@@ -1596,7 +1597,7 @@ void PaletteWindow::DrawSummonPicker(int player)
 	if (!summon.edited[selected])
 		return;
 
-	if (ImGui::Button("Back to the game's colour"))
+	if (ImGui::Button(TrLabel("Back to the game's colour")))
 	{
 		Record(player);
 		summon.edited[selected] = false;
@@ -1608,12 +1609,12 @@ void PaletteWindow::DrawSummon(int player)
 {
 	if (!m_hasCompanion[player])
 	{
-		ImGui::TextDisabled("this character has no separate doppel.");
+		ImGui::TextDisabled(Tr("this character has no separate doppel."));
 		return;
 	}
 
-	ImGui::TextWrapped("The doppel reads separate colours. Changing one here leaves the character "
-		"alone.");
+	ImGui::TextWrapped(Tr("The doppel reads separate colours. Changing one here leaves the character "
+		"alone."));
 
 	unsigned char entries[LivePalette::kColours] = {};
 	int count = 0;
@@ -1627,7 +1628,7 @@ void PaletteWindow::DrawSummon(int player)
 	ImGui::BeginChild("summon", Ui::Scaled(0.0f, 200.0f), ImGuiChildFlags_Borders);
 
 	if (count == 0)
-		ImGui::TextDisabled("nothing of the doppel's is in this palette.");
+		ImGui::TextDisabled(Tr("nothing of the doppel's is in this palette."));
 	else
 		DrawSummonGrid(player, entries, count);
 

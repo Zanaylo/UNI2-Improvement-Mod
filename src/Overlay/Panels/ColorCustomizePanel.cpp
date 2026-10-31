@@ -9,6 +9,7 @@
 #include "Palette/PaletteManager.h"
 
 #include "Overlay/Widgets/UiScale.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -82,7 +83,7 @@ void ColorCustomizePanel::Draw()
 {
 	if (!ColorCustomize::IsAvailable())
 	{
-		ImGui::TextDisabled("The game has not built its player card yet.");
+		ImGui::TextDisabled(Tr("The game has not built its player card yet."));
 		return;
 	}
 
@@ -92,7 +93,7 @@ void ColorCustomizePanel::Draw()
 
 	if (!StockPalettes::Load(m_chara))
 	{
-		ImGui::TextDisabled("The game's colour files could not be read.");
+		ImGui::TextDisabled(Tr("The game's colour files could not be read."));
 		return;
 	}
 
@@ -117,7 +118,7 @@ void ColorCustomizePanel::Draw()
 void ColorCustomizePanel::DrawCharacter()
 {
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextUnformatted("Character");
+	ImGui::TextUnformatted(Tr("Character"));
 	ImGui::SameLine(ImGui::GetFontSize() * 8.0f);
 
 	Ui::SetItemWidth(260.0f);
@@ -163,7 +164,7 @@ void ColorCustomizePanel::DrawPose()
 		return;
 
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextUnformatted("Pose");
+	ImGui::TextUnformatted(Tr("Pose"));
 	ImGui::SameLine(ImGui::GetFontSize() * 8.0f);
 
 	char label[24] = {};
@@ -358,15 +359,15 @@ void ColorCustomizePanel::DrawPreview()
 	ImGui::Dummy(ImVec2(kGridColumns * cell, rows * cell));
 
 	if (!drawn)
-		ImGui::TextDisabled("Could not read this character's poses from the game files.");
+		ImGui::TextDisabled(Tr("Could not read this character's poses from the game files."));
 
 	if (!ColorPartTable::IsLoaded())
-		ImGui::TextDisabled("Could not read the game's part lists, so the parts are not shown.");
+		ImGui::TextDisabled(Tr("Could not read the game's part lists, so the parts are not shown."));
 }
 void ColorCustomizePanel::DrawSlot()
 {
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextUnformatted("Custom slot");
+	ImGui::TextUnformatted(Tr("Custom slot"));
 	ImGui::SameLine(ImGui::GetFontSize() * 8.0f);
 
 	char label[32] = {};
@@ -506,9 +507,9 @@ void ColorCustomizePanel::DrawPick(int part)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Pick any colour for this part. Its other shades change to match.\n\n"
+		ImGui::SetTooltip(Tr("Pick any colour for this part. Its other shades change to match.\n\n"
 			"The mod shows it here, and in matches once you export it. Players without the mod "
-			"see the stock colour.");
+			"see the stock colour."));
 	}
 
 	if (!picked)
@@ -516,14 +517,14 @@ void ColorCustomizePanel::DrawPick(int part)
 
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("x"))
+	if (ImGui::SmallButton(TrLabel("x")))
 	{
 		Record();
 		ColorOverride::Clear(m_chara, m_slot, part);
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Back to the stock colour.");
+		ImGui::SetTooltip(Tr("Back to the stock colour."));
 }
 
 void ColorCustomizePanel::DrawActions()
@@ -532,32 +533,32 @@ void ColorCustomizePanel::DrawActions()
 
 	ImGui::BeginDisabled(!dirty);
 
-	if (ImGui::Button("Save"))
+	if (ImGui::Button(TrLabel("Save")))
 		Save();
 
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Saves this slot to the game. Nothing above changes the game until you "
-			"press it.");
+		ImGui::SetTooltip(Tr("Saves this slot to the game. Nothing above changes the game until you "
+			"press it."));
 	}
 
 	ImGui::SameLine();
 
 	ImGui::BeginDisabled(m_history.empty());
 
-	if (ImGui::Button("Undo"))
+	if (ImGui::Button(TrLabel("Undo")))
 		Undo();
 
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Undoes the changes made since you opened this slot.");
+		ImGui::SetTooltip(Tr("Undoes the changes made since you opened this slot."));
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Reset slot"))
+	if (ImGui::Button(TrLabel("Reset slot")))
 	{
 		int defaults[ColorCustomize::kPartCount] = {};
 
@@ -573,8 +574,8 @@ void ColorCustomizePanel::DrawActions()
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Loads the game's default colours for this slot. Press Save to keep "
-			"them.");
+		ImGui::SetTooltip(Tr("Loads the game's default colours for this slot. Press Save to keep "
+			"them."));
 
 	ImGui::SameLine();
 
@@ -584,7 +585,7 @@ void ColorCustomizePanel::DrawActions()
 	if (locked == 0)
 	{
 		ImGui::BeginDisabled();
-		ImGui::Button("All colours unlocked");
+		ImGui::Button(TrLabel("All colours unlocked"));
 		ImGui::EndDisabled();
 	}
 	else
@@ -606,7 +607,7 @@ void ColorCustomizePanel::DrawActions()
 	if (!dirty)
 		return;
 
-	ImGui::TextColored(kWarning, "Not saved. Changing the character or slot loses these changes.");
+	ImGui::TextColored(kWarning, Tr("Not saved. Changing the character or slot loses these changes."));
 }
 
 
@@ -616,14 +617,14 @@ void ColorCustomizePanel::DrawExport()
 
 	ImGui::BeginDisabled(!picks);
 
-	const bool save = ImGui::Button("Export as palette");
+	const bool save = ImGui::Button(TrLabel("Export as palette"));
 
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Saves these colours as a .pal in this character's palette folder, so "
-			"the mod can use them in a match. Only needed if you picked custom colours.");
+		ImGui::SetTooltip(Tr("Saves these colours as a .pal in this character's palette folder, so "
+			"the mod can use them in a match. Only needed if you picked custom colours."));
 	}
 
 	if (!save)

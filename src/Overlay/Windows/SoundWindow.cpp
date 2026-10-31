@@ -8,6 +8,7 @@
 #include "Game/Audio/VoiceImport.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -119,19 +120,19 @@ void SoundWindow::Draw()
 	if (!ImGui::BeginTabBar("sound"))
 		return;
 
-	if (ImGui::BeginTabItem("Replace"))
+	if (ImGui::BeginTabItem(TrLabel("Replace")))
 	{
 		DrawReplace();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Packs"))
+	if (ImGui::BeginTabItem(TrLabel("Packs")))
 	{
 		DrawPacks();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Help"))
+	if (ImGui::BeginTabItem(TrLabel("Help")))
 	{
 		DrawHowTo();
 		ImGui::EndTabItem();
@@ -251,19 +252,19 @@ void SoundWindow::DrawRow(int index)
 
 	ImGui::TableNextColumn();
 
-	if (ImGui::Button("Play"))
+	if (ImGui::Button(TrLabel("Play")))
 		CharaSounds::Play(index, m_status, sizeof(m_status));
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("New...") && !m_replace.IsRunning())
+	if (ImGui::Button(TrLabel("New...")) && !m_replace.IsRunning())
 		AskForPack(index);
 
 	if (state == CharaSounds::State_Pack)
 	{
 		ImGui::SameLine();
 
-		if (ImGui::Button("Back to original"))
+		if (ImGui::Button(TrLabel("Back to original")))
 			CharaSounds::UseGame(index, m_status, sizeof(m_status));
 	}
 
@@ -351,7 +352,7 @@ void SoundWindow::DrawNewPack()
 
 	ImGui::Spacing();
 
-	if (ImGui::Button("Create", Ui::Scaled(110.0f, 0.0f)))
+	if (ImGui::Button(TrLabel("Create"), Ui::Scaled(110.0f, 0.0f)))
 	{
 		std::string id;
 
@@ -372,7 +373,7 @@ void SoundWindow::DrawNewPack()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Cancel", Ui::Scaled(110.0f, 0.0f)))
+	if (ImGui::Button(TrLabel("Cancel"), Ui::Scaled(110.0f, 0.0f)))
 	{
 		m_wanted = -1;
 		ImGui::CloseCurrentPopup();
@@ -394,7 +395,7 @@ void SoundWindow::DrawGetVoice()
 
 	ImGui::BeginDisabled(VoiceImport::IsBusy());
 
-	if (ImGui::Button("Get this voice from UNI or a mod...") && !m_uni.IsRunning())
+	if (ImGui::Button(TrLabel("Get this voice from UNI or a mod...")) && !m_uni.IsRunning())
 		m_uni.BeginFolder("Pick an UNDER NIGHT IN-BIRTH folder or a voice mod folder");
 
 	ImGui::EndDisabled();
@@ -511,13 +512,13 @@ void SoundWindow::DrawRemovePack()
 	if (!ImGui::BeginPopupModal(kRemovePackPopup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		return;
 
-	ImGui::TextUnformatted("Delete this pack and everything in it?");
+	ImGui::TextUnformatted(Tr("Delete this pack and everything in it?"));
 	UiText::Muted("%s", m_removing.c_str());
 	ImGui::Spacing();
 	UiText::Muted("UNI2's sounds are not touched. Characters using it go back to them.");
 	ImGui::Spacing();
 
-	if (ImGui::Button("Delete", Ui::Scaled(110.0f, 0.0f)))
+	if (ImGui::Button(TrLabel("Delete"), Ui::Scaled(110.0f, 0.0f)))
 	{
 		SoundPacks::Remove(m_removing, m_status, sizeof(m_status));
 		m_removing.clear();
@@ -527,7 +528,7 @@ void SoundWindow::DrawRemovePack()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Cancel", Ui::Scaled(110.0f, 0.0f)))
+	if (ImGui::Button(TrLabel("Cancel"), Ui::Scaled(110.0f, 0.0f)))
 	{
 		m_removing.clear();
 		ImGui::CloseCurrentPopup();
@@ -543,17 +544,17 @@ void SoundWindow::DrawPacks()
 
 	ImGui::Spacing();
 
-	if (ImGui::Button("Rescan"))
+	if (ImGui::Button(TrLabel("Rescan")))
 		SoundPacks::RequestScan();
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Import a zip...") && !m_import.IsRunning())
+	if (ImGui::Button(TrLabel("Import a zip...")) && !m_import.IsRunning())
 		m_import.BeginOpen("Choose a sound pack", kZipFilter);
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Open the folder"))
+	if (ImGui::Button(TrLabel("Open the folder")))
 	{
 		ShellOpen::Open(SoundPacks::Root());
 	}
@@ -589,14 +590,14 @@ void SoundWindow::DrawPacks()
 		ImGui::TextUnformatted(pack->source.empty() ? "-" : pack->source.c_str());
 
 		ImGui::TableNextColumn();
-		ImGui::Text("%d file(s), %d character(s)", pack->files,
+		ImGui::Text(Tr("%d file(s), %d character(s)"), pack->files,
 			static_cast<int>(pack->characters.size()));
 
 		if (pack->shared)
 		{
 			bool everyone = _stricmp(SoundPacks::SharedChoice(), pack->id.c_str()) == 0;
 
-			if (ImGui::Checkbox("everyone hears its shared sounds", &everyone))
+			if (ImGui::Checkbox(TrLabel("everyone hears its shared sounds"), &everyone))
 				SoundPacks::ChooseShared(everyone ? pack->id : std::string());
 		}
 
@@ -608,7 +609,7 @@ void SoundWindow::DrawPacks()
 
 		ImGui::TableNextColumn();
 
-		if (ImGui::Button("Export...") && !m_export.IsRunning())
+		if (ImGui::Button(TrLabel("Export...")) && !m_export.IsRunning())
 		{
 			m_exporting = pack->id;
 			m_export.BeginSave("Save the pack", kZipFilter, (pack->id + ".zip").c_str());
@@ -616,14 +617,14 @@ void SoundWindow::DrawPacks()
 
 		ImGui::SameLine();
 
-		if (ImGui::Button("Remove"))
+		if (ImGui::Button(TrLabel("Remove")))
 		{
 			m_removing = pack->id;
 			ImGui::OpenPopup(kRemovePackPopup);
 		}
 
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Deletes this pack from the mod. UNI2's sounds are untouched.");
+			ImGui::SetTooltip(Tr("Deletes this pack from the mod. UNI2's sounds are untouched."));
 
 		DrawRemovePack();
 
@@ -648,14 +649,14 @@ void SoundWindow::DrawHowTo()
 
 	ImGui::Spacing();
 
-	if (ImGui::Button("Open the readme"))
+	if (ImGui::Button(TrLabel("Open the readme")))
 	{
 		ShellOpen::Open(SoundsReadme::Path());
 	}
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Open the Sounds folder"))
+	if (ImGui::Button(TrLabel("Open the Sounds folder")))
 	{
 		ShellOpen::Open(SoundPacks::Root());
 	}

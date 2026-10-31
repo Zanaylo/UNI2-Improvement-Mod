@@ -114,6 +114,13 @@
   <ItemGroup>
     <ClCompile Include="src\Game\Customize\AnnouncerScroll.cpp" />
     <ClCompile Include="src\Overlay\Windows\MiscWindow.cpp" />
+    <ClCompile Include="src\Core\Text\Language.cpp" />
+    <ClCompile Include="src\Core\Text\LanguagePick.cpp" />
+    <ClCompile Include="src\Core\Text\LanguageCatalog.cpp" />
+    <ClCompile Include="src\Core\Text\LabelText.cpp" />
+    <ClCompile Include="src\Core\Text\Catalogs\MainPortuguese.cpp" />
+    <ClCompile Include="src\Core\Text\Catalogs\MainSpanish.cpp" />
+    <ClCompile Include="src\Overlay\Widgets\LanguageCombo.cpp" />
     <ClCompile Include="src\Overlay\Panels\MiscPanel.cpp" />
     <ClCompile Include="src\Game\Customize\PortraitLayer.cpp" />
     <ClCompile Include="src\Game\Customize\PortraitPicks.cpp" />
@@ -713,6 +720,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\Core\Text\Language.h" />
+    <ClInclude Include="src\Core\Text\LanguageId.h" />
+    <ClInclude Include="src\Core\Text\LanguagePick.h" />
+    <ClInclude Include="src\Core\Text\LanguageCatalog.h" />
+    <ClInclude Include="src\Core\Text\LabelText.h" />
+    <ClInclude Include="src\Core\Text\Catalogs\MainCatalogs.h" />
+    <ClInclude Include="src\Overlay\Widgets\LanguageCombo.h" />
     <ClInclude Include="src\Game\Customize\AnnouncerScroll.h" />
     <ClInclude Include="src\Overlay\Windows\MiscWindow.h" />
     <ClInclude Include="src\Overlay\Panels\MiscPanel.h" />

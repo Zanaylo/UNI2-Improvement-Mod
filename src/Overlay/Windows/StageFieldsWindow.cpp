@@ -8,6 +8,7 @@
 #include "Game/Stages/StageSettings.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -169,7 +170,7 @@ float Clamped(float value, float least, float most)
 void HoverTip(const char* text)
 {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		ImGui::SetTooltip("%s", text);
+		ImGui::SetTooltip("%s", Tr(text));
 }
 
 }
@@ -277,7 +278,7 @@ bool StageFieldsWindow::GroupHeader(const char* group, bool edited)
 	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - button);
 	ImGui::BeginDisabled(!edited);
 
-	const bool pressed = ImGui::SmallButton("Reset");
+	const bool pressed = ImGui::SmallButton(TrLabel("Reset"));
 
 	ImGui::EndDisabled();
 	HoverTip("Puts back the values this stage came with for this part.");
@@ -339,19 +340,19 @@ void StageFieldsWindow::DrawCamera()
 		kMostMove, "%.2f");
 	HoverTip("Moves the scenery. The fighters stay where they are.");
 
-	changed |= ImGui::DragFloat("FOV##fieldfov", &place.fov, kFovSpeed, StagePlacement::kLeastFov,
+	changed |= ImGui::DragFloat(TrLabel("FOV##fieldfov"), &place.fov, kFovSpeed, StagePlacement::kLeastFov,
 		StagePlacement::kMostFov, "%.1f");
 	HoverTip("Field of view in degrees.");
 
-	changed |= ImGui::DragFloat("Vanishing point##fieldhorizon", &place.horizon, kHorizonSpeed,
+	changed |= ImGui::DragFloat(TrLabel("Vanishing point##fieldhorizon"), &place.horizon, kHorizonSpeed,
 		-kMostHorizon, kMostHorizon, "%.4f");
 	HoverTip("Slides the view up or down without tilting it.");
 
-	changed |= ImGui::DragFloat("View rotation X##fieldtilt", &place.tilt, kAngleSpeed, -kMostTilt,
+	changed |= ImGui::DragFloat(TrLabel("View rotation X##fieldtilt"), &place.tilt, kAngleSpeed, -kMostTilt,
 		kMostTilt, "%.1f");
 	HoverTip("Tips the scenery toward or away from the camera, in degrees.");
 
-	changed |= ImGui::DragFloat("View rotation Y##fieldturn", &place.turn, kAngleSpeed, -kMostTurn,
+	changed |= ImGui::DragFloat(TrLabel("View rotation Y##fieldturn"), &place.turn, kAngleSpeed, -kMostTurn,
 		kMostTurn, "%.1f");
 	HoverTip("Turns the scenery left or right around the fight, in degrees.");
 
@@ -443,7 +444,7 @@ void StageFieldsWindow::DrawResetAll()
 
 	ImGui::BeginDisabled(m_edited.empty() && !placed);
 
-	if (ImGui::Button("Reset all"))
+	if (ImGui::Button(TrLabel("Reset all")))
 	{
 		StageImport::ResetFields(m_id, m_edited);
 
@@ -462,7 +463,7 @@ void StageFieldsWindow::DrawResetAll()
 void StageFieldsWindow::DrawExport()
 {
 	ImGui::Spacing();
-	ImGui::SeparatorText("Export");
+	ImGui::SeparatorText(Tr("Export"));
 
 	UiText::Muted("Puts this stage into BBTAG or BBCF in place of one of their stages. Neither game "
 		"can take a new stage, so one has to make room. The original is backed up first.");
@@ -497,7 +498,7 @@ void StageFieldsWindow::DrawGamePicker()
 
 	ImGui::SetNextItemWidth(Ui::Scaled(kFieldWidth));
 
-	if (ImGui::BeginCombo("Game", LabelOf(m_exportGame)))
+	if (ImGui::BeginCombo(TrLabel("Game"), LabelOf(m_exportGame)))
 	{
 		for (const ExportGame& one : kExportGames)
 		{
@@ -515,7 +516,7 @@ void StageFieldsWindow::DrawGamePicker()
 	ImGui::SameLine();
 	ImGui::BeginDisabled(m_folderDialog.IsRunning());
 
-	if (ImGui::Button("Choose folder"))
+	if (ImGui::Button(TrLabel("Choose folder")))
 		m_folderDialog.BeginFolder("Pick the game folder");
 
 	ImGui::EndDisabled();
@@ -540,7 +541,7 @@ void StageFieldsWindow::DrawTargetPicker()
 
 	ImGui::SetNextItemWidth(Ui::Scaled(kFieldWidth));
 
-	if (!ImGui::BeginCombo("Replace", current))
+	if (!ImGui::BeginCombo(TrLabel("Replace"), current))
 		return;
 
 	for (int i = 0; i < static_cast<int>(m_targets.size()); ++i)
@@ -563,7 +564,7 @@ void StageFieldsWindow::DrawInstallButtons()
 
 	ImGui::BeginDisabled(busy || chosen == nullptr);
 
-	if (ImGui::Button("Install in game") && chosen != nullptr)
+	if (ImGui::Button(TrLabel("Install in game")) && chosen != nullptr)
 	{
 		m_installStatus.clear();
 		StageExport::Install(m_id, m_exportGame, *chosen);
@@ -575,7 +576,7 @@ void StageFieldsWindow::DrawInstallButtons()
 	ImGui::SameLine();
 	ImGui::BeginDisabled(busy || chosen == nullptr || !m_targetBackups[m_target]);
 
-	if (ImGui::Button("Restore original") && chosen != nullptr)
+	if (ImGui::Button(TrLabel("Restore original")) && chosen != nullptr)
 	{
 		StageInstall::Restore(m_exportGame, *chosen, m_installStatus);
 		RefreshTargets();
@@ -587,7 +588,7 @@ void StageFieldsWindow::DrawInstallButtons()
 	ImGui::SameLine();
 	ImGui::BeginDisabled(busy);
 
-	if (ImGui::Button("Export files only"))
+	if (ImGui::Button(TrLabel("Export files only")))
 		StageExport::Start(m_id);
 
 	ImGui::EndDisabled();
@@ -600,7 +601,7 @@ void StageFieldsWindow::DrawInstallButtons()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Open folder"))
+	if (ImGui::Button(TrLabel("Open folder")))
 		ShellOpen::Open(folder);
 }
 

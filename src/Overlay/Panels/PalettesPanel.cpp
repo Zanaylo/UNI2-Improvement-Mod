@@ -26,6 +26,7 @@
 #include "Palette/PaletteMemory.h"
 #include "Palette/PaletteReport.h"
 #include "Palette/PaletteTexture.h"
+#include "Core/Text/Language.h"
 
 #include <Windows.h>
 #include <imgui.h>
@@ -47,13 +48,13 @@ void StepPalette(int player, int applied, int count, int steps);
 
 void DrawCustomSection()
 {
-	if (!ImGui::CollapsingHeader("Custom"))
+	if (!ImGui::CollapsingHeader(TrLabel("Custom")))
 		return;
 
 	if (!ImGui::BeginTabBar("##custom"))
 		return;
 
-	const bool live = ImGui::BeginTabItem("Palette");
+	const bool live = ImGui::BeginTabItem(TrLabel("Palette"));
 
 	if (live)
 	{
@@ -70,7 +71,7 @@ void DrawCustomSection()
 		ImGui::EndTabItem();
 	}
 
-	const bool colorCustomize = ImGui::BeginTabItem("Native Palette");
+	const bool colorCustomize = ImGui::BeginTabItem(TrLabel("Native Palette"));
 
 	if (colorCustomize)
 	{
@@ -78,13 +79,13 @@ void DrawCustomSection()
 		ImGui::EndTabItem();
 	}
 
-	if (g_modVals.showLegacyPalettes && ImGui::BeginTabItem("Palette (legacy)"))
+	if (g_modVals.showLegacyPalettes && ImGui::BeginTabItem(TrLabel("Palette (legacy)")))
 	{
 		DrawPalettesTab();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Player Card"))
+	if (ImGui::BeginTabItem(TrLabel("Player Card")))
 	{
 		g_playerCard.Draw();
 		ImGui::EndTabItem();
@@ -95,7 +96,7 @@ void DrawCustomSection()
 
 void DrawPaletteChoosers()
 {
-	ImGui::SeparatorText("Character Palette");
+	ImGui::SeparatorText(Tr("Character Palette"));
 
 	for (int player = 0; player < PaletteControl::kPlayers; ++player)
 		DrawPaletteChooser(player);
@@ -107,13 +108,13 @@ void DrawPaletteChooser(int player)
 
 	if (chara < 0)
 	{
-		ImGui::TextDisabled("P%d: no character yet", player + 1);
+		ImGui::TextDisabled(Tr("P%d: no character yet"), player + 1);
 		return;
 	}
 
 	ImGui::PushID(player);
 
-	ImGui::Text("P%d", player + 1);
+	ImGui::Text(Tr("P%d"), player + 1);
 	ImGui::SameLine();
 	ImGui::TextDisabled("%s", PaletteManager::GetCharaName(chara));
 
@@ -156,7 +157,7 @@ void DrawPaletteChooser(int player)
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Rescan"))
+	if (ImGui::Button(TrLabel("Rescan")))
 		PaletteLibrary::Rescan(chara);
 
 	ImGui::EndDisabled();
@@ -166,51 +167,51 @@ void DrawPaletteChooser(int player)
 
 void DrawPaletteOptions()
 {
-	if (ImGui::Checkbox("Group by part", &g_modVals.paletteGroupByPart))
+	if (ImGui::Checkbox(TrLabel("Group by part"), &g_modVals.paletteGroupByPart))
 		Settings::SaveInt("Palette", "GroupByPart", g_modVals.paletteGroupByPart ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Groups the colours by part (hair, skin, boots), the same way UNI2's "
-			"colour screen does.");
+		ImGui::SetTooltip(Tr("Groups the colours by part (hair, skin, boots), the same way UNI2's "
+			"colour screen does."));
 	}
 
-	if (ImGui::Checkbox("Flash the entry on the character", &g_modVals.paletteFlashEntry))
+	if (ImGui::Checkbox(TrLabel("Flash the entry on the character"), &g_modVals.paletteFlashEntry))
 		Settings::SaveInt("Palette", "FlashEntry", g_modVals.paletteFlashEntry ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("When you pick a colour, everything else darkens and that part blinks on "
-			"the character, so you can see what you are about to change.");
+		ImGui::SetTooltip(Tr("When you pick a colour, everything else darkens and that part blinks on "
+			"the character, so you can see what you are about to change."));
 	}
 
-	if (ImGui::Checkbox("Filter junk colours", &g_modVals.paletteFilterJunk))
+	if (ImGui::Checkbox(TrLabel("Filter junk colours"), &g_modVals.paletteFilterJunk))
 		Settings::SaveInt("Palette", "FilterJunk", g_modVals.paletteFilterJunk ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Hides the colours this character's sprites never use, and the green that "
-			"fills unused slots. Colours UNI2's colour screen offers are always kept.");
+		ImGui::SetTooltip(Tr("Hides the colours this character's sprites never use, and the green that "
+			"fills unused slots. Colours UNI2's colour screen offers are always kept."));
 	}
 
-	if (ImGui::Checkbox("Extended colour slots", &g_modVals.paletteExtendedSlots))
+	if (ImGui::Checkbox(TrLabel("Extended colour slots"), &g_modVals.paletteExtendedSlots))
 		Settings::SaveInt("Palette", "ExtendedSlots", g_modVals.paletteExtendedSlots ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("At character select, pressing right past the game's last colour reaches "
+		ImGui::SetTooltip(Tr("At character select, pressing right past the game's last colour reaches "
 			"one extra slot per saved palette that no colour holds (EX 1, EX 2...).\n"
-			"Players without the mod see the game's first colour.\nPicker: %s",
+			"Players without the mod see the game's first colour.\nPicker: %s"),
 			ColourPicker::StatusText());
 	}
 
-	if (ImGui::Checkbox("See the other player's colours", &g_modVals.showOnlinePalettes))
+	if (ImGui::Checkbox(TrLabel("See the other player's colours"), &g_modVals.showOnlinePalettes))
 		Settings::SaveInt("Palette", "ShowOnlinePalettes", g_modVals.showOnlinePalettes ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Turn this on to see the palette your opponent picked. When off, their "
-			"character keeps the game's colours. Yours is sent either way.");
+		ImGui::SetTooltip(Tr("Turn this on to see the palette your opponent picked. When off, their "
+			"character keeps the game's colours. Yours is sent either way."));
 	}
 
 	ImGui::TextDisabled("%s", PaletteControl::IsSpectating()
@@ -224,18 +225,18 @@ void DrawPalettesTab()
 {
 	if (!GameState::AllowsPalettes())
 	{
-		ImGui::TextDisabled("In a match only.");
+		ImGui::TextDisabled(Tr("In a match only."));
 		return;
 	}
 
-	if (ImGui::Button("Load Palettes"))
+	if (ImGui::Button(TrLabel("Load Palettes")))
 		PaletteManager::Refresh();
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Reloads UNI2-IM\\Palettes. Each character has a folder named after them. "
+		ImGui::SetTooltip(Tr("Reloads UNI2-IM\\Palettes. Each character has a folder named after them. "
 			"Put a .pal file there (the game's format, which Hantei-kun also saves) and it shows up "
-			"here. The folders are created the first time you press this.");
+			"here. The folders are created the first time you press this."));
 	}
 
 	ImGui::SameLine();
@@ -249,7 +250,7 @@ void DrawPalettesTab()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Log palettes"))
+	if (ImGui::Button(TrLabel("Log palettes")))
 	{
 		std::string path;
 
@@ -261,11 +262,11 @@ void DrawPalettesTab()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Writes the palette state to a text file in UNI2-IM\\Logs: which side the "
+		ImGui::SetTooltip(Tr("Writes the palette state to a text file in UNI2-IM\\Logs: which side the "
 			"mod thinks you are, what each side is wearing, the textures it tracks and what was "
 			"drawn.\n\n"
 			"If a shared palette looks wrong, take one on each PC at the same moment. Works in "
-			"this build, no logging build needed.");
+			"this build, no logging build needed."));
 	}
 
 	ImGui::TextDisabled("(%s)", PaletteShare::GetStatusText());
@@ -278,12 +279,12 @@ void DrawPalettesTab()
 		const int count = PaletteManager::GetCount(player);
 		const int applied = PaletteManager::GetApplied(player);
 
-		ImGui::Text("P%d  %s", player + 1, PaletteManager::GetCharaName(chara));
+		ImGui::Text(Tr("P%d  %s"), player + 1, PaletteManager::GetCharaName(chara));
 
 		if (PaletteTexture::FindForPlayer(player) < 0)
 		{
 			ImGui::SameLine();
-			ImGui::TextDisabled("(no palette texture for this side yet)");
+			ImGui::TextDisabled(Tr("(no palette texture for this side yet)"));
 			ImGui::PopID();
 			continue;
 		}
@@ -291,7 +292,7 @@ void DrawPalettesTab()
 		if (count == 0)
 		{
 			ImGui::SameLine();
-			ImGui::TextDisabled("(no palettes in its folder)");
+			ImGui::TextDisabled(Tr("(no palettes in its folder)"));
 			ImGui::PopID();
 			continue;
 		}
@@ -307,11 +308,11 @@ void DrawPalettesTab()
 		if (ImGui::BeginCombo("##palette", chosen == 0 ? "Default"
 			: PaletteManager::GetName(player, applied)))
 		{
-			if (ImGui::Selectable("Default", chosen == 0))
+			if (ImGui::Selectable(TrLabel("Default"), chosen == 0))
 				PaletteManager::Restore(player);
 
 			if (ImGui::IsItemHovered() && worn[0] != '\0')
-				ImGui::SetTooltip("%s: the colours this character was picked with", worn);
+				ImGui::SetTooltip(Tr("%s: the colours this character was picked with"), worn);
 
 			ComboNav::KeepSelectedInView(chosen == 0);
 
@@ -326,7 +327,7 @@ void DrawPalettesTab()
 
 				const char* creator = PaletteManager::GetCreator(player, i);
 				if (ImGui::IsItemHovered() && creator[0] != '\0')
-					ImGui::SetTooltip("by %s", creator);
+					ImGui::SetTooltip(Tr("by %s"), creator);
 
 				ComboNav::KeepSelectedInView(selected);
 

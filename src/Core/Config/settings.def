@@ -26,6 +26,7 @@
 SETTING_STRING(dinputDllWrapper,    "Mod",      "DinputDllWrapper",     "")
 
 SETTING_BOOL(checkForUpdates, "Mod", "CheckForUpdates", 1)
+SETTING_STRING(language,             "Mod",      "Language",             "auto")
 SETTING_INT(settingsRevision,       "Mod",      "SettingsRevision",     2)
 
 SETTING_STRING(toggleOverlayKey,    "Keybinds", "ToggleOverlay",        "F1")

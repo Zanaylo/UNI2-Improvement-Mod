@@ -18,6 +18,7 @@
 #include "Overlay/Widgets/ComboNav.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -200,7 +201,7 @@ void MusicPanel::Draw()
 	if (!ImGui::BeginTabBar("##music"))
 		return;
 
-	if (ImGui::BeginTabItem("Soundpacks"))
+	if (ImGui::BeginTabItem(TrLabel("Soundpacks")))
 	{
 		DrawSoundpacks();
 		ImGui::Separator();
@@ -210,19 +211,19 @@ void MusicPanel::Draw()
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Add music"))
+	if (ImGui::BeginTabItem(TrLabel("Add music")))
 	{
 		DrawMyMusic();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Browse"))
+	if (ImGui::BeginTabItem(TrLabel("Browse")))
 	{
 		DrawBrowse();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Rules"))
+	if (ImGui::BeginTabItem(TrLabel("Rules")))
 	{
 		DrawRules();
 		ImGui::Separator();
@@ -253,13 +254,13 @@ void MusicPanel::DrawStatus()
 	if (BgmControl::IsPinned())
 		UiText::Good("Your pick: %s", playingText);
 	else
-		ImGui::Text("Playing: %s", playingText);
+		ImGui::Text(Tr("Playing: %s"), playingText);
 
 	ImGui::SameLine();
 
 	ImGui::BeginDisabled(playing < 0);
 
-	if (ImGui::SmallButton("Stop"))
+	if (ImGui::SmallButton(TrLabel("Stop")))
 		BgmControl::Stop();
 
 	ImGui::EndDisabled();
@@ -268,7 +269,7 @@ void MusicPanel::DrawStatus()
 	{
 		ImGui::SameLine();
 
-		if (ImGui::SmallButton("Give it back"))
+		if (ImGui::SmallButton(TrLabel("Give it back")))
 			BgmControl::Release();
 
 		UiText::Muted("UNI2's music is on hold until you stop or give it back.");
@@ -279,7 +280,7 @@ void MusicPanel::DrawStatus()
 
 	UiText::Muted("Why this one: %s", BgmControl::ReasonText());
 
-	ImGui::Text("Loaded characters: %s vs %s", CharacterName(BgmControl::GetCharacter(0)),
+	ImGui::Text(Tr("Loaded characters: %s vs %s"), CharacterName(BgmControl::GetCharacter(0)),
 		CharacterName(BgmControl::GetCharacter(1)));
 }
 
@@ -294,9 +295,9 @@ void MusicPanel::DrawSoundpacks()
 		UiText::Help("A soundpack is a folder with a theme.ini. The ini names the pack and has a "
 			"[Map] section with one 'scene = track' line per track. A track is a vanilla slot "
 			"number or the file name of a track in the library folder.");
-		ImGui::TextWrapped("Looked in: %s", BgmThemes::ThemesPath());
+		ImGui::TextWrapped(Tr("Looked in: %s"), BgmThemes::ThemesPath());
 
-		if (ImGui::Button("Rescan folder"))
+		if (ImGui::Button(TrLabel("Rescan folder")))
 			MusicRefresh::Rescan();
 
 		return;
@@ -380,14 +381,14 @@ int MusicPanel::DrawSoundpackTable(int count, int active)
 
 void MusicPanel::DrawSoundpackControls(int active)
 {
-	if (ImGui::Button("Rescan folder"))
+	if (ImGui::Button(TrLabel("Rescan folder")))
 		MusicRefresh::Rescan();
 
 	ImGui::SameLine();
 
 	ImGui::BeginDisabled(active < 0);
 
-	if (ImGui::Button("Back to vanilla"))
+	if (ImGui::Button(TrLabel("Back to vanilla")))
 		BgmThemes::Clear();
 
 	ImGui::EndDisabled();
@@ -405,7 +406,7 @@ void MusicPanel::DrawPackBuilder()
 {
 	if (!SoundpackBuilder::IsOpen())
 	{
-		if (ImGui::Button("New soundpack"))
+		if (ImGui::Button(TrLabel("New soundpack")))
 			SoundpackBuilder::Begin();
 
 		ImGui::SameLine();
@@ -442,14 +443,14 @@ void MusicPanel::DrawPackDraft()
 
 	ImGui::BeginDisabled(count == 0);
 
-	if (ImGui::Button("Save soundpack"))
+	if (ImGui::Button(TrLabel("Save soundpack")))
 		SoundpackBuilder::Save(m_packStatus, sizeof(m_packStatus));
 
 	ImGui::EndDisabled();
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Cancel"))
+	if (ImGui::Button(TrLabel("Cancel")))
 	{
 		SoundpackBuilder::Cancel();
 		m_packStatus[0] = 0;
@@ -494,7 +495,7 @@ void MusicPanel::DrawPackDraftTable(int count)
 
 		ImGui::TableNextColumn();
 
-		if (ImGui::SmallButton("Drop"))
+		if (ImGui::SmallButton(TrLabel("Drop")))
 			removeIndex = i;
 
 		ImGui::PopID();
@@ -520,12 +521,12 @@ void MusicPanel::DrawMyMusic()
 	Ui::SetItemWidth(kComboWidth);
 	ImGui::InputTextWithHint("Folder", "Folder name", m_musicPack, IM_ARRAYSIZE(m_musicPack));
 
-	if (ImGui::Button("Import music"))
+	if (ImGui::Button(TrLabel("Import music")))
 		m_musicDialog.BeginOpen("Pick the music to add", UserMusic::SupportedFilter());
 
 	ImGui::SameLine();
 
-	bool rescan = ImGui::Button("Rescan music folder");
+	bool rescan = ImGui::Button(TrLabel("Rescan music folder"));
 
 	std::string picked;
 
@@ -650,7 +651,7 @@ void MusicPanel::DrawGetOst()
 
 	ImGui::BeginDisabled(OstImport::IsBusy());
 
-	if (ImGui::Button("Get OST from French-Bread games"))
+	if (ImGui::Button(TrLabel("Get OST from French-Bread games")))
 		m_ostDialog.BeginFolder("Pick the game folder to take the soundtrack from");
 
 	ImGui::EndDisabled();
@@ -687,7 +688,7 @@ void MusicPanel::DrawTransfer()
 
 	ImGui::BeginDisabled(SoundpackTransfer::IsBusy());
 
-	if (ImGui::Button("Export soundpacks"))
+	if (ImGui::Button(TrLabel("Export soundpacks")))
 	{
 		m_exportDialog.BeginSave("Export soundpacks", "Zip archive\0*.zip\0\0",
 			"UNI2-IM-Soundpacks.zip");
@@ -695,7 +696,7 @@ void MusicPanel::DrawTransfer()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Import soundpacks"))
+	if (ImGui::Button(TrLabel("Import soundpacks")))
 		m_importDialog.BeginOpen("Import soundpacks", "Zip archive\0*.zip\0\0");
 
 	ImGui::EndDisabled();
@@ -727,10 +728,10 @@ void MusicPanel::DrawSourceFilter()
 
 	if (ImGui::BeginCombo("##source", current))
 	{
-		if (ImGui::Selectable("Everything", m_source == 0))
+		if (ImGui::Selectable(TrLabel("Everything"), m_source == 0))
 			m_source = 0;
 
-		if (ImGui::Selectable("UNI2", m_source == kVanillaSource))
+		if (ImGui::Selectable(TrLabel("UNI2"), m_source == kVanillaSource))
 			m_source = kVanillaSource;
 
 		for (int i = 0; i < BgmLibrary::TagCount(); ++i)
@@ -774,7 +775,7 @@ void MusicPanel::DrawShuffle()
 {
 	bool shuffle = BgmCatalog::ShuffleEnabled();
 
-	if (ImGui::Checkbox("Randomizer", &shuffle))
+	if (ImGui::Checkbox(TrLabel("Randomizer"), &shuffle))
 	{
 		BgmCatalog::SetShuffleEnabled(shuffle);
 
@@ -790,19 +791,19 @@ void MusicPanel::DrawShuffle()
 
 	ImGui::BeginDisabled(!shuffle);
 
-	if (ImGui::SmallButton("Draw again"))
+	if (ImGui::SmallButton(TrLabel("Draw again")))
 		BgmControl::Reshuffle();
 
 	ImGui::EndDisabled();
 
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("Enable all"))
+	if (ImGui::SmallButton(TrLabel("Enable all")))
 		BgmCatalog::SetAllAllowed(true);
 
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("Disable all"))
+	if (ImGui::SmallButton(TrLabel("Disable all")))
 		BgmCatalog::SetAllAllowed(false);
 
 	ImGui::SameLine();
@@ -839,7 +840,7 @@ void MusicPanel::DrawBrowse()
 	{
 		ImGui::SameLine();
 
-		if (ImGui::SmallButton("Reset volumes"))
+		if (ImGui::SmallButton(TrLabel("Reset volumes")))
 		{
 			BgmVolume::ResetAll();
 			BgmControl::RefreshVolume();
@@ -946,7 +947,7 @@ void MusicPanel::DrawTrackRow(int id, const char* name, bool building, bool play
 
 	ImGui::TableNextColumn();
 
-	if (ImGui::SmallButton("Play"))
+	if (ImGui::SmallButton(TrLabel("Play")))
 		BgmControl::Play(id);
 }
 
@@ -1002,7 +1003,7 @@ void MusicPanel::DrawRules()
 {
 	bool enabled = BgmRules::IsEnabled();
 
-	if (ImGui::Checkbox("Apply my music rules", &enabled))
+	if (ImGui::Checkbox(TrLabel("Apply my music rules"), &enabled))
 	{
 		BgmRules::SetEnabled(enabled);
 		BgmRules::Save();
@@ -1036,14 +1037,14 @@ void MusicPanel::DrawRuleTransfer()
 {
 	ImGui::BeginDisabled(BgmRules::Count() == 0);
 
-	if (ImGui::SmallButton("Export rules"))
+	if (ImGui::SmallButton(TrLabel("Export rules")))
 		m_rulesExportDialog.BeginSave("Export rules", "Rule list\0*.txt\0\0", "bgm-rules.txt");
 
 	ImGui::EndDisabled();
 
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("Import rules"))
+	if (ImGui::SmallButton(TrLabel("Import rules")))
 		m_rulesImportDialog.BeginOpen("Import rules", "Rule list\0*.txt\0\0");
 
 	ImGui::SameLine();
@@ -1086,11 +1087,11 @@ bool MusicPanel::DrawRuleRow(int index, const BgmRules::Rule& stored)
 
 	ImGui::TableNextColumn();
 
-	if (ImGui::SmallButton("Preview"))
+	if (ImGui::SmallButton(TrLabel("Preview")))
 		BgmControl::Play(rule.bgm);
 
 	ImGui::SameLine();
-	return ImGui::SmallButton("Remove");
+	return ImGui::SmallButton(TrLabel("Remove"));
 }
 
 int MusicPanel::DrawRuleTable(int count)
@@ -1131,18 +1132,18 @@ int MusicPanel::DrawRuleTable(int count)
 
 void MusicPanel::DrawRuleEditor()
 {
-	ImGui::TextUnformatted("Add a rule");
+	ImGui::TextUnformatted(Tr("Add a rule"));
 
 	const char* const kinds[] = { "Matchup", "Character", "Any scene or track" };
 
 	Ui::SetItemWidth(kComboWidth);
-	ImGui::Combo("When", &m_draft.kind, kinds, IM_ARRAYSIZE(kinds));
+	ImGui::Combo(TrLabel("When"), &m_draft.kind, kinds, IM_ARRAYSIZE(kinds));
 
 	if (m_draft.kind == BgmRules::Kind_Matchup)
 	{
 		DrawCharacterCombo("Left", m_draft.a);
 		DrawCharacterCombo("Right", m_draft.b);
-		ImGui::Checkbox("Either side of the screen", &m_draft.bothWays);
+		ImGui::Checkbox(TrLabel("Either side of the screen"), &m_draft.bothWays);
 	}
 	else if (m_draft.kind == BgmRules::Kind_Character)
 	{
@@ -1165,7 +1166,7 @@ void MusicPanel::DrawRuleEditor()
 
 	ImGui::BeginDisabled(!valid);
 
-	if (ImGui::Button("Add rule"))
+	if (ImGui::Button(TrLabel("Add rule")))
 	{
 		m_draft.enabled = true;
 		m_draft.fromTheme = false;

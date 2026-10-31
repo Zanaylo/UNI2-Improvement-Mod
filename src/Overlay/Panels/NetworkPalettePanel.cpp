@@ -9,6 +9,7 @@
 #include "Palette/PaletteCycle.h"
 #include "Palette/PaletteLibrary.h"
 #include "Palette/RoomPalette.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -81,40 +82,40 @@ void DrawSteps(int chara)
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Rescan"))
+	if (ImGui::Button(TrLabel("Rescan")))
 		PaletteLibrary::Rescan(chara);
 }
 
 void DrawNotes(const NetworkPick::Pick& pick)
 {
-	ImGui::TextWrapped("Worn by your room avatar and in your next online match. The next and previous "
-		"palette hotkeys change it too.");
+	ImGui::TextWrapped(Tr("Worn by your room avatar and in your next online match. The next and previous "
+		"palette hotkeys change it too."));
 
 	if (!pick.hasSignature)
 	{
-		ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f), "Confirm this colour once at Network > Character "
-			"Select so the room can recognise your avatar.");
+		ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.3f, 1.0f), Tr("Confirm this colour once at Network > Character "
+			"Select so the room can recognise your avatar."));
 	}
 
 	if (!g_modVals.sharePalettes)
-		ImGui::TextDisabled("Sharing palettes is off, so other players see the game's colour.");
+		ImGui::TextDisabled(Tr("Sharing palettes is off, so other players see the game's colour."));
 }
 
 }
 
 void NetworkPalettePanel::Draw()
 {
-	ImGui::SeparatorText("Network palette");
+	ImGui::SeparatorText(Tr("Network palette"));
 
 	NetworkPick::Pick pick = {};
 
 	if (!NetworkPick::Recall(pick))
 	{
-		ImGui::TextWrapped("Pick a character at Network > Character Select first.");
+		ImGui::TextWrapped(Tr("Pick a character at Network > Character Select first."));
 		return;
 	}
 
-	ImGui::Text("%s, colour %03d", CharaTables::Name(pick.chara), pick.colour + 1);
+	ImGui::Text(Tr("%s, colour %03d"), CharaTables::Name(pick.chara), pick.colour + 1);
 
 	DrawChoices(pick);
 	DrawSteps(pick.chara);

@@ -14,6 +14,7 @@
 #include "Palette/PaletteManager.h"
 #include "Palette/PaletteMemory.h"
 #include "Palette/PaletteTexture.h"
+#include "Core/Text/Language.h"
 
 #include <Windows.h>
 
@@ -141,7 +142,7 @@ void PaletteEditorWindow::DrawSwatches(const unsigned char* entries, int count)
 		}
 
 		if (!m_editEffect && ImGui::IsItemHovered())
-			ImGui::SetTooltip("entry %d%s", i, changed ? " (changed)" : "");
+			ImGui::SetTooltip(Tr("entry %d%s"), i, changed ? " (changed)" : "");
 
 		if (((n + 1) % 14) != 0 && n + 1 < count)
 			ImGui::SameLine();
@@ -400,7 +401,7 @@ void PaletteEditorWindow::Draw()
 
 	if (!GameState::AllowsPalettes())
 	{
-		ImGui::TextDisabled("in a match only");
+		ImGui::TextDisabled(Tr("in a match only"));
 		return;
 	}
 
@@ -429,22 +430,22 @@ void PaletteEditorWindow::DrawSide(int player)
 {
 	if (PaletteTexture::FindForPlayer(player) < 0)
 	{
-		ImGui::TextDisabled("no palette for this side yet. The characters need to appear on screen "
-			"first.");
+		ImGui::TextDisabled(Tr("no palette for this side yet. The characters need to appear on screen "
+			"first."));
 		return;
 	}
 
 	if (!ImGui::BeginTabBar("views"))
 		return;
 
-	if (ImGui::BeginTabItem("Character colors"))
+	if (ImGui::BeginTabItem(TrLabel("Character colors")))
 	{
 		Select(player, false);
 		DrawCharacterColors();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Effect colors"))
+	if (ImGui::BeginTabItem(TrLabel("Effect colors")))
 	{
 		Select(player, true);
 		DrawEffectColors();
@@ -492,14 +493,14 @@ void PaletteEditorWindow::DrawCharacterColors()
 
 	if (!m_pulled)
 	{
-		ImGui::TextDisabled("nothing to edit yet");
+		ImGui::TextDisabled(Tr("nothing to edit yet"));
 		return;
 	}
 
 	DrawUndo("Undo the character colors",
 		"Resets this side's colors to the palette it is wearing. Effect colors are not touched.");
 
-	ImGui::Checkbox("Flash the entry on the character", &m_flash);
+	ImGui::Checkbox(TrLabel("Flash the entry on the character"), &m_flash);
 
 	const int chara = PaletteManager::GetCharaNumber(m_player);
 	const int parts = GameTables::GetPartCount(chara);
@@ -507,19 +508,19 @@ void PaletteEditorWindow::DrawCharacterColors()
 	if (parts > 0)
 	{
 		ImGui::SameLine();
-		ImGui::Checkbox("By part", &m_byPart);
+		ImGui::Checkbox(TrLabel("By part"), &m_byPart);
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Groups the colors the same way the game's color screen does, like "
-				"hair, skin and boots.");
+			ImGui::SetTooltip(Tr("Groups the colors the same way the game's color screen does, like "
+				"hair, skin and boots."));
 		}
 	}
 
 	if (parts == 0 || !m_byPart)
 	{
 		ImGui::SameLine();
-		ImGui::Checkbox("Filter colors", &m_hideUnused);
+		ImGui::Checkbox(TrLabel("Filter colors"), &m_hideUnused);
 	}
 
 	ImGui::Separator();
@@ -561,7 +562,7 @@ void PaletteEditorWindow::DrawCharacterColors()
 
 		ImGui::PushID(parts);
 
-		if (restCount > 0 && ImGui::CollapsingHeader("Everything else"))
+		if (restCount > 0 && ImGui::CollapsingHeader(TrLabel("Everything else")))
 			DrawSwatches(rest, restCount);
 
 		ImGui::PopID();
@@ -581,14 +582,14 @@ void PaletteEditorWindow::DrawCharacterColors()
 		}
 
 		if (count == 0)
-			ImGui::TextDisabled("every entry looks unused. Untick Filter colors to see them.");
+			ImGui::TextDisabled(Tr("every entry looks unused. Untick Filter colors to see them."));
 		else
 			DrawSwatches(flat, count);
 	}
 
 	ImGui::EndChild();
 
-	ImGui::Text("entry %d%s", m_selected,
+	ImGui::Text(Tr("entry %d%s"), m_selected,
 		memcmp(m_colors + m_selected * 4, m_original + m_selected * 4, 3) != 0 ? "  (changed)" : "");
 
 	float picked[3] = {
@@ -616,21 +617,21 @@ void PaletteEditorWindow::DrawSaving()
 	ImGui::Separator();
 
 	Ui::SetItemWidth(220.0f);
-	ImGui::InputText("File name", m_fileName, sizeof(m_fileName));
+	ImGui::InputText(TrLabel("File name"), m_fileName, sizeof(m_fileName));
 
 	Ui::SetItemWidth(220.0f);
-	ImGui::InputText("Creator", m_creator, sizeof(m_creator));
+	ImGui::InputText(TrLabel("Creator"), m_creator, sizeof(m_creator));
 
 	Ui::SetItemWidth(220.0f);
-	ImGui::InputText("Description", m_description, sizeof(m_description));
+	ImGui::InputText(TrLabel("Description"), m_description, sizeof(m_description));
 
-	if (ImGui::Button("Save"))
+	if (ImGui::Button(TrLabel("Save")))
 		Save();
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Saves a .pal in this character's folder with the colors from both tabs. "
-			"It uses the game's palette format, so Hantei-kun can open it too.");
+		ImGui::SetTooltip(Tr("Saves a .pal in this character's folder with the colors from both tabs. "
+			"It uses the game's palette format, so Hantei-kun can open it too."));
 	}
 
 	if (m_status[0] != '\0')

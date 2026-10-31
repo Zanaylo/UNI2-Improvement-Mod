@@ -12,6 +12,7 @@
 #include "Overlay/Widgets/ComboNav.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -53,13 +54,13 @@ void MiscPanel::Draw()
 	if (!ImGui::BeginTabBar("##misctabs"))
 		return;
 
-	if (ImGui::BeginTabItem("Portraits"))
+	if (ImGui::BeginTabItem(TrLabel("Portraits")))
 	{
 		DrawPortraits();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("MBTL announcers"))
+	if (ImGui::BeginTabItem(TrLabel("MBTL announcers")))
 	{
 		DrawAnnouncers();
 		ImGui::EndTabItem();
@@ -91,7 +92,7 @@ void MiscPanel::DrawPortraitDownload()
 
 	ImGui::BeginDisabled(PortraitDownload::IsBusy() || !linked);
 
-	if (ImGui::Button("Download the portrait pack"))
+	if (ImGui::Button(TrLabel("Download the portrait pack")))
 		PortraitDownload::BeginAll();
 
 	ImGui::EndDisabled();
@@ -148,7 +149,7 @@ void MiscPanel::DrawPortraitStyle()
 {
 	const int options = PortraitStyles::Count() + 1;
 
-	if (ImGui::BeginCombo("Everyone", m_portraitStyle < 0 ? kEveryoneHint : StyleLabel(m_portraitStyle)))
+	if (ImGui::BeginCombo(TrLabel("Everyone"), m_portraitStyle < 0 ? kEveryoneHint : StyleLabel(m_portraitStyle)))
 	{
 		for (int option = 0; option < options; ++option)
 		{
@@ -233,7 +234,7 @@ void MiscPanel::DrawAnnouncers()
 	ImGui::Spacing();
 	ImGui::BeginDisabled(AnnouncerImport::IsBusy());
 
-	if (ImGui::Button("Get the MBTL announcers") && !m_announcers.IsRunning())
+	if (ImGui::Button(TrLabel("Get the MBTL announcers")) && !m_announcers.IsRunning())
 	{
 		const std::string found = AnnouncerImport::FindGame();
 

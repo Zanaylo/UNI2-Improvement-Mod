@@ -17,6 +17,7 @@
 #include "Overlay/Hud/NotificationBar.h"
 #include "Overlay/Widgets/ComboNav.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <Windows.h>
 #include <imgui.h>
@@ -79,7 +80,7 @@ void DrawReplayAccounts()
 
 	Ui::SetItemWidth(300.0f);
 
-	if (ImGui::BeginCombo("Save folder", ReplayFiles::AccountLabel(selected).c_str()))
+	if (ImGui::BeginCombo(TrLabel("Save folder"), ReplayFiles::AccountLabel(selected).c_str()))
 	{
 		for (int i = 0; i < accounts; ++i)
 		{
@@ -105,20 +106,20 @@ void DrawReplayAccounts()
 
 void DrawReplaySection()
 {
-	if (!ImGui::CollapsingHeader("Replays"))
+	if (!ImGui::CollapsingHeader(TrLabel("Replays")))
 		return;
 
 	const bool readable = ReplayFiles::IsAvailable();
 	const bool live = ReplayFiles::IsLive();
 
-	ImGui::TextWrapped("Each new replay is saved to UNI2-IM\\Replays as a separate file, so you can "
+	ImGui::TextWrapped(Tr("Each new replay is saved to UNI2-IM\\Replays as a separate file, so you can "
 		"share a single match. Files are named after the two players, or P1 and P2 when Steam "
-		"cannot find a name. Press Export all to also save the replays already in REP-DATA.");
+		"cannot find a name. Press Export all to also save the replays already in REP-DATA."));
 
 	ImGui::Spacing();
 
 	bool automatic = ReplayFiles::GetAutoExport();
-	if (ImGui::Checkbox("Save each new replay to a file", &automatic))
+	if (ImGui::Checkbox(TrLabel("Save each new replay to a file"), &automatic))
 	{
 		ReplayFiles::SetAutoExport(automatic);
 		Settings::SaveInt("Replays", "AutoExport", automatic ? 1 : 0);
@@ -129,25 +130,25 @@ void DrawReplaySection()
 
 	ImGui::BeginDisabled(!readable);
 
-	if (ImGui::Button("Export all"))
+	if (ImGui::Button(TrLabel("Export all")))
 	{
 		std::string error;
 		ReplayFiles::ExportAll(error);
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Anything already in the folder is left alone.");
+		ImGui::SetTooltip(Tr("Anything already in the folder is left alone."));
 
 	ImGui::EndDisabled();
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Open folder"))
+	if (ImGui::Button(TrLabel("Open folder")))
 		ShellOpen::Open(ReplayFiles::GetFolder());
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Refresh"))
+	if (ImGui::Button(TrLabel("Refresh")))
 		ReplayFiles::Refresh();
 
 	ImGui::Spacing();
@@ -160,7 +161,7 @@ void DrawReplaySection()
 
 	if (files.empty())
 	{
-		ImGui::TextDisabled("No replay files yet.");
+		ImGui::TextDisabled(Tr("No replay files yet."));
 	}
 	else
 	{
@@ -211,7 +212,7 @@ void DrawReplaySection()
 
 		ImGui::BeginDisabled(!canPlay);
 
-		if (ImGui::Button("Start Replay"))
+		if (ImGui::Button(TrLabel("Start Replay")))
 		{
 			std::string error;
 			if (!ReplayFiles::RequestPlayback(ReplayFiles::GetFolder() + files[picked], error))
@@ -232,7 +233,7 @@ void DrawReplaySection()
 
 		ImGui::BeginDisabled(!readable);
 
-		if (ImGui::Button("Load into the game's replay list"))
+		if (ImGui::Button(TrLabel("Load into the game's replay list")))
 		{
 			std::string error;
 			if (!ReplayFiles::Import(ReplayFiles::GetFolder() + files[picked], error))
@@ -243,29 +244,29 @@ void DrawReplaySection()
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Writes it over the oldest unprotected slot. It shows up in the Replay "
-				"screen under its date. Protect any replay you want to keep first.");
+			ImGui::SetTooltip(Tr("Writes it over the oldest unprotected slot. It shows up in the Replay "
+				"screen under its date. Protect any replay you want to keep first."));
 		}
 	}
 
 	if (!readable)
 	{
 		ImGui::Spacing();
-		ImGui::TextDisabled("Could not read any replays, from the game or from REP-DATA.");
+		ImGui::TextDisabled(Tr("Could not read any replays, from the game or from REP-DATA."));
 		return;
 	}
 
 	ImGui::Spacing();
-	ImGui::TextDisabled("%d of %d slots used, replay format version %d%s",
+	ImGui::TextDisabled(Tr("%d of %d slots used, replay format version %d%s"),
 		ReplayFiles::CountUsed(), ReplayFiles::kSlotCount, ReplayFiles::CurrentVersion(),
 		live ? "" : " (read from REP-DATA, loaded files show up after a restart)");
 
-	ImGui::TextDisabled("Steam names: %s", SteamNames::GetStatus());
+	ImGui::TextDisabled(Tr("Steam names: %s"), SteamNames::GetStatus());
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Names are saved in UNI2-IM\\SteamNames.txt and reused every session. If "
-			"Steam cannot find a name, it asks again at most once every 20 seconds.");
+		ImGui::SetTooltip(Tr("Names are saved in UNI2-IM\\SteamNames.txt and reused every session. If "
+			"Steam cannot find a name, it asks again at most once every 20 seconds."));
 	}
 
 	if (ReplayFiles::GetStatus()[0] != 0)

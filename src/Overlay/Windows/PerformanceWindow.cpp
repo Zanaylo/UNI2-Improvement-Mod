@@ -29,6 +29,7 @@
 #include "Overlay/Panels/GraphicsPanel.h"
 #include "Training/Meter/InputLagMeter.h"
 #include "Training/StageColor.h"
+#include "Core/Text/Language.h"
 
 #include <cstdarg>
 #include <cstdio>
@@ -161,7 +162,7 @@ void SaveVideo(const char* key, int value)
 
 bool MillisecondsSlider(const char* label, const char* key, float* value, float min, float max)
 {
-	ImGui::SliderFloat(label, value, min, max, "%.1f ms");
+	ImGui::SliderFloat(TrLabel(label), value, min, max, "%.1f ms");
 
 	if (!ImGui::IsItemDeactivatedAfterEdit())
 		return false;
@@ -182,23 +183,23 @@ void DeltaText(double now, double before)
 	const ImVec4 colour = delta == 0.0 ? ImVec4(0.7f, 0.7f, 0.7f, 1.0f)
 		: delta < 0.0 ? kGoodColour : kWarnColour;
 
-	ImGui::TextColored(colour, "%+.2f ms (%+.0f%%)", delta, delta / before * 100.0);
+	ImGui::TextColored(colour, Tr("%+.2f ms (%+.0f%%)"), delta, delta / before * 100.0);
 }
 
 void StatRow(const char* name, double now, double before, bool hasBaseline)
 {
 	ImGui::TableNextRow();
 	ImGui::TableNextColumn();
-	ImGui::TextUnformatted(name);
+	ImGui::TextUnformatted(Tr(name));
 
 	ImGui::TableNextColumn();
 	if (hasBaseline)
-		ImGui::Text("%.2f ms", before);
+		ImGui::Text(Tr("%.2f ms"), before);
 	else
 		ImGui::TextDisabled("-");
 
 	ImGui::TableNextColumn();
-	ImGui::Text("%.2f ms", now);
+	ImGui::Text(Tr("%.2f ms"), now);
 
 	ImGui::TableNextColumn();
 	if (hasBaseline)
@@ -253,7 +254,7 @@ void DrawIntervalTable(const char* title, const Profiler::Stats& now, const Prof
 	{
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Within 0.5 ms of 16.67 ms");
+		ImGui::TextUnformatted(Tr("Within 0.5 ms of 16.67 ms"));
 		ImGui::TableNextColumn();
 
 		if (hasBaseline)
@@ -278,16 +279,16 @@ void DrawIntervalTable(const char* title, const Profiler::Stats& now, const Prof
 
 	ImGui::TableNextRow();
 	ImGui::TableNextColumn();
-	ImGui::TextUnformatted("Frames over 20 ms");
+	ImGui::TextUnformatted(Tr("Frames over 20 ms"));
 	ImGui::TableNextColumn();
 
 	if (hasBaseline)
-		ImGui::Text("%d of %d", before.slowFrames, before.samples);
+		ImGui::Text(Tr("%d of %d"), before.slowFrames, before.samples);
 	else
 		ImGui::TextDisabled("-");
 
 	ImGui::TableNextColumn();
-	ImGui::Text("%d of %d", now.slowFrames, now.samples);
+	ImGui::Text(Tr("%d of %d"), now.slowFrames, now.samples);
 	ImGui::TableNextColumn();
 	ImGui::TextDisabled("-");
 
@@ -348,7 +349,7 @@ void DrawFineHistogram()
 
 void DrawSections(bool hasBaseline)
 {
-	ImGui::SeparatorText("Where the frame time goes");
+	ImGui::SeparatorText(Tr("Where the frame time goes"));
 
 	Muted("The mod's work in milliseconds, averaged over recent frames. oPresent and "
 		"oFrameUpdate are the game itself, shown for comparison.");
@@ -520,43 +521,43 @@ void PerformanceWindow::Draw()
 
 	const bool graphics = Features::Shows(FeatureCatalog::Id_Graphics);
 
-	if (ImGui::BeginTabItem("Performance"))
+	if (ImGui::BeginTabItem(TrLabel("Performance")))
 	{
 		DrawPerformanceTab();
 		ImGui::EndTabItem();
 	}
 
-	if (graphics && ImGui::BeginTabItem("POTATO MODE"))
+	if (graphics && ImGui::BeginTabItem(TrLabel("POTATO MODE")))
 	{
 		DrawPotatoTab();
 		ImGui::EndTabItem();
 	}
 
-	if (graphics && !PotatoMode::IsActive() && ImGui::BeginTabItem("Improvements"))
+	if (graphics && !PotatoMode::IsActive() && ImGui::BeginTabItem(TrLabel("Improvements")))
 	{
 		DrawImprovementsTab();
 		ImGui::EndTabItem();
 	}
 
-	if (graphics && ImGui::BeginTabItem("Shaders"))
+	if (graphics && ImGui::BeginTabItem(TrLabel("Shaders")))
 	{
 		GraphicsPanel::DrawShadersTab();
 		ImGui::EndTabItem();
 	}
 
-	if (graphics && ImGui::BeginTabItem("dgVoodoo"))
+	if (graphics && ImGui::BeginTabItem(TrLabel("dgVoodoo")))
 	{
 		GraphicsPanel::DrawDgVoodoo();
 		ImGui::EndTabItem();
 	}
 
-	if (graphics && ImGui::BeginTabItem("DXVK"))
+	if (graphics && ImGui::BeginTabItem(TrLabel("DXVK")))
 	{
 		GraphicsPanel::DrawDxvk();
 		ImGui::EndTabItem();
 	}
 
-	if (ImGui::BeginTabItem("Metrics"))
+	if (ImGui::BeginTabItem(TrLabel("Metrics")))
 	{
 		DrawMetricsTab();
 		ImGui::EndTabItem();
@@ -577,14 +578,14 @@ void PerformanceWindow::DrawWhatIsHappening()
 		return;
 	}
 
-	ImGui::Text("%ux%u %s, %s, %u back buffer(s)", present.BackBufferWidth, present.BackBufferHeight,
+	ImGui::Text(Tr("%ux%u %s, %s, %u back buffer(s)"), present.BackBufferWidth, present.BackBufferHeight,
 		present.Windowed ? "windowed" : "exclusive fullscreen",
 		VsyncLabel(present), present.BackBufferCount);
 
 	if (!present.Windowed)
 	{
 		ImGui::SameLine();
-		ImGui::Text("at %u Hz", present.FullScreen_RefreshRateInHz);
+		ImGui::Text(Tr("at %u Hz"), present.FullScreen_RefreshRateInHz);
 	}
 
 	static DWORD stateTick = 0;
@@ -594,7 +595,7 @@ void PerformanceWindow::DrawWhatIsHappening()
 		fps = Profiler::GetPresentedFps();
 
 	if (fps > 0.0)
-		ImGui::Text("Presenting %.1f frames a second", fps);
+		ImGui::Text(Tr("Presenting %.1f frames a second"), fps);
 
 	if (present.Windowed)
 	{
@@ -650,14 +651,14 @@ bool PerformanceWindow::DrawDisplayGroup()
 	const bool windowed = present.Windowed != FALSE;
 	const bool vsync = VsyncIsOn(present);
 
-	if (!ImGui::CollapsingHeader("Display"))
+	if (!ImGui::CollapsingHeader(TrLabel("Display")))
 		return false;
 
 	bool changed = false;
 
 	ImGui::BeginDisabled(windowed);
 
-	if (ImGui::Checkbox("Let the mod pick the display settings", &g_modVals.displayTuning))
+	if (ImGui::Checkbox(TrLabel("Let the mod pick the display settings"), &g_modVals.displayTuning))
 	{
 		SaveVideo("DisplayTuning", g_modVals.displayTuning ? 1 : 0);
 		changed = true;
@@ -682,7 +683,7 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	ImGui::BeginDisabled(!g_modVals.displaySync);
 
-	if (ImGui::Checkbox("No tearing in exclusive fullscreen", &g_modVals.displaySyncVsync))
+	if (ImGui::Checkbox(TrLabel("No tearing in exclusive fullscreen"), &g_modVals.displaySyncVsync))
 	{
 		SaveVideo("DisplaySyncVsync", g_modVals.displaySyncVsync ? 1 : 0);
 		changed = true;
@@ -696,9 +697,9 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	Ui::SetItemWidth(320.0f);
 
-	if (ImGui::BeginCombo("Fullscreen refresh", preview))
+	if (ImGui::BeginCombo(TrLabel("Fullscreen refresh"), preview))
 	{
-		if (ImGui::Selectable("Automatic (keep the desktop's mode)",
+		if (ImGui::Selectable(TrLabel("Automatic (keep the desktop's mode)"),
 			g_modVals.fullscreenRefreshHz == 0))
 		{
 			g_modVals.fullscreenRefreshHz = 0;
@@ -730,7 +731,7 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	ImGui::BeginDisabled(!vsync);
 
-	if (ImGui::Checkbox("Use a second back buffer", &g_modVals.extraBackBuffer))
+	if (ImGui::Checkbox(TrLabel("Use a second back buffer"), &g_modVals.extraBackBuffer))
 	{
 		SaveVideo("ExtraBackBuffer", g_modVals.extraBackBuffer ? 1 : 0);
 		changed = true;
@@ -764,12 +765,12 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 bool PerformanceWindow::DrawAdvanced()
 {
-	if (!ImGui::CollapsingHeader("Advanced"))
+	if (!ImGui::CollapsingHeader(TrLabel("Advanced")))
 		return false;
 
 	bool changed = false;
 
-	if (ImGui::Checkbox("Wake the input thread for every message",
+	if (ImGui::Checkbox(TrLabel("Wake the input thread for every message"),
 		&g_modVals.pumpWaitAllInput))
 	{
 		SaveVideo("PumpWaitAllInput", g_modVals.pumpWaitAllInput ? 1 : 0);
@@ -802,11 +803,11 @@ bool PerformanceWindow::DrawAdvanced()
 
 bool PerformanceWindow::DrawPresets()
 {
-	ImGui::SeparatorText("Presets");
+	ImGui::SeparatorText(Tr("Presets"));
 
 	bool changed = false;
 
-	if (ImGui::Button("Recommended"))
+	if (ImGui::Button(TrLabel("Recommended")))
 	{
 		ApplyPreset(true, true, true);
 		changed = true;
@@ -814,13 +815,13 @@ bool PerformanceWindow::DrawPresets()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Every option above on, the desktop's display mode and one back buffer. "
-			"None of it keeps a CPU core busy.");
+		ImGui::SetTooltip(Tr("Every option above on, the desktop's display mode and one back buffer. "
+			"None of it keeps a CPU core busy."));
 	}
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Game defaults"))
+	if (ImGui::Button(TrLabel("Game defaults")))
 	{
 		ApplyPreset(false, false, false);
 		g_modVals.displayTuning = false;
@@ -829,7 +830,7 @@ bool PerformanceWindow::DrawPresets()
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Everything off. Use this to measure against.");
+		ImGui::SetTooltip(Tr("Everything off. Use this to measure against."));
 
 	return changed;
 }
@@ -837,11 +838,11 @@ bool PerformanceWindow::DrawPresets()
 void PerformanceWindow::DrawPerformanceTab()
 {
 	ImGui::Spacing();
-	ImGui::SeparatorText("Right now");
+	ImGui::SeparatorText(Tr("Right now"));
 	DrawWhatIsHappening();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Options");
+	ImGui::SeparatorText(Tr("Options"));
 
 	bool changed = DrawOptions();
 
@@ -869,7 +870,7 @@ void PerformanceWindow::DrawMetricsTab()
 {
 	bool measuring = Profiler::IsEnabled();
 
-	if (ImGui::Checkbox("Measure", &measuring))
+	if (ImGui::Checkbox(TrLabel("Measure"), &measuring))
 	{
 		g_modVals.profilerEnabled = measuring;
 		Profiler::SetEnabled(measuring);
@@ -909,12 +910,12 @@ void PerformanceWindow::DrawMetricsTab()
 		tickBaseline = Profiler::GetBaselineTickStats();
 	}
 
-	ImGui::Text("Presenting %.1f frames a second", metricsFps);
+	ImGui::Text(Tr("Presenting %.1f frames a second"), metricsFps);
 
 	{
 		const D3DPRESENT_PARAMETERS& setup = DeviceHooks::GetPresentParameters();
 
-		ImGui::Text("Swap effect %s, %s, %s, %u back buffer%s, %s",
+		ImGui::Text(Tr("Swap effect %s, %s, %s, %u back buffer%s, %s"),
 			SwapEffectName(setup.SwapEffect), setup.Windowed ? "windowed" : "exclusive fullscreen",
 			VsyncLabel(setup), setup.BackBufferCount,
 			setup.BackBufferCount == 1 ? "" : "s",
@@ -923,7 +924,7 @@ void PerformanceWindow::DrawMetricsTab()
 		const char* const dxvkPresentMode = Dxvk::IsRunning() ? Dxvk::LastPresentMode() : nullptr;
 
 		if (dxvkPresentMode != nullptr)
-			ImGui::Text("DXVK's real present mode: %s", dxvkPresentMode);
+			ImGui::Text(Tr("DXVK's real present mode: %s"), dxvkPresentMode);
 	}
 
 	ImGui::Spacing();
@@ -935,11 +936,11 @@ void PerformanceWindow::DrawMetricsTab()
 		"dropped frames.");
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Frame interval, close up");
+	ImGui::SeparatorText(Tr("Frame interval, close up"));
 	DrawFineHistogram();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Frame interval, whole range");
+	ImGui::SeparatorText(Tr("Frame interval, whole range"));
 	DrawHistogram();
 
 	ImGui::Spacing();
@@ -957,7 +958,7 @@ void PerformanceWindow::DrawMetricsTab()
 		"while frame stepping pauses the game.");
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Input lag");
+	ImGui::SeparatorText(Tr("Input lag"));
 
 	const float lastLag = InputLagMeter::GetLastMs();
 	const float averageLag = InputLagMeter::GetAverageMs();
@@ -965,12 +966,12 @@ void PerformanceWindow::DrawMetricsTab()
 
 	if (averageLag > 0.0f)
 	{
-		ImGui::Text("%.1f ms average over %d trusted samples (%.1f frames), last %.1f ms",
+		ImGui::Text(Tr("%.1f ms average over %d trusted samples (%.1f frames), last %.1f ms"),
 			averageLag, trusted, averageLag / (1000.0f / 60.0f), lastLag);
 	}
 	else
 	{
-		ImGui::TextDisabled("Open Player Control and press something to measure.");
+		ImGui::TextDisabled(Tr("Open Player Control and press something to measure."));
 	}
 
 	Muted("Measured from a button press to the character reading it, which is the part of the delay "
@@ -981,27 +982,27 @@ void PerformanceWindow::DrawMetricsTab()
 	const double refresh = present.FullScreen_RefreshRateInHz != 0
 		? 1000.0 / present.FullScreen_RefreshRateInHz : 1000.0 / 60.0;
 
-	ImGui::Text("Display side, estimated: %.1f ms", blockStats.medianMs +
+	ImGui::Text(Tr("Display side, estimated: %.1f ms"), blockStats.medianMs +
 		present.BackBufferCount * refresh);
 
 	ImGui::Spacing();
 	DrawSections(hasBaseline);
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Before and after");
+	ImGui::SeparatorText(Tr("Before and after"));
 
 	Muted("Turn Measure on. Go to training mode, same character, same corner. Play thirty seconds. "
 		"Press Capture baseline. Change one thing on the Performance tab. Play the same thirty "
 		"seconds. Read the Change column, then Copy summary and paste it into the bug report.");
 
 	if (hasBaseline)
-		ImGui::Text("Baseline: %s", Profiler::GetBaselineLabel());
+		ImGui::Text(Tr("Baseline: %s"), Profiler::GetBaselineLabel());
 	else
-		ImGui::TextDisabled("No baseline captured yet.");
+		ImGui::TextDisabled(Tr("No baseline captured yet."));
 
-	ImGui::Text("Live sample: %d frames", Profiler::GetSampleCount());
+	ImGui::Text(Tr("Live sample: %d frames"), Profiler::GetSampleCount());
 
-	if (ImGui::Button("Capture baseline"))
+	if (ImGui::Button(TrLabel("Capture baseline")))
 	{
 		char label[192] = {};
 		BuildBaselineLabel(label, sizeof(label));
@@ -1011,17 +1012,17 @@ void PerformanceWindow::DrawMetricsTab()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Clear baseline"))
+	if (ImGui::Button(TrLabel("Clear baseline")))
 		Profiler::ClearBaseline();
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Reset live"))
+	if (ImGui::Button(TrLabel("Reset live")))
 		Profiler::Reset();
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Copy summary"))
+	if (ImGui::Button(TrLabel("Copy summary")))
 	{
 		char summary[2048] = {};
 		Profiler::BuildSummary(summary, sizeof(summary));
@@ -1030,7 +1031,7 @@ void PerformanceWindow::DrawMetricsTab()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Export CSV"))
+	if (ImGui::Button(TrLabel("Export CSV")))
 	{
 		const std::string path = GetModLogPath("performance.csv");
 		Profiler::ExportCsv(path.c_str());
@@ -1038,7 +1039,7 @@ void PerformanceWindow::DrawMetricsTab()
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Write to log"))
+	if (ImGui::Button(TrLabel("Write to log")))
 		Profiler::DumpToLog();
 }
 
@@ -1082,7 +1083,7 @@ void PerformanceWindow::DrawPotatoTab()
 
 	ImGui::Spacing();
 
-	if (ImGui::Checkbox("Draw the empty stage", &g_modVals.simpleStage))
+	if (ImGui::Checkbox(TrLabel("Draw the empty stage"), &g_modVals.simpleStage))
 	{
 		StageColor::SetColor(0x000000u);
 		StageColor::SetEnabled(g_modVals.simpleStage);
@@ -1098,7 +1099,7 @@ void PerformanceWindow::DrawPotatoTab()
 	ImGui::Unindent();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Active now");
+	ImGui::SeparatorText(Tr("Active now"));
 
 	DrawPotatoState();
 
@@ -1120,7 +1121,7 @@ void PerformanceWindow::DrawImprovementsTab()
 	Muted("The opposite of POTATO MODE: the game is drawn bigger than 720p.");
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Output resolution");
+	ImGui::SeparatorText(Tr("Output resolution"));
 
 	const int level = Improvements::GetLevel();
 
@@ -1148,7 +1149,7 @@ void PerformanceWindow::DrawImprovementsTab()
 	GraphicsPanel::DrawPictureQuality();
 
 	ImGui::Spacing();
-	ImGui::SeparatorText("Active now");
+	ImGui::SeparatorText(Tr("Active now"));
 
 	DrawPotatoState();
 	GraphicsPanel::DrawPostStatus();
@@ -1162,7 +1163,7 @@ void PerformanceWindow::DrawImprovementsTab()
 bool PerformanceWindow::DrawStageResolution()
 {
 	ImGui::Spacing();
-	ImGui::SeparatorText("Stage resolution");
+	ImGui::SeparatorText(Tr("Stage resolution"));
 
 	const int level = StageResolution::GetLevel();
 	bool changed = false;
@@ -1188,7 +1189,7 @@ bool PerformanceWindow::DrawStageResolution()
 
 	bool wholeScene = SceneLayer::GetLevel() == SceneLayer::Level_RenderResolution;
 
-	if (ImGui::Checkbox("Characters and text filters", &wholeScene))
+	if (ImGui::Checkbox(TrLabel("Characters and text filters"), &wholeScene))
 	{
 		SceneLayer::Apply(wholeScene ? SceneLayer::Level_RenderResolution : SceneLayer::Level_Native);
 		changed = true;
@@ -1209,14 +1210,14 @@ void PerformanceWindow::DrawScaledTargetsState()
 	if (ScaledTargets::NeedsRestart())
 		Warn("Restart the game to apply.");
 	else
-		ImGui::Text("Now: %s", ScaledTargets::GetStatusText());
+		ImGui::Text(Tr("Now: %s"), ScaledTargets::GetStatusText());
 }
 
 void PerformanceWindow::DrawDiagnostics()
 {
-	ImGui::SeparatorText("Diagnostics");
+	ImGui::SeparatorText(Tr("Diagnostics"));
 
-	if (ImGui::Button("Log camera diagnostic now"))
+	if (ImGui::Button(TrLabel("Log camera diagnostic now")))
 		Camera::LogDiagnostic();
 
 	Help("Writes a snapshot of the next frame to the log: render sizes, the picture the game is "
@@ -1271,14 +1272,14 @@ void PerformanceWindow::DrawPotatoState()
 
 		if (exact)
 		{
-			ImGui::TextColored(kGoodColour, "Drawing at %ux%u and %s it to the window",
+			ImGui::TextColored(kGoodColour, Tr("Drawing at %ux%u and %s it to the window"),
 				present.BackBufferWidth, present.BackBufferHeight,
 				DeviceHooks::GetOverlayScale() > 1.0f ? "fitting" : "stretching");
 		}
 		else if (rounded)
 		{
-			ImGui::TextColored(kGoodColour, "Drawing at %ux%u, the smallest mode your monitor "
-				"has that fits the %dx%d you asked for", present.BackBufferWidth,
+			ImGui::TextColored(kGoodColour, Tr("Drawing at %ux%u, the smallest mode your monitor "
+				"has that fits the %dx%d you asked for"), present.BackBufferWidth,
 				present.BackBufferHeight, g_modVals.presentWidth, g_modVals.presentHeight);
 		}
 		else
@@ -1291,7 +1292,7 @@ void PerformanceWindow::DrawPotatoState()
 	}
 	else
 	{
-		ImGui::Text("Drawing at %ux%u, set by the game's Display option",
+		ImGui::Text(Tr("Drawing at %ux%u, set by the game's Display option"),
 			present.BackBufferWidth, present.BackBufferHeight);
 	}
 
@@ -1301,13 +1302,13 @@ void PerformanceWindow::DrawPotatoState()
 			"picture in a window.");
 	}
 
-	ImGui::Text("Back buffer multisampling %s",
+	ImGui::Text(Tr("Back buffer multisampling %s"),
 		present.MultiSampleType == D3DMULTISAMPLE_NONE ? "off" : "on");
 
 	bool filterOn = false;
 	if (EngineQuality::ReadCharacterFilter(filterOn))
 	{
-		ImGui::Text("Character Visual Improvements is %s", filterOn ? "on" : "off");
+		ImGui::Text(Tr("Character Visual Improvements is %s"), filterOn ? "on" : "off");
 
 		if (filterOn && !EngineQuality::WantsCharacterFilter())
 			Warn("It should be off. %s", EngineQuality::GetStatusText());

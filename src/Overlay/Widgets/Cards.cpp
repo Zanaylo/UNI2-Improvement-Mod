@@ -1,5 +1,6 @@
 #include "Overlay/Widgets/Cards.h"
 
+#include "Core/Text/Language.h"
 #include "Overlay/Widgets/BoldText.h"
 #include "Overlay/Widgets/ModStyle.h"
 #include "Overlay/Widgets/UiScale.h"
@@ -53,7 +54,7 @@ void Cards::Problem(const char* text)
 	PushCard(ModStyle::kProblem, ModStyle::kProblemEdge);
 
 	if (BeginCardChild(text))
-		ImGui::TextWrapped("%s", text);
+		ImGui::TextWrapped("%s", Tr(text));
 
 	ImGui::EndChild();
 	PopCard();
@@ -62,15 +63,16 @@ void Cards::Problem(const char* text)
 
 bool Cards::TitleWithToggle(const char* title, bool open)
 {
-	const char* const label = open ? "Close" : "Open";
+	const char* const label = Tr(open ? "Close" : "Open");
+	const char* const shownTitle = Tr(title);
 	const ImGuiStyle& style = ImGui::GetStyle();
 	const float buttonWidth = ImGui::CalcTextSize(label).x + style.FramePadding.x * 2.0f;
 	const ImVec2 at = ImGui::GetCursorScreenPos();
 	const float right = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x;
 
 	BoldText::Draw(ImGui::GetWindowDrawList(), ImVec2(at.x, at.y + style.FramePadding.y), Colour(ModStyle::kText),
-		title);
-	ImGui::Dummy(ImVec2(BoldText::Size(title).x, ImGui::GetFrameHeight()));
+		shownTitle);
+	ImGui::Dummy(ImVec2(BoldText::Size(shownTitle).x, ImGui::GetFrameHeight()));
 
 	ImGui::SameLine(right - buttonWidth);
 	ImGui::PushID(title);

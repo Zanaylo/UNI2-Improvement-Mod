@@ -1,0 +1,992 @@
+Automatic	Automático	Automático
+Language	Idioma	Idioma
+The language of the mod's windows. Automatic follows Windows.	Idioma das janelas do mod. Automático usa o do Windows.	Idioma de las ventanas del mod. Automático usa el de Windows.
+  %s (no mod)	  %s (sem mod)	  %s (sin mod)
+%+.2f ms (%+.0f%%)		
+%.0f ms, %d frames	%.0f ms, %d frames	%.0f ms, %d frames
+%.0f%% here, %.0f%% there	%.0f%% aqui, %.0f%% lá	%.0f%% aquí, %.0f%% allá
+%.1f FPS		
+%.1f ms average over %d trusted samples (%.1f frames), last %.1f ms	Média de %.1f ms em %d amostras confiáveis (%.1f frames), última: %.1f ms	Promedio de %.1f ms en %d muestras confiables (%.1f frames), última: %.1f ms
+%.2f ms		
+%d B, %d packet(s)	%d B, %d pacote(s)	%d B, %d paquete(s)
+%d entries, %d seen drawn, %d changed	%d entradas, %d desenhadas, %d alteradas	%d entradas, %d dibujadas, %d cambiadas
+%d file(s) are not in a readable audio format	%d arquivo(s) em formato de áudio ilegível	%d archivo(s) con formato de audio ilegible
+%d file(s) from %d mod(s) are in use.	%d arquivo(s) de %d mod(s) em uso.	%d archivo(s) de %d mod(s) en uso.
+%d file(s) here are overridden by %s, which is higher in the list.	%d arquivo(s) daqui são substituídos por %s, que está acima na lista.	%d archivo(s) de aquí quedan reemplazados por %s, que está más arriba en la lista.
+%d file(s), %d character(s)	%d arquivo(s), %d personagem(ns)	%d archivo(s), %d personaje(s)
+%d file(s), %d of %d characters.	%d arquivo(s), %d de %d personagens.	%d archivo(s), %d de %d personajes.
+%d frames	%d frames	%d frames
+%d in the draw	%d no sorteio	%d en el sorteo
+%d kbps		
+%d line(s) shown this session	%d fala(s) exibidas nesta sessão	%d línea(s) mostradas en esta sesión
+%d line(s), %d written	%d linha(s), %d escritas	%d línea(s), %d escritas
+%d ms		
+%d ms (best %d)	%d ms (melhor %d)	%d ms (mejor %d)
+%d music track(s) are left out: every music slot is in use.	%d música(s) ficaram de fora: todos os slots de música estão ocupados.	%d tema(s) quedaron fuera: todos los slots de música están ocupados.
+%d music track(s) join the game's music list.	%d música(s) entram na lista do jogo.	%d tema(s) se suman a la lista del juego.
+%d name(s) covered this run.	%d nome(s) ocultos nesta sessão.	%d nombre(s) ocultos en esta sesión.
+%d of %d	%d de %d	%d de %d
+%d of %d in this room have the mod	%d de %d nesta sala têm o mod	%d de %d en esta sala tienen el mod
+%d of %d mod(s) on, %d file(s).	%d de %d mod(s) ativos, %d arquivo(s).	%d de %d mod(s) activos, %d archivo(s).
+%d of %d slots used, replay format version %d%s	%d de %d slots usados, formato de replay versão %d%s	%d de %d slots usados, formato de replay versión %d%s
+%d of %d tracks	%d de %d músicas	%d de %d temas
+%d of them use another slot, because a mod higher in the list uses theirs.	%d delas usam outro slot, porque um mod acima na lista já usa o delas.	%d de ellos usan otro slot, porque un mod más arriba en la lista ya usa el suyo.
+%d opponent(s) recorded	%d oponente(s) registrados	%d rival(es) registrados
+%d players online	%d jogadores online	%d jugadores en línea
+%d room name(s) covered this run.	%d nome(s) de sala ocultos nesta sessão.	%d nombre(s) de sala ocultos en esta sesión.
+%d surface(s) of this stage scroll.	%d camada(s) deste cenário rolam.	%d capa(s) de este escenario se desplazan.
+%d track(s) turned down	%d música(s) com volume reduzido	%d tema(s) con el volumen bajado
+%d tracks	%d músicas	%d temas
+%d upload(s) still running.	%d envio(s) ainda em andamento.	%d subida(s) todavía en curso.
+%d/%d stages.	%d/%d cenários.	%d/%d escenarios.
+%ld IR number(s) hidden this run.	%ld número(s) de IR ocultos nesta sessão.	%ld número(s) de IR ocultos en esta sesión.
+%s %s loaded (press %s to open the main window)	%s %s carregado (aperte %s para abrir a janela principal)	%s %s cargado (presiona %s para abrir la ventana principal)
+%s (%d more queued)	%s (mais %d na fila)	%s (%d más en cola)
+%s and %s are both %s.	%s e %s estão ambos em %s.	%s y %s están ambos en %s.
+%s is picked but not loaded.	%s está selecionado, mas não carregado.	%s está seleccionado, pero no cargado.
+%s is ready. Leave the match and come back to hear it.	%s está pronto. Saia da partida e volte para ouvir.	%s está listo. Sal de la partida y vuelve para escucharlo.
+%s still uses UNI2's sounds. Your changes are saved in a pack, so give it a name. The name is also its folder, which is what you send to a friend.	%s ainda usa os sons do UNI2. Suas mudanças ficam num pack, então dê um nome a ele. Esse nome é também a pasta que você manda para um amigo.	%s todavía usa los sonidos de UNI2. Tus cambios se guardan en un pack, así que ponle un nombre. Ese nombre es también la carpeta que le pasas a un amigo.
+%s vs %s		
+%s was not found. Choose its folder.	%s não foi encontrado. Escolha a pasta dele.	No se encontró %s. Elige su carpeta.
+%s, colour %03d	%s, cor %03d	%s, color %03d
+%s: off, the game adds it in %d.%02d	%s: desligado, o jogo inclui isso na versão %d.%02d	%s: desactivado, el juego lo incluye en la versión %d.%02d
+%s: on	%s: ligado	%s: activado
+%s: the colours this character was picked with	%s: as cores escolhidas para este personagem	%s: los colores elegidos para este personaje
+%s\n\n100%% is this stage's default. Drag, use - and +, or double click to type any value.	%s\n\n100%% é o padrão deste cenário. Arraste, use - e + ou dê um clique duplo para digitar um valor.	%s\n\n100%% es el valor predeterminado de este escenario. Arrastra, usa - y + o haz doble clic para escribir un valor.
+%u Hz cannot show 60 frames a second evenly, so with vsync on frames stutter. Pick a refresh rate below that divides by 60, or turn off the game's vsync.	%u Hz não exibe 60 frames por segundo de forma regular, então com o vsync ligado a imagem engasga. Escolha abaixo uma taxa que divida por 60 ou desligue o vsync do jogo.	%u Hz no muestra 60 frames por segundo de forma pareja, así que con el vsync activado la imagen se traba. Elige abajo una frecuencia que divida por 60 o desactiva el vsync del juego.
+%u line(s) were dropped because they came faster than the file was written.	%u linha(s) descartadas porque chegaram mais rápido do que o arquivo era gravado.	%u línea(s) descartadas porque llegaron más rápido de lo que se escribía el archivo.
+%ux%u %s, %s, %u back buffer(s)	%ux%u %s, %s, %u back buffer(s)	%ux%u %s, %s, %u back buffer(s)
+%zu / %zu, the end will be cut off	%zu / %zu, o final será cortado	%zu / %zu, el final se cortará
+(dummy)	(dummy)	(dummy)
+(forced in replay or watch mode)	(forçado em replay ou no modo espectador)	(forzado en replay o en modo espectador)
+(no palette texture for this side yet)	(este lado ainda não tem textura de paleta)	(este lado todavía no tiene textura de paleta)
+(no palettes in its folder)	(nenhuma paleta na pasta)	(no hay paletas en la carpeta)
++-%.1f ms		
+0x%02x %s		
+0x%06x		
+99th percentile	Percentil 99	Percentil 99
+A folder with only a model to convert gets an Install as a stage button instead.	Uma pasta só com um modelo para converter mostra o botão Instalar como cenário.	Una carpeta con solo un modelo para convertir muestra el botón Instalar como escenario.
+A green name is the stage playing right now. UNI2's stages can be recoloured but not removed. Their Advanced changes are kept in Mods\\bg\\base.	Um nome em verde é o cenário em uso agora. Os cenários do UNI2 podem ser recoloridos, mas não removidos. As mudanças avançadas deles ficam em Mods\\bg\\base.	Un nombre en verde es el escenario que se usa ahora. Los escenarios de UNI2 se pueden recolorear, pero no quitar. Sus cambios avanzados se guardan en Mods\\bg\\base.
+A match is connected. Room features are paused.	Uma partida está conectada. Os recursos da sala estão pausados.	Hay una partida conectada. Las funciones de la sala están en pausa.
+A mod is a folder that uses UNI2's file paths. For example, a mod that replaces Hyde's voice only holds se\\battle_se\\chr000. Install a zip or drop the folder in yourself. It shows up in the list within a second, with no restart.	Um mod é uma pasta que segue os caminhos de arquivo do UNI2. Por exemplo, um mod que troca a voz do Hyde só tem se\\battle_se\\chr000. Instale um zip ou copie a pasta manualmente. Ele aparece na lista em um segundo, sem reiniciar.	Un mod es una carpeta que sigue las rutas de archivo de UNI2. Por ejemplo, un mod que cambia la voz de Hyde solo tiene se\\battle_se\\chr000. Instala un zip o copia la carpeta a mano. Aparece en la lista en un segundo, sin reiniciar.
+A module that is off loads nothing and leaves the menus. A hidden training option is also turned off.	Um módulo desligado não carrega nada e some dos menus. As opções de treino escondidas dele também são desligadas.	Un módulo desactivado no carga nada y desaparece de los menús. Sus opciones de entrenamiento ocultas también se desactivan.
+A patch only loads when the game restarts.	Um patch só é carregado quando o jogo reinicia.	Un parche solo se carga cuando el juego se reinicia.
+A replaced sound loads the next time the character loads its sounds, so you hear it when you next enter a match or a menu.	Um som trocado é carregado quando o personagem recarrega os sons, ou seja, na próxima partida ou menu.	Un sonido reemplazado se carga cuando el personaje vuelve a cargar sus sonidos, o sea, en la próxima partida o menú.
+A rule swaps one track for another. Matchup and Character rules only work in battle, and a Replace rule works on any screen. With this off the game plays its normal music, and the randomizer in Browse overrides rules while it is on.	Uma regra troca uma música por outra. Regras de Confronto e de Personagem só valem na luta; a regra Substituir vale em qualquer tela. Desligado, o jogo toca a música normal. O aleatório de Navegar ignora as regras enquanto estiver ligado.	Una regla cambia un tema por otro. Las reglas de Enfrentamiento y de Personaje solo valen en pelea; la regla Reemplazar vale en cualquier pantalla. Desactivado, el juego pone su música normal. El aleatorio de Explorar ignora las reglas mientras está activado.
+A shaky ping makes the game wait when it doesn't need to. This evens the ping out first.\nGame default: off.	Um ping instável faz o jogo esperar à toa. Isto estabiliza o ping antes.\nPadrão do jogo: desligado.	Un ping inestable hace que el juego espere sin necesidad. Esto estabiliza el ping primero.\nPredeterminado del juego: desactivado.
+A soundpack is a folder with a theme.ini. The ini names the pack and has a [Map] section with one 'scene = track' line per track. A track is a vanilla slot number or the file name of a track in the library folder.	Um soundpack é uma pasta com um theme.ini. O ini dá o nome do pack e tem uma seção [Map] com uma linha 'cena = música' para cada música. A música é um número de slot original ou o nome de um arquivo da pasta da biblioteca.	Un soundpack es una carpeta con un theme.ini. El ini le da el nombre al pack y tiene una sección [Map] con una línea 'escena = tema' por cada tema. El tema es un número de slot original o el nombre de un archivo de la carpeta de la biblioteca.
+A stage can have a section, named after its folder, to set its name and its picture in your mod's stage select sheet:	Um cenário pode ter uma seção com o nome da pasta dele, para definir o nome e a imagem na tela de seleção de cenários do seu mod:	Un escenario puede tener una sección con el nombre de su carpeta, para definir su nombre y su imagen en la pantalla de selección de escenarios de tu mod:
+A theme draws another French-Bread game's screens over UNI2's. Only the look changes, the menus work the same. Themes go in UNI2-IM\\Screens, each with its .pat files and a screen.ini.	Um tema desenha as telas de outro jogo da French-Bread por cima das do UNI2. Só o visual muda; os menus funcionam igual. Os temas ficam em UNI2-IM\\Screens, cada um com seus arquivos .pat e um screen.ini.	Un tema dibuja las pantallas de otro juego de French-Bread sobre las de UNI2. Solo cambia el aspecto; los menús funcionan igual. Los temas van en UNI2-IM\\Screens, cada uno con sus archivos .pat y un screen.ini.
+Active now	Ativo agora	Activo ahora
+Active. %d ghost(s) removed.	Ativo. %d fantasma(s) removido(s).	Activo. %d fantasma(s) quitado(s).
+Add	Adicionar	Agregar
+Add a patch	Adicionar um patch	Agregar un parche
+Add a rule	Adicionar uma regra	Agregar una regla
+Add all	Adicionar todos	Agregar todos
+Add music	Adicionar música	Agregar música
+Add rule	Adicionar regra	Agregar regla
+Add stages	Adicionar cenários	Agregar escenarios
+Add stages can put a stage folder in place of one of UNI2's. It keeps the game's number, card and walls. Restore brings the game's stage back.	Adicionar cenários pode colocar uma pasta de cenário no lugar de um do UNI2. O número, o card e as paredes do jogo continuam. Restaurar traz de volta o cenário original.	Agregar escenarios puede poner una carpeta de escenario en lugar de uno de UNI2. Se mantienen el número, la tarjeta y las paredes del juego. Restaurar devuelve el escenario original.
+Add your music	Adicione suas músicas	Agrega tu música
+Adding a stage	Adicionar um cenário	Agregar un escenario
+Adds 'Watch Match in Progress' to the room menu while a match you can watch is running; your game fast-forwards to the players. The first player needs mod 0.7.5 or newer with this on too. Game default: you can only watch from the start.	Adiciona 'Watch Match in Progress' ao menu da sala quando houver uma partida em andamento para assistir; seu jogo avança até alcançar os jogadores. O primeiro jogador também precisa do mod 0.7.5 ou mais novo com isto ligado. Padrão do jogo: só dá para assistir desde o começo.	Agrega 'Watch Match in Progress' al menú de la sala cuando hay una partida en curso para ver; tu juego avanza hasta alcanzar a los jugadores. El primer jugador también necesita el mod 0.7.5 o más nuevo con esto activado. Predeterminado del juego: solo se puede ver desde el principio.
+Adds GGPO's messages: syncing, lost packets, disconnects. Only needed for detailed reports. Stops at 8 MB.	Inclui as mensagens do GGPO: sincronização, pacotes perdidos, desconexões. Só serve para relatórios detalhados. Para em 8 MB.	Incluye los mensajes de GGPO: sincronización, paquetes perdidos, desconexiones. Solo sirve para reportes detallados. Se detiene en 8 MB.
+Adds a Pack column to the list below. Tick the tracks you want, pick the screen each one plays on, then save.	Adiciona uma coluna Pack à lista abaixo. Marque as músicas que quiser, escolha a tela em que cada uma toca e salve.	Agrega una columna Pack a la lista de abajo. Marca los temas que quieras, elige la pantalla donde suena cada uno y guarda.
+Adds a line with the last hit's blockstun or hitstun, the gap before it, the flash length and the damage.	Mostra uma linha com o blockstun ou hitstun do último golpe, a brecha antes dele, a duração do flash e o dano.	Muestra una línea con el blockstun o hitstun del último golpe, el hueco antes de él, la duración del flash y el daño.
+Adds a tiny bit of noise to hide banding in smooth gradients.	Adiciona um leve ruído para esconder o efeito de faixas em degradês.	Agrega un leve ruido para ocultar el efecto de bandas en los degradados.
+Adjusts the colours of the finished frame. When it is off, the sliders below do nothing.	Ajusta as cores da imagem final. Desligado, os controles abaixo não fazem nada.	Ajusta los colores de la imagen final. Desactivado, los controles de abajo no hacen nada.
+Advanced	Avançado	Avanzado
+Advanced stage options	Opções avançadas de cenário	Opciones avanzadas de escenario
+After a training restart, the dummy does the action ticked on the game's Reversal action page, on the first frame it can act. Air actions need the dummy in the air, so they do not come out from a standing restart.	Ao reiniciar o treino, o dummy faz a ação marcada na página Reversal action do jogo, no primeiro frame em que puder agir. Ações aéreas precisam do dummy no ar, então não saem de um reinício em pé.	Al reiniciar el entrenamiento, el dummy hace la acción marcada en la página Reversal action del juego, en el primer frame en que pueda actuar. Las acciones aéreas necesitan al dummy en el aire, así que no salen de un reinicio de pie.
+After waiting once, the game keeps waiting a bit more for a while. Off removes those extra waits.\nGame default: on.	Depois de esperar uma vez, o jogo continua esperando um pouco mais por um tempo. Desligado, essas esperas extras somem.\nPadrão do jogo: ligado.	Después de esperar una vez, el juego sigue esperando un poco más durante un rato. Desactivado, esas esperas extra desaparecen.\nPredeterminado del juego: activado.
+All colours unlocked	Todas as cores desbloqueadas	Todos los colores desbloqueados
+Allow spectators	Permitir espectadores	Permitir espectadores
+Also turn on UNI2's Subtitles option (Options, then Game settings). The game checks it before drawing a line. This session it asked for %d line(s) and drew %d of yours.	Ligue também a opção Subtitles do UNI2 (Options > Game settings). O jogo confere isso antes de mostrar uma fala. Nesta sessão ele pediu %d fala(s) e mostrou %d das suas.	Activa también la opción Subtitles de UNI2 (Options > Game settings). El juego la revisa antes de mostrar una línea. En esta sesión pidió %d línea(s) y mostró %d de las tuyas.
+Alternate character art and the MELTY BLOOD TYPE LUMINA announcers.	Arte alternativa dos personagens e os narradores de MELTY BLOOD TYPE LUMINA.	Arte alternativo de los personajes y los narradores de MELTY BLOOD TYPE LUMINA.
+An added stage is only on your machine, so an opponent is never offered it: they get the game's first stage while you keep playing on yours. A stage they ask for that this game does not have plays as the game's first stage here. A replaced stage keeps the game's number, so an opponent without it sees UNI2's. In a Player Match room the same holds for every member. Online, Random picks only from UNI2's stages. Colour settings are never sent.	Um cenário adicionado só existe no seu PC, então nunca é oferecido ao oponente: ele recebe o primeiro cenário do jogo e você continua no seu. Um cenário pedido por ele que este jogo não tem vira aqui o primeiro cenário do jogo. Um cenário substituído mantém o número do jogo, então quem não o tem vê o do UNI2. Numa sala de Player Match isso vale para todos. Online, o Random só escolhe entre os cenários do UNI2. As configurações de cor nunca são enviadas.	Un escenario agregado solo existe en tu PC, así que nunca se le ofrece al rival: él recibe el primer escenario del juego y tú sigues en el tuyo. Un escenario que él pida y que este juego no tenga se convierte aquí en el primer escenario del juego. Un escenario reemplazado mantiene el número del juego, así que quien no lo tiene ve el de UNI2. En una sala de Player Match esto vale para todos. En línea, Random solo elige entre los escenarios de UNI2. Los ajustes de color nunca se envían.
+An example	Um exemplo	Un ejemplo
+An older version's battle data, so its replays play back right.	Dados de batalha de uma versão anterior, para os replays dela rodarem certo.	Datos de batalla de una versión anterior, para que sus replays se reproduzcan bien.
+Another French-Bread game's screens over UNI2's.	As telas de outro jogo da French-Bread por cima das do UNI2.	Las pantallas de otro juego de French-Bread sobre las de UNI2.
+Anti-aliasing	Anti-aliasing	Antialiasing
+Any click that lands on the meter grabs it, even if you meant to click something else.	Qualquer clique no medidor o arrasta, mesmo que você quisesse clicar em outra coisa.	Cualquier clic sobre el medidor lo arrastra, aunque quisieras hacer clic en otra cosa.
+Anything already in the folder is left alone.	O que já estiver na pasta fica como está.	Lo que ya esté en la carpeta se deja como está.
+Applied when you let go of the slider. To use another .ttf font, set [Overlay] FontPath in the ini.	Aplicado ao soltar o controle. Para usar outra fonte .ttf, defina [Overlay] FontPath no ini.	Se aplica al soltar el control. Para usar otra fuente .ttf, define [Overlay] FontPath en el ini.
+Applied: %s	Aplicado: %s	Aplicado: %s
+Apply my music rules	Aplicar minhas regras de música	Aplicar mis reglas de música
+Apply title	Aplicar título	Aplicar título
+Applying a soundpack sets every screen to that game's music. It only changes the replace rules, so switching is instant and your rules stay.	Aplicar um soundpack põe a música daquele jogo em todas as telas. Só as regras de substituição mudam, então a troca é instantânea e suas regras continuam.	Aplicar un soundpack pone la música de ese juego en todas las pantallas. Solo cambian las reglas de reemplazo, así que el cambio es instantáneo y tus reglas se conservan.
+Asked to draw at %dx%d, still drawing at %ux%u. Restart the game, or change any option in its Video menu.	O jogo pediu %dx%d, mas ainda desenha em %ux%u. Reinicie o jogo ou mude qualquer opção no menu Video dele.	El juego pidió %dx%d, pero todavía dibuja a %ux%u. Reinicia el juego o cambia cualquier opción de su menú Video.
+Asks again the next time the game starts.	Pergunta de novo quando o jogo iniciar.	Vuelve a preguntar cuando inicie el juego.
+At character select, pressing right past the game's last colour reaches one extra slot per saved palette that no colour holds (EX 1, EX 2...).\nPlayers without the mod see the game's first colour.\nPicker: %s	Na seleção de personagem, apertar para a direita depois da última cor do jogo leva a um slot extra para cada paleta salva que não ocupa uma cor (EX 1, EX 2...).\nQuem não tem o mod vê a primeira cor do jogo.\nSeletor: %s	En la selección de personaje, presionar a la derecha después del último color del juego lleva a un slot extra por cada paleta guardada que no ocupa un color (EX 1, EX 2...).\nQuien no tiene el mod ve el primer color del juego.\nSelector: %s
+Attack Row	Linha de ataque	Fila de ataque
+Audio	Áudio	Audio
+Author	Autor	Autor
+Auto pause	Pausa automática	Pausa automática
+Automatic (keep the desktop's mode)	Automático (mantém o modo da área de trabalho)	Automático (mantiene el modo del escritorio)
+Automatic uses the Windows pointer, and draws the mod's only when Windows cannot show one: with a Direct3D wrapper like dgVoodoo, or in exclusive fullscreen when the game hides it.	Automático usa o ponteiro do Windows e só desenha o do mod quando o Windows não consegue: com um wrapper de Direct3D como o dgVoodoo, ou em tela cheia exclusiva quando o jogo o esconde.	Automático usa el puntero de Windows y solo dibuja el del mod cuando Windows no puede: con un wrapper de Direct3D como dgVoodoo, o en pantalla completa exclusiva cuando el juego lo oculta.
+Average	Média	Promedio
+Average %.1f ms over %d (about %.1f frames at 60 Hz)	Média de %.1f ms em %d (cerca de %.1f frames a 60 Hz)	Promedio de %.1f ms en %d (unos %.1f frames a 60 Hz)
+Average distance from target	Distância média do alvo	Distancia promedio al objetivo
+BBTAG draws these behind Astral Heats and on its menus, not in fights.\nSome make good stages, some look wrong from the fighting camera.	O BBTAG usa estes atrás dos Astral Heats e nos menus, não nas lutas.\nAlguns ficam bons como cenário, outros ficam estranhos na câmera da luta.	BBTAG usa estos detrás de los Astral Heats y en sus menús, no en las peleas.\nAlgunos quedan bien como escenario, otros se ven raros con la cámara de pelea.
+Back buffer multisampling %s	Multisampling do back buffer %s	Multisampling del back buffer %s
+Back to original	Voltar ao original	Volver al original
+Back to the game's colour	Voltar à cor do jogo	Volver al color del juego
+Back to the game's screens	Voltar às telas do jogo	Volver a las pantallas del juego
+Back to the stock colour.	Volta à cor original.	Vuelve al color original.
+Back to vanilla	Voltar ao original	Volver al original
+Backs up the stage it replaces the first time, then writes this one over it.	Na primeira vez, faz backup do cenário substituído e depois grava este por cima.	La primera vez, respalda el escenario reemplazado y luego escribe este encima.
+Baseline: %s	Referência: %s	Referencia: %s
+Before and after	Antes e depois	Antes y después
+Behind the characters	Atrás dos personagens	Detrás de los personajes
+Between steps	Entre passos	Entre pasos
+Blender		
+Block count	Contagem de bloqueios	Conteo de bloqueos
+Block mouse input to the game	Bloquear o mouse no jogo	Bloquear el mouse en el juego
+Bloom		
+Boosts dull colours and leaves colours that are already vivid alone.	Realça as cores apagadas sem mexer nas que já são vivas.	Realza los colores apagados sin tocar los que ya son vivos.
+Brightness	Brilho	Brillo
+Brightness, Glow and Size	Brilho, Brilho externo e Tamanho	Brillo, Resplandor y Tamaño
+Browse	Navegar	Explorar
+Builds the stage from its model and adds it to your stages.	Monta o cenário a partir do modelo e o adiciona aos seus cenários.	Arma el escenario a partir de su modelo y lo agrega a tus escenarios.
+By part	Por parte	Por parte
+Camera, fog, shadows, bloom and smoothing for this stage.	Câmera, névoa, sombras, bloom e suavização deste cenário.	Cámara, niebla, sombras, bloom y suavizado de este escenario.
+Can't change during a match.	Não dá para mudar durante uma partida.	No se puede cambiar durante una partida.
+Cancel	Cancelar	Cancelar
+Capture baseline	Capturar referência	Capturar referencia
+Capture the next match start	Capturar o início da próxima partida	Capturar el inicio de la próxima partida
+Catch up when watching falls behind	Alcançar quando o modo espectador atrasar	Alcanzar cuando el modo espectador se atrase
+Catching up now.	Alcançando agora.	Alcanzando ahora.
+Changes a whole part at once. The shading stays and only the colour changes.	Muda uma parte inteira de uma vez. O sombreado fica; só a cor muda.	Cambia una parte entera de una vez. El sombreado se conserva; solo cambia el color.
+Changes the name the stage list shows.\nThe game's stage select picks it up after a restart.	Muda o nome exibido na lista de cenários.\nA seleção de cenários do jogo mostra o novo nome depois de reiniciar.	Cambia el nombre que muestra la lista de escenarios.\nLa selección de escenarios del juego lo muestra después de reiniciar.
+Character	Personagem	Personaje
+Character Palette	Paleta do personagem	Paleta del personaje
+Character Visual Improvements is %s	Character Visual Improvements está %s	Character Visual Improvements está %s
+Character art and announcers	Arte dos personagens e narradores	Arte de personajes y narradores
+Character colors	Cores dos personagens	Colores de los personajes
+Characters and text filters	Personagens e filtros de texto	Personajes y filtros de texto
+Check for updates on start	Procurar atualizações ao iniciar	Buscar actualizaciones al iniciar
+Check now	Verificar agora	Buscar ahora
+Checks GitHub once for a newer release when the game starts. Nothing is downloaded unless you ask.	Procura uma versão nova no GitHub uma vez, quando o jogo inicia. Nada é baixado sem você pedir.	Busca una versión nueva en GitHub una vez, al iniciar el juego. No se descarga nada a menos que lo pidas.
+Choose folder	Escolher pasta	Elegir carpeta
+Choose its characters	Escolher os personagens	Elegir sus personajes
+Choose or make a subtitle file above to start writing lines.	Escolha ou crie um arquivo de legendas acima para começar a escrever as falas.	Elige o crea un archivo de subtítulos arriba para empezar a escribir las líneas.
+Clear	Limpar	Limpiar
+Clear baseline	Limpar referência	Borrar referencia
+Click a subtitle to edit it. Click anywhere else to keep your text, or press Esc to undo.	Clique numa legenda para editar. Clique fora para manter o texto ou aperte Esc para desfazer.	Haz clic en un subtítulo para editarlo. Haz clic fuera para conservar el texto o presiona Esc para deshacer.
+Colour and display	Cor e exibição	Color y visualización
+Colour slot	Slot de cor	Slot de color
+Colour: %s	Cor: %s	Color: %s
+Colour: %s.	Cor: %s.	Color: %s.
+Combo count	Contagem do combo	Conteo del combo
+Config	Config	Config
+Confirm this colour once at Network > Character Select so the room can recognise your avatar.	Confirme esta cor uma vez em Network > Character Select para a sala reconhecer o seu avatar.	Confirma este color una vez en Network > Character Select para que la sala reconozca tu avatar.
+Connection	Conexão	Conexión
+Contrast	Contraste	Contraste
+Converting %d file(s)...	Convertendo %d arquivo(s)...	Convirtiendo %d archivo(s)...
+Copy summary	Copiar resumo	Copiar resumen
+Could not read any replays, from the game or from REP-DATA.	Não foi possível ler nenhum replay, nem do jogo nem do REP-DATA.	No se pudo leer ningún replay, ni del juego ni de REP-DATA.
+Could not read the game's part lists, so the parts are not shown.	Não foi possível ler as listas de partes do jogo, então as partes não aparecem.	No se pudieron leer las listas de partes del juego, así que las partes no se muestran.
+Could not read the game's plate lists. Showing ids only.	Não foi possível ler as listas de placas do jogo. Mostrando só os ids.	No se pudieron leer las listas de placas del juego. Se muestran solo los ids.
+Could not read this character's poses from the game files.	Não foi possível ler as poses deste personagem nos arquivos do jogo.	No se pudieron leer las poses de este personaje en los archivos del juego.
+Could not write the palette report	Não foi possível gravar o relatório de paletas	No se pudo escribir el reporte de paletas
+Couldn't read the game's chrNNN_se_list.txt for this character, so there are no lines to write.	Não deu para ler o chrNNN_se_list.txt deste personagem, então não há falas para escrever.	No se pudo leer el chrNNN_se_list.txt de este personaje, así que no hay líneas para escribir.
+Count band	Faixa da contagem	Franja del conteo
+Count down first	Contagem regressiva primeiro	Cuenta regresiva primero
+Cover my name too	Ocultar meu nome também	Ocultar mi nombre también
+Create	Criar	Crear
+Creator	Criador	Creador
+Ctrl		
+Custom	Personalizado	Personalizado
+Custom slot	Slot personalizado	Slot personalizado
+DXVK		
+DXVK's real present mode: %s	Modo de apresentação real do DXVK: %s	Modo de presentación real de DXVK: %s
+Debug	Depuração	Depuración
+Debug view	Depurador	Depurador
+Default	Padrão	Predeterminado
+Delay before resuming a pause	Atraso ao sair da pausa	Retraso al salir de la pausa
+Delete	Excluir	Eliminar
+Delete this pack and everything in it?	Excluir este pack e tudo o que há nele?	¿Eliminar este pack y todo lo que contiene?
+Delete: removes the one picked in the list.	Excluir: apaga o item selecionado na lista.	Eliminar: borra el elemento seleccionado en la lista.
+Deletes Mods\\bg\\bg%03d, so UNI2's stage comes back.	Apaga Mods\\bg\\bg%03d e o cenário do UNI2 volta.	Borra Mods\\bg\\bg%03d y vuelve el escenario de UNI2.
+Deletes this pack from the mod. UNI2's sounds are untouched.	Exclui este pack do mod. Os sons do UNI2 ficam intactos.	Elimina este pack del mod. Los sonidos de UNI2 quedan intactos.
+Description	Descrição	Descripción
+Diagnostics	Diagnóstico	Diagnóstico
+Directions are numpad numbers from the dummy's point of view: 4 is back, 6 is forward, and they swap when the sides swap. Buttons are A, B, C and D.	As direções seguem o teclado numérico, do ponto de vista do dummy: 4 é para trás, 6 é para frente, e invertem quando os lados trocam. Os botões são A, B, C e D.	Las direcciones siguen el teclado numérico, desde el punto de vista del dummy: 4 es atrás, 6 es adelante, y se invierten cuando se cambian los lados. Los botones son A, B, C y D.
+Disable all	Desligar tudo	Desactivar todo
+Display	Exibição	Pantalla
+Display side, estimated: %.1f ms	Lado da tela, estimado: %.1f ms	Lado de pantalla, estimado: %.1f ms
+Dither	Dither	Dither
+Doppel		
+Down	Baixo	Abajo
+Download DXVK yourself (github.com/doitsujin/dxvk) and extract it. Press \"Pick the DXVK folder...\", tick the box and restart the game. Every change here needs a restart.\n\nThe mod copies x32\\d3d9.dll into UNI2-IM\\DXVK. Nothing in the game folder is touched. DXVK translates the game's Direct3D 9 calls to Vulkan, unlike dgVoodoo which goes through Direct3D 11/12.\n\nThe first few matches after enabling this load slower while DXVK compiles and caches shaders; it gets faster from there.\n\nOnly one Direct3D wrapper can run at a time; turning this on turns dgVoodoo off.	Baixe o DXVK (github.com/doitsujin/dxvk) e extraia. Aperte \"Pick the DXVK folder...\", marque a caixa e reinicie o jogo. Toda mudança aqui exige reiniciar.\n\nO mod copia x32\\d3d9.dll para UNI2-IM\\DXVK, sem mexer na pasta do jogo. O DXVK traduz o Direct3D 9 do jogo para Vulkan; o dgVoodoo passa pelo Direct3D 11/12.\n\nAs primeiras partidas depois de ligar carregam mais devagar enquanto o DXVK compila e guarda os shaders. Depois fica mais rápido.\n\nSó um wrapper de Direct3D funciona por vez: ligar este desliga o dgVoodoo.	Descarga DXVK (github.com/doitsujin/dxvk) y extráelo. Presiona \"Pick the DXVK folder...\", marca la casilla y reinicia el juego. Todo cambio aquí requiere reiniciar.\n\nEl mod copia x32\\d3d9.dll a UNI2-IM\\DXVK, sin tocar la carpeta del juego. DXVK traduce el Direct3D 9 del juego a Vulkan; dgVoodoo pasa por Direct3D 11/12.\n\nLas primeras partidas después de activarlo cargan más lento mientras DXVK compila y guarda los shaders. Después va más rápido.\n\nSolo funciona un wrapper de Direct3D a la vez: activar este desactiva dgVoodoo.
+Download dgVoodoo2 yourself and extract it. Press \"Pick the dgVoodoo folder...\", tick the box and restart the game. Every change here needs a restart.\n\nThe mod copies the dlls into UNI2-IM\\dgVoodoo and writes dgVoodoo.conf from these options. Nothing in the game folder is touched.\n\nForcing texture filtering or anti-aliasing can break the character colours. Keep them on UNI2's or off unless you know you want them.\n\nOnly one Direct3D wrapper can run at a time; turning this on turns DXVK off.	Baixe o dgVoodoo2 e extraia. Aperte \"Pick the dgVoodoo folder...\", marque a caixa e reinicie o jogo. Toda mudança aqui exige reiniciar.\n\nO mod copia as dlls para UNI2-IM\\dgVoodoo e gera o dgVoodoo.conf com estas opções, sem mexer na pasta do jogo.\n\nForçar filtro de textura ou anti-aliasing pode estragar as cores dos personagens. Deixe no padrão do UNI2 ou desligado, a não ser que tenha certeza.\n\nSó um wrapper de Direct3D funciona por vez: ligar este desliga o DXVK.	Descarga dgVoodoo2 y extráelo. Presiona \"Pick the dgVoodoo folder...\", marca la casilla y reinicia el juego. Todo cambio aquí requiere reiniciar.\n\nEl mod copia las dlls a UNI2-IM\\dgVoodoo y genera dgVoodoo.conf con estas opciones, sin tocar la carpeta del juego.\n\nForzar el filtrado de texturas o el antialiasing puede romper los colores de los personajes. Déjalos como en UNI2 o desactivados, salvo que estés seguro.\n\nSolo funciona un wrapper de Direct3D a la vez: activar este desactiva DXVK.
+Download the portrait pack	Baixar o pack de retratos	Descargar el pack de retratos
+Drag the meter with the mouse	Arrastar o medidor com o mouse	Arrastrar el medidor con el mouse
+Draw again	Sortear de novo	Sortear de nuevo
+Draw the empty stage	Mostrar só o cenário	Mostrar solo el escenario
+Draw the theme	Mostrar o tema	Mostrar el tema
+Drawing at %ux%u and %s it to the window	Desenhando em %ux%u e %s para a janela	Dibujando a %ux%u y %s a la ventana
+Drawing at %ux%u, set by the game's Display option	Desenhando em %ux%u, definido pela opção Display do jogo	Dibujando a %ux%u, definido por la opción Display del juego
+Drawing at %ux%u, the smallest mode your monitor has that fits the %dx%d you asked for	Desenhando em %ux%u, o menor modo do seu monitor em que cabem os %dx%d pedidos	Dibujando a %ux%u, el modo más chico de tu monitor donde entran los %dx%d pedidos
+Draws a cross at each object's position, the point its boxes are measured from. Use it to tell if boxes belong to a projectile or to the character who fired it.	Mostra uma cruz na posição de cada objeto, o ponto a partir do qual as caixas dele são medidas. Serve para saber se as caixas são de um projétil ou do personagem que o lançou.	Muestra una cruz en la posición de cada objeto, el punto desde donde se miden sus cajas. Sirve para saber si las cajas son de un proyectil o del personaje que lo lanzó.
+Draws characters, effects, menus and text at the stage resolution instead of 720p. Only above 720p. Game default: off. Needs a restart.	Desenha personagens, efeitos, menus e textos na resolução do cenário em vez de 720p. Só vale acima de 720p. Padrão do jogo: desligado. Exige reiniciar.	Dibuja personajes, efectos, menús y textos a la resolución del escenario en lugar de 720p. Solo vale por encima de 720p. Predeterminado del juego: desactivado. Requiere reiniciar.
+Draws only the stage. The match keeps running as usual. Offline only, and it turns off when the game closes.	Mostra só o cenário; a partida continua normalmente. Só offline. Desliga quando o jogo fecha.	Muestra solo el escenario; la partida sigue normalmente. Solo sin conexión. Se desactiva al cerrar el juego.
+Draws the input list behind the characters instead of over them.\nGame default: over them.	Desenha a lista de comandos atrás dos personagens em vez de por cima.\nPadrão do jogo: por cima.	Dibuja la lista de comandos detrás de los personajes en lugar de encima.\nPredeterminado del juego: encima.
+Drop	Soltar	Soltar
+Dummy Script Doc.	Guia do script do dummy	Guía del script del dummy
+Dummy lead-in	Entrada do dummy	Entrada del dummy
+Dummy script	Script do dummy	Script del dummy
+During a match	Durante uma partida	Durante una partida
+During a match the mod leaves the room and the connection alone. Always on.	Durante uma partida o mod não mexe na sala nem na conexão. Sempre ligado.	Durante una partida el mod no toca la sala ni la conexión. Siempre activado.
+Each new replay is saved to UNI2-IM\\Replays as a separate file, so you can share a single match. Files are named after the two players, or P1 and P2 when Steam cannot find a name. Press Export all to also save the replays already in REP-DATA.	Cada replay novo é salvo em UNI2-IM\\Replays como um arquivo próprio, para você poder compartilhar uma partida só. O nome do arquivo leva os nomes dos dois jogadores, ou P1 e P2 quando a Steam não acha o nome. Aperte Exportar todos para salvar também os replays que já estão no REP-DATA.	Cada replay nuevo se guarda en UNI2-IM\\Replays como un archivo propio, para que puedas compartir una sola partida. El nombre del archivo lleva los nombres de los dos jugadores, o P1 y P2 cuando Steam no encuentra el nombre. Presiona Exportar todos para guardar también los replays que ya están en REP-DATA.
+Each screen that asks for music gets a random track from this list. It picks once per screen, so a new round or a training reset keeps the track; press Draw again to change it. Rules are ignored while this is on, and tracks you switch off are never picked.	Cada tela que pede música recebe uma música aleatória desta lista. O sorteio é um por tela, então um round novo ou um reset do treino mantém a música; aperte Sortear de novo para trocar. As regras ficam de lado enquanto isto estiver ligado, e músicas desligadas nunca são sorteadas.	Cada pantalla que pide música recibe un tema aleatorio de esta lista. Se sortea una vez por pantalla, así que una ronda nueva o un reinicio del entrenamiento conserva el tema; presiona Sortear de nuevo para cambiarlo. Las reglas se ignoran mientras esto está activado, y los temas desactivados nunca salen.
+Each side has a separate script, name and saved list. The two run independently, so start both and a whole scenario plays out.	Cada lado tem script, nome e lista salva próprios. Os dois rodam de forma independente: inicie os dois e uma situação inteira se desenrola.	Cada lado tiene su propio script, nombre y lista guardada. Los dos funcionan por separado: inicia ambos y se desarrolla una situación completa.
+Effect colors	Cores dos efeitos	Colores de los efectos
+Effects	Efeitos	Efectos
+Either side of the screen	Qualquer lado da tela	Cualquier lado de la pantalla
+Enable all	Ligar tudo	Activar todo
+Enable the stage in the game to change its camera.	Ative o cenário no jogo para mudar a câmera dele.	Activa el escenario en el juego para cambiar su cámara.
+Enter saves. Esc cancels.	Enter salva. Esc cancela.	Enter guarda. Esc cancela.
+Every frame since the last reset, in 1 ms steps from 0 to 40 ms. Dropped frames show up as a tail on the right.	Todos os frames desde o último reset, em passos de 1 ms de 0 a 40 ms. Frames perdidos aparecem como uma cauda à direita.	Todos los frames desde el último reinicio, en pasos de 1 ms de 0 a 40 ms. Los frames perdidos aparecen como una cola a la derecha.
+Every mod's Bgm\\bgm.txt is added to the game's music list, with yours, after a restart. If two mods use the same slot, the higher one keeps it and the other track moves to a free slot, so both can be played. The mod's grpdat\\CSel\\bgmselect.txt follows the move.	O Bgm\\bgm.txt de cada mod entra na lista de músicas do jogo, junto com as suas, depois de reiniciar. Se dois mods usam o mesmo slot, o de cima fica com ele e a outra música vai para um slot livre, então as duas tocam. O grpdat\\CSel\\bgmselect.txt do mod acompanha a mudança.	El Bgm\\bgm.txt de cada mod se suma a la lista de música del juego, junto con la tuya, después de reiniciar. Si dos mods usan el mismo slot, el de más arriba se lo queda y el otro tema pasa a un slot libre, así que suenan los dos. El grpdat\\CSel\\bgmselect.txt del mod sigue el cambio.
+Every option above on, the desktop's display mode and one back buffer. None of it keeps a CPU core busy.	Todas as opções acima ligadas, o modo de tela da área de trabalho e um back buffer. Nada disso ocupa um núcleo da CPU.	Todas las opciones de arriba activadas, el modo de pantalla del escritorio y un back buffer. Nada de eso ocupa un núcleo de la CPU.
+Everyone	Todos	Todos
+Everyone you played online. Saved only on your PC.\nWin rate counts each game. Older matches aren't counted.	Todos com quem você jogou online. Salvo só no seu PC.\nA taxa de vitória conta cada luta. Partidas antigas não entram.	Todos con los que jugaste en línea. Se guarda solo en tu PC.\nEl porcentaje de victorias cuenta cada pelea. Las partidas antiguas no cuentan.
+Everything	Tudo	Todo
+Everything else	Todo o resto	Todo lo demás
+Everything off	Tudo desligado	Todo desactivado
+Everything off. Use this to measure against.	Tudo desligado. Use como base de comparação.	Todo desactivado. Úsalo como base de comparación.
+Exclusive fullscreen: your monitor switches to this mode instead of stretching the picture in a window.	Tela cheia exclusiva: o monitor muda para este modo em vez de esticar a imagem numa janela.	Pantalla completa exclusiva: el monitor cambia a este modo en lugar de estirar la imagen en una ventana.
+Explains each box type, what it can touch and which moves use it. The colours match the hitbox viewer.	Explica cada tipo de caixa, o que ela pode tocar e quais golpes a usam. As cores são as do visualizador de hitbox.	Explica cada tipo de caja, qué puede tocar y qué movimientos la usan. Los colores son los del visor de hitboxes.
+Explains every band and status colour, with a sample meter and what each number means. The colours match the meter.	Explica cada faixa e cor de estado, com um medidor de exemplo e o que cada número significa. As cores são as do medidor.	Explica cada franja y color de estado, con un medidor de ejemplo y qué significa cada número. Los colores son los del medidor.
+Export	Exportar	Exportar
+Export CSV	Exportar CSV	Exportar CSV
+Export all	Exportar todos	Exportar todos
+Export as palette	Exportar como paleta	Exportar como paleta
+Export files only	Exportar só os arquivos	Exportar solo los archivos
+Export rules	Exportar regras	Exportar reglas
+Export saves one zip with everything a friend needs: the audio, the slot table, the picker list, every soundpack and anything you put in the Music folder yourself. Import loads one back.	Exportar salva um zip com tudo o que um amigo precisa: o áudio, a tabela de slots, a lista do seletor, os soundpacks e o que você pôs na pasta Music. Importar carrega um zip desses.	Exportar guarda un zip con todo lo que necesita un amigo: el audio, la tabla de slots, la lista del selector, los soundpacks y lo que pusiste en la carpeta Music. Importar carga uno de esos zip.
+Export saves the chosen file so you can share it. Import adds the lines from a file someone sent you to the chosen file. Lines for the same voice are replaced and the rest are kept.	Exportar salva o arquivo escolhido para você compartilhar. Importar junta ao arquivo escolhido as falas de um arquivo que alguém te mandou. Falas da mesma voz são substituídas e o resto continua.	Exportar guarda el archivo elegido para que lo compartas. Importar suma al archivo elegido las líneas de un archivo que alguien te mandó. Las líneas de la misma voz se reemplazan y el resto se conserva.
+Export saves your rules to a text file you can share. Import adds the rules from a file to the ones you already have, without removing any.	Exportar salva suas regras num arquivo de texto para compartilhar. Importar soma as regras de um arquivo às que você já tem, sem remover nenhuma.	Exportar guarda tus reglas en un archivo de texto para compartir. Importar suma las reglas de un archivo a las que ya tienes, sin quitar ninguna.
+Export soundpacks	Exportar soundpacks	Exportar soundpacks
+Export...	Exportar...	Exportar...
+Extended colour slots	Slots de cor extras	Slots de color extra
+Extras	Extras	Extras
+FOV	FOV	FOV
+FXAA over the finished frame.\n\nMultisampling cannot work here, because the game draws its scene into textures. For smoother edges, use this or raise the render resolution above.	FXAA sobre a imagem final.\n\nMultisampling não funciona aqui, porque o jogo desenha a cena em texturas. Para bordas mais suaves, use isto ou aumente a resolução de renderização acima.	FXAA sobre la imagen final.\n\nEl multisampling no funciona aquí, porque el juego dibuja la escena en texturas. Para bordes más suaves, usa esto o sube la resolución de renderizado de arriba.
+Field of view	Campo de visão	Campo de visión
+Field of view in degrees.	Campo de visão em graus.	Campo de visión en grados.
+File name	Nome do arquivo	Nombre del archivo
+Files are looked up in this order:	Os arquivos são procurados nesta ordem:	Los archivos se buscan en este orden:
+Filter colors	Filtrar cores	Filtrar colores
+Filter junk colours	Filtrar cores inúteis	Filtrar colores inútiles
+Find the patch each replay was recorded on	Descobrir o patch em que cada replay foi gravado	Averiguar el parche en que se grabó cada replay
+First 5 s: %d re-simulated frames     After that: %d	Primeiros 5 s: %d frames re-simulados     Depois disso: %d	Primeros 5 s: %d frames re-simulados     Después de eso: %d
+Flash the entry on the character	Piscar o item no personagem	Hacer parpadear el elemento en el personaje
+Flat colour stage	Cenário de cor sólida	Escenario de color plano
+Fn		
+Folders in UNI2-IM\\Packs that replace game files.	Pastas em UNI2-IM\\Packs que substituem arquivos do jogo.	Carpetas en UNI2-IM\\Packs que reemplazan archivos del juego.
+Font size	Tamanho da fonte	Tamaño de fuente
+Forcing a filter breaks the character colours. Keep it on Native.	Forçar um filtro estraga as cores dos personagens. Deixe em Native.	Forzar un filtro estropea los colores de los personajes. Déjalo en Native.
+Frame Meter	Medidor de frames	Medidor de frames
+Frame Meter Doc.	Guia do medidor de frames	Guía del medidor de frames
+Frame interval, close up	Intervalo de frame, de perto	Intervalo de frame, de cerca
+Frame interval, whole range	Intervalo de frame, escala inteira	Intervalo de frame, escala completa
+Frame lead	Vantagem de frames	Ventaja de frames
+Frame limit	Limite de frames	Límite de frames
+Frame meter	Medidor de frames	Medidor de frames
+Frame meter options	Opções do medidor de frames	Opciones del medidor de frames
+Frame time	Tempo de frame	Tiempo de frame
+Frames behind (them)	Frames de atraso (oponente)	Frames de retraso (rival)
+Frames behind (you)	Frames de atraso (você)	Frames de retraso (tú)
+Frames over 20 ms	Frames acima de 20 ms	Frames por encima de 20 ms
+Frames re-simulated this match	Frames re-simulados nesta partida	Frames re-simulados en esta partida
+Fullscreen refresh	Taxa de atualização em tela cheia	Frecuencia en pantalla completa
+Function	Função	Función
+GGPO endpoint	Endpoint do GGPO	Endpoint de GGPO
+GGPO ping	Ping do GGPO	Ping de GGPO
+GRD popups	Avisos de GRD	Avisos de GRD
+GRD timer	Tempo do GRD	Tiempo del GRD
+Game	Jogo	Juego
+Game default leaves the keyboard where the game puts it.\n1P and 2P keep your keys as they are and move the controller to the other side.	Padrão do jogo deixa o teclado onde o jogo o coloca.\n1P e 2P mantêm suas teclas e passam o controle para o outro lado.	Predeterminado del juego deja el teclado donde lo pone el juego.\n1P y 2P conservan tus teclas y pasan el mando al otro lado.
+Game defaults	Padrões do jogo	Valores del juego
+Game patches	Patches do jogo	Parches del juego
+Gamma		
+General	Geral	General
+Get OST from French-Bread games	Baixar OST de jogos da French-Bread	Descargar OST de juegos de French-Bread
+Get stages from another fighting game	Baixar cenários de outro jogo de luta	Descargar escenarios de otro juego de pelea
+Get the MBTL announcers	Baixar os narradores do MBTL	Descargar los narradores de MBTL
+Get this voice from UNI or a mod...	Pegar esta voz do UNI ou de um mod...	Tomar esta voz de UNI o de un mod...
+Ghost members	Membros fantasma	Miembros fantasma
+Give it back	Devolver	Devolver
+Gives every character the same kind of art. A character without it wears UNI2's.	Dá o mesmo tipo de arte a todos os personagens. Quem não tiver usa a do UNI2.	Da el mismo tipo de arte a todos los personajes. Quien no lo tenga usa el de UNI2.
+Goes back to the game's colours and keeps your edits. This character will not wear it automatically next match.	Volta às cores do jogo e mantém suas edições. Este personagem não vai usá-la sozinho na próxima partida.	Vuelve a los colores del juego y conserva tus cambios. Este personaje no la usará solo en la próxima partida.
+Green	Verde	Verde
+Greyed out because the game is windowed. A window cannot set the refresh rate, and Windows already holds a frame itself.	Indisponível com o jogo em janela. Uma janela não define a taxa de atualização, e o Windows já segura um frame por conta própria.	No disponible con el juego en ventana. Una ventana no puede fijar la frecuencia, y Windows ya retiene un frame por su cuenta.
+Greyed out because the game's vsync is off, and a second buffer would only add lag. Turn on vsync in the game's Video menu to use it.	Indisponível porque o vsync do jogo está desligado, e um segundo buffer só aumentaria o atraso. Ligue o vsync no menu Video do jogo para usar.	No disponible porque el vsync del juego está desactivado, y un segundo buffer solo agregaría retraso. Activa el vsync en el menú Video del juego para usarlo.
+Grid: %s	Grade: %s	Cuadrícula: %s
+Group by part	Agrupar por parte	Agrupar por parte
+Groups the colors the same way the game's color screen does, like hair, skin and boots.	Agrupa as cores como a tela de cores do jogo: cabelo, pele, botas.	Agrupa los colores como la pantalla de colores del juego: pelo, piel, botas.
+Groups the colours by part (hair, skin, boots), the same way UNI2's colour screen does.	Agrupa as cores por parte (cabelo, pele, botas), como a tela de cores do UNI2.	Agrupa los colores por parte (pelo, piel, botas), como la pantalla de colores de UNI2.
+Health values	Valores de vida	Valores de vida
+Height on screen	Altura na tela	Altura en pantalla
+Help	Ajuda	Ayuda
+Hidden stages	Cenários ocultos	Escenarios ocultos
+Hidden stages, and stages from other French-Bread games you have.	Cenários ocultos e cenários de outros jogos da French-Bread que você tem.	Escenarios ocultos y escenarios de otros juegos de French-Bread que tengas.
+Hide IR	Ocultar IR	Ocultar IR
+Hide characters and effects	Ocultar personagens e efeitos	Ocultar personajes y efectos
+Hide other players' names	Ocultar o nome dos outros jogadores	Ocultar los nombres de otros jugadores
+Hide room names in the room search	Ocultar nomes de sala na busca de salas	Ocultar los nombres de sala en la búsqueda de salas
+Hide the HUD	Ocultar o HUD	Ocultar el HUD
+Hides every IR number, including the change after ranked matches. Only on your screen. Your IR still counts.	Oculta todos os números de IR, inclusive a variação depois das ranqueadas. Só na sua tela; seu IR continua contando.	Oculta todos los números de IR, incluido el cambio después de las ranked. Solo en tu pantalla; tu IR sigue contando.
+Hides player names everywhere: rooms, lobby, player card, replays and the health bars.	Oculta o nome dos jogadores em todo lugar: salas, lobby, player card, replays e barras de vida.	Oculta los nombres de los jugadores en todas partes: salas, lobby, player card, replays y barras de vida.
+Hides the colours this character's sprites never use, and the green that fills unused slots. Colours UNI2's colour screen offers are always kept.	Oculta as cores que os sprites deste personagem nunca usam e o verde que preenche os slots vazios. As cores que a tela de cores do UNI2 oferece sempre ficam.	Oculta los colores que los sprites de este personaje nunca usan y el verde que llena los slots vacíos. Los colores que ofrece la pantalla de colores de UNI2 siempre se conservan.
+Hides the gauges, the timer and the round markers, like the game does during a cinematic. Health values still show either way.	Oculta as barras, o tempo e os marcadores de round, como o jogo faz numa cinemática. Os valores de vida continuam aparecendo.	Oculta las barras, el tiempo y los marcadores de ronda, como hace el juego en una cinemática. Los valores de vida se siguen mostrando.
+Hit lands	Golpe acerta	El golpe conecta
+Hitbox Doc.	Guia de hitbox	Guía de hitbox
+Hitbox Types	Tipos de hitbox	Tipos de hitbox
+Hitbox types	Tipos de hitbox	Tipos de hitbox
+Hitbox viewer	Visualizador de hitbox	Visor de hitbox
+Hitstun, gap and flash	Hitstun, brecha e flash	Hitstun, hueco y flash
+Hold for half the lead, as stock GGPO	Esperar metade da vantagem, como o GGPO original	Esperar la mitad de la ventaja, como el GGPO original
+Hold the side during a match	Manter o lado durante a partida	Mantener el lado durante la partida
+Holding the next-frame key	Segurando a tecla de avançar frame	Manteniendo la tecla de avanzar frame
+Horizon	Horizonte	Horizonte
+How big the scenery is around the fight. A bigger stage makes the fighters look smaller.	O tamanho do cenário em volta da luta. Um cenário maior deixa os lutadores menores.	El tamaño del escenario alrededor de la pelea. Un escenario más grande hace ver más chicos a los luchadores.
+How big the scenery is. The Size column changes all three at once.	O tamanho do cenário. A coluna Tamanho muda os três de uma vez.	El tamaño del escenario. La columna Tamaño cambia los tres a la vez.
+How bright the whole stage is.	O brilho do cenário inteiro.	El brillo de todo el escenario.
+How early a frame is ready before the screen refreshes. Lower means less input lag; raise it if motion still stutters. Default: 8 ms. Needs \"Line frames up with the screen\" on.	Quanto tempo antes da atualização da tela o frame fica pronto. Menor é menos input lag; aumente se o movimento ainda engasgar. Padrão: 8 ms. Exige \"Line frames up with the screen\" ligado.	Cuánto antes de que se actualice la pantalla queda listo el frame. Menos es menos input lag; súbelo si el movimiento todavía se traba. Predeterminado: 8 ms. Requiere \"Line frames up with the screen\" activado.
+How long it takes to hand the frame to the driver. With vsync on this is the wait for the monitor, and two clusters here mean the refresh rate does not divide by 60.	Quanto tempo leva para entregar o frame ao driver. Com vsync ligado, é a espera pelo monitor; dois grupos aqui indicam que a taxa de atualização não divide por 60.	Cuánto tarda en entregar el frame al driver. Con vsync activado es la espera al monitor; dos grupos aquí indican que la frecuencia no divide por 60.
+How long to hold the key before it starts stepping by itself. A tap always steps one frame.	Quanto tempo segurar a tecla até ela avançar sozinha. Um toque sempre avança um frame.	Cuánto mantener la tecla hasta que avance sola. Un toque siempre avanza un frame.
+How many inputs the list shows. More rows are drawn smaller, so the list keeps the same height.\nGame default: 16.	Quantos comandos a lista mostra. Com mais linhas, elas ficam menores e a lista mantém a altura.\nPadrão do jogo: 16.	Cuántos comandos muestra la lista. Con más filas, se dibujan más chicas y la lista mantiene su altura.\nPredeterminado del juego: 16.
+How often the game checks if you're ahead of the opponent and waits for them.\nGame default: every 240 frames (4 s).	De quanto em quanto tempo o jogo confere se você está à frente do oponente e espera por ele.\nPadrão do jogo: a cada 240 frames (4 s).	Cada cuánto el juego revisa si vas adelantado al rival y lo espera.\nPredeterminado del juego: cada 240 frames (4 s).
+How solid each part of the screen is during a fight. 100%% is the game as it is. Also in the game's menu under Option, Display, Improvement Mod - HUD Opacity.	A opacidade de cada parte da tela durante a luta. 100%% é o jogo original. Também fica no menu do jogo em Option, Display, Improvement Mod - HUD Opacity.	La opacidad de cada parte de la pantalla durante la pelea. 100%% es el juego original. También está en el menú del juego en Option, Display, Improvement Mod - HUD Opacity.
+How solid the whole meter looks, bars and numbers included. Lower it to see the fight behind it.	A opacidade do medidor inteiro, com barras e números. Diminua para ver a luta por trás.	La opacidad de todo el medidor, con barras y números. Bájala para ver la pelea detrás.
+How strong the glowing parts are: lamps, glows, flares and light beams. The rest of the stage keeps its brightness.	A intensidade das partes que brilham: lâmpadas, brilhos, reflexos e feixes de luz. O resto do cenário não muda.	La intensidad de las partes que brillan: lámparas, brillos, destellos y haces de luz. El resto del escenario no cambia.
+How the mod stays out of the connection	Como o mod fica longe da conexão	Cómo el mod se mantiene fuera de la conexión
+Hud	HUD	HUD
+IP  %d		
+IR		
+If a second keyboard player is set up in the game's options, those keys will work on the controller's side. Set Keyboard Player Number to 1 there to turn them off.	Se houver um segundo jogador de teclado nas opções do jogo, essas teclas vão funcionar no lado do controle. Ponha Keyboard Player Number em 1 lá para desligá-las.	Si hay un segundo jugador de teclado en las opciones del juego, esas teclas funcionarán del lado del mando. Pon Keyboard Player Number en 1 allí para desactivarlas.
+If your game falls behind the opponent's, it runs the late frames faster to catch up, so the opponent does not have to slow down for you. Needs the game's vsync off. Game default: off, the player ahead waits instead.	Se o seu jogo ficar atrás do oponente, ele roda os frames atrasados mais rápido para alcançar, e o oponente não precisa desacelerar por você. Exige o vsync do jogo desligado. Padrão do jogo: desligado; quem está à frente espera.	Si tu juego se queda atrás del rival, corre los frames atrasados más rápido para alcanzarlo, y el rival no tiene que frenar por ti. Requiere el vsync del juego desactivado. Predeterminado del juego: desactivado; el que va adelante espera.
+If your game falls behind while you watch (an alt-tab, a hitch), it runs faster for a moment to catch up instead of losing the connection. Needs the game's vsync off. Game default: off.	Se o seu jogo atrasar enquanto você assiste (um alt-tab, uma travada), ele acelera por um momento para alcançar, em vez de perder a conexão. Exige o vsync do jogo desligado. Padrão do jogo: desligado.	Si tu juego se atrasa mientras ves una partida (un alt-tab, un tirón), acelera un momento para alcanzarla en lugar de perder la conexión. Requiere el vsync del juego desactivado. Predeterminado del juego: desactivado.
+Import	Importar	Importar
+Import a stage folder	Importar uma pasta de cenário	Importar una carpeta de escenario
+Import a zip...	Importar um zip...	Importar un zip...
+Import music	Importar música	Importar música
+Import rules	Importar regras	Importar reglas
+Import soundpacks	Importar soundpacks	Importar soundpacks
+Improvements	Melhorias	Mejoras
+In a match only.	Só durante uma partida.	Solo durante una partida.
+In a window, Windows handles the display, so the display settings below do nothing. Pick fullscreen in the game's Video menu.	Em janela, quem controla a tela é o Windows, então as opções de tela abaixo não fazem nada. Escolha tela cheia no menu Video do jogo.	En ventana, la pantalla la controla Windows, así que las opciones de pantalla de abajo no hacen nada. Elige pantalla completa en el menú Video del juego.
+In degrees. Tips the scenery toward or away from the camera.	Em graus. Inclina o cenário para perto ou para longe da câmera.	En grados. Inclina el escenario hacia la cámara o lejos de ella.
+In degrees. Turns the scenery left or right around the fight.	Em graus. Gira o cenário para a esquerda ou direita em volta da luta.	En grados. Gira el escenario a la izquierda o la derecha alrededor de la pelea.
+In degrees. Wider shows more scenery around the fight, the fight keeps its size.	Em graus. Mais aberto mostra mais cenário em volta da luta, sem mudar o tamanho dela.	En grados. Más abierto muestra más escenario alrededor de la pelea, sin cambiar su tamaño.
+In place of one of the game's stages	No lugar de um dos cenários do jogo	En lugar de uno de los escenarios del juego
+Include GGPO's lines	Incluir as linhas do GGPO	Incluir las líneas de GGPO
+Input delay	Delay de input	Delay de input
+Input delay can't be read on this game version.	O delay de input não pode ser lido nesta versão do jogo.	El delay de input no se puede leer en esta versión del juego.
+Input history	Histórico de comandos	Historial de comandos
+Input lag	Input lag	Input lag
+Input lag: %.1f ms	Input lag: %.1f ms	Input lag: %.1f ms
+Input lag: press a key or a button to measure	Input lag: aperte uma tecla ou botão para medir	Input lag: presiona una tecla o un botón para medir
+Inputs not yet acknowledged	Comandos ainda não confirmados	Comandos aún no confirmados
+Install a stage	Instalar um cenário	Instalar un escenario
+Install a zip...	Instalar um zip...	Instalar un zip...
+Install as a stage	Instalar como cenário	Instalar como escenario
+Install in game	Instalar no jogo	Instalar en el juego
+Installed stages	Cenários instalados	Escenarios instalados
+Installed stages stay in Mods\\bg, and you can keep as many as you like. The picker holds %d of them at a time, and Enabled chooses which. When it is full, new stages still install but unticked, so untick one you don't play and tick the new one. Only Remove deletes files.	Os cenários instalados ficam em Mods\\bg, e você pode ter quantos quiser. O seletor mostra %d por vez, e a coluna Ativado escolhe quais. Com o seletor cheio, cenários novos são instalados desmarcados: desmarque um que você não joga e marque o novo. Só Remover apaga arquivos.	Los escenarios instalados quedan en Mods\\bg, y puedes tener todos los que quieras. El selector muestra %d a la vez, y la columna Activado elige cuáles. Con el selector lleno, los escenarios nuevos se instalan desmarcados: desmarca uno que no juegues y marca el nuevo. Solo Quitar borra archivos.
+Installs every stage in the list with the names shown. Stages that don't fit in the picker go into your library unticked.	Instala todos os cenários da lista com os nomes mostrados. Os que não cabem no seletor entram na sua biblioteca desmarcados.	Instala todos los escenarios de la lista con los nombres mostrados. Los que no entran en el selector quedan en tu biblioteca desmarcados.
+Intensity	Intensidade	Intensidad
+Invincibility Row	Linha de invencibilidade	Fila de invencibilidad
+It is not known yet which of these follows the character select cursor. Move the cursor and look for the value that follows your slot. The answer is also written to the log.	Ainda não se sabe qual destes valores acompanha o cursor da seleção de personagem. Mova o cursor e veja qual valor segue o seu slot. A resposta também vai para o log.	Todavía no se sabe cuál de estos valores sigue al cursor de la selección de personaje. Mueve el cursor y fíjate qué valor sigue a tu slot. La respuesta también va al log.
+It should be off. %s	Deveria estar desligado. %s	Debería estar desactivado. %s
+Japanese and other scripts fall back to %s	Japonês e outros alfabetos usam %s	El japonés y otros alfabetos usan %s
+Join a room to see this.	Entre numa sala para ver isto.	Entra a una sala para ver esto.
+Join room matches in progress	Entrar em partidas da sala em andamento	Unirse a partidas de la sala en curso
+Joining a room match in progress	Entrando numa partida da sala em andamento	Uniéndose a una partida de la sala en curso
+Keep the Windows pointer visible	Manter o ponteiro do Windows visível	Mantener visible el puntero de Windows
+Keep the game's follow-up holds	Manter as esperas extras do jogo	Mantener las esperas extra del juego
+Keep the keyboard working when the game is in the background	Manter o teclado funcionando com o jogo em segundo plano	Mantener el teclado funcionando con el juego en segundo plano
+Keep the menu music playing	Manter a música do menu tocando	Mantener la música del menú sonando
+Keeps the ping other players see for you accurate.\nOff by default. Never runs during a match.	Mantém correto o ping que os outros jogadores veem de você.\nDesligado por padrão. Nunca roda durante uma partida.	Mantiene correcto el ping que los otros jugadores ven de ti.\nDesactivado por defecto. Nunca funciona durante una partida.
+Keeps you on the side you picked for the whole match. When off, the game decides who goes where and only the controller moves.	Mantém você no lado escolhido a partida inteira. Desligado, o jogo decide os lados e só o controle muda.	Te mantiene en el lado elegido toda la partida. Desactivado, el juego decide los lados y solo cambia el mando.
+Keybinds	Atalhos	Atajos
+Keyboard	Teclado	Teclado
+Keyboard plays	O teclado controla	El teclado controla
+Kick	Expulsar	Expulsar
+Later	Depois	Más tarde
+Let in	Deixar entrar	Dejar entrar
+Let people watch you	Deixar outros assistirem você	Dejar que otros te vean
+Let the mod handle display scaling	Deixar o mod cuidar da escala da tela	Dejar que el mod maneje el escalado de pantalla
+Let the mod pick the display settings	Deixar o mod escolher as configurações de tela	Dejar que el mod elija los ajustes de pantalla
+Lets Steam friends with the mod watch your online matches. They join at your next match.	Deixa amigos da Steam com o mod assistirem suas partidas online. Eles entram na sua próxima partida.	Deja que amigos de Steam con el mod vean tus partidas en línea. Entran en tu próxima partida.
+Link quality	Qualidade da conexão	Calidad de la conexión
+Live sample: %d frames	Amostra ao vivo: %d frames	Muestra en vivo: %d frames
+Load	Carregar	Cargar
+Load Palettes	Carregar paletas	Cargar paletas
+Load into the game's replay list	Carregar na lista de replays do jogo	Cargar en la lista de replays del juego
+Loaded characters: %s vs %s	Personagens carregados: %s vs %s	Personajes cargados: %s vs %s
+Loading: %s.	Carregando: %s.	Cargando: %s.
+Loads the game's default colours for this slot. Press Save to keep them.	Carrega as cores padrão do jogo para este slot. Aperte Salvar para mantê-las.	Carga los colores predeterminados del juego para este slot. Presiona Guardar para conservarlos.
+Log camera diagnostic now	Registrar diagnóstico da câmera agora	Registrar diagnóstico de la cámara ahora
+Log palettes	Registrar paletas	Registrar paletas
+Looked in: %s	Procurado em: %s	Se buscó en: %s
+Looking for a mod update...	Procurando uma atualização do mod...	Buscando una actualización del mod...
+Loop from is the point, in seconds, where the track restarts when it ends. At 0 the whole track repeats, intro included. Set it past the intro to loop like UNI2's music; soundpacks save this as the track's loop point.	Repetir de é o ponto, em segundos, em que a música recomeça ao acabar. Em 0, a música inteira se repete, com a introdução. Coloque depois da introdução para repetir como as músicas do UNI2; os soundpacks salvam isso como o ponto de loop da música.	Repetir desde es el punto, en segundos, donde el tema vuelve a empezar al terminar. En 0 se repite el tema entero, con la intro. Ponlo después de la intro para que se repita como la música de UNI2; los soundpacks lo guardan como el punto de loop del tema.
+MBTL announcers	Narradores do MBTL	Narradores de MBTL
+Makes the bright parts of the picture glow: stage neon, the moon, EXS and super effects.\n\nThreshold is how bright a pixel must be to glow. Lower it and the whole picture gets hazy. Raise it and only the real highlights glow.	Faz as partes claras da imagem brilharem: neon do cenário, a lua, EXS e efeitos de super.\n\nLimiar é o quanto um pixel precisa ser claro para brilhar. Abaixe e a imagem toda fica enevoada. Aumente e só os pontos realmente claros brilham.	Hace brillar las partes claras de la imagen: el neón del escenario, la luna, EXS y efectos de super.\n\nUmbral es qué tan claro debe ser un píxel para brillar. Bájalo y toda la imagen se ve brumosa. Súbelo y solo brillan los puntos realmente claros.
+Making a mod	Como fazer um mod	Cómo hacer un mod
+Manual pause	Pausa manual	Pausa manual
+Match start	Início da partida	Inicio de la partida
+Measure	Medir	Medir
+Measured from a button press to the character reading it, which is the part of the delay the game can see. Direct3D 9 cannot report the display part, so the number below is an estimate.	Medido do aperto do botão até o personagem ler o comando, que é a parte do atraso que o jogo enxerga. O Direct3D 9 não informa a parte da tela, então o número abaixo é uma estimativa.	Medido desde que se presiona el botón hasta que el personaje lee el comando, que es la parte del retraso que el juego ve. Direct3D 9 no informa la parte de la pantalla, así que el número de abajo es una estimación.
+Median	Mediana	Mediana
+Metrics	Métricas	Métricas
+Mipmaps: %s.	Mipmaps: %s.	Mipmaps: %s.
+Misc	Diversos	Varios
+Missing characters use data from a newer version.	Personagens que faltam usam dados de uma versão mais nova.	Los personajes que faltan usan datos de una versión más nueva.
+Mod		
+Mod packets waiting: %d, sent to the opponent this match: %d B	Pacotes do mod na fila: %d, enviados ao oponente nesta partida: %d B	Paquetes del mod en cola: %d, enviados al rival en esta partida: %d B
+Mods		
+Mods folder: %s	Pasta de mods: %s	Carpeta de mods: %s
+Mods folder: %s, %d read so far	Pasta de mods: %s, %d lidos até agora	Carpeta de mods: %s, %d leídos hasta ahora
+Mods stay loaded when you play online. Art and sound only change what you see, but a mod with data or script files changes gameplay and will desync with the other player.	Os mods continuam ativos quando você joga online. Arte e som só mudam o que você vê, mas um mod com arquivos de dados ou de script muda a jogabilidade e dessincroniza com o outro jogador.	Los mods siguen activos cuando juegas en línea. El arte y el sonido solo cambian lo que ves, pero un mod con archivos de datos o de script cambia la jugabilidad y se desincroniza con el otro jugador.
+Modules	Módulos	Módulos
+Most of the game's softness comes from stretching it to your window. Sharpening brings the edges back. 40-60% works best.	A maior parte do borrado do jogo vem de esticar a imagem para a sua janela. A nitidez devolve as bordas. O melhor é 40-60%.	La mayor parte del desenfoque del juego viene de estirar la imagen a tu ventana. La nitidez devuelve los bordes. Lo mejor es 40-60%.
+Most re-simulation came at the start. The connection settled after that.	A maior parte da re-simulação foi no começo. Depois a conexão estabilizou.	La mayor parte de la re-simulación fue al principio. Después la conexión se estabilizó.
+Mouse pointer	Ponteiro do mouse	Puntero del mouse
+Move starts	Início do golpe	Inicio del movimiento
+Moves the scenery and the camera for this stage only. The fighters stay where they are. Size is in the list below.	Move o cenário e a câmera só neste cenário. Os lutadores ficam onde estão. O tamanho fica na lista abaixo.	Mueve el escenario y la cámara solo en este escenario. Los luchadores se quedan donde están. El tamaño está en la lista de abajo.
+Moves the scenery. The fighters stay where they are.	Move o cenário. Os lutadores ficam onde estão.	Mueve el escenario. Los luchadores se quedan donde están.
+Music	Música	Música
+Music control is not active: %s	O controle de música não está ativo: %s	El control de música no está activo: %s
+My controls drive	Meus controles comandam	Mis controles manejan
+Name	Nome	Nombre
+Names are saved in UNI2-IM\\SteamNames.txt and reused every session. If Steam cannot find a name, it asks again at most once every 20 seconds.	Os nomes ficam salvos em UNI2-IM\\SteamNames.txt e são reaproveitados em toda sessão. Se a Steam não achar um nome, ela tenta de novo no máximo a cada 20 segundos.	Los nombres se guardan en UNI2-IM\\SteamNames.txt y se reutilizan en cada sesión. Si Steam no encuentra un nombre, vuelve a intentar como mucho cada 20 segundos.
+Native Palette	Paleta nativa	Paleta nativa
+Netcode		
+Netplay		
+Netplay frame	Frame do netplay	Frame del netplay
+Network log	Log de rede	Log de red
+Network palette	Paleta online	Paleta en línea
+Network palette: %s	Paleta online: %s	Paleta en línea: %s
+New soundpack	Novo soundpack	Nuevo soundpack
+New...	Novo...	Nuevo...
+Next frame	Próximo frame	Siguiente frame
+No Direct3D device found. Something else is wrapping Direct3D, so the display settings below do nothing.	Nenhum dispositivo Direct3D encontrado. Outro programa está interceptando o Direct3D, então as opções de tela abaixo não fazem nada.	No se encontró ningún dispositivo Direct3D. Otro programa está interceptando Direct3D, así que las opciones de pantalla de abajo no hacen nada.
+No baseline captured yet.	Nenhuma referência capturada ainda.	Todavía no se capturó ninguna referencia.
+No match connected.	Nenhuma partida conectada.	No hay ninguna partida conectada.
+No mods installed. Install a zip, or drop a mod's folder into %s.	Nenhum mod instalado. Instale um zip ou coloque a pasta de um mod em %s.	No hay mods instalados. Instala un zip o pon la carpeta de un mod en %s.
+No notes for this release.	Sem notas para esta versão.	No hay notas para esta versión.
+No one has joined or left yet.	Ninguém entrou nem saiu ainda.	Nadie entró ni salió todavía.
+No patches added yet.	Nenhum patch adicionado ainda.	Todavía no se agregaron parches.
+No profile saved yet.	Nenhum perfil salvo ainda.	Todavía no hay ningún perfil guardado.
+No replay files yet.	Nenhum arquivo de replay ainda.	Todavía no hay archivos de replay.
+No rules yet. The game has only three matchup themes; rules let you add as many as you want.	Nenhuma regra ainda. O jogo só tem três temas de confronto; com regras você adiciona quantos quiser.	Todavía no hay reglas. El juego solo tiene tres temas de enfrentamiento; con reglas puedes agregar todos los que quieras.
+No soundpacks installed.	Nenhum soundpack instalado.	No hay soundpacks instalados.
+No stage files were found in its data\\bg folder.	Nenhum arquivo de cenário na pasta data\\bg dele.	No hay archivos de escenario en su carpeta data\\bg.
+No tearing in exclusive fullscreen	Sem tearing em tela cheia exclusiva	Sin tearing en pantalla completa exclusiva
+No themes installed.	Nenhum tema instalado.	No hay temas instalados.
+None	Nenhum	Ninguno
+None of this changes gameplay, inputs or what your opponent sees.	Nada disto muda a jogabilidade, os comandos ou o que o oponente vê.	Nada de esto cambia la jugabilidad, los comandos ni lo que ve tu rival.
+None of your Steam friends allow spectators right now.	Nenhum dos seus amigos da Steam permite espectadores agora.	Ninguno de tus amigos de Steam permite espectadores ahora.
+None yet.	Nenhum ainda.	Ninguno todavía.
+Normal controls.	Controles normais.	Controles normales.
+Normally the game freezes until the replay finishes uploading. With this on, it uploads in the background and you move on right away.	Normalmente o jogo trava até terminar de enviar o replay. Ligado, o envio é feito em segundo plano e você continua na hora.	Normalmente el juego se congela hasta terminar de subir el replay. Activado, se sube en segundo plano y sigues al instante.
+Normally the menu music starts over every time you come back from Options, Customize or Gallery. Turn this on to keep the same track playing across those screens.	Normalmente a música do menu recomeça toda vez que você volta de Options, Customize ou Gallery. Ligue para manter a mesma música tocando nessas telas.	Normalmente la música del menú vuelve a empezar cada vez que vuelves de Options, Customize o Gallery. Actívalo para que el mismo tema siga sonando en esas pantallas.
+Not every CENTRALFICTION stage may work yet. They use the CROSS TAG BATTLE camera, which was not checked against CENTRALFICTION. If one looks too big or too small, change its Size.	Nem todo cenário de CENTRALFICTION funciona ainda. Eles usam a câmera de CROSS TAG BATTLE, que não foi conferida com CENTRALFICTION. Se algum ficar grande ou pequeno demais, ajuste o Tamanho dele.	No todos los escenarios de CENTRALFICTION funcionan todavía. Usan la cámara de CROSS TAG BATTLE, que no se comprobó con CENTRALFICTION. Si alguno se ve demasiado grande o chico, ajusta su Tamaño.
+Not part of any level above, because a match with no background is worse than a blurry one. Use it if your PC still cannot hold 60 fps on Potato.	Não faz parte de nenhum nível acima, porque lutar sem fundo é pior do que com fundo borrado. Use se o seu PC ainda não segurar 60 fps no Potato.	No forma parte de ningún nivel de arriba, porque pelear sin fondo es peor que con un fondo borroso. Úsalo si tu PC todavía no aguanta 60 fps en Potato.
+Not saved. Changing the character or slot loses these changes.	Não salvo. Trocar de personagem ou de slot descarta estas mudanças.	Sin guardar. Cambiar de personaje o de slot descarta estos cambios.
+Nothing captured yet. It fills in when an online match starts.	Nada capturado ainda. Aparece quando uma partida online começa.	Nada capturado todavía. Aparece cuando empieza una partida en línea.
+Nothing in %s yet.	Nada em %s ainda.	Nada en %s todavía.
+Nothing is being measured. Turn on Measure and play for a few seconds.	Nada está sendo medido. Ligue Medir e jogue por alguns segundos.	No se está midiendo nada. Activa Medir y juega unos segundos.
+Nothing picked yet. Tick Pack on the tracks you want in it.	Nada escolhido ainda. Marque Pack nas músicas que quiser incluir.	Nada elegido todavía. Marca Pack en los temas que quieras incluir.
+Nothing sampled yet.	Nenhuma amostra ainda.	Todavía no hay muestras.
+Now: %s	Agora: %s	Ahora: %s
+Object layer: %s	Camada de objetos: %s	Capa de objetos: %s
+Off	Desligado	Desactivado
+Off on this copy of the game, see the note at the top.	Desligado nesta cópia do jogo; veja o aviso no topo.	Desactivado en esta copia del juego; mira el aviso de arriba.
+Offline Training doesn't need a restart. Entering it switches the battle data to %s, and leaving it switches back.	O Training offline não precisa reiniciar. Ao entrar, os dados de batalha mudam para %s, e ao sair voltam.	El Training sin conexión no necesita reiniciar. Al entrar, los datos de batalla cambian a %s, y al salir vuelven.
+On-screen lines for what each character says.	Legendas na tela para as falas de cada personagem.	Subtítulos en pantalla para lo que dice cada personaje.
+One step per line. Anything after a step on the same line is ignored, so notes are free.	Um passo por linha. O que vier depois do passo na mesma linha é ignorado, então dá para anotar à vontade.	Un paso por línea. Lo que venga después del paso en la misma línea se ignora, así que puedes anotar lo que quieras.
+One tab per side	Uma aba por lado	Una pestaña por lado
+Online		
+Online: %s is only used in player matches where the other player has the mod and the same patch. Ranked, casual and everyone else get the installed game, switched before the match starts.	Online: %s só é usado em player matches em que o outro jogador tem o mod e o mesmo patch. Ranked, casual e o resto usam o jogo instalado, trocado antes de a partida começar.	En línea: %s solo se usa en player matches donde el otro jugador tiene el mod y el mismo parche. Ranked, casual y el resto usan el juego instalado, cambiado antes de que empiece la partida.
+Online: the sides are left alone until the match ends.	Online: os lados não mudam até a partida acabar.	En línea: los lados no cambian hasta que termine la partida.
+Only lines with a spoken note	Só falas com anotação de voz	Solo líneas con nota de voz
+Only what I wrote	Só o que eu escrevi	Solo lo que escribí
+Opacity	Opacidade	Opacidad
+Open	Abrir	Abrir
+Open Player Control and press something to measure.	Abra o Player Control e aperte algo para medir.	Abre Player Control y presiona algo para medir.
+Open folder	Abrir pasta	Abrir carpeta
+Open the Sounds folder	Abrir a pasta Sounds	Abrir la carpeta Sounds
+Open the folder	Abrir a pasta	Abrir la carpeta
+Open the readme	Abrir o leia-me	Abrir el archivo léeme
+Open the release page	Abrir a página da versão	Abrir la página de la versión
+Open this release on GitHub	Abrir esta versão no GitHub	Abrir esta versión en GitHub
+Opens the release on GitHub in your browser.	Abre a versão do GitHub no navegador.	Abre la versión de GitHub en el navegador.
+Opponent	Oponente	Rival
+Opponent names are being replaced with \"%s\".	Os nomes dos oponentes estão sendo trocados por \"%s\".	Los nombres de los rivales se están reemplazando por \"%s\".
+Opponents	Oponentes	Rivales
+Options	Opções	Opciones
+Other people's names	Nomes de outros jogadores	Nombres de otros jugadores
+Output resolution	Resolução de saída	Resolución de salida
+Overlay appearance	Aparência do overlay	Apariencia del overlay
+Overlay pointer	Ponteiro do overlay	Puntero del overlay
+Overlay scale	Escala do overlay	Escala del overlay
+P%d		
+P%d  %s		
+P%d: no character yet	P%d: nenhum personagem ainda	P%d: todavía sin personaje
+P1		
+P2		
+P2 also has a Slot, with Write to slot and Read from slot. Its Play writes the slot and uses UNI2's playback, so the playback menu options work too (repeat, on reversal, after a restart). P1 has no slot because the game only plays recordings on the dummy. P1's Play goes through Player Control instead.	O P2 também tem um Slot, com Gravar no slot e Ler do slot. O Tocar dele grava o slot e usa a reprodução do UNI2, então as opções do menu de reprodução também funcionam (repetir, no reversal, após reiniciar). O P1 não tem slot porque o jogo só reproduz gravações no dummy; o Tocar do P1 passa pelo Player Control.	P2 también tiene un Slot, con Escribir en el slot y Leer del slot. Su Reproducir escribe el slot y usa la reproducción de UNI2, así que las opciones del menú de reproducción también funcionan (repetir, en reversal, después de reiniciar). P1 no tiene slot porque el juego solo reproduce grabaciones en el dummy; el Reproducir de P1 pasa por Player Control.
+PERSONA 4 ARENA ULTIMAX places its camera where CROSS TAG BATTLE does, but its field of view was not checked. If a stage looks too big or too small, change its Size.	PERSONA 4 ARENA ULTIMAX posiciona a câmera como CROSS TAG BATTLE, mas o campo de visão não foi conferido. Se um cenário ficar grande ou pequeno demais, ajuste o Tamanho dele.	PERSONA 4 ARENA ULTIMAX coloca la cámara igual que CROSS TAG BATTLE, pero su campo de visión no se comprobó. Si un escenario se ve demasiado grande o chico, ajusta su Tamaño.
+PERSONA 4 ARENA ULTIMAX stages are not perfect yet. Some of them work, others may look wrong.	Os cenários de PERSONA 4 ARENA ULTIMAX ainda não estão perfeitos. Alguns funcionam, outros podem ficar estranhos.	Los escenarios de PERSONA 4 ARENA ULTIMAX todavía no son perfectos. Algunos funcionan, otros pueden verse raros.
+POTATO MODE		
+Pack	Pack	Pack
+Packs	Packs	Packs
+Palette	Paleta	Paleta
+Palette (legacy)	Paleta (antiga)	Paleta (antigua)
+Palette editor	Editor de paletas	Editor de paletas
+Palette report written to %s	Relatório de paletas gravado em %s	Reporte de paletas escrito en %s
+Patches are unavailable: this mod version can't find the game's data search path.	Patches indisponíveis: esta versão do mod não acha o caminho de dados do jogo.	Parches no disponibles: esta versión del mod no encuentra la ruta de datos del juego.
+Pause	Pausar	Pausar
+Pause mode	Modo de pausa	Modo de pausa
+Pauses on every hit that connects, using the game's combo counter. Blocked hits do not count.	Pausa a cada golpe que acerta, pelo contador de combo do jogo. Golpes bloqueados não contam.	Pausa en cada golpe que conecta, según el contador de combo del juego. Los golpes bloqueados no cuentan.
+Pauses on the first startup frame of a move. Jumps, dashes and assaults count as movement, so they do not trigger this.	Pausa no primeiro frame de startup de um golpe. Pulos, dashes e assaults contam como movimentação, então não ativam isto.	Pausa en el primer frame de startup de un movimiento. Saltos, dashes y assaults cuentan como desplazamiento, así que no lo activan.
+Performance	Desempenho	Rendimiento
+Performance and graphics	Desempenho e gráficos	Rendimiento y gráficos
+Performance editor	Editor de desempenho	Editor de rendimiento
+Pick a character and its pack, then give any of its sounds a new file. Back to original restores the game's sound.	Escolha um personagem e o pack dele, depois troque o arquivo de qualquer som. Voltar ao original restaura o som do jogo.	Elige un personaje y su pack, luego cambia el archivo de cualquier sonido. Volver al original restaura el sonido del juego.
+Pick a character at Network > Character Select first.	Escolha antes um personagem em Network > Character Select.	Elige antes un personaje en Network > Character Select.
+Pick a folder	Escolher uma pasta	Elegir una carpeta
+Pick a folder with UNIclr.exe, UNIst.exe or UNIEL.exe to take that game's voice for this character, matched line by line. Or pick a voice mod for this game (a folder with an se folder inside) to take this character's sounds from it. Either way you get a pack for this character only, and running it again replaces what it added.	Escolha uma pasta com UNIclr.exe, UNIst.exe ou UNIEL.exe para trazer a voz daquele jogo para este personagem, fala por fala. Ou escolha um mod de voz deste jogo (uma pasta com uma pasta se dentro) para trazer os sons deste personagem. Nos dois casos você ganha um pack só deste personagem, e rodar de novo substitui o que foi adicionado.	Elige una carpeta con UNIclr.exe, UNIst.exe o UNIEL.exe para traer la voz de ese juego a este personaje, línea por línea. O elige un mod de voz de este juego (una carpeta con una carpeta se adentro) para traer los sonidos de este personaje. En ambos casos obtienes un pack solo de este personaje, y ejecutarlo de nuevo reemplaza lo que agregó.
+Pick a friend to watch. You can't be in your room while watching.	Escolha um amigo para assistir. Você não pode estar na sua sala enquanto assiste.	Elige un amigo para ver. No puedes estar en tu sala mientras ves.
+Pick an MP3, OGG or WAV file. It is copied into the mod and listed in Browse and in the game's Stage & BGM Select. Anything that isn't OGG Vorbis is converted, and the copy in Music\\.cache can be deleted at any time.	Escolha um arquivo MP3, OGG ou WAV. Ele é copiado para o mod e aparece em Navegar e no Stage & BGM Select do jogo. O que não for OGG Vorbis é convertido; a cópia em Music\\.cache pode ser apagada quando quiser.	Elige un archivo MP3, OGG o WAV. Se copia al mod y aparece en Explorar y en el Stage & BGM Select del juego. Lo que no sea OGG Vorbis se convierte; la copia en Music\\.cache se puede borrar cuando quieras.
+Pick any colour for this part. Its other shades change to match.\n\nThe mod shows it here, and in matches once you export it. Players without the mod see the stock colour.	Escolha qualquer cor para esta parte. Os outros tons dela acompanham.\n\nO mod mostra aqui e, depois de exportar, nas partidas. Quem não tem o mod vê a cor original.	Elige cualquier color para esta parte. Sus otros tonos la acompañan.\n\nEl mod lo muestra aquí y, después de exportar, en las partidas. Quien no tiene el mod ve el color original.
+Pick the DXVK folder...		
+Pick the art each character wears on character select, the versus screen, the battle gauge, the winner screen and the main menu.	Escolha a arte que cada personagem usa na seleção de personagem, na tela de versus, na barra da luta, na tela de vitória e no menu principal.	Elige el arte que usa cada personaje en la selección de personaje, la pantalla de versus, la barra de pelea, la pantalla de victoria y el menú principal.
+Pick the dgVoodoo folder...		
+Pick the folder a game is installed in and the mod reads its stage data. Nothing is downloaded and no UNI2 file is replaced.\n\nFrench-Bread: UNI[st], UNI[cl-r], UNI Exe:Late, MELTY BLOOD: TYPE LUMINA and DENGEKI BUNKO FIGHTING CLIMAX IGNITION.\n\nArc System Works: every stage of BLAZBLUE CROSS TAG BATTLE, and the stages of PERSONA 4 ARENA ULTIMAX and BLAZBLUE CENTRALFICTION.\nPERSONA 4 ARENA ULTIMAX stages are not perfect yet. Some of them work.\nNot every BLAZBLUE CENTRALFICTION stage may work yet.	Escolha a pasta onde um jogo está instalado e o mod lê os dados de cenário dele. Nada é baixado e nenhum arquivo do UNI2 é substituído.\n\nFrench-Bread: UNI[st], UNI[cl-r], UNI Exe:Late, MELTY BLOOD: TYPE LUMINA e DENGEKI BUNKO FIGHTING CLIMAX IGNITION.\n\nArc System Works: todos os cenários de BLAZBLUE CROSS TAG BATTLE, e os de PERSONA 4 ARENA ULTIMAX e BLAZBLUE CENTRALFICTION.\nOs de PERSONA 4 ARENA ULTIMAX ainda não estão perfeitos; alguns funcionam.\nNem todos os de BLAZBLUE CENTRALFICTION funcionam ainda.	Elige la carpeta donde está instalado un juego y el mod lee sus datos de escenario. No se descarga nada y no se reemplaza ningún archivo de UNI2.\n\nFrench-Bread: UNI[st], UNI[cl-r], UNI Exe:Late, MELTY BLOOD: TYPE LUMINA y DENGEKI BUNKO FIGHTING CLIMAX IGNITION.\n\nArc System Works: todos los escenarios de BLAZBLUE CROSS TAG BATTLE, y los de PERSONA 4 ARENA ULTIMAX y BLAZBLUE CENTRALFICTION.\nLos de PERSONA 4 ARENA ULTIMAX todavía no son perfectos; algunos funcionan.\nNo todos los de BLAZBLUE CENTRALFICTION funcionan todavía.
+Pick the folder that holds data and script. Name the patch after its version so the engine values match it.	Escolha a pasta que contém data e script. Dê ao patch o nome da versão para os valores do motor baterem.	Elige la carpeta que contiene data y script. Ponle al parche el nombre de su versión para que coincidan los valores del motor.
+Pick the folder with UNIclr.exe, UNIst.exe, MBTL.exe or MBAA.exe. The mod reads that game's music from your copy and installs it as a soundpack, with song titles and loop points. Nothing is downloaded, and running it again on the same game replaces what it added.	Escolha a pasta com UNIclr.exe, UNIst.exe, MBTL.exe ou MBAA.exe. O mod lê as músicas daquele jogo na sua cópia e instala como soundpack, com nomes e pontos de loop. Nada é baixado, e rodar de novo no mesmo jogo substitui o que foi adicionado.	Elige la carpeta con UNIclr.exe, UNIst.exe, MBTL.exe o MBAA.exe. El mod lee la música de ese juego en tu copia y la instala como soundpack, con títulos y puntos de loop. No se descarga nada, y ejecutarlo de nuevo con el mismo juego reemplaza lo que agregó.
+Picking this colour at character select puts this palette on.\nA palette with no colour is an extended slot: keep pressing right past the game's last colour to reach it.\nPlayers without the mod see the game's colour - the first one for an extended slot.\nChanging palette during a match still wins until the next match.	Escolher esta cor na seleção de personagem aplica esta paleta.\nUma paleta sem cor fica num slot extra: continue apertando para a direita depois da última cor do jogo para chegar nela.\nQuem não tem o mod vê a cor do jogo (a primeira, no caso de slot extra).\nTrocar de paleta durante a partida vale até a próxima partida.	Elegir este color en la selección de personaje aplica esta paleta.\nUna paleta sin color queda en un slot extra: sigue presionando a la derecha después del último color del juego para llegar a ella.\nQuien no tiene el mod ve el color del juego (el primero, en el caso de un slot extra).\nCambiar de paleta durante la partida vale hasta la próxima partida.
+Ping (GGPO)		
+Ping (Steam)		
+Place automatically	Posicionar automaticamente	Colocar automáticamente
+Plate	Placa	Placa
+Plate title	Título da placa	Título de la placa
+Play	Tocar	Reproducir
+Play is usually all you need. Use Write to slot when you want the game's playback settings: write the slot, then set the dummy's action to recorded playback in the training menu. If the slot was never recorded into, the mod fills it in so it is no longer greyed out.	Normalmente Tocar basta. Use Gravar no slot quando quiser as opções de reprodução do jogo: grave o slot e depois ponha a ação do dummy em reprodução gravada no menu de treino. Se o slot nunca recebeu gravação, o mod o preenche para ele não ficar desativado.	Normalmente basta con Reproducir. Usa Escribir en el slot cuando quieras las opciones de reproducción del juego: escribe el slot y luego pon la acción del dummy en reproducción grabada en el menú de entrenamiento. Si el slot nunca tuvo una grabación, el mod lo llena para que no quede desactivado.
+Play someone online and they appear here.	Jogue com alguém online e a pessoa aparece aqui.	Juega con alguien en línea y aparecerá aquí.
+Play starts a track and keeps it playing. Press Stop to give the game its music back.	Tocar inicia uma música e a mantém tocando. Aperte Parar para devolver a música ao jogo.	Reproducir inicia un tema y lo mantiene sonando. Presiona Detener para devolverle la música al juego.
+Play: runs the script on that side.	Tocar: roda o script naquele lado.	Reproducir: ejecuta el script en ese lado.
+Player Card	Player Card	Player Card
+Player Control	Player Control	Player Control
+Players who crash, alt-F4 or get kicked stay stuck in the room list. This removes them.\nOff by default.	Jogadores que crasham, dão alt-F4 ou são expulsos ficam presos na lista da sala. Isto os remove.\nDesligado por padrão.	Los jugadores que crashean, hacen alt-F4 o son expulsados quedan trabados en la lista de la sala. Esto los quita.\nDesactivado por defecto.
+Playing %s.	Tocando %s.	Reproduciendo %s.
+Playing a versus match	Jogando uma partida versus	Jugando una partida versus
+Playing it back	Reproduzindo	Reproduciéndolo
+Playing the installed game.	Jogando o jogo instalado.	Jugando el juego instalado.
+Playing: %s	Tocando: %s	Reproduciendo: %s
+Portraits	Retratos	Retratos
+Pose	Pose	Pose
+Presenting %.1f frames a second	Exibindo %.1f frames por segundo	Mostrando %.1f frames por segundo
+Presets	Predefinições	Preajustes
+Press Enter to save. It gets cut to the length of each name.	Aperte Enter para salvar. O texto é cortado no tamanho de cada nome.	Presiona Enter para guardar. El texto se recorta al largo de cada nombre.
+Presses each button to learn your layout, so scripts and Player Control use the right A/B/C/D even with custom buttons. Takes a few seconds. Do not press anything.	Aperta cada botão para aprender o seu layout, assim os scripts e o Player Control usam o A/B/C/D certo mesmo com botões trocados. Leva alguns segundos. Não aperte nada.	Presiona cada botón para aprender tu configuración, así los scripts y Player Control usan el A/B/C/D correcto aunque cambies los botones. Tarda unos segundos. No presiones nada.
+Preview	Prévia	Vista previa
+Privacy	Privacidade	Privacidad
+Profiles	Perfis	Perfiles
+Proration info	Info de proration	Info de proration
+Put a shader in the Shaders folder next to the ini and pick it here. It runs last, over the finished frame.\n\nSupported: .hlsl, .ps, .fx, .slang, .glsl, .frag and .fsh. Anything that is not HLSL is translated and saved in the Translated folder, so you can fix it there.\n\nOnly single pass shaders work. See the README in the folder for details.\n\nNeeds d3dcompiler_47.dll, which comes with Windows and Proton.	Coloque um shader na pasta Shaders, ao lado do ini, e escolha aqui. Ele roda por último, sobre a imagem final.\n\nFormatos: .hlsl, .ps, .fx, .slang, .glsl, .frag e .fsh. O que não for HLSL é traduzido e salvo na pasta Translated, para você corrigir lá.\n\nSó shaders de uma passada funcionam. Detalhes no README da pasta.\n\nExige o d3dcompiler_47.dll, que já vem com o Windows e o Proton.	Pon un shader en la carpeta Shaders, junto al ini, y elígelo aquí. Se ejecuta al final, sobre la imagen terminada.\n\nFormatos: .hlsl, .ps, .fx, .slang, .glsl, .frag y .fsh. Lo que no sea HLSL se traduce y se guarda en la carpeta Translated, para que lo corrijas allí.\n\nSolo funcionan shaders de una pasada. Detalles en el README de la carpeta.\n\nRequiere d3dcompiler_47.dll, que ya viene con Windows y Proton.
+Put your files at the same paths the game uses, and add a mod.ini to give it a name. A folder without one still works and is listed by its folder name.	Coloque seus arquivos nos mesmos caminhos que o jogo usa e adicione um mod.ini para dar um nome. Sem ele, a pasta funciona igual e aparece com o próprio nome.	Pon tus archivos en las mismas rutas que usa el juego y agrega un mod.ini para darle un nombre. Sin él, la carpeta funciona igual y aparece con su propio nombre.
+Puts back every value this stage came with.	Restaura todos os valores originais deste cenário.	Restaura todos los valores originales de este escenario.
+Puts back the values this stage came with for this part.	Restaura os valores originais deste cenário nesta parte.	Restaura los valores originales de este escenario en esta parte.
+Puts the backed up stage back.	Restaura o cenário do backup.	Restaura el escenario respaldado.
+Puts this stage into BBTAG or BBCF in place of one of their stages. Neither game can take a new stage, so one has to make room. The original is backed up first.	Coloca este cenário no BBTAG ou no BBCF no lugar de um dos cenários deles. Nenhum dos dois aceita cenários novos, então um precisa sair. Antes é feito um backup do original.	Pone este escenario en BBTAG o BBCF en lugar de uno de sus escenarios. Ninguno de los dos acepta escenarios nuevos, así que uno tiene que salir. Antes se respalda el original.
+Randomizer	Aleatório	Aleatorio
+Raw readouts of the game's memory and the search tools used to build the mod. Ctrl+F1 opens it too.	Leituras da memória do jogo e as ferramentas de busca usadas para criar o mod. Ctrl+F1 também abre.	Lecturas de la memoria del juego y las herramientas de búsqueda usadas para crear el mod. Ctrl+F1 también lo abre.
+Re-read	Ler de novo	Volver a leer
+Re-simulated per second	Re-simulados por segundo	Re-simulados por segundo
+Read from slot	Ler do slot	Leer del slot
+Read input later	Ler o comando mais tarde	Leer el comando más tarde
+Reading another account's replays. Nothing is written to it, and new matches still save to yours.	Lendo os replays de outra conta. Nada é gravado nela, e as partidas novas continuam salvando na sua.	Leyendo los replays de otra cuenta. No se escribe nada en ella, y las partidas nuevas se siguen guardando en la tuya.
+Reading the folder...	Lendo a pasta...	Leyendo la carpeta...
+Reads the character's colours from the game again. Use it if they changed colour after you opened this. Your edits are kept.	Relê as cores do personagem no jogo. Use se ele trocou de cor depois que você abriu isto. Suas edições ficam.	Vuelve a leer los colores del personaje del juego. Úsalo si cambió de color después de abrir esto. Tus cambios se conservan.
+Real pixels at %d DPI.	Pixels reais em %d DPI.	Píxeles reales a %d DPI.
+Recommended	Recomendado	Recomendado
+Recording	Gravando	Grabando
+Refresh	Atualizar	Actualizar
+Relay network	Rede de relay	Red de relay
+Release notes	Notas da versão	Notas de la versión
+Reload from game	Recarregar do jogo	Recargar del juego
+Reloads UNI2-IM\\Palettes. Each character has a folder named after them. Put a .pal file there (the game's format, which Hantei-kun also saves) and it shows up here. The folders are created the first time you press this.	Recarrega UNI2-IM\\Palettes. Cada personagem tem uma pasta com o nome dele. Coloque um .pal lá (o formato do jogo, que o Hantei-kun também salva) e ele aparece aqui. As pastas são criadas na primeira vez que você aperta isto.	Recarga UNI2-IM\\Palettes. Cada personaje tiene una carpeta con su nombre. Pon un .pal ahí (el formato del juego, que Hantei-kun también guarda) y aparece aquí. Las carpetas se crean la primera vez que presionas esto.
+Remove	Remover	Quitar
+Remove players who disconnect or get kicked	Remover quem desconecta ou é expulso	Quitar a quien se desconecta o es expulsado
+Rename	Renomear	Renombrar
+Replace	Substituir	Reemplazar
+Replace is the quick way: pick a character, load its sounds, press New on the one you want and choose a file. Your first change asks you to name a pack, and later changes go into the same pack.	Substituir é o jeito rápido: escolha um personagem, carregue os sons dele, aperte Novo no som desejado e escolha um arquivo. Na primeira mudança você dá nome a um pack, e as próximas vão para o mesmo pack.	Reemplazar es la forma rápida: elige un personaje, carga sus sonidos, presiona Nuevo en el sonido que quieras y elige un archivo. En el primer cambio le pones nombre a un pack, y los siguientes van al mismo pack.
+Replace it with a stage folder	Substituir por uma pasta de cenário	Reemplazarlo por una carpeta de escenario
+Replaces room names in the room search with your \"Shown instead\" text. Only on your screen.	Troca os nomes de sala na busca de salas pelo seu texto de \"Shown instead\". Só na sua tela.	Reemplaza los nombres de sala en la búsqueda de salas por tu texto de \"Shown instead\". Solo en tu pantalla.
+Replaces the stage with a solid colour for chroma keying. Characters, effects and the HUD are untouched.	Troca o cenário por uma cor sólida para chroma key. Personagens, efeitos e HUD não mudam.	Reemplaza el escenario por un color sólido para chroma key. Personajes, efectos y HUD no cambian.
+Replacing a game stage	Substituindo um cenário do jogo	Reemplazar un escenario del juego
+Replay upload	Envio de replay	Subida de replay
+Replay upload: %d of %d step(s) failed, see the log	Envio de replay: %d de %d etapa(s) falharam; veja o log	Subida de replay: fallaron %d de %d paso(s); mira el log
+Replay uploaded in the background	Replay enviado em segundo plano	Replay subido en segundo plano
+Replays	Replays	Replays
+Rescan	Buscar de novo	Volver a buscar
+Rescan folder	Buscar na pasta de novo	Volver a buscar en la carpeta
+Rescan music folder	Buscar na pasta de músicas de novo	Volver a buscar en la carpeta de música
+Reset	Redefinir	Restablecer
+Reset all	Redefinir tudo	Restablecer todo
+Reset effects	Redefinir efeitos	Restablecer efectos
+Reset live	Redefinir ao vivo	Restablecer en vivo
+Reset slot	Redefinir slot	Restablecer slot
+Reset volumes	Redefinir volumes	Restablecer volúmenes
+Resolution, shaders, frame pacing and POTATO MODE.	Resolução, shaders, cadência de frames e POTATO MODE.	Resolución, shaders, cadencia de frames y POTATO MODE.
+Restart the game	Reiniciar o jogo	Reiniciar el juego
+Restart the game to apply.	Reinicie o jogo para aplicar.	Reinicia el juego para aplicar.
+Restart the game to apply. The game was not made for it, so it is off by default.	Reinicie o jogo para aplicar. O jogo não foi feito para isto, então vem desligado.	Reinicia el juego para aplicar. El juego no se hizo para esto, así que viene desactivado.
+Restart the game to use the loaded profile.	Reinicie o jogo para usar o perfil carregado.	Reinicia el juego para usar el perfil cargado.
+Restart the game to use these settings. The netcode changes are put in place when the game starts.	Reinicie o jogo para usar estas configurações. As mudanças de netcode são aplicadas quando o jogo inicia.	Reinicia el juego para usar estos ajustes. Los cambios de netcode se aplican al iniciar el juego.
+Restarting	Reiniciando	Reiniciando
+Restarting the game.	Reiniciando o jogo.	Reiniciando el juego.
+Restore	Restaurar	Restaurar
+Restore original	Restaurar original	Restaurar original
+Reversal action after restart	Ação de reversal depois de reiniciar	Acción de reversal después de reiniciar
+Right now	Agora	Ahora mismo
+Rollback		
+Rollback in the first 15 seconds of an online match.	Rollback nos primeiros 15 segundos de uma partida online.	Rollback en los primeros 15 segundos de una partida en línea.
+Rollback, ping, the room, your match history and privacy.	Rollback, ping, a sala, seu histórico de partidas e privacidade.	Rollback, ping, la sala, tu historial de partidas y privacidad.
+Room %llu, last update %u s ago	Sala %llu, última atualização há %u s	Sala %llu, última actualización hace %u s
+Room names	Nomes de sala	Nombres de sala
+Room ping	Ping da sala	Ping de la sala
+Rooms: %s	Salas: %s	Salas: %s
+Round trip for the time sync	Ida e volta da sincronização de tempo	Ida y vuelta de la sincronización de tiempo
+Route	Rota	Ruta
+Rows	Linhas	Filas
+Rules	Regras	Reglas
+Run late frames to catch up in versus	Acelerar frames atrasados para alcançar no versus	Acelerar frames atrasados para alcanzar en versus
+Run the game through DXVK	Rodar o jogo com DXVK	Ejecutar el juego con DXVK
+Run the game through dgVoodoo	Rodar o jogo com dgVoodoo	Ejecutar el juego con dgVoodoo
+Running %s.	Executando %s.	Ejecutando %s.
+Running now: UNI2's native netcode.	Em uso: o netcode nativo do UNI2.	En uso: el netcode nativo de UNI2.
+Running now: the mod's netcode changes.	Em uso: as mudanças de netcode do mod.	En uso: los cambios de netcode del mod.
+Same as UNI2's Input lag option. More delay means fewer rollbacks but slower controls.\nApplies from your next match.	O mesmo que a opção Input lag do UNI2. Mais delay significa menos rollbacks, mas controles mais lentos.\nVale a partir da próxima partida.	Igual que la opción Input lag de UNI2. Más delay significa menos rollbacks pero controles más lentos.\nSe aplica desde tu próxima partida.
+Saturation	Saturação	Saturación
+Save	Salvar	Guardar
+Save current settings	Salvar as configurações atuais	Guardar los ajustes actuales
+Save each new replay to a file	Salvar cada replay novo num arquivo	Guardar cada replay nuevo en un archivo
+Save folder	Pasta de saves	Carpeta de guardado
+Save or pick a palette to give it a slot.	Salve ou escolha uma paleta para dar um slot a ela.	Guarda o elige una paleta para darle un slot.
+Save soundpack	Salvar soundpack	Guardar soundpack
+Save: keeps it under that side's character, by the name in the box.	Salvar: guarda no personagem daquele lado, com o nome digitado.	Guardar: lo guarda en el personaje de ese lado, con el nombre escrito.
+Saved to UNI2_IM.ini as soon as something is bound.	Salvo no UNI2_IM.ini assim que algo é atribuído.	Se guarda en UNI2_IM.ini en cuanto se asigna algo.
+Saves a .pal in this character's folder with the colors from both tabs. It uses the game's palette format, so Hantei-kun can open it too.	Salva um .pal na pasta deste personagem com as cores das duas abas. Usa o formato de paleta do jogo, então o Hantei-kun também abre.	Guarda un .pal en la carpeta de este personaje con los colores de ambas pestañas. Usa el formato de paleta del juego, así que Hantei-kun también lo abre.
+Saves connection info to a file. Send it when you report a connection problem.	Salva as informações da conexão num arquivo. Mande junto ao relatar um problema de conexão.	Guarda la información de la conexión en un archivo. Envíalo al reportar un problema de conexión.
+Saves every setting as it is now under this name. Letters, digits, spaces, - and _, up to 32.	Salva todas as configurações atuais com este nome. Letras, números, espaços, - e _, até 32.	Guarda todos los ajustes actuales con este nombre. Letras, números, espacios, - y _, hasta 32.
+Saves these colours as a .pal in this character's palette folder, so the mod can use them in a match. Only needed if you picked custom colours.	Salva estas cores como .pal na pasta de paletas deste personagem, para o mod usá-las nas partidas. Só é preciso se você escolheu cores personalizadas.	Guarda estos colores como .pal en la carpeta de paletas de este personaje, para que el mod los use en las partidas. Solo hace falta si elegiste colores personalizados.
+Saves this slot to the game. Nothing above changes the game until you press it.	Salva este slot no jogo. Nada acima muda o jogo até você apertar isto.	Guarda este slot en el juego. Nada de lo de arriba cambia el juego hasta que lo presiones.
+Scales every screen shake in the game (Wald's walk, heavy hits, cutscenes). Shakes keep their length and timing and only move less. 100%% is the game's default and 0 turns shaking off.	Ajusta todo tremor de tela do jogo (a caminhada do Wald, golpes pesados, cinemáticas). A duração e o ritmo continuam; só o movimento diminui. 100%% é o padrão do jogo e 0 desliga o tremor.	Ajusta todas las sacudidas de pantalla del juego (la caminata de Wald, golpes fuertes, cinemáticas). La duración y el ritmo se mantienen; solo se mueven menos. 100%% es el valor del juego y 0 las desactiva.
+Scanlines	Scanlines	Scanlines
+Scene %u, %s	Cena %u, %s	Escena %u, %s
+Screen shake strength	Força do tremor de tela	Intensidad de la sacudida de pantalla
+See the other player's colours	Ver as cores do outro jogador	Ver los colores del otro jugador
+See the update	Ver a atualização	Ver la actualización
+Send queue	Fila de envio	Cola de envío
+Sends the game back to its first loading screen, so it loads the patch like a fresh launch. In training it leaves the battle first.	Volta o jogo para a primeira tela de carregamento, para ele carregar o patch como se tivesse acabado de abrir. No treino, sai da luta antes.	Devuelve el juego a su primera pantalla de carga, para que cargue el parche como si se acabara de abrir. En entrenamiento, primero sale de la pelea.
+Sent	Enviado	Enviado
+Set	Definir	Asignar
+Shader pack	Pack de shaders	Pack de shaders
+Shaders	Shaders	Shaders
+Shaders: %s	Shaders: %s	Shaders: %s
+Share your soundpacks	Compartilhe seus soundpacks	Comparte tus soundpacks
+Sharing palettes is off, so other players see the game's colour.	O compartilhamento de paletas está desligado, então os outros jogadores veem a cor do jogo.	Compartir paletas está desactivado, así que los otros jugadores ven el color del juego.
+Sharpening	Nitidez	Nitidez
+Show Origin	Mostrar origem	Mostrar origen
+Show hitboxes and frame meter in the pause menu	Mostrar hitboxes e medidor de frames no menu de pausa	Mostrar hitboxes y medidor de frames en el menú de pausa
+Show subtitles	Mostrar legendas	Mostrar subtítulos
+Show the update	Mostrar a atualização	Mostrar la actualización
+Show who is speaking	Mostrar quem está falando	Mostrar quién habla
+Shown in the menu: %d of %d	Mostrados no menu: %d de %d	Mostrados en el menú: %d de %d
+Shown instead	Mostrar no lugar	Mostrar en su lugar
+Shows Light and Size on the stage list, and the placement sliders under it. Light only affects glowing (additive) parts, which UNI2's stages do not have. The right Size is different on every stage.	Mostra Luz e Tamanho na lista de cenários e os controles de posição abaixo dela. Luz só afeta partes que brilham (aditivas), que os cenários do UNI2 não têm. O Tamanho ideal muda de cenário para cenário.	Muestra Luz y Tamaño en la lista de escenarios y los controles de posición debajo. Luz solo afecta a las partes que brillan (aditivas), que los escenarios de UNI2 no tienen. El Tamaño ideal cambia en cada escenario.
+Shows each GRD gain or loss, in blocks, above the GRD gauge.\nOffline training only.	Mostra cada ganho ou perda de GRD, em blocos, acima da barra de GRD.\nSó no treino offline.	Muestra cada ganancia o pérdida de GRD, en bloques, encima de la barra de GRD.\nSolo en entrenamiento sin conexión.
+Shows how many frames each finished band lasted, at the end of the band. Bands too short to fit the number stay blank.	Mostra quantos frames cada faixa durou, no fim dela. Faixas curtas demais para o número ficam em branco.	Muestra cuántos frames duró cada franja, al final de ella. Las franjas demasiado cortas para el número quedan en blanco.
+Shows if your opponent has the mod. Palettes are only sent to opponents who do.	Mostra se o seu oponente tem o mod. As paletas só são enviadas para quem tem.	Muestra si tu rival tiene el mod. Las paletas solo se envían a quien lo tiene.
+Shows the exact health under each health bar, and how much the trailing bar still has to drop. Offline only.	Mostra a vida exata embaixo de cada barra de vida e quanto a barra vermelha ainda vai cair. Só offline.	Muestra la vida exacta debajo de cada barra de vida y cuánto le falta bajar a la barra roja. Solo sin conexión.
+Shows the proration the combo timer and the move count put on the next hit, under the game's Damage info.\nOffline training only.	Mostra a proration que o tempo do combo e o número de golpes aplicam ao próximo golpe, abaixo do Damage info do jogo.\nSó no treino offline.	Muestra la proration que el tiempo del combo y la cantidad de golpes aplican al siguiente golpe, debajo del Damage info del juego.\nSolo en entrenamiento sin conexión.
+Shows the seconds left before the GRD circle closes, in the middle of the gauge.\nOffline training only.	Mostra os segundos que faltam para o círculo do GRD fechar, no meio da barra.\nSó no treino offline.	Muestra los segundos que faltan para que se cierre el círculo del GRD, en el medio de la barra.\nSolo en entrenamiento sin conexión.
+Shows what characters say as text on screen. If the game already has a subtitle for a voice line, the game draws your text with its font, position and timing. Every other line is drawn by the overlay as soon as it plays.	Mostra as falas dos personagens como texto na tela. Se o jogo já tem legenda para uma fala, ele desenha o seu texto com a fonte, a posição e o tempo dele. As outras falas são desenhadas pelo overlay assim que tocam.	Muestra lo que dicen los personajes como texto en pantalla. Si el juego ya tiene un subtítulo para una línea de voz, dibuja tu texto con su fuente, posición y tiempo. Las demás líneas las dibuja el overlay en cuanto suenan.
+Shows who in the room has the mod. Sends nothing.	Mostra quem na sala tem o mod. Não envia nada.	Muestra quién en la sala tiene el mod. No envía nada.
+Size	Tamanho	Tamaño
+Skip this version	Pular esta versão	Saltar esta versión
+Slides the view up or down without tilting it.	Desliza a vista para cima ou para baixo sem inclinar.	Desliza la vista hacia arriba o abajo sin inclinarla.
+Slides the view up or down without tilting it. Higher puts the horizon lower.	Desliza a vista para cima ou para baixo sem inclinar. Mais alto deixa o horizonte mais baixo.	Desliza la vista hacia arriba o abajo sin inclinarla. Más alto deja el horizonte más abajo.
+Slot	Slot	Slot
+Smooth draws the game's text like the frame meter. Sharp gives it hard edges. Applies right away.	Suave desenha o texto do jogo como o medidor de frames. Nítido deixa as bordas duras. Aplica na hora.	Suave dibuja el texto del juego como el medidor de frames. Nítido deja los bordes duros. Se aplica al instante.
+Smooth softens the edges of the character art. Pixels shows the art's original pixels, enlarged. Applies right away.	Suave suaviza as bordas da arte dos personagens. Pixels mostra os pixels originais da arte, ampliados. Aplica na hora.	Suave suaviza los bordes del arte de los personajes. Píxeles muestra los píxeles originales del arte, ampliados. Se aplica al instante.
+Smooth the round trip the time sync reads	Suavizar a ida e volta lida pela sincronização de tempo	Suavizar la ida y vuelta que lee la sincronización de tiempo
+Soundpacks	Soundpacks	Soundpacks
+Soundpacks, the track list and what plays where.	Soundpacks, a lista de músicas e o que toca onde.	Soundpacks, la lista de temas y qué suena dónde.
+Spread (standard deviation)	Dispersão (desvio padrão)	Dispersión (desviación estándar)
+Stage %d is also in %s. The mod higher in the list is used.	O cenário %d também está em %s. Vale o mod mais acima na lista.	El escenario %d también está en %s. Vale el mod que está más arriba en la lista.
+Stage %d, bg\\%s.	Cenário %d, bg\\%s.	Escenario %d, bg\\%s.
+Stage & BGM Select: %s		
+Stage position and camera	Posição do cenário e câmera	Posición del escenario y cámara
+Stage resolution	Resolução do cenário	Resolución del escenario
+Stage table: %s	Tabela de cenários: %s	Tabla de escenarios: %s
+Stages	Cenários	Escenarios
+Stages %s join the stage list when the game starts.	Os cenários %s entram na lista de cenários quando o jogo inicia.	Los escenarios %s se suman a la lista de escenarios al iniciar el juego.
+Stages are different	Os cenários são diferentes	Los escenarios son distintos
+Start Replay	Iniciar replay	Iniciar replay
+Startup 7F  /  Total 18F  /  Advantage +4F	Startup 7F  /  Total 18F  /  Vantagem +4F	Startup 7F  /  Total 18F  /  Ventaja +4F
+Steam listener: %s, %d event kind(s)	Listener da Steam: %s, %d tipo(s) de evento	Listener de Steam: %s, %d tipo(s) de evento
+Steam names: %s	Nomes da Steam: %s	Nombres de Steam: %s
+Steam networking did not start, so the mod cannot tell if a match is online. Modes that are surely offline still work. Anything that might be online is blocked.	A rede da Steam não iniciou, então o mod não sabe se uma partida é online. Modos que com certeza são offline continuam funcionando; o resto fica bloqueado.	La red de Steam no se inició, así que el mod no puede saber si una partida es en línea. Los modos que seguro son sin conexión siguen funcionando; el resto queda bloqueado.
+Steam ping	Ping da Steam	Ping de Steam
+Steam send queue	Fila de envio da Steam	Cola de envío de Steam
+Steam status	Status da Steam	Estado de Steam
+Steam work thread: %s, slowest job %.1f ms	Thread de trabalho da Steam: %s, tarefa mais lenta %.1f ms	Hilo de trabajo de Steam: %s, tarea más lenta %.1f ms
+Stop	Parar	Detener
+Stop watching	Parar de assistir	Dejar de ver
+Stops asking about %s. A newer release will still be announced.	Para de perguntar sobre %s. Versões mais novas continuam sendo avisadas.	Deja de preguntar por %s. Las versiones más nuevas se siguen avisando.
+Strength	Força	Intensidad
+Subtitle file	Arquivo de legendas	Archivo de subtítulos
+Subtitles	Legendas	Subtítulos
+Subtitles are off.	As legendas estão desligadas.	Los subtítulos están desactivados.
+Subtitles are on. %d line(s) shown so far.	As legendas estão ligadas. %d fala(s) exibidas até agora.	Los subtítulos están activados. %d línea(s) mostradas hasta ahora.
+Swap a character's voice or the shared sound effects.	Troque a voz de um personagem ou os efeitos sonoros comuns.	Cambia la voz de un personaje o los efectos de sonido comunes.
+Swap effect %s, %s, %s, %u back buffer%s, %s	Swap effect %s, %s, %s, %u back buffer%s, %s	Swap effect %s, %s, %s, %u back buffer%s, %s
+Take a stage from another game you have	Trazer um cenário de outro jogo que você tem	Traer un escenario de otro juego que tengas
+Take one from MELTY BLOOD: TYPE LUMINA, MELTY BLOOD Actress Again Current Code, UNI[st], UNI[cl-r], UNI Exe:Late, DFCI, BLAZBLUE CROSS TAG BATTLE, BLAZBLUE CENTRALFICTION or PERSONA 4 ARENA ULTIMAX, or import a folder you made in Blender. Nothing is downloaded and none of the game's files are replaced.	Traga um de MELTY BLOOD: TYPE LUMINA, MELTY BLOOD Actress Again Current Code, UNI[st], UNI[cl-r], UNI Exe:Late, DFCI, BLAZBLUE CROSS TAG BATTLE, BLAZBLUE CENTRALFICTION ou PERSONA 4 ARENA ULTIMAX, ou importe uma pasta feita no Blender. Nada é baixado e nenhum arquivo do jogo é substituído.	Trae uno de MELTY BLOOD: TYPE LUMINA, MELTY BLOOD Actress Again Current Code, UNI[st], UNI[cl-r], UNI Exe:Late, DFCI, BLAZBLUE CROSS TAG BATTLE, BLAZBLUE CENTRALFICTION o PERSONA 4 ARENA ULTIMAX, o importa una carpeta hecha en Blender. No se descarga nada y no se reemplaza ningún archivo del juego.
+Take the soundtrack from another game you have	Trazer a trilha sonora de outro jogo que você tem	Traer la banda sonora de otro juego que tengas
+Takes the announcers from MELTY BLOOD TYPE LUMINA and puts the ticked ones in Customize, Announcer Character, each with an icon.	Traz os narradores de MELTY BLOOD TYPE LUMINA e coloca os marcados em Customize, Announcer Character, cada um com um ícone.	Trae los narradores de MELTY BLOOD TYPE LUMINA y pone los marcados en Customize, Announcer Character, cada uno con un ícono.
+Text size	Tamanho do texto	Tamaño del texto
+That folder holds %s.	Essa pasta contém %s.	Esa carpeta contiene %s.
+That pick has no track.	Essa escolha não tem música.	Esa elección no tiene tema.
+The add-on that opens and saves a stage is in the mod's source repository, under resource\\blender, with a README next to it.	O add-on que abre e salva cenários está no repositório do mod, em resource\\blender, com um README ao lado.	El add-on que abre y guarda escenarios está en el repositorio del mod, en resource\\blender, con un README al lado.
+The camera is saved with the Size column, the rest in %sbg%03d\\stage.txt. A change shows the next time the stage loads.	A câmera é salva com a coluna Tamanho; o resto, em %sbg%03d\\stage.txt. A mudança aparece na próxima vez que o cenário carregar.	La cámara se guarda con la columna Tamaño; el resto, en %sbg%03d\\stage.txt. El cambio se ve la próxima vez que se cargue el escenario.
+The doppel reads separate colours. Changing one here leaves the character alone.	O doppel tem cores próprias. Mudar uma aqui não altera o personagem.	El doppel tiene colores propios. Cambiar uno aquí no afecta al personaje.
+The file reached 8 MB, so GGPO's lines have stopped. The mod's lines carry on.	O arquivo chegou a 8 MB, então as linhas do GGPO pararam. As do mod continuam.	El archivo llegó a 8 MB, así que las líneas de GGPO se detuvieron. Las del mod siguen.
+The frame is drawn at %ux%u and shrunk to your window by an uneven ratio, so the overlay text looks soft. 4K into 1080p stays sharp, 1440p into 1080p does not. Raise the font size, or use 4K or Off.	A imagem é desenhada em %ux%u e reduzida para a sua janela numa proporção não exata, então o texto do overlay fica borrado. 4K em 1080p fica nítido; 1440p em 1080p, não. Aumente a fonte ou use 4K ou Desligado.	La imagen se dibuja a %ux%u y se reduce a tu ventana en una proporción no exacta, así que el texto del overlay se ve borroso. 4K en 1080p queda nítido; 1440p en 1080p, no. Sube la fuente o usa 4K o Desactivado.
+The game always asks for 60 Hz and one back buffer, without checking your monitor. Turn this off to keep exactly what the game asks for.	O jogo sempre pede 60 Hz e um back buffer, sem olhar o seu monitor. Desligue para manter exatamente o que o jogo pede.	El juego siempre pide 60 Hz y un back buffer, sin mirar tu monitor. Desactívalo para mantener exactamente lo que pide el juego.
+The game can't restart right now: %s.	O jogo não pode reiniciar agora: %s.	El juego no se puede reiniciar ahora: %s.
+The game draws the scene at its render resolution and stretches it to your window. This picks a better filter for that stretch.\n\nIt does nothing while the output resolution is not above the render resolution.	O jogo desenha a cena na resolução de renderização e estica para a sua janela. Isto escolhe um filtro melhor para essa ampliação.\n\nNão faz nada se a resolução de saída não for maior que a de renderização.	El juego dibuja la escena a su resolución de renderizado y la estira a tu ventana. Esto elige un filtro mejor para esa ampliación.\n\nNo hace nada si la resolución de salida no es mayor que la de renderizado.
+The game has BGM switched off, so nothing will play.	O jogo está com a BGM desligada, então nada vai tocar.	El juego tiene la BGM desactivada, así que no sonará nada.
+The game has not built its player card yet.	O jogo ainda não montou o player card.	El juego todavía no armó su player card.
+The game has not read its stage list yet.	O jogo ainda não leu a lista de cenários.	El juego todavía no leyó su lista de escenarios.
+The game has two stages it never lists: the altar brought over from UNI and a debug stage. Tick one to put it back on the list.	O jogo tem dois cenários que nunca aparecem na lista: o altar trazido do UNI e um cenário de debug. Marque um para colocá-lo na lista.	El juego tiene dos escenarios que nunca aparecen en la lista: el altar traído de UNI y un escenario de debug. Marca uno para ponerlo en la lista.
+The game hides the mouse pointer. This keeps it on screen. Restart the game to apply. Game default: hidden.	O jogo esconde o ponteiro do mouse. Isto o mantém na tela. Reinicie o jogo para aplicar. Padrão do jogo: oculto.	El juego oculta el puntero del mouse. Esto lo mantiene en pantalla. Reinicia el juego para aplicar. Predeterminado del juego: oculto.
+The game ignores the mouse, so clicking the overlay never affects it.\nSaved as soon as it changes.	O jogo ignora o mouse, então clicar no overlay nunca afeta o jogo.\nSalvo assim que muda.	El juego ignora el mouse, así que hacer clic en el overlay nunca lo afecta.\nSe guarda en cuanto cambia.
+The game is not mapped yet.	O jogo ainda não foi mapeado.	El juego todavía no está mapeado.
+The game puts the keyboard and the first controller on the same side, so in local versus they control the same character. Pick a side for the keyboard here and the controller moves to the other one. Your key settings are not changed.	O jogo coloca o teclado e o primeiro controle no mesmo lado, então no versus local os dois controlam o mesmo personagem. Escolha aqui um lado para o teclado e o controle vai para o outro. Suas teclas não mudam.	El juego pone el teclado y el primer mando del mismo lado, así que en versus local los dos controlan al mismo personaje. Elige aquí un lado para el teclado y el mando pasa al otro. Tus teclas no cambian.
+The game reads its stage list only at startup. After adding or removing a stage, use the restart button at the bottom. Colour changes apply right away.	O jogo só lê a lista de cenários ao iniciar. Depois de adicionar ou remover um cenário, use o botão de reiniciar lá embaixo. Mudanças de cor aplicam na hora.	El juego solo lee su lista de escenarios al iniciar. Después de agregar o quitar un escenario, usa el botón de reiniciar de abajo. Los cambios de color se aplican al instante.
+The game reads its stage list only when it starts, so a stage from a mod appears after a restart. Every bg\\bgNNN folder with a bg.fbx.bin is added, with the values from its stage.txt. If two mods use the same number, the higher one is used.	O jogo só lê a lista de cenários ao iniciar, então o cenário de um mod aparece depois de reiniciar. Toda pasta bg\\bgNNN com um bg.fbx.bin entra, com os valores do stage.txt dela. Se dois mods usam o mesmo número, vale o de cima.	El juego solo lee su lista de escenarios al iniciar, así que el escenario de un mod aparece después de reiniciar. Se agrega cada carpeta bg\\bgNNN con un bg.fbx.bin, con los valores de su stage.txt. Si dos mods usan el mismo número, vale el de más arriba.
+The game stops reading the keyboard when you click another window. Turn this on and your keys keep reaching it, even while you type somewhere else.\nControllers always work in the background.	O jogo para de ler o teclado quando você clica em outra janela. Ligado, suas teclas continuam chegando, mesmo enquanto você digita em outro lugar.\nControles sempre funcionam em segundo plano.	El juego deja de leer el teclado cuando haces clic en otra ventana. Activado, tus teclas le siguen llegando, aunque escribas en otro lado.\nLos mandos siempre funcionan en segundo plano.
+The game uses its original file again the next time it loads it, on the next match or screen. Nothing is copied over the game and the d archive is never touched, so removing every mod leaves your install exactly as Steam put it.	O jogo volta a usar o arquivo original na próxima vez que carregá-lo, na próxima partida ou tela. Nada é copiado por cima do jogo e o arquivo d nunca é alterado, então remover todos os mods deixa a instalação exatamente como a Steam deixou.	El juego vuelve a usar su archivo original la próxima vez que lo cargue, en la próxima partida o pantalla. No se copia nada encima del juego y el archivo d nunca se modifica, así que quitar todos los mods deja tu instalación tal como la dejó Steam.
+The game waits out your whole lead, so both sides can end up taking turns waiting. This waits only half, like normal GGPO.\nGame default: off.	O jogo espera a sua vantagem inteira, e os dois lados podem acabar se revezando na espera. Isto espera só a metade, como o GGPO normal.\nPadrão do jogo: desligado.	El juego espera toda tu ventaja, y los dos lados pueden terminar turnándose para esperar. Esto espera solo la mitad, como el GGPO normal.\nPredeterminado del juego: desactivado.
+The game's colour files could not be read.	Não foi possível ler os arquivos de cor do jogo.	No se pudieron leer los archivos de color del juego.
+The game's font only has Western characters, so accents work but kanji don't.	A fonte do jogo só tem caracteres ocidentais, então acentos funcionam, mas kanji não.	La fuente del juego solo tiene caracteres occidentales, así que los acentos funcionan pero los kanji no.
+The hitboxes and frame meter normally hide when you open the game's pause menu. Turn this on to keep them on screen while the match is paused.	As hitboxes e o medidor de frames somem quando você abre o menu de pausa do jogo. Ligue para mantê-los na tela com a partida pausada.	Las hitboxes y el medidor de frames se ocultan al abrir el menú de pausa del juego. Actívalo para mantenerlos en pantalla con la partida en pausa.
+The input thread normally handles one message per millisecond. This handles them as fast as they come, so the window and overlay respond faster, but moving the mouse uses more CPU. Needs \"Wake the input thread right away\" on.	A thread de input normalmente trata uma mensagem por milissegundo. Isto trata cada uma assim que chega, então a janela e o overlay respondem mais rápido, mas mexer o mouse gasta mais CPU. Exige \"Wake the input thread right away\" ligado.	El hilo de entrada normalmente procesa un mensaje por milisegundo. Esto procesa cada uno en cuanto llega, así que la ventana y el overlay responden más rápido, pero mover el mouse gasta más CPU. Requiere \"Wake the input thread right away\" activado.
+The installed game	O jogo instalado	El juego instalado
+The last replay needs %s. Start Replay loads it for you and plays.	O último replay precisa de %s. Iniciar replay carrega e toca para você.	El último replay necesita %s. Iniciar replay lo carga y lo reproduce por ti.
+The list	A lista	La lista
+The list: the scripts saved for that side's character.	A lista: os scripts salvos para o personagem daquele lado.	La lista: los scripts guardados para el personaje de ese lado.
+The main menu's Training shortcut skips character select. This picks the characters and colours it starts with.\nGame default: your last training pick, or Hyde vs Linne.	O atalho de Training do menu principal pula a seleção de personagem. Isto define os personagens e as cores iniciais.\nPadrão do jogo: sua última escolha no treino, ou Hyde vs Linne.	El atajo de Training del menú principal se salta la selección de personaje. Esto define los personajes y colores iniciales.\nPredeterminado del juego: tu última elección en entrenamiento, o Hyde vs Linne.
+The menu has room for a limited number. Change the ticks and press the button again to swap them. The game has to be restarted before they show up.	O menu tem espaço limitado. Mude as marcações e aperte o botão de novo para trocar. Eles só aparecem depois de reiniciar o jogo.	El menú tiene lugar limitado. Cambia las marcas y presiona el botón otra vez para cambiarlos. Solo aparecen después de reiniciar el juego.
+The mod higher in the list wins that file only. The rest of the lower mod still applies. The row tells you when this happens and names the winning mod, so use Up and Down to choose which one wins.	O mod mais acima na lista vence só nesse arquivo; o resto do mod de baixo continua valendo. A linha avisa quando isso acontece e mostra qual mod venceu. Use Subir e Descer para escolher.	El mod más arriba en la lista gana solo en ese archivo; el resto del mod de abajo sigue aplicándose. La fila avisa cuando pasa y muestra qué mod ganó. Usa Subir y Bajar para elegir.
+The mod's work in milliseconds, averaged over recent frames. oPresent and oFrameUpdate are the game itself, shown for comparison.	O trabalho do mod em milissegundos, na média dos últimos frames. oPresent e oFrameUpdate são o próprio jogo, para comparação.	El trabajo del mod en milisegundos, promediado en los últimos frames. oPresent y oFrameUpdate son el propio juego, para comparar.
+The name has no version number, so engine values stay as they are.	O nome não tem número de versão, então os valores do motor não mudam.	El nombre no tiene número de versión, así que los valores del motor no cambian.
+The notation	A notação	La notación
+The number beside Play is how many frames the script is, or what went wrong if it would not parse.	O número ao lado de Tocar é a duração do script em frames, ou o erro, se ele não pôde ser lido.	El número junto a Reproducir es la duración del script en frames, o el error, si no se pudo leer.
+The opposite of POTATO MODE: the game is drawn bigger than 720p.	O contrário do POTATO MODE: o jogo é desenhado acima de 720p.	Lo contrario de POTATO MODE: el juego se dibuja por encima de 720p.
+The performance editor could not be created.	Não foi possível criar o editor de desempenho.	No se pudo crear el editor de rendimiento.
+The picker	O seletor	El selector
+The picker is full at %d stage(s). Untick one to make room.	O seletor está cheio com %d cenário(s). Desmarque um para liberar espaço.	El selector está lleno con %d escenario(s). Desmarca uno para liberar lugar.
+The plate art could not be read out of the game's archive.	Não foi possível ler a arte da placa no arquivo do jogo.	No se pudo leer el arte de la placa en el archivo del juego.
+The randomizer picks the next screen's music, so your pick ends there.	O aleatório escolhe a música da próxima tela, então a sua escolha vale só até lá.	El aleatorio elige la música de la próxima pantalla, así que tu elección vale solo hasta ahí.
+The readme explains the folder layout of a hand-made pack, what pack.ini holds, which formats play and how to share a pack:	O leia-me explica como organizar as pastas de um pack feito à mão, o que vai no pack.ini, quais formatos tocam e como compartilhar um pack:	El archivo léeme explica cómo organizar las carpetas de un pack hecho a mano, qué va en pack.ini, qué formatos se reproducen y cómo compartir un pack:
+The restart freezes for the frame count set in Timing. The reversal is ready only after that runs out.	O reinício congela pelos frames definidos em Tempo. O reversal só fica pronto depois disso.	El reinicio se congela durante los frames fijados en Tiempo. El reversal solo está listo después de eso.
+The same frames in 0.25 ms steps from %.2f to %.2f ms. Smooth play is one spike in the middle. Two spikes on either side is judder, and the median hides it.	Os mesmos frames em passos de 0,25 ms, de %.2f a %.2f ms. Jogo fluido é um pico no meio. Dois picos, um de cada lado, é engasgo, e a mediana esconde isso.	Los mismos frames en pasos de 0,25 ms, de %.2f a %.2f ms. Un juego fluido es un pico en el medio. Dos picos, uno a cada lado, son tirones, y la mediana los oculta.
+The size of the finished picture sent to your screen. Set it to your screen's resolution. The game's 720p picture is enlarged to it by the upscale filter below, and the stage follows the render resolution below. Needs a restart.	O tamanho da imagem final enviada para a tela. Use a resolução da sua tela. A imagem de 720p do jogo é ampliada até ela pelo filtro de ampliação abaixo, e o cenário segue a resolução de renderização abaixo. Exige reiniciar.	El tamaño de la imagen final que se envía a la pantalla. Usa la resolución de tu pantalla. La imagen de 720p del juego se amplía a ese tamaño con el filtro de escalado de abajo, y el escenario sigue la resolución de renderizado de abajo. Requiere reiniciar.
+The size the 3D stage is drawn at. Lower is lighter, higher is sharper. Match the output resolution. Game default: 720p. Needs a restart.	A resolução em que o cenário 3D é desenhado. Menor é mais leve, maior é mais nítido. Use a mesma da saída. Padrão do jogo: 720p. Exige reiniciar.	La resolución a la que se dibuja el escenario 3D. Menos es más liviano, más es más nítido. Usa la misma que la salida. Predeterminado del juego: 720p. Requiere reiniciar.
+The stage keeps its number, card, walls and selection flags, so it needs no free number. Only the look changes. An opponent without it sees UNI2's stage.\n\nRestore, under Installed stages, brings the game's stage back.	O cenário mantém o número, o card, as paredes e as marcações de seleção, então não precisa de número livre. Só o visual muda. Quem não o tem vê o cenário do UNI2.\n\nRestaurar, em Cenários instalados, traz de volta o cenário do jogo.	El escenario mantiene su número, tarjeta, paredes y marcas de selección, así que no necesita un número libre. Solo cambia el aspecto. Quien no lo tiene ve el escenario de UNI2.\n\nRestaurar, en Escenarios instalados, devuelve el escenario del juego.
+The time between two finished frames, which is what smoothness means. Median is the typical frame. Spread and distance from target show judder. Frames over 20 ms are dropped frames.	O tempo entre dois frames terminados, ou seja, a fluidez. A mediana é o frame típico. Dispersão e distância do alvo mostram os engasgos. Frames acima de 20 ms são frames perdidos.	El tiempo entre dos frames terminados, o sea, la fluidez. La mediana es el frame típico. Dispersión y distancia al objetivo muestran los tirones. Los frames por encima de 20 ms son frames perdidos.
+The time between two game logic steps. Only counts during a match, and reads zero while frame stepping pauses the game.	O tempo entre dois passos da lógica do jogo. Só conta durante uma partida e marca zero enquanto o avanço de frame pausa o jogo.	El tiempo entre dos pasos de la lógica del juego. Solo cuenta durante una partida y marca cero mientras el avance de frames pausa el juego.
+Theme	Tema	Tema
+These change how long your game waits for the opponent. They work against anyone, with or without the mod.	Mudam quanto tempo o seu jogo espera pelo oponente. Funcionam contra qualquer um, com ou sem o mod.	Cambian cuánto espera tu juego al rival. Funcionan contra cualquiera, con o sin el mod.
+These columns show when Advanced stage options is ticked, in the mod window under Config. Each one is a percentage of that stage's default, so 100%% is always the stage as it comes. Brightness lights the whole stage. Glow changes only the glowing parts: lamps, flares and light beams. Size is how big the scenery is around the fight. Drag a value, use - and +, or double click it to type any number. Default puts one stage back.	Estas colunas aparecem quando Opções avançadas de cenário está marcado, na janela do mod em Config. Cada uma é uma porcentagem do padrão do cenário, então 100%% é sempre o cenário original. Brilho ilumina o cenário inteiro. Luz muda só as partes que brilham: lâmpadas, reflexos e feixes de luz. Tamanho é o tamanho do cenário em volta da luta. Arraste um valor, use - e + ou dê um clique duplo para digitar. Padrão restaura um cenário.	Estas columnas aparecen cuando está marcado Opciones avanzadas de escenario, en la ventana del mod en Config. Cada una es un porcentaje del valor original del escenario, así que 100%% es siempre el escenario original. Brillo ilumina todo el escenario. Luz cambia solo las partes que brillan: lámparas, destellos y haces de luz. Tamaño es el tamaño del escenario alrededor de la pelea. Arrastra un valor, usa - y + o haz doble clic para escribir. Predeterminado restaura un escenario.
+These levels only change how the frame is drawn. They do not change gameplay, your opponent never sees them, and the stage is still drawn at every level.	Estes níveis só mudam como a imagem é desenhada. Não mudam a jogabilidade, o oponente nunca os vê, e o cenário continua aparecendo em todos os níveis.	Estos niveles solo cambian cómo se dibuja la imagen. No cambian la jugabilidad, tu rival nunca los ve, y el escenario se sigue viendo en todos los niveles.
+These numbers come straight from GGPO. GGPO's ping can read up to 2 frames (about 33 ms) higher than Steam's.	Estes números vêm direto do GGPO. O ping do GGPO pode marcar até 2 frames (uns 33 ms) a mais que o da Steam.	Estos números vienen directo de GGPO. El ping de GGPO puede marcar hasta 2 frames (unos 33 ms) más que el de Steam.
+These settings change how the overlay draws subtitles for voices the game has no subtitle for.	Estas opções mudam como o overlay mostra legendas para falas que o jogo não legenda.	Estas opciones cambian cómo el overlay muestra subtítulos para voces que el juego no subtitula.
+These stages convert with their motions, sprite animations, lights and the BLAZBLUE camera. To edit one, open it with the Mua add-on for Blender and import the result with the button below.	Estes cenários são convertidos com movimentos, animações de sprite, luzes e a câmera do BLAZBLUE. Para editar um, abra com o add-on Mua para Blender e importe o resultado com o botão abaixo.	Estos escenarios se convierten con movimientos, animaciones de sprites, luces y la cámara de BLAZBLUE. Para editar uno, ábrelo con el add-on Mua para Blender e importa el resultado con el botón de abajo.
+Thin row above each bar.\nOn active frames, the attack's Head, Foot or Air property.	Linha fina acima de cada barra.\nNos frames ativos, a propriedade Head, Foot ou Air do ataque.	Fila fina encima de cada barra.\nEn los frames activos, la propiedad Head, Foot o Air del ataque.
+Thin row under each bar.\nWhat the character can't be hit by on each frame.\nWhite means nothing can hit.	Linha fina abaixo de cada barra.\nO que não acerta o personagem em cada frame.\nBranco quer dizer que nada acerta.	Fila fina debajo de cada barra.\nLo que no puede golpear al personaje en cada frame.\nBlanco significa que nada lo golpea.
+This game version has no hidden stages.	Esta versão do jogo não tem cenários ocultos.	Esta versión del juego no tiene escenarios ocultos.
+This install has saves from more than one Steam account. Export all uses the one picked here. Other accounts are read only, and loading a file into the replay list always writes to yours.	Esta instalação tem saves de mais de uma conta da Steam. Exportar todos usa a conta escolhida aqui. As outras são só leitura, e carregar um arquivo na lista de replays sempre grava na sua.	Esta instalación tiene partidas guardadas de más de una cuenta de Steam. Exportar todos usa la cuenta elegida aquí. Las otras son de solo lectura, y cargar un archivo en la lista de replays siempre escribe en la tuya.
+This list has every screen with music: character select, the main menu, the network menu, the VS screen, win demo, continue, game over, the story tracks and every battle theme.	Esta lista tem todas as telas com música: seleção de personagem, menu principal, menu de rede, tela de VS, demo de vitória, continue, game over, as músicas da história e todos os temas de luta.	Esta lista tiene todas las pantallas con música: selección de personaje, menú principal, menú de red, pantalla de VS, demo de victoria, continue, game over, los temas de la historia y todos los temas de pelea.
+This release came without notes.	Esta versão veio sem notas.	Esta versión vino sin notas.
+This replay was recorded on %s.	Este replay foi gravado na versão %s.	Este replay se grabó en la versión %s.
+This tab shows how smooth your online match is: ping, rollbacks and how far each side is behind. It only fills in during an online match.	Esta aba mostra o quão fluida está a sua partida online: ping, rollbacks e o atraso de cada lado. Só aparece durante uma partida online.	Esta pestaña muestra qué tan fluida es tu partida en línea: ping, rollbacks y el retraso de cada lado. Solo aparece durante una partida en línea.
+Threshold	Limiar	Umbral
+Tilt	Inclinação	Inclinación
+Time between steps while the key is held (%d a second). It rounds to whole frames, so at 60 Hz anything from 34 to 49 ms steps every third frame.	Tempo entre passos com a tecla segurada (%d por segundo). É arredondado para frames inteiros, então a 60 Hz qualquer valor entre 34 e 49 ms avança a cada três frames.	Tiempo entre pasos con la tecla mantenida (%d por segundo). Se redondea a frames enteros, así que a 60 Hz cualquier valor entre 34 y 49 ms avanza cada tres frames.
+Time from pressing a key or button to the game registering it. Display lag is not included.\n\nThe keyboard and pads are read about a thousand times a second, not once a frame like the game does, so the result is not rounded to 16.7 ms.	Tempo entre apertar uma tecla ou botão e o jogo registrar. Não inclui o atraso da tela.\n\nO teclado e os controles são lidos umas mil vezes por segundo, e não uma vez por frame como no jogo, então o resultado não é arredondado para 16,7 ms.	Tiempo desde que presionas una tecla o botón hasta que el juego lo registra. No incluye el retraso de la pantalla.\n\nEl teclado y los mandos se leen unas mil veces por segundo, no una vez por frame como en el juego, así que el resultado no se redondea a 16,7 ms.
+Time on screen	Tempo na tela	Tiempo en pantalla
+Time sync check	Verificação de sincronização	Comprobación de sincronización
+Times each frame, how long Present waits, and every step of the mod's work. Off by default, so it costs nothing when you are not measuring.	Mede cada frame, a espera do Present e cada etapa do trabalho do mod. Desligado por padrão, então não pesa nada quando você não está medindo.	Mide cada frame, la espera de Present y cada paso del trabajo del mod. Desactivado por defecto, así que no pesa nada cuando no estás midiendo.
+Timing	Tempo	Tiempo
+Tips the scenery toward or away from the camera, in degrees.	Inclina o cenário para perto ou para longe da câmera, em graus.	Inclina el escenario hacia la cámara o lejos de ella, en grados.
+To apply the drawing size, restart the game or change any option in its Video menu. Everything else applies right away. In exclusive fullscreen the size is rounded up to a mode your monitor has, so a 4:3 mode will letterbox or stretch.	Para aplicar o tamanho de desenho, reinicie o jogo ou mude qualquer opção no menu Video dele. O resto aplica na hora. Em tela cheia exclusiva, o tamanho é arredondado para cima até um modo que o monitor tenha, então um modo 4:3 fica com barras ou esticado.	Para aplicar el tamaño de dibujo, reinicia el juego o cambia cualquier opción de su menú Video. El resto se aplica al instante. En pantalla completa exclusiva, el tamaño se redondea hacia arriba a un modo que tenga el monitor, así que un modo 4:3 queda con barras o estirado.
+To share a mod, send the folder. Your switches and order stay in your ini.	Para compartilhar um mod, mande a pasta. O que está ligado e a ordem ficam no seu ini.	Para compartir un mod, envía la carpeta. Lo que está activado y el orden quedan en tu ini.
+Training	Treino	Entrenamiento
+Training shortcut	Atalho do Training	Atajo de Training
+Turn	Giro	Giro
+Turn Measure on. Go to training mode, same character, same corner. Play thirty seconds. Press Capture baseline. Change one thing on the Performance tab. Play the same thirty seconds. Read the Change column, then Copy summary and paste it into the bug report.	Ligue Medir. Entre no treino, mesmo personagem, mesmo canto. Jogue trinta segundos. Aperte Capturar referência. Mude uma coisa na aba Desempenho. Jogue os mesmos trinta segundos. Veja a coluna Mudança, depois aperte Copiar resumo e cole no relatório de bug.	Activa Medir. Entra al entrenamiento, mismo personaje, misma esquina. Juega treinta segundos. Presiona Capturar referencia. Cambia una cosa en la pestaña Rendimiento. Juega los mismos treinta segundos. Mira la columna Cambio, luego presiona Copiar resumen y pégalo en el reporte de errores.
+Turn this on to see the palette your opponent picked. When off, their character keeps the game's colours. Yours is sent either way.	Ligue para ver a paleta que o oponente escolheu. Desligado, o personagem dele fica com as cores do jogo. A sua é enviada de qualquer jeito.	Actívalo para ver la paleta que eligió tu rival. Desactivado, su personaje mantiene los colores del juego. La tuya se envía igual.
+Turning a mod off	Desligando um mod	Desactivar un mod
+Turns off every graphics option in the mod: output and render resolution, shaders, back buffer multisampling, Character Visual Improvements, the empty stage and POTATO MODE. After this the mod draws nothing into the frame.	Desliga todas as opções gráficas do mod: resolução de saída e de renderização, shaders, multisampling do back buffer, Character Visual Improvements, o cenário vazio e o POTATO MODE. Depois disso o mod não desenha nada na imagem.	Desactiva todas las opciones gráficas del mod: resolución de salida y de renderizado, shaders, multisampling del back buffer, Character Visual Improvements, el escenario vacío y POTATO MODE. Después de esto el mod no dibuja nada en la imagen.
+Turns the scenery left or right around the fight, in degrees.	Gira o cenário para a esquerda ou direita em volta da luta, em graus.	Gira el escenario a la izquierda o la derecha alrededor de la pelea, en grados.
+Turns vsync on for you, even with UNI2's vsync off, so no line splits the picture. Costs at most the frame lead in input lag. Needs \"Line frames up with the screen\" on. Applies after an alt-tab or a restart. Default: on.	Liga o vsync para você, mesmo com o do UNI2 desligado, para a imagem não rasgar. Custa no máximo a vantagem de frame em input lag. Exige \"Line frames up with the screen\" ligado. Vale depois de um alt-tab ou de reiniciar. Padrão: ligado.	Activa el vsync por ti, aun con el de UNI2 desactivado, para que la imagen no se corte. Cuesta como mucho la ventaja de frame en input lag. Requiere \"Line frames up with the screen\" activado. Se aplica después de un alt-tab o de reiniciar. Predeterminado: activado.
+Two clusters, %.2f ms and %.2f ms, %.2f ms apart. Frames land on either side of the target instead of on it.	Dois grupos, %.2f ms e %.2f ms, separados por %.2f ms. Os frames caem dos lados do alvo em vez de em cima.	Dos grupos, %.2f ms y %.2f ms, separados por %.2f ms. Los frames caen a los lados del objetivo en lugar de encima.
+Type what a character should do instead of recording it. There is a tab for each side, each with a separate script, and Play runs it one step per frame.	Escreva o que um personagem deve fazer em vez de gravar. Há uma aba para cada lado, cada uma com o próprio script, e Tocar roda um passo por frame.	Escribe lo que debe hacer un personaje en lugar de grabarlo. Hay una pestaña para cada lado, cada una con su propio script, y Reproducir lo ejecuta un paso por frame.
+UNI2		
+UNI2's	Do UNI2	De UNI2
+UNI2's d archive, for everything else	O arquivo d do UNI2, para todo o resto	El archivo d de UNI2, para todo lo demás
+UNI2's music is on hold until you stop or give it back.	A música do UNI2 fica em espera até você parar ou devolver.	La música de UNI2 queda en espera hasta que la detengas o la devuelvas.
+UNI2's sounds are not touched. Characters using it go back to them.	Os sons do UNI2 não são alterados. Os personagens que usavam este pack voltam para eles.	Los sonidos de UNI2 no se modifican. Los personajes que usaban este pack vuelven a ellos.
+Undo	Desfazer	Deshacer
+Undo the last change. %d left.	Desfazer a última mudança. Restam %d.	Deshacer el último cambio. Quedan %d.
+Undoes the changes made since you opened this slot.	Desfaz as mudanças feitas desde que você abriu este slot.	Deshace los cambios hechos desde que abriste este slot.
+Untick to show this stage in UNI2's colour, without the mod's Brightness or Glow. Your values are kept for when you tick it again.	Desmarque para mostrar este cenário com a cor do UNI2, sem o Brilho e a Luz do mod. Seus valores ficam guardados para quando marcar de novo.	Desmarca para mostrar este escenario con el color de UNI2, sin el Brillo y la Luz del mod. Tus valores se guardan para cuando lo vuelvas a marcar.
+Up	Cima	Arriba
+Update	Atualizar	Actualizar
+Update available	Atualização disponível	Actualización disponible
+Update my ping location every 30 s	Atualizar minha localização de ping a cada 30 s	Actualizar mi ubicación de ping cada 30 s
+Upload replays in the background	Enviar replays em segundo plano	Subir replays en segundo plano
+Upscale filter	Filtro de ampliação	Filtro de escalado
+Upscale filter, anti-aliasing and sharpening are on the Improvements tab.	Filtro de ampliação, anti-aliasing e nitidez ficam na aba Melhorias.	El filtro de escalado, el antialiasing y la nitidez están en la pestaña Mejoras.
+Use	Usar	Usar
+Use UNI2's native netcode	Usar o netcode nativo do UNI2	Usar el netcode nativo de UNI2
+Use a second back buffer	Usar um segundo back buffer	Usar un segundo back buffer
+Use enhanced rich presence	Usar rich presence detalhado	Usar rich presence detallado
+Using UNI2's screens.	Usando as telas do UNI2.	Usando las pantallas de UNI2.
+Vanishing point	Ponto de fuga	Punto de fuga
+Version %s is out.	A versão %s saiu.	Salió la versión %s.
+Vibrance	Vibração	Intensidad de color
+View rotation X	Rotação da vista X	Rotación de la vista X
+View rotation Y	Rotação da vista Y	Rotación de la vista Y
+Viewers at most	Máximo de espectadores	Máximo de espectadores
+Vignette	Vinheta	Viñeta
+Visuals	Visual	Visual
+Voices and sound	Vozes e som	Voces y sonido
+Volume is saved per track in bgm.ini and applies when you let go of the slider. It can only make a track quieter, never louder than it was recorded. To make one track louder, raise the game's BGM volume and turn the others down here.	O volume é salvo por música no bgm.ini e aplica quando você solta o controle. Ele só abaixa uma música, nunca deixa mais alta do que foi gravada. Para destacar uma música, aumente o volume de BGM do jogo e abaixe as outras aqui.	El volumen se guarda por tema en bgm.ini y se aplica al soltar el control. Solo puede bajar un tema, nunca subirlo por encima de como se grabó. Para destacar un tema, sube el volumen de BGM del juego y baja los demás aquí.
+W12\n[4]\nW30\n]4[\n236C		
+Wait before repeating	Espera antes de repetir	Espera antes de repetir
+Wait twelve frames, hold back for thirty, let go, then quarter-circle C.	Espere doze frames, segure para trás por trinta, solte e faça meia-lua C.	Espera doce frames, mantén atrás durante treinta, suelta y haz cuarto de círculo C.
+Waits after each frame before the game reads your buttons, so they are read closer to when the next frame is shown. Less input lag. When the game needs the time the mod waits less, so no frame comes late. Default: 0 ms. Needs \"Line frames up with the screen\" on.	Espera um pouco depois de cada frame antes de o jogo ler seus botões, para que sejam lidos mais perto da exibição do próximo frame. Menos input lag. Quando o jogo precisa do tempo, o mod espera menos e nenhum frame atrasa. Padrão: 0 ms. Exige \"Line frames up with the screen\" ligado.	Espera un poco después de cada frame antes de que el juego lea tus botones, para que se lean más cerca de cuando se muestra el siguiente frame. Menos input lag. Cuando el juego necesita el tiempo, el mod espera menos y ningún frame llega tarde. Predeterminado: 0 ms. Requiere \"Line frames up with the screen\" activado.
+Wake the input thread for every message	Acordar a thread de input a cada mensagem	Despertar el hilo de entrada en cada mensaje
+Warm up lets everyone move before recording starts. Still freezes the game. Neither one records the countdown.	O aquecimento deixa todos se moverem antes de a gravação começar, mas o jogo ainda congela. Nenhum dos dois grava a contagem regressiva.	El calentamiento deja que todos se muevan antes de empezar a grabar, pero el juego igual se congela. Ninguno de los dos graba la cuenta regresiva.
+Warmth	Temperatura	Calidez
+Watch	Assistir	Ver
+Watch someone	Assistir alguém	Ver a alguien
+Watching a room match	Assistindo uma partida da sala	Viendo una partida de la sala
+What this is	O que é isto	Qué es esto
+When	Quando	Cuándo
+When two mods change the same file	Quando dois mods mudam o mesmo arquivo	Cuando dos mods cambian el mismo archivo
+When you pick a colour, everything else darkens and that part blinks on the character, so you can see what you are about to change.	Ao escolher uma cor, todo o resto escurece e aquela parte pisca no personagem, para você ver o que vai mudar.	Al elegir un color, todo lo demás se oscurece y esa parte parpadea en el personaje, para que veas lo que vas a cambiar.
+Where the frame time goes	Onde o tempo de frame é gasto	En qué se va el tiempo de frame
+Who in the room has the mod	Quem na sala tem o mod	Quién en la sala tiene el mod
+Whole parts	Partes inteiras	Partes enteras
+Why this one: %s	Por que este: %s	Por qué este: %s
+Windows is scaling this window by %d%%, so everything is drawn small and stretched, which blurs it.	O Windows está escalando esta janela em %d%%, então tudo é desenhado pequeno e esticado, e fica borrado.	Windows está escalando esta ventana al %d%%, así que todo se dibuja chico y estirado, y se ve borroso.
+With the game's vsync off, the refresh rate only changes how fast a frame reaches the screen. Keeping the desktop's mode is the fastest and the easiest to alt-tab out of.\n\nWith vsync on, a rate that does not divide by 60 stutters. Automatic then picks the highest rate that does.\n\nRestart the game to apply.	Com o vsync do jogo desligado, a taxa de atualização só muda a rapidez com que o frame chega à tela. Manter o modo da área de trabalho é o mais rápido e o melhor para alt-tab.\n\nCom vsync ligado, uma taxa que não divide por 60 engasga. Automático então escolhe a maior taxa que divide.\n\nReinicie o jogo para aplicar.	Con el vsync del juego desactivado, la frecuencia solo cambia qué tan rápido llega el frame a la pantalla. Mantener el modo del escritorio es lo más rápido y lo mejor para hacer alt-tab.\n\nCon vsync activado, una frecuencia que no divide por 60 se traba. Automático elige entonces la frecuencia más alta que sí divide.\n\nReinicia el juego para aplicar.
+With vsync on, a late frame can wait here instead of costing a whole refresh. It adds up to a frame of input lag.\n\nWith vsync off it only adds a frame of delay, so leave it off.	Com vsync ligado, um frame atrasado pode esperar aqui em vez de custar uma atualização inteira. Adiciona até um frame de input lag.\n\nCom vsync desligado só adiciona um frame de atraso, então deixe desligado.	Con vsync activado, un frame atrasado puede esperar aquí en lugar de costar una actualización entera. Agrega hasta un frame de input lag.\n\nCon vsync desactivado solo agrega un frame de retraso, así que déjalo desactivado.
+Within 0.5 ms of 16.67 ms	Até 0,5 ms de 16,67 ms	A menos de 0,5 ms de 16,67 ms
+Without a function key, a keyboard bind marked Fn cannot fire.	Sem uma tecla de função, um atalho de teclado marcado com Fn não dispara.	Sin una tecla de función, un atajo de teclado marcado con Fn no se activa.
+Worn by your room avatar and in your next online match. The next and previous palette hotkeys change it too.	Usada pelo seu avatar na sala e na sua próxima partida online. Os atalhos de paleta anterior e próxima também a trocam.	La usa tu avatar en la sala y en tu próxima partida en línea. Los atajos de paleta anterior y siguiente también la cambian.
+Worst	Pior	Peor
+Write the mod's log	Gravar o log do mod	Escribir el log del mod
+Write the network log	Gravar o log de rede	Escribir el log de red
+Write to log	Gravar no log	Escribir en el log
+Write to slot	Gravar no slot	Escribir en el slot
+Writes a snapshot of the next frame to the log: render sizes, the picture the game is drawing inside the window, the camera matrices, each player's position and every draw call. Press it when something looks out of place, then send the newest file in UNI2-IM\\Logs.	Grava no log um retrato do próximo frame: tamanhos de renderização, a imagem que o jogo desenha na janela, as matrizes da câmera, a posição de cada jogador e cada chamada de desenho. Aperte quando algo parecer fora do lugar e mande o arquivo mais novo de UNI2-IM\\Logs.	Escribe en el log una captura del siguiente frame: tamaños de renderizado, la imagen que el juego dibuja en la ventana, las matrices de la cámara, la posición de cada jugador y cada llamada de dibujo. Presiónalo cuando algo se vea fuera de lugar y envía el archivo más nuevo de UNI2-IM\\Logs.
+Writes it over the oldest unprotected slot. It shows up in the Replay screen under its date. Protect any replay you want to keep first.	Grava por cima do slot desprotegido mais antigo. Ele aparece na tela de Replay com a própria data. Proteja antes os replays que quiser manter.	Lo escribe sobre el slot sin proteger más antiguo. Aparece en la pantalla de Replay con su propia fecha. Protege antes los replays que quieras conservar.
+Writes the .MUA, .mmot, .evb, textures and both games' .pac files into UNI2-IM\\Export.	Grava os arquivos .MUA, .mmot, .evb, as texturas e os .pac dos dois jogos em UNI2-IM\\Export.	Escribe los archivos .MUA, .mmot, .evb, las texturas y los .pac de ambos juegos en UNI2-IM\\Export.
+Writes the palette state to a text file in UNI2-IM\\Logs: which side the mod thinks you are, what each side is wearing, the textures it tracks and what was drawn.\n\nIf a shared palette looks wrong, take one on each PC at the same moment. Works in this build, no logging build needed.	Grava o estado das paletas num arquivo de texto em UNI2-IM\\Logs: de que lado o mod acha que você está, o que cada lado está usando, as texturas que ele acompanha e o que foi desenhado.\n\nSe uma paleta compartilhada aparecer errada, gere um em cada PC no mesmo momento. Funciona nesta versão, sem precisar de uma versão com log.	Escribe el estado de las paletas en un archivo de texto en UNI2-IM\\Logs: de qué lado cree el mod que estás, qué usa cada lado, las texturas que sigue y lo que se dibujó.\n\nSi una paleta compartida se ve mal, genera uno en cada PC en el mismo momento. Funciona en esta versión, sin necesitar una versión con log.
+X		
+Y		
+You can edit a name before adding it.	Você pode editar um nome antes de adicionar.	Puedes editar un nombre antes de agregarlo.
+Your controls play P%d. P%d stands still.	Seus controles jogam com o P%d. O P%d fica parado.	Tus controles juegan con P%d. P%d se queda quieto.
+Your files	Seus arquivos	Tus archivos
+Your files (the top row, the Mods folder)	Seus arquivos (a primeira linha, a pasta Mods)	Tus archivos (la primera fila, la carpeta Mods)
+Your opponent's mod	O mod do seu oponente	El mod de tu rival
+Your pick: %s	Sua escolha: %s	Tu elección: %s
+[Mod]\nName = Hyde speaks UNI\nAuthor = you\nVersion = 1.0\nNote = His UNI[st] voice, all 96 lines.		
+[bg068]\nName = Garden at Night\nCard = 30		
+a loaded game patch	um patch do jogo carregado	un parche del juego cargado
+all	todos	todos
+always on, always first	sempre ligado, sempre primeiro	siempre activado, siempre primero
+applied, waiting for this character to appear	aplicado, esperando este personagem aparecer	aplicado, esperando a que aparezca este personaje
+at %u Hz	a %u Hz	a %u Hz
+bg%03d is not ready to play yet.	bg%03d ainda não está pronto para jogar.	bg%03d todavía no está listo para jugar.
+by %s	por %s	por %s
+clear history	limpar histórico	borrar historial
+converting %d file(s) to Ogg. The voice works once this is done.	convertendo %d arquivo(s) para Ogg. A voz funciona quando isto terminar.	convirtiendo %d archivo(s) a Ogg. La voz funciona cuando esto termine.
+converting %d to Ogg...	convertendo %d para Ogg...	convirtiendo %d a Ogg...
+current	atual	actual
+dgVoodoo		
+entry %d%s	entrada %d%s	entrada %d%s
+entry %d, used by %d part%s%s%s%s	entrada %d, usada por %d parte%s%s%s%s	entrada %d, usada por %d parte%s%s%s%s
+every entry looks unused. Untick Filter colors to see them.	todas as entradas parecem sem uso. Desmarque Filtrar cores para vê-las.	todas las entradas parecen sin usar. Desmarca Filtrar colores para verlas.
+every entry looks unused. Untick Filter junk colours to see them.	todas as entradas parecem sem uso. Desmarque Filtrar cores inúteis para vê-las.	todas las entradas parecen sin usar. Desmarca Filtrar colores inútiles para verlas.
+everyone hears its shared sounds	todos ouvem os sons comuns dele	todos escuchan sus sonidos comunes
+frame %d	frame %d	frame %d
+frames	frames	frames
+game handled it	tratado pelo jogo	lo manejó el juego
+hold it with another key or button for shortcuts	segure junto com outra tecla ou botão para atalhos	mantenla junto con otra tecla o botón para atajos
+in a match only	só numa partida	solo en una partida
+joined	entrou	entró
+missing	faltando	falta
+no palette for this side yet. The characters need to appear on screen first.	ainda sem paleta para este lado. Os personagens precisam aparecer na tela antes.	todavía no hay paleta para este lado. Primero tienen que aparecer los personajes en pantalla.
+nobody in this slot yet	ninguém neste slot ainda	todavía no hay nadie en este slot
+not worn	não usada	sin uso
+nothing of the doppel's is in this palette.	nada do doppel está nesta paleta.	nada del doppel está en esta paleta.
+nothing saved for this character	nada salvo para este personagem	nada guardado para este personaje
+nothing to edit yet	nada para editar ainda	todavía no hay nada para editar
+on restart	ao reiniciar	al reiniciar
+pick one to change it	escolha um para mudar	elige uno para cambiarlo
+plays	toca	suena
+queued	na fila	en cola
+ready	pronto	listo
+removed by the mod	removido pelo mod	quitado por el mod
+running	em execução	en ejecución
+sampler %d Hz, watching the keyboard and %d pad(s)	amostragem a %d Hz, lendo o teclado e %d controle(s)	muestreo a %d Hz, leyendo el teclado y %d mando(s)
+sampler stalled %.0f ms	amostragem travou por %.0f ms	el muestreo se trabó %.0f ms
+skipped	pulado	omitido
+that name cannot be a filename	esse nome não pode ser usado como nome de arquivo	ese nombre no se puede usar como nombre de archivo
+the game as installed	o jogo como instalado	el juego tal como está instalado
+this character has no separate doppel.	este personagem não tem doppel separado.	este personaje no tiene un doppel aparte.
+this character's colour files could not be read	não foi possível ler os arquivos de cor deste personagem	no se pudieron leer los archivos de color de este personaje
+this character's effects are not tinted from its palette	os efeitos deste personagem não usam as cores da paleta	los efectos de este personaje no usan los colores de la paleta
+this list, top to bottom	esta lista, de cima para baixo	esta lista, de arriba abajo
+wearing '%s', which they chose	usando '%s', escolhida pelo jogador	usando '%s', elegida por el jugador
+wearing the colours they picked in the game	usando as cores que o jogador escolheu no jogo	usando los colores que el jugador eligió en el juego
+working	processando	procesando
+worn	usada	en uso
+x		
+Always on in this build.	Sempre ligado nesta versão.	Siempre activado en esta versión.
+Close	Fechar	Cerrar
+Fetches every art that is not in the game, about 120 MB, once. Picking one of them fetches the pack too.	Baixa uma vez todas as artes que não vêm no jogo, uns 120 MB. Escolher uma delas também baixa o pack.	Descarga una vez todo el arte que no viene en el juego, unos 120 MB. Elegir uno de ellos también descarga el pack.
+Keeps the full log in the Logs folder. Turn it on before sending a bug report. Default: off.	Guarda o log completo na pasta Logs. Ligue antes de mandar um relatório de bug. Padrão: desligado.	Guarda el log completo en la carpeta Logs. Actívalo antes de enviar un reporte de errores. Predeterminado: desactivado.
+No link to the portrait pack is set yet. Put it in [Portraits] PackUrl of UNI2_IM.ini.	Ainda não há link para o pack de retratos. Coloque em [Portraits] PackUrl no UNI2_IM.ini.	Todavía no hay enlace al pack de retratos. Ponlo en [Portraits] PackUrl de UNI2_IM.ini.
+Nothing loaded yet.	Nada carregado ainda.	Nada cargado todavía.
+Reading...	Lendo...	Leyendo...
+The GGPO session could not be read on this game version.	Não foi possível ler a sessão do GGPO nesta versão do jogo.	No se pudo leer la sesión de GGPO en esta versión del juego.
+The game was updated. Game features stay off until the mod is updated too.	O jogo foi atualizado. Os recursos de jogo ficam desligados até o mod ser atualizado também.	El juego se actualizó. Las funciones de juego quedan desactivadas hasta que el mod también se actualice.
+This copy of the game is out of date. Game features stay off until it is updated.	Esta cópia do jogo está desatualizada. Os recursos de jogo ficam desligados até ela ser atualizada.	Esta copia del juego está desactualizada. Las funciones de juego quedan desactivadas hasta que se actualice.

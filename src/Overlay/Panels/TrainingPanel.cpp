@@ -36,6 +36,7 @@
 #include "Training/StageColor.h"
 #include "Training/TrainingItems.h"
 #include "Training/TrainingVisibility.h"
+#include "Core/Text/Language.h"
 
 #include <Windows.h>
 #include <imgui.h>
@@ -76,7 +77,7 @@ constexpr size_t kColourOptionLabel = 160;
 
 void DrawTrainingSection()
 {
-	if (!ImGui::CollapsingHeader("Training", ImGuiTreeNodeFlags_DefaultOpen))
+	if (!ImGui::CollapsingHeader(TrLabel("Training"), ImGuiTreeNodeFlags_DefaultOpen))
 		return;
 
 	DrawQuickTrainingControls();
@@ -98,15 +99,15 @@ void DrawTrainingBlockedReason()
 {
 	if (!IsMeasuredGameBuild())
 	{
-		ImGui::TextDisabled("Off on this copy of the game, see the note at the top.");
+		ImGui::TextDisabled(Tr("Off on this copy of the game, see the note at the top."));
 		return;
 	}
 
 	if (OnlineState::IsBlind())
 	{
-		ImGui::TextDisabled("Steam networking did not start, so the mod cannot tell if a match "
+		ImGui::TextDisabled(Tr("Steam networking did not start, so the mod cannot tell if a match "
 			"is online. Modes that are surely offline still work. Anything that might be online "
-			"is blocked.");
+			"is blocked."));
 		return;
 	}
 
@@ -126,7 +127,7 @@ void DrawHitboxViewerToggle()
 		return;
 
 	bool open = HitboxOverlay::IsShown();
-	if (ImGui::Checkbox("Hitbox viewer", &open))
+	if (ImGui::Checkbox(TrLabel("Hitbox viewer"), &open))
 		HitboxOverlay::SetShown(open);
 
 	ImGui::SameLine();
@@ -139,7 +140,7 @@ void DrawFrameMeterToggle()
 		return;
 
 	bool meterVisible = FrameMeterHud::IsVisible();
-	if (ImGui::Checkbox("Frame meter", &meterVisible))
+	if (ImGui::Checkbox(TrLabel("Frame meter"), &meterVisible))
 		FrameMeterHud::SetVisible(meterVisible);
 
 	ImGui::SameLine();
@@ -152,11 +153,11 @@ void DrawGrdPopupToggle()
 		return;
 
 	bool grdVisible = GrdPopupHud::IsVisible();
-	if (ImGui::Checkbox("GRD popups", &grdVisible))
+	if (ImGui::Checkbox(TrLabel("GRD popups"), &grdVisible))
 		GrdPopupHud::SetVisible(grdVisible);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Shows each GRD gain or loss, in blocks, above the GRD gauge.\nOffline training only.");
+		ImGui::SetTooltip(Tr("Shows each GRD gain or loss, in blocks, above the GRD gauge.\nOffline training only."));
 }
 
 void DrawGrdTimerToggle()
@@ -165,11 +166,11 @@ void DrawGrdTimerToggle()
 		return;
 
 	bool grdTimerVisible = GrdPopupHud::IsTimerVisible();
-	if (ImGui::Checkbox("GRD timer", &grdTimerVisible))
+	if (ImGui::Checkbox(TrLabel("GRD timer"), &grdTimerVisible))
 		GrdPopupHud::SetTimerVisible(grdTimerVisible);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Shows the seconds left before the GRD circle closes, in the middle of the gauge.\nOffline training only.");
+		ImGui::SetTooltip(Tr("Shows the seconds left before the GRD circle closes, in the middle of the gauge.\nOffline training only."));
 }
 
 void DrawHealthToggle()
@@ -178,13 +179,13 @@ void DrawHealthToggle()
 		return;
 
 	bool healthVisible = HealthReadout::IsVisible();
-	if (ImGui::Checkbox("Health values", &healthVisible))
+	if (ImGui::Checkbox(TrLabel("Health values"), &healthVisible))
 		HealthReadout::SetVisible(healthVisible);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Shows the exact health under each health bar, and how much the trailing "
-			"bar still has to drop. Offline only.");
+		ImGui::SetTooltip(Tr("Shows the exact health under each health bar, and how much the trailing "
+			"bar still has to drop. Offline only."));
 	}
 }
 
@@ -194,13 +195,13 @@ void DrawProrationToggle()
 		return;
 
 	bool prorationVisible = ProrationHud::IsVisible();
-	if (ImGui::Checkbox("Proration info", &prorationVisible))
+	if (ImGui::Checkbox(TrLabel("Proration info"), &prorationVisible))
 		ProrationHud::SetVisible(prorationVisible);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Shows the proration the combo timer and the move count put on the next "
-			"hit, under the game's Damage info.\nOffline training only.");
+		ImGui::SetTooltip(Tr("Shows the proration the combo timer and the move count put on the next "
+			"hit, under the game's Damage info.\nOffline training only."));
 	}
 }
 
@@ -210,13 +211,13 @@ void DrawHideHudToggle()
 		return;
 
 	bool hudHidden = BattleCockpit::IsHidden();
-	if (ImGui::Checkbox("Hide the HUD", &hudHidden))
+	if (ImGui::Checkbox(TrLabel("Hide the HUD"), &hudHidden))
 		BattleCockpit::SetHidden(hudHidden);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Hides the gauges, the timer and the round markers, like the game does "
-			"during a cinematic. Health values still show either way.");
+		ImGui::SetTooltip(Tr("Hides the gauges, the timer and the round markers, like the game does "
+			"during a cinematic. Health values still show either way."));
 	}
 }
 
@@ -228,14 +229,14 @@ void DrawHideFightersToggle()
 	bool fightersHidden = CleanFrame::FightersHidden();
 	ImGui::BeginDisabled(OnlineState::IsOnline());
 
-	if (ImGui::Checkbox("Hide characters and effects", &fightersHidden))
+	if (ImGui::Checkbox(TrLabel("Hide characters and effects"), &fightersHidden))
 		CleanFrame::SetFightersHidden(fightersHidden);
 
 	ImGui::EndDisabled();
 
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		ImGui::SetTooltip("Draws only the stage. The match keeps running as usual. Offline only, "
-			"and it turns off when the game closes.");
+		ImGui::SetTooltip(Tr("Draws only the stage. The match keeps running as usual. Offline only, "
+			"and it turns off when the game closes."));
 }
 
 void DrawHitboxControls()
@@ -256,7 +257,7 @@ void DrawPauseControls()
 		return;
 
 	bool paused = FrameStepper::IsPaused();
-	if (ImGui::Checkbox("Pause", &paused))
+	if (ImGui::Checkbox(TrLabel("Pause"), &paused))
 		FrameStepper::SetPaused(paused);
 
 	ImGui::SameLine();
@@ -264,7 +265,7 @@ void DrawPauseControls()
 
 	ImGui::BeginDisabled(!paused);
 
-	if (ImGui::Button("Next frame"))
+	if (ImGui::Button(TrLabel("Next frame")))
 		FrameStepper::RequestStep(1);
 
 	ImGui::SameLine();
@@ -287,7 +288,7 @@ void DrawPlayerControlToggle()
 		return;
 
 	bool open = panel->IsOpen();
-	if (ImGui::Checkbox("Player Control", &open))
+	if (ImGui::Checkbox(TrLabel("Player Control"), &open))
 		open ? panel->Open() : panel->Close();
 }
 
@@ -304,14 +305,14 @@ void DrawHitboxTypeControls()
 	if (overlay == nullptr)
 		return;
 
-	if (!ImGui::TreeNode("Hitbox types"))
+	if (!ImGui::TreeNode(TrLabel("Hitbox types")))
 		return;
 
-	ImGui::Checkbox("Show Origin", &overlay->GetShowOrigin());
+	ImGui::Checkbox(TrLabel("Show Origin"), &overlay->GetShowOrigin());
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Draws a cross at each object's position, the point its boxes are measured "
-			"from. Use it to tell if boxes belong to a projectile or to the character who fired it.");
+		ImGui::SetTooltip(Tr("Draws a cross at each object's position, the point its boxes are measured "
+			"from. Use it to tell if boxes belong to a projectile or to the character who fired it."));
 	}
 
 	const ImGuiStyle& style = ImGui::GetStyle();
@@ -375,13 +376,13 @@ void DrawHitboxTypeControls()
 	if (WindowContainer* const legendContainer = WindowManager::GetInstance().GetContainer())
 	{
 		IWindow* const legend = legendContainer->GetWindow(WindowType_HitboxLegend);
-		if (legend != nullptr && ImGui::Button("Hitbox Doc."))
+		if (legend != nullptr && ImGui::Button(TrLabel("Hitbox Doc.")))
 			legend->IsOpen() ? legend->Close() : legend->Open();
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Explains each box type, what it can touch and which moves use it. The "
-				"colours match the hitbox viewer.");
+			ImGui::SetTooltip(Tr("Explains each box type, what it can touch and which moves use it. The "
+				"colours match the hitbox viewer."));
 		}
 	}
 
@@ -393,85 +394,85 @@ void DrawFrameMeterControls()
 	if (!Shows(TrainingItems::Item_FrameMeterOptions))
 		return;
 
-	if (!ImGui::TreeNode("Frame meter options"))
+	if (!ImGui::TreeNode(TrLabel("Frame meter options")))
 		return;
 
 	Ui::SetItemWidth(160.0f);
-	ImGui::SliderFloat("Size", &g_modVals.frameMeterScale, 0.5f, 4.0f, "%.2fx");
+	ImGui::SliderFloat(TrLabel("Size"), &g_modVals.frameMeterScale, 0.5f, 4.0f, "%.2fx");
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveFloat("FrameMeter", "Scale", g_modVals.frameMeterScale);
 
 	Ui::SetItemWidth(160.0f);
-	ImGui::SliderInt("Opacity", &g_modVals.frameMeterOpacity, 10, 100, "%d%%");
+	ImGui::SliderInt(TrLabel("Opacity"), &g_modVals.frameMeterOpacity, 10, 100, "%d%%");
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Settings::SaveInt("FrameMeter", "Opacity", g_modVals.frameMeterOpacity);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("How solid the whole meter looks, bars and numbers included. Lower it to see "
-			"the fight behind it.");
+		ImGui::SetTooltip(Tr("How solid the whole meter looks, bars and numbers included. Lower it to see "
+			"the fight behind it."));
 	}
 
-	if (ImGui::Checkbox("Count band", &g_modVals.frameMeterCounts))
+	if (ImGui::Checkbox(TrLabel("Count band"), &g_modVals.frameMeterCounts))
 		Settings::SaveInt("FrameMeter", "BandCounts", g_modVals.frameMeterCounts ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Shows how many frames each finished band lasted, at the end of the band. "
-			"Bands too short to fit the number stay blank.");
+		ImGui::SetTooltip(Tr("Shows how many frames each finished band lasted, at the end of the band. "
+			"Bands too short to fit the number stay blank."));
 	}
 
 	ImGui::SameLine();
-	if (ImGui::Checkbox("Hitstun, gap and flash", &g_modVals.frameMeterTotals))
+	if (ImGui::Checkbox(TrLabel("Hitstun, gap and flash"), &g_modVals.frameMeterTotals))
 		Settings::SaveInt("FrameMeter", "LineTotals", g_modVals.frameMeterTotals ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Adds a line with the last hit's blockstun or hitstun, the gap before it, "
-			"the flash length and the damage.");
+		ImGui::SetTooltip(Tr("Adds a line with the last hit's blockstun or hitstun, the gap before it, "
+			"the flash length and the damage."));
 	}
 
-	if (ImGui::Checkbox("Invincibility Row", &g_modVals.frameMeterAttributes))
+	if (ImGui::Checkbox(TrLabel("Invincibility Row"), &g_modVals.frameMeterAttributes))
 		Settings::SaveInt("FrameMeter", "AttributeRow", g_modVals.frameMeterAttributes ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Thin row under each bar.\nWhat the character can't be hit by on each frame.\n"
-			"White means nothing can hit.");
+		ImGui::SetTooltip(Tr("Thin row under each bar.\nWhat the character can't be hit by on each frame.\n"
+			"White means nothing can hit."));
 	}
 
-	if (ImGui::Checkbox("Attack Row", &g_modVals.frameMeterAttackRow))
+	if (ImGui::Checkbox(TrLabel("Attack Row"), &g_modVals.frameMeterAttackRow))
 		Settings::SaveInt("FrameMeter", "AttackRow", g_modVals.frameMeterAttackRow ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Thin row above each bar.\nOn active frames, the attack's Head, Foot or Air "
-			"property.");
+		ImGui::SetTooltip(Tr("Thin row above each bar.\nOn active frames, the attack's Head, Foot or Air "
+			"property."));
 	}
 
-	if (ImGui::Checkbox("Place automatically", &g_modVals.frameMeterAuto))
+	if (ImGui::Checkbox(TrLabel("Place automatically"), &g_modVals.frameMeterAuto))
 		Settings::SaveInt("FrameMeter", "PlaceAutomatically", g_modVals.frameMeterAuto ? 1 : 0);
 
 	const bool automatic = g_modVals.frameMeterAuto;
 
 	if (!automatic)
 	{
-		if (ImGui::Checkbox("Drag the meter with the mouse", &g_modVals.frameMeterDrag))
+		if (ImGui::Checkbox(TrLabel("Drag the meter with the mouse"), &g_modVals.frameMeterDrag))
 			Settings::SaveInt("FrameMeter", "MouseDrag", g_modVals.frameMeterDrag ? 1 : 0);
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Any click that lands on the meter grabs it, even if you meant to click "
-				"something else.");
+			ImGui::SetTooltip(Tr("Any click that lands on the meter grabs it, even if you meant to click "
+				"something else."));
 		}
 
 		Ui::SetItemWidth(160.0f);
-		ImGui::DragInt("X", &g_modVals.frameMeterX, 2.0f, 0, 4096);
+		ImGui::DragInt(TrLabel("X"), &g_modVals.frameMeterX, 2.0f, 0, 4096);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 			Settings::SaveInt("FrameMeter", "PositionX", g_modVals.frameMeterX);
 
 		Ui::SetItemWidth(160.0f);
-		ImGui::DragInt("Y", &g_modVals.frameMeterY, 2.0f, 0, 4096);
+		ImGui::DragInt(TrLabel("Y"), &g_modVals.frameMeterY, 2.0f, 0, 4096);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 			Settings::SaveInt("FrameMeter", "PositionY", g_modVals.frameMeterY);
 	}
@@ -481,13 +482,13 @@ void DrawFrameMeterControls()
 	if (WindowContainer* const legendContainer = WindowManager::GetInstance().GetContainer())
 	{
 		IWindow* const legend = legendContainer->GetWindow(WindowType_FrameMeterLegend);
-		if (legend != nullptr && ImGui::Button("Frame Meter Doc."))
+		if (legend != nullptr && ImGui::Button(TrLabel("Frame Meter Doc.")))
 			legend->IsOpen() ? legend->Close() : legend->Open();
 
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Explains every band and status colour, with a sample meter and what "
-				"each number means. The colours match the meter.");
+			ImGui::SetTooltip(Tr("Explains every band and status colour, with a sample meter and what "
+				"each number means. The colours match the meter."));
 		}
 	}
 
@@ -572,7 +573,7 @@ void DrawStopList(const char* label, const char* tooltip, bool& enabled, int* st
 		stops[FrameMeter::kComboStops - 1] = 0;
 	}
 
-	if (used < FrameMeter::kComboStops && ImGui::SmallButton("Add"))
+	if (used < FrameMeter::kComboStops && ImGui::SmallButton(TrLabel("Add")))
 	{
 		for (int i = 0; i < FrameMeter::kComboStops; ++i)
 		{
@@ -604,11 +605,11 @@ void DrawTimingControls()
 	FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
 	const FrameMeter::AutoPauseConfig before = config;
 
-	if (!ImGui::TreeNode("Timing"))
+	if (!ImGui::TreeNode(TrLabel("Timing")))
 		return;
 
 	Ui::SetItemWidth(90.0f);
-	if (ImGui::InputInt("frames", &config.resumeDelayFrames, 0))
+	if (ImGui::InputInt(TrLabel("frames"), &config.resumeDelayFrames, 0))
 	{
 		if (config.resumeDelayFrames < FrameMeter::kMinResumeFrames)
 			config.resumeDelayFrames = FrameMeter::kMinResumeFrames;
@@ -616,8 +617,8 @@ void DrawTimingControls()
 			config.resumeDelayFrames = FrameMeter::kMaxResumeFrames;
 	}
 
-	ImGui::TextDisabled("Dummy lead-in");
-	ImGui::Checkbox("Recording", &config.onDummyRecord);
+	ImGui::TextDisabled(Tr("Dummy lead-in"));
+	ImGui::Checkbox(TrLabel("Recording"), &config.onDummyRecord);
 
 	ImGui::BeginDisabled(!config.onDummyRecord);
 	Ui::SetItemWidth(260.0f);
@@ -631,23 +632,23 @@ void DrawTimingControls()
 	ImGui::Combo("##leadinmode", &config.leadInMode, kLeadInModes, 2);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Warm up lets everyone move before recording starts. Still freezes the "
-			"game. Neither one records the countdown.");
+		ImGui::SetTooltip(Tr("Warm up lets everyone move before recording starts. Still freezes the "
+			"game. Neither one records the countdown."));
 
 	ImGui::EndDisabled();
 
 	ImGui::Separator();
-	ImGui::TextDisabled("Delay before resuming a pause");
+	ImGui::TextDisabled(Tr("Delay before resuming a pause"));
 
-	ImGui::Checkbox("Move starts##delay", &config.delayOnMoveStarts);
+	ImGui::Checkbox(TrLabel("Move starts##delay"), &config.delayOnMoveStarts);
 	ImGui::SameLine();
-	ImGui::Checkbox("Hit lands##delay", &config.delayOnHitLands);
+	ImGui::Checkbox(TrLabel("Hit lands##delay"), &config.delayOnHitLands);
 	ImGui::SameLine();
-	ImGui::Checkbox("Manual pause##delay", &config.delayOnManualPause);
+	ImGui::Checkbox(TrLabel("Manual pause##delay"), &config.delayOnManualPause);
 
-	ImGui::Checkbox("Combo count##delay", &config.delayOnComboReaches);
+	ImGui::Checkbox(TrLabel("Combo count##delay"), &config.delayOnComboReaches);
 	ImGui::SameLine();
-	ImGui::Checkbox("Block count##delay", &config.delayOnBlockReaches);
+	ImGui::Checkbox(TrLabel("Block count##delay"), &config.delayOnBlockReaches);
 
 	config.resumeDelay = config.delayOnMoveStarts || config.delayOnHitLands ||
 		config.delayOnComboReaches || config.delayOnBlockReaches || config.delayOnManualPause;
@@ -667,40 +668,40 @@ void DrawAutoPauseControls()
 	FrameStepper::SetManualResumeDelay(ManualResumeDelay(config));
 	const FrameMeter::AutoPauseConfig before = config;
 
-	if (!ImGui::TreeNode("Auto pause"))
+	if (!ImGui::TreeNode(TrLabel("Auto pause")))
 		return;
 
-	ImGui::Checkbox("P1", &config.player[0]);
+	ImGui::Checkbox(TrLabel("P1"), &config.player[0]);
 	ImGui::SameLine();
-	ImGui::Checkbox("P2", &config.player[1]);
+	ImGui::Checkbox(TrLabel("P2"), &config.player[1]);
 	ImGui::SameLine();
-	ImGui::TextDisabled("Watch");
+	ImGui::TextDisabled(Tr("Watch"));
 
 	ImGui::BeginTable("autopausetriggers", 2, ImGuiTableFlags_SizingStretchSame);
 	ImGui::TableNextRow();
 	ImGui::TableNextColumn();
 
-	ImGui::Checkbox("Move starts", &config.onMoveStarts);
+	ImGui::Checkbox(TrLabel("Move starts"), &config.onMoveStarts);
 
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
 		ImGui::PushTextWrapPos(340.0f);
-		ImGui::TextUnformatted("Pauses on the first startup frame of a move. Jumps, dashes and "
-			"assaults count as movement, so they do not trigger this.");
+		ImGui::TextUnformatted(Tr("Pauses on the first startup frame of a move. Jumps, dashes and "
+			"assaults count as movement, so they do not trigger this."));
 		ImGui::PopTextWrapPos();
 		ImGui::EndTooltip();
 	}
 
 	ImGui::TableNextColumn();
-	ImGui::Checkbox("Hit lands", &config.onHit);
+	ImGui::Checkbox(TrLabel("Hit lands"), &config.onHit);
 
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
 		ImGui::PushTextWrapPos(340.0f);
-		ImGui::TextUnformatted("Pauses on every hit that connects, using the game's combo counter. "
-			"Blocked hits do not count.");
+		ImGui::TextUnformatted(Tr("Pauses on every hit that connects, using the game's combo counter. "
+			"Blocked hits do not count."));
 		ImGui::PopTextWrapPos();
 		ImGui::EndTooltip();
 	}
@@ -745,22 +746,22 @@ void DrawExtrasControls()
 	FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
 	const FrameMeter::AutoPauseConfig before = config;
 
-	if (!ImGui::TreeNode("Extras"))
+	if (!ImGui::TreeNode(TrLabel("Extras")))
 		return;
 
-	ImGui::Checkbox("Reversal action after restart", &config.reversalAfterRestart);
+	ImGui::Checkbox(TrLabel("Reversal action after restart"), &config.reversalAfterRestart);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("After a training restart, the dummy does the action ticked on the game's "
+		ImGui::SetTooltip(Tr("After a training restart, the dummy does the action ticked on the game's "
 			"Reversal action page, on the first frame it can act. Air actions need the dummy in the "
-			"air, so they do not come out from a standing restart.");
+			"air, so they do not come out from a standing restart."));
 
 	ImGui::BeginDisabled(!config.reversalAfterRestart);
-	ImGui::Checkbox("Count down first", &config.reversalAfterCountdown);
+	ImGui::Checkbox(TrLabel("Count down first"), &config.reversalAfterCountdown);
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("The restart freezes for the frame count set in Timing. The reversal is "
-			"ready only after that runs out.");
+		ImGui::SetTooltip(Tr("The restart freezes for the frame count set in Timing. The reversal is "
+			"ready only after that runs out."));
 
 	ImGui::EndDisabled();
 
@@ -797,7 +798,7 @@ void DrawDummyScriptControls()
 	if (!Shows(TrainingItems::Item_DummyScript))
 		return;
 
-	if (!ImGui::TreeNode("Dummy script"))
+	if (!ImGui::TreeNode(TrLabel("Dummy script")))
 		return;
 
 	DummyScript::RefreshLibrary();
@@ -841,7 +842,7 @@ void DrawScriptTab(int player)
 
 	if (slotSide)
 	{
-		ImGui::Text("Slot");
+		ImGui::Text(Tr("Slot"));
 		ImGui::SameLine();
 
 		Ui::SetItemWidth(110.0f);
@@ -881,14 +882,14 @@ void DrawScriptTab(int player)
 
 	if (slotSide)
 	{
-		if (ImGui::Button("Write to slot"))
+		if (ImGui::Button(TrLabel("Write to slot")))
 		{
 			if (DummyScript::Parse(tab.text, tab.error, sizeof(tab.error)))
 				DummyScript::WriteToSlot(tab.slot - 1);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("Read from slot"))
+		if (ImGui::Button(TrLabel("Read from slot")))
 		{
 			if (DummyScript::ReadFromSlot(tab.slot - 1, tab.text, sizeof(tab.text)))
 				tab.error[0] = '\0';
@@ -899,16 +900,16 @@ void DrawScriptTab(int player)
 	if (tab.error[0] != '\0')
 		ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.4f, 1.0f), "%s", tab.error);
 	else if (running)
-		ImGui::TextDisabled("frame %d", slotSide ? DummyScript::GetPlaybackFrame()
+		ImGui::TextDisabled(Tr("frame %d"), slotSide ? DummyScript::GetPlaybackFrame()
 			: PlayerControl::GetScriptFrame(player));
 	else
-		ImGui::TextDisabled("%d frames", DummyScript::GetFrameCount());
+		ImGui::TextDisabled(Tr("%d frames"), DummyScript::GetFrameCount());
 
 	Ui::SetItemWidth(130.0f);
 	ImGui::InputText("##scriptname", tab.name, sizeof(tab.name));
 
 	ImGui::SameLine();
-	if (ImGui::Button("Save"))
+	if (ImGui::Button(TrLabel("Save")))
 	{
 		DummyScript::Save(player, tab.name, tab.text);
 		tab.selected = -1;
@@ -943,7 +944,7 @@ void DrawScriptTab(int player)
 		}
 
 		if (shown == 0)
-			ImGui::TextDisabled("nothing saved for this character");
+			ImGui::TextDisabled(Tr("nothing saved for this character"));
 
 		ImGui::EndCombo();
 	}
@@ -951,7 +952,7 @@ void DrawScriptTab(int player)
 	ImGui::SameLine();
 	ImGui::BeginDisabled(tab.selected < 0 || tab.selected >= count);
 
-	if (ImGui::Button("Delete"))
+	if (ImGui::Button(TrLabel("Delete")))
 	{
 		DummyScript::DeleteFromLibrary(tab.selected);
 		tab.selected = -1;
@@ -962,7 +963,7 @@ void DrawScriptTab(int player)
 	if (WindowContainer* const guideContainer = WindowManager::GetInstance().GetContainer())
 	{
 		IWindow* const guide = guideContainer->GetWindow(WindowType_DummyScriptGuide);
-		if (guide != nullptr && ImGui::Button("Dummy Script Doc."))
+		if (guide != nullptr && ImGui::Button(TrLabel("Dummy Script Doc.")))
 			guide->IsOpen() ? guide->Close() : guide->Open();
 	}
 }
@@ -974,7 +975,7 @@ void DrawStageColourControls()
 
 	bool enabled = StageColor::IsEnabled();
 
-	if (ImGui::Checkbox("Flat colour stage", &enabled))
+	if (ImGui::Checkbox(TrLabel("Flat colour stage"), &enabled))
 	{
 		StageColor::SetEnabled(enabled);
 		Settings::SaveInt("Video", "FlatStage", enabled ? 1 : 0);
@@ -982,8 +983,8 @@ void DrawStageColourControls()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Replaces the stage with a solid colour for chroma keying. Characters, "
-			"effects and the HUD are untouched.");
+		ImGui::SetTooltip(Tr("Replaces the stage with a solid colour for chroma keying. Characters, "
+			"effects and the HUD are untouched."));
 	}
 
 	if (!enabled)
@@ -1011,7 +1012,7 @@ void DrawStageColourControls()
 		Settings::SaveInt("Video", "FlatStageColour", static_cast<int>(StageColor::GetColor()));
 
 	ImGui::SameLine();
-	if (ImGui::Button("Green"))
+	if (ImGui::Button(TrLabel("Green")))
 	{
 		StageColor::SetColor(kGreenScreen);
 		Settings::SaveInt("Video", "FlatStageColour", static_cast<int>(kGreenScreen));
@@ -1080,7 +1081,7 @@ void DrawFreezeModeCombo()
 	Ui::SetItemWidth(160.0f);
 	ImGui::BeginDisabled(forced);
 
-	if (ImGui::BeginCombo("Pause mode", FrameStepper::GetModeName(current)))
+	if (ImGui::BeginCombo(TrLabel("Pause mode"), FrameStepper::GetModeName(current)))
 	{
 		for (FrameStepper::FreezeMode mode : modes)
 		{
@@ -1114,7 +1115,7 @@ void DrawFreezeModeCombo()
 	if (forced)
 	{
 		ImGui::SameLine();
-		ImGui::TextDisabled("(forced in replay or watch mode)");
+		ImGui::TextDisabled(Tr("(forced in replay or watch mode)"));
 	}
 }
 
@@ -1123,17 +1124,17 @@ void DrawQuickTrainingControls()
 	if (!Shows(TrainingItems::Item_TrainingShortcut))
 		return;
 
-	if (!ImGui::TreeNode("Training shortcut"))
+	if (!ImGui::TreeNode(TrLabel("Training shortcut")))
 		return;
 
 	bool enabled = QuickTraining::IsEnabled();
-	if (ImGui::Checkbox("Choose its characters", &enabled))
+	if (ImGui::Checkbox(TrLabel("Choose its characters"), &enabled))
 		QuickTraining::SetEnabled(enabled);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("The main menu's Training shortcut skips character select. This picks the "
-			"characters and colours it starts with.\nGame default: your last training pick, or Hyde vs Linne.");
+		ImGui::SetTooltip(Tr("The main menu's Training shortcut skips character select. This picks the "
+			"characters and colours it starts with.\nGame default: your last training pick, or Hyde vs Linne."));
 	}
 
 	ImGui::BeginDisabled(!enabled);
@@ -1150,7 +1151,7 @@ void DrawQuickTrainingSide(int player)
 	ImGui::PushID(player);
 
 	ImGui::AlignTextToFramePadding();
-	ImGui::Text("P%d", player + 1);
+	ImGui::Text(Tr("P%d"), player + 1);
 	ImGui::SameLine();
 	DrawQuickTrainingCharaCombo(player);
 	ImGui::SameLine();

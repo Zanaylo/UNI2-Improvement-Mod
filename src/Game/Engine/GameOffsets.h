@@ -82,6 +82,7 @@ namespace GameOffsets
 	constexpr uint32_t kMoveCode1Jump = 0x400000;
 
 	constexpr uint32_t kMoveCode2FromAssault = 0x10;
+	constexpr uint32_t kMoveCode2SystemAttack = 0x80000;
 	constexpr uint32_t kMoveCode2EnemyAntenStop = 0x100000;
 
 	constexpr uint32_t kMoveCode3Anten = 0x8000;

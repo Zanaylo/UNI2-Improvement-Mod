@@ -8,6 +8,7 @@
 #include "Overlay/Widgets/UiText.h"
 #include "Web/UpdateCheck.h"
 #include "Web/UpdateInstall.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -99,7 +100,7 @@ void DrawTitleLink(const std::string& title, const std::string& page)
 	ImGui::PopFont();
 
 	if (hovered)
-		ImGui::SetTooltip("Open this release on GitHub");
+		ImGui::SetTooltip(Tr("Open this release on GitHub"));
 
 	if (ImGui::IsItemClicked() && !page.empty())
 		ShellOpen::Open(page);
@@ -245,16 +246,16 @@ void UpdateNotifierWindow::DrawPrimaryButton(const ImVec2& size)
 {
 	if (!m_canInstall)
 	{
-		if (ImGui::Button("Open the release page", size))
+		if (ImGui::Button(TrLabel("Open the release page"), size))
 			ShellOpen::Open(UpdateCheck::GetReleaseUrl());
 
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Opens the release on GitHub in your browser.");
+			ImGui::SetTooltip(Tr("Opens the release on GitHub in your browser."));
 
 		return;
 	}
 
-	if (ImGui::Button("Update", size))
+	if (ImGui::Button(TrLabel("Update"), size))
 		UpdateInstall::Start();
 
 	if (ImGui::IsItemHovered())
@@ -277,25 +278,25 @@ void UpdateNotifierWindow::DrawButtons()
 	DrawPrimaryButton(size);
 	ImGui::SameLine();
 
-	if (ImGui::Button("Later", size))
+	if (ImGui::Button(TrLabel("Later"), size))
 	{
 		UpdateCheck::Dismiss();
 		Close();
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Asks again the next time the game starts.");
+		ImGui::SetTooltip(Tr("Asks again the next time the game starts."));
 
 	ImGui::SameLine();
 
-	if (ImGui::Button("Skip this version", size))
+	if (ImGui::Button(TrLabel("Skip this version"), size))
 	{
 		UpdateCheck::SkipLatest();
 		Close();
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Stops asking about %s. A newer release will still be announced.",
+		ImGui::SetTooltip(Tr("Stops asking about %s. A newer release will still be announced."),
 			UpdateCheck::GetLatestVersion());
 
 	CentredMuted(kManualHelp);

@@ -7,6 +7,7 @@
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Web/UpdateCheck.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -70,7 +71,7 @@ void StandbyWindow::DrawUpdateState() const
 	{
 		UiText::Good("Version %s is out.", UpdateCheck::GetLatestVersion());
 
-		if (ImGui::Button("See the update"))
+		if (ImGui::Button(TrLabel("See the update")))
 			WindowManager::GetInstance().OpenUpdateNotifier();
 
 		return;
@@ -79,6 +80,6 @@ void StandbyWindow::DrawUpdateState() const
 	UiText::Muted("%s", UpdateCheck::HasAnswer() ? "No update yet. The mod checks again every 15 minutes."
 		: UpdateCheck::GetStatusText());
 
-	if (ImGui::Button("Check now"))
+	if (ImGui::Button(TrLabel("Check now")))
 		UpdateCheck::Refresh();
 }

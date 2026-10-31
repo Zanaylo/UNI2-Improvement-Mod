@@ -19,6 +19,7 @@
 #include "Core/Boot/crashdump.h"
 #include "Core/info.h"
 #include "Core/Config/interfaces.h"
+#include "Core/Text/Language.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "D3D9/Device/D3D9Proxy.h"
@@ -135,6 +136,7 @@ void Stage_Settings()
 {
 	Settings::LoadSettingsFile();
 	Settings::ApplySettings();
+	Language::Initialize();
 	Hotkeys::Load();
 	Features::Freeze();
 

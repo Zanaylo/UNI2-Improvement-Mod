@@ -6,6 +6,7 @@
 #include "Game/Engine/SceneWatch.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -149,7 +150,7 @@ void PatchWindow::DrawRestart()
 
 	bool automatic = GamePatches::IsAuto();
 
-	if (ImGui::Checkbox("Find the patch each replay was recorded on", &automatic))
+	if (ImGui::Checkbox(TrLabel("Find the patch each replay was recorded on"), &automatic))
 		GamePatches::SetAuto(automatic);
 }
 
@@ -204,7 +205,7 @@ void PatchWindow::DrawInstalledRow()
 	if (running)
 		UiText::Good("The installed game");
 	else
-		ImGui::TextUnformatted("The installed game");
+		ImGui::TextUnformatted(Tr("The installed game"));
 
 	ImGui::TableNextColumn();
 	UiText::Muted("the game as installed");
@@ -228,7 +229,7 @@ void PatchWindow::DrawInstalledRow()
 
 	ImGui::BeginDisabled(picked);
 
-	if (ImGui::SmallButton("Use"))
+	if (ImGui::SmallButton(TrLabel("Use")))
 		GamePatches::Choose(-1);
 
 	ImGui::EndDisabled();
@@ -299,7 +300,7 @@ void PatchWindow::DrawRow(int index)
 
 	ImGui::BeginDisabled(!patch->present || picked);
 
-	if (ImGui::SmallButton("Use"))
+	if (ImGui::SmallButton(TrLabel("Use")))
 		GamePatches::Choose(index);
 
 	ImGui::EndDisabled();
@@ -349,7 +350,7 @@ void PatchWindow::DrawInstall()
 	Ui::SetItemWidth(kFieldWidth);
 	ImGui::InputTextWithHint("Name", "1.05", m_name, IM_ARRAYSIZE(m_name));
 
-	if (ImGui::Button("Pick a folder"))
+	if (ImGui::Button(TrLabel("Pick a folder")))
 		m_folderDialog.BeginFolder("Pick the patch's data folder");
 
 	std::string picked;

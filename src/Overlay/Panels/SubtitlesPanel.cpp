@@ -7,6 +7,7 @@
 #include "Game/Subtitles/SubtitleWatch.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -63,14 +64,14 @@ void SubtitlesPanel::Draw()
 
 void SubtitlesPanel::DrawSwitch()
 {
-	ImGui::TextUnformatted("Subtitles");
+	ImGui::TextUnformatted(Tr("Subtitles"));
 	UiText::Help("Shows what characters say as text on screen. If the game already has a subtitle "
 		"for a voice line, the game draws your text with its font, position and timing. Every "
 		"other line is drawn by the overlay as soon as it plays.");
 
 	bool on = SubtitleWatch::IsEnabled();
 
-	if (ImGui::Checkbox("Show subtitles", &on))
+	if (ImGui::Checkbox(TrLabel("Show subtitles"), &on))
 	{
 		SubtitleWatch::SetEnabled(on);
 		g_modVals.subtitles = on;
@@ -105,9 +106,9 @@ void SubtitlesPanel::DrawFile()
 
 	ImGui::SetNextItemWidth(Ui::Scaled(240.0f));
 
-	if (ImGui::BeginCombo("Subtitle file", label))
+	if (ImGui::BeginCombo(TrLabel("Subtitle file"), label))
 	{
-		if (ImGui::Selectable("None", chosen[0] == 0))
+		if (ImGui::Selectable(TrLabel("None"), chosen[0] == 0))
 		{
 			CommitEdit();
 			SubtitleTable::Choose("");
@@ -147,7 +148,7 @@ void SubtitlesPanel::DrawNewFile()
 
 	ImGui::BeginDisabled(m_newName[0] == 0);
 
-	if (ImGui::Button("Create"))
+	if (ImGui::Button(TrLabel("Create")))
 	{
 		CommitEdit();
 
@@ -173,7 +174,7 @@ void SubtitlesPanel::DrawTransfer()
 
 	ImGui::BeginDisabled(!chosen);
 
-	if (ImGui::SmallButton("Export"))
+	if (ImGui::SmallButton(TrLabel("Export")))
 	{
 		CommitEdit();
 		m_export.BeginSave("Export subtitles", "Subtitle file\0*.txt\0\0", "subtitles.txt");
@@ -181,7 +182,7 @@ void SubtitlesPanel::DrawTransfer()
 
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("Import"))
+	if (ImGui::SmallButton(TrLabel("Import")))
 		m_import.BeginOpen("Import subtitles", "Subtitle file\0*.txt\0\0");
 
 	ImGui::EndDisabled();
@@ -219,7 +220,7 @@ void SubtitlesPanel::DrawLook()
 	int hold = SubtitleWatch::HoldMs();
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
 
-	if (ImGui::SliderInt("Time on screen", &hold, 500, 8000, "%d ms"))
+	if (ImGui::SliderInt(TrLabel("Time on screen"), &hold, 500, 8000, "%d ms"))
 	{
 		SubtitleWatch::SetHoldMs(hold);
 		g_modVals.subtitleHoldMs = SubtitleWatch::HoldMs();
@@ -229,7 +230,7 @@ void SubtitlesPanel::DrawLook()
 	int scale = g_modVals.subtitleScale;
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
 
-	if (ImGui::SliderInt("Text size", &scale, 50, 400, "%d%%"))
+	if (ImGui::SliderInt(TrLabel("Text size"), &scale, 50, 400, "%d%%"))
 	{
 		g_modVals.subtitleScale = scale;
 		Settings::SaveInt("Subtitles", "Scale", scale);
@@ -238,7 +239,7 @@ void SubtitlesPanel::DrawLook()
 	int y = g_modVals.subtitleY;
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
 
-	if (ImGui::SliderInt("Height on screen", &y, 5, 98, "%d%%"))
+	if (ImGui::SliderInt(TrLabel("Height on screen"), &y, 5, 98, "%d%%"))
 	{
 		g_modVals.subtitleY = y;
 		Settings::SaveInt("Subtitles", "PositionY", y);
@@ -251,7 +252,7 @@ void SubtitlesPanel::DrawSpeaker()
 {
 	bool names = g_modVals.subtitleNames;
 
-	if (!ImGui::Checkbox("Show who is speaking", &names))
+	if (!ImGui::Checkbox(TrLabel("Show who is speaking"), &names))
 		return;
 
 	g_modVals.subtitleNames = names;
@@ -264,7 +265,7 @@ void SubtitlesPanel::DrawPicker()
 
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
 
-	if (ImGui::BeginCombo("Character", name != nullptr ? name : "?"))
+	if (ImGui::BeginCombo(TrLabel("Character"), name != nullptr ? name : "?"))
 	{
 		for (int i = 0; i < CharaTables::GetCharaCount(); ++i)
 		{
@@ -294,10 +295,10 @@ void SubtitlesPanel::DrawPicker()
 	ImGui::InputTextWithHint("##subtitlefilter", "Search", m_filter, sizeof(m_filter));
 
 	ImGui::SameLine();
-	ImGui::Checkbox("Only lines with a spoken note", &m_onlySpoken);
+	ImGui::Checkbox(TrLabel("Only lines with a spoken note"), &m_onlySpoken);
 
 	ImGui::SameLine();
-	ImGui::Checkbox("Only what I wrote", &m_onlyWritten);
+	ImGui::Checkbox(TrLabel("Only what I wrote"), &m_onlyWritten);
 
 	UiText::Muted("Click a subtitle to edit it. Click anywhere else to keep your text, or press "
 		"Esc to undo.");

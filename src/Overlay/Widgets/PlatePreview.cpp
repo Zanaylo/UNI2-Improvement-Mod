@@ -3,6 +3,7 @@
 #include "D3D9/Draw/DdsTexture.h"
 #include "D3D9/Device/DeviceHooks.h"
 #include "Game/Files/DataArchive.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -135,5 +136,5 @@ void PlatePreview::Draw(float width)
 	if (drawn > 0)
 		return;
 
-	ImGui::TextDisabled("The plate art could not be read out of the game's archive.");
+	ImGui::TextDisabled(Tr("The plate art could not be read out of the game's archive."));
 }

@@ -1,5 +1,7 @@
 #include "Overlay/Framework/IWindow.h"
 
+#include "Core/Text/Language.h"
+
 IWindow::IWindow(const std::string& title, bool closable, ImGuiWindowFlags windowFlags)
 	: m_title(title)
 	, m_isOpen(false)
@@ -15,7 +17,7 @@ void IWindow::Update()
 
 	BeforeDraw();
 
-	if (ImGui::Begin(m_title.c_str(), m_closable ? &m_isOpen : nullptr, m_windowFlags))
+	if (ImGui::Begin(TrLabel(m_title.c_str()), m_closable ? &m_isOpen : nullptr, m_windowFlags))
 	{
 		Draw();
 

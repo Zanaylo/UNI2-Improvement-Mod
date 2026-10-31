@@ -20,6 +20,7 @@
 #include "Overlay/Panels/RestartPrompt.h"
 #include "Overlay/Framework/WindowManager.h"
 #include "Overlay/Windows/StageFieldsWindow.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -82,7 +83,7 @@ void Resize(StagePlacement::Place& place, float size)
 void HoverTip(const char* text)
 {
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("%s", text);
+		ImGui::SetTooltip("%s", Tr(text));
 }
 
 void ShowFields(int id, int slot, const std::string& name)
@@ -97,11 +98,11 @@ void ShowFields(int id, int slot, const std::string& name)
 
 void AdvancedButton(int id, int slot, const std::string& name)
 {
-	if (ImGui::SmallButton("Advanced"))
+	if (ImGui::SmallButton(TrLabel("Advanced")))
 		ShowFields(id, slot, name);
 
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		ImGui::SetTooltip("Camera, fog, shadows, bloom and smoothing for this stage.");
+		ImGui::SetTooltip(Tr("Camera, fog, shadows, bloom and smoothing for this stage."));
 }
 
 float Snapped(float percent, float step)
@@ -228,8 +229,8 @@ bool Percent(const char* id, float* value, float base, float low, float high, co
 	changed = ImGui::DragFloat("##value", &percent, kDragSpeed, low, high, "%.0f%%") || changed;
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("%s\n\n100%% is this stage's default. Drag, use - and +, or double click "
-			"to type any value.", tip);
+		ImGui::SetTooltip(Tr("%s\n\n100%% is this stage's default. Drag, use - and +, or double click "
+			"to type any value."), Tr(tip));
 
 	ImGui::SameLine(0.0f, gap);
 
@@ -319,7 +320,7 @@ void StagesPanel::Draw()
 
 	if (ImGui::BeginTabBar("##stagetabs"))
 	{
-		if (ImGui::BeginTabItem("Installed stages"))
+		if (ImGui::BeginTabItem(TrLabel("Installed stages")))
 		{
 			DrawHidden();
 
@@ -329,7 +330,7 @@ void StagesPanel::Draw()
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Add stages"))
+		if (ImGui::BeginTabItem(TrLabel("Add stages")))
 		{
 			DrawSource();
 
@@ -342,7 +343,7 @@ void StagesPanel::Draw()
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Help"))
+		if (ImGui::BeginTabItem(TrLabel("Help")))
 		{
 			DrawHelp();
 			ImGui::EndTabItem();
@@ -363,7 +364,7 @@ void StagesPanel::DrawHidden()
 
 	if (ExtraStages::Count() == 0)
 	{
-		ImGui::TextDisabled("This game version has no hidden stages.");
+		ImGui::TextDisabled(Tr("This game version has no hidden stages."));
 		return;
 	}
 
@@ -389,7 +390,7 @@ void StagesPanel::DrawHidden()
 			ExtraStages::SetUnlocked(stage->number, unlocked);
 
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Stage %d, bg\\%s.", stage->number, stage->folder.c_str());
+			ImGui::SetTooltip(Tr("Stage %d, bg\\%s."), stage->number, stage->folder.c_str());
 
 		ImGui::PopID();
 	}
@@ -401,7 +402,7 @@ void StagesPanel::DrawSource()
 
 	ImGui::BeginDisabled(StageImport::IsBusy());
 
-	if (ImGui::Button("Get stages from another fighting game"))
+	if (ImGui::Button(TrLabel("Get stages from another fighting game")))
 		m_sourceDialog.BeginFolder("Pick the game folder to take a stage from");
 
 	ImGui::EndDisabled();
@@ -477,7 +478,7 @@ void StagesPanel::DrawCustom()
 
 	ImGui::BeginDisabled(StageImport::IsBusy());
 
-	if (ImGui::Button("Import a stage folder"))
+	if (ImGui::Button(TrLabel("Import a stage folder")))
 		m_customDialog.BeginFolder("Pick the folder holding the stage's files");
 
 	ImGui::EndDisabled();
@@ -494,7 +495,7 @@ void StagesPanel::DrawReplace()
 
 	if (ExtraStages::StageCount() == 0)
 	{
-		ImGui::TextDisabled("The game has not read its stage list yet.");
+		ImGui::TextDisabled(Tr("The game has not read its stage list yet."));
 		return;
 	}
 
@@ -538,7 +539,7 @@ void StagesPanel::DrawReplace()
 	ImGui::SameLine();
 	ImGui::BeginDisabled(StageImport::IsBusy() || m_replaceDialog.IsRunning() || m_replaceNumber <= 0);
 
-	if (ImGui::Button("Replace it with a stage folder"))
+	if (ImGui::Button(TrLabel("Replace it with a stage folder")))
 		m_replaceDialog.BeginFolder("Pick the folder holding the stage's files");
 
 	ImGui::EndDisabled();
@@ -561,7 +562,7 @@ void StagesPanel::DrawOffers()
 
 	DrawBackdropToggle();
 
-	if (ImGui::Button("Add all"))
+	if (ImGui::Button(TrLabel("Add all")))
 	{
 		for (int i = 0; i < StageImport::OfferCount(); ++i)
 		{
@@ -572,8 +573,8 @@ void StagesPanel::DrawOffers()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Installs every stage in the list with the names shown. Stages that don't "
-			"fit in the picker go into your library unticked.");
+		ImGui::SetTooltip(Tr("Installs every stage in the list with the names shown. Stages that don't "
+			"fit in the picker go into your library unticked."));
 	}
 
 	ImGui::SameLine();
@@ -634,8 +635,8 @@ void StagesPanel::DrawBackdropToggle()
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("BBTAG draws these behind Astral Heats and on its menus, not in fights.\n"
-			"Some make good stages, some look wrong from the fighting camera.");
+		ImGui::SetTooltip(Tr("BBTAG draws these behind Astral Heats and on its menus, not in fights.\n"
+			"Some make good stages, some look wrong from the fighting camera."));
 	}
 }
 
@@ -674,11 +675,11 @@ void StagesPanel::DrawOfferRow(int index)
 
 	if (queued)
 	{
-		ImGui::TextDisabled("queued");
+		ImGui::TextDisabled(Tr("queued"));
 		return;
 	}
 
-	if (ImGui::SmallButton("Add"))
+	if (ImGui::SmallButton(TrLabel("Add")))
 		Queue(index);
 }
 
@@ -722,7 +723,7 @@ void StagesPanel::DrawPlacement()
 	if (stage < 0 || !StagePlacement::Of(stage, place))
 		return;
 
-	if (!ImGui::CollapsingHeader("Stage position and camera"))
+	if (!ImGui::CollapsingHeader(TrLabel("Stage position and camera")))
 		return;
 
 	UiText::Muted("Moves the scenery and the camera for this stage only. The fighters stay where "
@@ -733,19 +734,19 @@ void StagesPanel::DrawPlacement()
 	bool changed = ImGui::DragFloat3("Position##placemove", place.position, kMoveSpeed,
 		-kMostMove, kMostMove, "%.2f");
 
-	changed |= ImGui::DragFloat("Field of view##placefov", &place.fov, kFovSpeed,
+	changed |= ImGui::DragFloat(TrLabel("Field of view##placefov"), &place.fov, kFovSpeed,
 		StagePlacement::kLeastFov, StagePlacement::kMostFov, "%.1f");
 	HoverTip("In degrees. Wider shows more scenery around the fight, the fight keeps its size.");
 
-	changed |= ImGui::DragFloat("Horizon##placehorizon", &place.horizon, kHorizonSpeed,
+	changed |= ImGui::DragFloat(TrLabel("Horizon##placehorizon"), &place.horizon, kHorizonSpeed,
 		-kMostHorizon, kMostHorizon, "%.3f");
 	HoverTip("Slides the view up or down without tilting it. Higher puts the horizon lower.");
 
-	changed |= ImGui::DragFloat("Tilt##placetilt", &place.tilt, kAngleSpeed, -kMostTilt, kMostTilt,
+	changed |= ImGui::DragFloat(TrLabel("Tilt##placetilt"), &place.tilt, kAngleSpeed, -kMostTilt, kMostTilt,
 		"%.1f");
 	HoverTip("In degrees. Tips the scenery toward or away from the camera.");
 
-	changed |= ImGui::DragFloat("Turn##placeturn", &place.turn, kAngleSpeed, -kMostTurn, kMostTurn,
+	changed |= ImGui::DragFloat(TrLabel("Turn##placeturn"), &place.turn, kAngleSpeed, -kMostTurn, kMostTurn,
 		"%.1f");
 	HoverTip("In degrees. Turns the scenery left or right around the fight.");
 
@@ -758,7 +759,7 @@ void StagesPanel::DrawPlacement()
 	{
 		ImGui::SameLine();
 
-		if (ImGui::Button("Reset##placereset"))
+		if (ImGui::Button(TrLabel("Reset##placereset")))
 			StagePlacement::Forget(stage);
 	}
 
@@ -776,8 +777,8 @@ void StagesPanel::DrawTuning(int key, int slot)
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Untick to show this stage in UNI2's colour, without the mod's "
-			"Brightness or Glow. Your values are kept for when you tick it again.");
+		ImGui::SetTooltip(Tr("Untick to show this stage in UNI2's colour, without the mod's "
+			"Brightness or Glow. Your values are kept for when you tick it again."));
 	}
 
 	BgGrade::Grade grade = BgGrade::Of(key);
@@ -830,7 +831,7 @@ void StagesPanel::DrawPorted()
 	if (ExtraStages::StageCount() == 0 && StageLibrary::Count() == 0)
 	{
 		ImGui::BeginChild("##noports", ImVec2(0.0f, Ui::Scaled(kPortedHeight)), false);
-		ImGui::TextDisabled("None yet.");
+		ImGui::TextDisabled(Tr("None yet."));
 		ImGui::EndChild();
 		return;
 	}
@@ -919,17 +920,17 @@ void StagesPanel::DrawPorted()
 		{
 			ImGui::BeginDisabled(StageImport::IsBusy());
 
-			if (ImGui::SmallButton("Rename"))
+			if (ImGui::SmallButton(TrLabel("Rename")))
 				BeginRename(row.id, row.name);
 
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-				ImGui::SetTooltip("Changes the name the stage list shows.\nThe game's stage select picks it up after a restart.");
+				ImGui::SetTooltip(Tr("Changes the name the stage list shows.\nThe game's stage select picks it up after a restart."));
 
 			ImGui::SameLine();
 			AdvancedButton(row.id, row.slot, row.name);
 			ImGui::SameLine();
 
-			if (ImGui::SmallButton("Remove"))
+			if (ImGui::SmallButton(TrLabel("Remove")))
 				StageImport::Remove(row.id);
 
 			ImGui::EndDisabled();
@@ -948,13 +949,13 @@ void StagesPanel::DrawPorted()
 		{
 			ImGui::BeginDisabled(StageImport::IsBusy());
 
-			if (ImGui::SmallButton("Restore"))
+			if (ImGui::SmallButton(TrLabel("Restore")))
 				StageImport::Restore(row.slot);
 
 			ImGui::EndDisabled();
 
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-				ImGui::SetTooltip("Deletes Mods\\bg\\bg%03d, so UNI2's stage comes back.", row.slot);
+				ImGui::SetTooltip(Tr("Deletes Mods\\bg\\bg%03d, so UNI2's stage comes back."), row.slot);
 
 			ImGui::SameLine();
 		}
@@ -966,7 +967,7 @@ void StagesPanel::DrawPorted()
 		ImGui::BeginDisabled(grade.contrast == untouched.contrast
 			&& BgGrade::GlowOf(row.key) == BgGrade::DefaultGlowOf(row.key) && !moved);
 
-		if (ImGui::SmallButton("Default"))
+		if (ImGui::SmallButton(TrLabel("Default")))
 		{
 			BgGrade::Forget(row.key);
 
@@ -1018,7 +1019,7 @@ void StagesPanel::DrawRename(int id)
 	}
 
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Enter saves. Esc cancels.");
+		ImGui::SetTooltip(Tr("Enter saves. Esc cancels."));
 
 	if (ImGui::IsItemDeactivated())
 		m_renaming = -1;
@@ -1026,7 +1027,7 @@ void StagesPanel::DrawRename(int id)
 
 void StagesPanel::DrawHelp()
 {
-	ImGui::SeparatorText("Adding a stage");
+	ImGui::SeparatorText(Tr("Adding a stage"));
 
 	UiText::Muted("Take one from MELTY BLOOD: TYPE LUMINA, MELTY BLOOD Actress Again Current Code, "
 		"UNI[st], UNI[cl-r], UNI Exe:Late, DFCI, "
@@ -1034,24 +1035,24 @@ void StagesPanel::DrawHelp()
 		"folder you made in "
 		"Blender. Nothing is downloaded and none of the game's files are replaced.");
 
-	ImGui::SeparatorText("Hidden stages");
+	ImGui::SeparatorText(Tr("Hidden stages"));
 
 	UiText::Muted("The game has two stages it never lists: the altar brought over from UNI and a "
 		"debug stage. Tick one to put it back on the list.");
 
-	ImGui::SeparatorText("The picker");
+	ImGui::SeparatorText(Tr("The picker"));
 
 	UiText::Muted("Installed stages stay in Mods\\bg, and you can keep as many as you like. The "
 		"picker holds %d of them at a time, and Enabled chooses which. When it is full, new stages "
 		"still install but unticked, so untick one you don't play and tick the new one. Only Remove "
 		"deletes files.", StageLibrary::SlotBudget());
 
-	ImGui::SeparatorText("Restarting");
+	ImGui::SeparatorText(Tr("Restarting"));
 
 	UiText::Muted("The game reads its stage list only at startup. After adding or removing a "
 		"stage, use the restart button at the bottom. Colour changes apply right away.");
 
-	ImGui::SeparatorText("Brightness, Glow and Size");
+	ImGui::SeparatorText(Tr("Brightness, Glow and Size"));
 
 	UiText::Muted("These columns show when Advanced stage options is ticked, in the mod window under "
 		"Config. Each one is a percentage of that stage's default, so 100%% is always the stage "
@@ -1059,17 +1060,17 @@ void StagesPanel::DrawHelp()
 		"flares and light beams. Size is how big the scenery is around the fight. Drag a value, use "
 		"- and +, or double click it to type any number. Default puts one stage back.");
 
-	ImGui::SeparatorText("The list");
+	ImGui::SeparatorText(Tr("The list"));
 
 	UiText::Muted("A green name is the stage playing right now. UNI2's stages can be "
 		"recoloured but not removed. Their Advanced changes are kept in Mods\\bg\\base.");
 
-	ImGui::SeparatorText("Replacing a game stage");
+	ImGui::SeparatorText(Tr("Replacing a game stage"));
 
 	UiText::Muted("Add stages can put a stage folder in place of one of UNI2's. It keeps the "
 		"game's number, card and walls. Restore brings the game's stage back.");
 
-	ImGui::SeparatorText("Online");
+	ImGui::SeparatorText(Tr("Online"));
 
 	UiText::Muted("An added stage is only on your machine, so an opponent is never offered it: they get "
 		"the game's first stage while you keep playing on yours. A stage they ask for that this game "
@@ -1080,7 +1081,7 @@ void StagesPanel::DrawHelp()
 	UiText::Muted("%s", OnlineStage::StatusText());
 	UiText::Muted("Rooms: %s", RoomStage::StatusText());
 
-	ImGui::SeparatorText("Blender");
+	ImGui::SeparatorText(Tr("Blender"));
 
 	UiText::Muted("The add-on that opens and saves a stage is in the mod's source repository, "
 		"under resource\\blender, with a README next to it.");

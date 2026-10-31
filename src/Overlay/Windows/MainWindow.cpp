@@ -29,6 +29,7 @@
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Audio/SoundPacks.h"
 #include "Game/Subtitles/SubtitleWatch.h"
+#include "Core/Text/Language.h"
 
 #include <Windows.h>
 
@@ -212,7 +213,7 @@ void MainWindow::DrawTabs()
 		if (!MainTabs::Visible(tab.id, contents))
 			continue;
 
-		if (!ImGui::BeginTabItem(tab.label))
+		if (!ImGui::BeginTabItem(TrLabel(tab.label)))
 		{
 			if (tab.hidden != nullptr)
 				tab.hidden();
@@ -289,7 +290,7 @@ void MainWindow::DrawLogSection()
 
 	ImGui::BeginDisabled(forced);
 
-	if (ImGui::Checkbox("Write the mod's log", &logging))
+	if (ImGui::Checkbox(TrLabel("Write the mod's log"), &logging))
 		SetLogging(logging);
 
 	ImGui::EndDisabled();
@@ -333,14 +334,14 @@ void MainWindow::DrawMusicSection()
 		return;
 	}
 
-	if (ImGui::Checkbox("Keep the menu music playing", &g_modVals.keepMenuMusic))
+	if (ImGui::Checkbox(TrLabel("Keep the menu music playing"), &g_modVals.keepMenuMusic))
 		Settings::SaveInt("Music", "KeepMenuMusic", g_modVals.keepMenuMusic ? 1 : 0);
 
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("Normally the menu music starts over every time you come back from "
+		ImGui::SetTooltip(Tr("Normally the menu music starts over every time you come back from "
 			"Options, Customize or Gallery. Turn this on to keep the same track playing across "
-			"those screens.");
+			"those screens."));
 	}
 
 	char playing[224] = {};

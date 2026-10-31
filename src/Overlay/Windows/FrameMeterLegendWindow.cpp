@@ -4,6 +4,7 @@
 #include "Overlay/Windows/FrameMeterLegendWindow.h"
 
 #include "Training/Meter/FrameMeter.h"
+#include "Core/Text/Language.h"
 
 #include <cfloat>
 
@@ -130,7 +131,7 @@ void FrameMeterLegendWindow::BeforeDraw()
 
 void FrameMeterLegendWindow::Draw()
 {
-	ImGui::TextUnformatted("Startup 7F  /  Total 18F  /  Advantage +4F");
+	ImGui::TextUnformatted(Tr("Startup 7F  /  Total 18F  /  Advantage +4F"));
 	DrawSampleMeter();
 
 	GuideImGui::Draw(FrameMeterLegend::Get(), GuideImGui::Layout_Grid);

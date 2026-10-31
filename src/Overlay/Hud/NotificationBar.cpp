@@ -1,6 +1,7 @@
 #include "Overlay/Hud/NotificationBar.h"
 
 #include "Core/Config/interfaces.h"
+#include "Core/Text/Language.h"
 
 #include <imgui.h>
 
@@ -37,7 +38,7 @@ void NotificationBar::Add(const char* format, ...)
 	va_list args;
 	va_start(args, format);
 	char text[512] = {};
-	const int written = vsnprintf(text, sizeof(text), format, args);
+	const int written = vsnprintf(text, sizeof(text), Tr(format), args);
 	va_end(args);
 
 	if (written <= 0)
