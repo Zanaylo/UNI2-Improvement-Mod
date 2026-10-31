@@ -6,6 +6,7 @@
 #include "Core/utils.h"
 #include "Game/Audio/BgmCatalog.h"
 #include "Game/Audio/BgmLibrary.h"
+#include "Game/Audio/LibraryRemap.h"
 #include "Game/Audio/BgmTableFile.h"
 #include "Game/Audio/BgmNames.h"
 #include "Game/Audio/BgmRules.h"
@@ -398,9 +399,14 @@ void ForgetDrawAfterBattle()
 	g_shufflePick = -1;
 }
 
+bool GameHoldsAnotherSlot(int asked)
+{
+	return static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)) != asked;
+}
+
 void CarryOnThroughRound(int asked, int chosen, uint32_t state)
 {
-	if (chosen == asked || state != State_Stopped || !GameState::IsInMatch())
+	if (!GameHoldsAnotherSlot(asked) || state != State_Stopped || !GameState::IsInMatch())
 		return;
 
 	const uint32_t stream = ReadGlobal(GameOffsets::kBgmPlayer);
@@ -416,7 +422,7 @@ void CarryOnThroughRound(int asked, int chosen, uint32_t state)
 
 bool SwappedTrackInMatch()
 {
-	if (!GameState::IsInMatch() || g_playing < 0 || g_lastPlayed == g_lastRequested)
+	if (!GameState::IsInMatch() || g_playing < 0 || !GameHoldsAnotherSlot(g_lastRequested))
 		return false;
 
 	if (ReadGlobal(GameOffsets::kBgmState) != State_Playing)
@@ -788,6 +794,13 @@ void __cdecl HookedBgmPause()
 	ParkPaused("the game's pause");
 }
 
+}
+
+void BgmControl::Remap(const std::vector<std::string>& before, const std::vector<std::string>& after)
+{
+	g_pinned = LibraryRemap::Id(g_pinned, before, after, BgmLibrary::kFirstId);
+	g_playing = LibraryRemap::Id(g_playing, before, after, BgmLibrary::kFirstId);
+	g_shufflePick = LibraryRemap::Id(g_shufflePick, before, after, BgmLibrary::kFirstId);
 }
 
 bool BgmControl::Initialize()

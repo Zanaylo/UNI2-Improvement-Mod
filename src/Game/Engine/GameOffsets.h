@@ -659,6 +659,7 @@ namespace GameOffsets
 	constexpr uintptr_t kReplayRecordTable = 0x1eafecc;
 
 	constexpr uintptr_t kFnResolvePersonaName = 0x2fa280;
+	constexpr size_t kResolvedNameBytes = 0x40;
 	constexpr uintptr_t kFnSetFallbackName = 0x38dd0;
 
 	constexpr uintptr_t kFnDrawIrNumber = 0x38ea40;

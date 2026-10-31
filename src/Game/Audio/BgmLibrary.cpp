@@ -267,6 +267,17 @@ int BgmLibrary::IdAt(int index)
 	return kFirstId + index;
 }
 
+std::vector<std::string> BgmLibrary::Files()
+{
+	std::vector<std::string> files;
+	files.reserve(g_tracks.size());
+
+	for (const Track& track : g_tracks)
+		files.push_back(track.file);
+
+	return files;
+}
+
 const BgmLibrary::Track* BgmLibrary::Get(int id)
 {
 	const int index = id - kFirstId;

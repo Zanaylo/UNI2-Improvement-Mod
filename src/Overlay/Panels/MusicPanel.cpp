@@ -601,7 +601,7 @@ void MusicPanel::DrawMyMusicRow(const UserMusic::Entry& entry)
 	if (ImGui::IsItemDeactivatedAfterEdit())
 	{
 		UserMusic::SetLoopPoint(entry.slotName, loop);
-		BgmLibrary::Load();
+		MusicRefresh::ReloadLibrary();
 	}
 
 	ImGui::TableNextColumn();

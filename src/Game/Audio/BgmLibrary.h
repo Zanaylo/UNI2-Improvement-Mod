@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace BgmLibrary
 {
@@ -22,6 +23,7 @@ namespace BgmLibrary
 
 	int Count();
 	int IdAt(int index);
+	std::vector<std::string> Files();
 
 	const Track* Get(int id);
 

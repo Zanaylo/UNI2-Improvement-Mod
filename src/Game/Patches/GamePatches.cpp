@@ -2,6 +2,7 @@
 
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
+#include "Core/utils.h"
 #include "Game/Battle/BalanceRules.h"
 #include "Game/Battle/BattleDataReload.h"
 #include "Game/Audio/BgmControl.h"
@@ -9,6 +10,7 @@
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Engine/OnlineState.h"
+#include "Game/Patches/InstalledBuild.h"
 #include "Game/Replays/ReplayState.h"
 #include "Game/Battle/ScriptReload.h"
 
@@ -301,7 +303,12 @@ int GamePatches::ReplayWanted()
 
 bool GamePatches::TablesAgreeWith(int index)
 {
-	return index == BootIndex();
+	if (index == BootIndex())
+		return true;
+
+	const Patch* const patch = PatchLibrary::Get(index);
+
+	return BootIndex() < 0 && patch != nullptr && InstalledBuild::Is(patch->released, GetGameBuildStamp());
 }
 
 void GamePatches::ApplyForReset(int index)
@@ -484,7 +491,7 @@ void GamePatches::OnReplayStarting(const SYSTEMTIME& when)
 	g_replayHeld = true;
 	g_sawPlayback = false;
 
-	if (wanted == BootIndex())
+	if (TablesAgreeWith(wanted))
 		return;
 
 	const Patch* const patch = PatchLibrary::Get(wanted);

@@ -44,12 +44,16 @@ namespace ReplayFiles
 
 	std::string Export(int slot);
 	std::string SaveRecord(const std::vector<uint8_t>& record, const std::string& note);
+	std::string SaveRecord(const std::vector<uint8_t>& record, const std::string& note,
+		const std::string names[2]);
 	std::string WriteRecordFile(const std::vector<uint8_t>& record, const Info& info, const std::string& name);
 	int ExportAll(std::string& outError);
 
 	bool Import(const std::string& path, std::string& outError);
 
 	bool RequestPlayback(const std::string& path, std::string& outError);
+	std::string MatchupOf(const std::string& path);
+	bool IsLoadingPatch();
 
 	bool ReadRecordFile(const std::string& path, std::vector<uint8_t>& out, std::string outNames[2],
 		std::string& outError);

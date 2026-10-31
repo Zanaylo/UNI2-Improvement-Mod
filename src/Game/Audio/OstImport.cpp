@@ -4,6 +4,7 @@
 #include "Core/utils.h"
 #include "Game/Audio/BgmLayers.h"
 #include "Game/Audio/BgmLibrary.h"
+#include "Game/Audio/MusicRefresh.h"
 #include "Game/Audio/BgmSelectFile.h"
 #include "Game/Audio/BgmTable.h"
 #include "Game/Audio/BgmTableFile.h"
@@ -895,8 +896,7 @@ void OstImport::Update()
 	if (InterlockedCompareExchange(&g_finished, 0, 1) != 1)
 		return;
 
-	ModFiles::Rescan();
-	BgmLibrary::Load();
+	MusicRefresh::Reindex();
 	BgmThemes::Reload();
 }
 

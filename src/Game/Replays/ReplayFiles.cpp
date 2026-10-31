@@ -9,9 +9,12 @@
 #include "Game/Engine/SceneWatch.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Replays/ReplayArchive.h"
+#include "Game/Replays/ReplayNames.h"
 #include "Game/Replays/ReplayPatchPlan.h"
 #include "Game/Replays/ReplayRecord.h"
+#include "Game/Lobby/KnownNames.h"
 #include "Game/Lobby/SteamNames.h"
+#include "Game/Tables/CharaTables.h"
 #include "Hooks/GameHook.h"
 #include "Network/NetLink.h"
 #include "Game/Engine/CodeSignatures.h"
@@ -395,6 +398,14 @@ uint64_t ReadSteamId(const uint8_t* record, int player)
 	return id;
 }
 
+int ReadChara(const uint8_t* record, int player)
+{
+	uint32_t chara = 0;
+	memcpy(&chara, record + PlayerBlock(player) + kPlayerChara, sizeof(chara));
+
+	return static_cast<int>(chara);
+}
+
 std::string ReadStored(const char* raw, size_t bytes)
 {
 	char text[kStoredNameBytes + 1] = {};
@@ -667,10 +678,7 @@ void ReplayFiles::DescribeHeader(const uint8_t* header, Info& out)
 
 	for (int player = 0; player < 2; ++player)
 	{
-		uint32_t chara = 0;
-		memcpy(&chara, header + PlayerBlock(player) + kPlayerChara, sizeof(chara));
-
-		out.chara[player] = static_cast<int>(chara);
+		out.chara[player] = ReadChara(header, player);
 		out.steamId[player] = ReadSteamId(header, player);
 		out.title[player] = ReadTitle(header, player);
 		out.name[player] = SteamNames::Resolve(out.steamId[player]);
@@ -682,10 +690,7 @@ std::string ReplayFiles::PlayerName(const Info& info, int player)
 	if (player < 0 || player > 1)
 		return std::string();
 
-	if (!info.name[player].empty())
-		return info.name[player];
-
-	return player == 0 ? "P1" : "P2";
+	return ReplayNames::Pick(info.name[player], CharaTables::Name(info.chara[player]), player);
 }
 
 int ReplayFiles::CountUsed()
@@ -801,11 +806,24 @@ std::string ReplayFiles::Export(int slot)
 
 std::string ReplayFiles::SaveRecord(const std::vector<uint8_t>& record, const std::string& note)
 {
+	const std::string unnamed[2];
+	return SaveRecord(record, note, unnamed);
+}
+
+std::string ReplayFiles::SaveRecord(const std::vector<uint8_t>& record, const std::string& note,
+	const std::string names[2])
+{
 	if (record.size() != kRecordSize)
 		return std::string();
 
 	Info info;
 	DescribeHeader(record.data(), info);
+
+	for (int player = 0; player < 2; ++player)
+	{
+		if (!ReplayNames::IsPlaceholder(names[player]))
+			info.name[player] = names[player];
+	}
 
 	std::string name = FileNameFor(info, NextMatchNumber(info.time));
 	const std::string tag = Sanitise(note);
@@ -848,7 +866,7 @@ std::string ReplayFiles::WriteRecordFile(const std::vector<uint8_t>& record, con
 
 	NameBlock names = {};
 	for (int player = 0; player < 2; ++player)
-		strncpy_s(names.player[player], PlayerName(info, player).c_str(), kStoredNameBytes - 1);
+		strncpy_s(names.player[player], info.name[player].c_str(), kStoredNameBytes - 1);
 
 	const bool ok = fwrite(&header, sizeof(header), 1, file) == 1 &&
 		(!packed || fwrite(&names, sizeof(names), 1, file) == 1) &&
@@ -1106,19 +1124,28 @@ bool BuildRecord(std::vector<uint8_t>& record, std::string& outError)
 	return false;
 }
 
+std::string ShownName(const std::vector<uint8_t>& record, const std::string names[2], int player)
+{
+	const std::string stored = ReplayNames::IsPlaceholder(names[player])
+		? SteamNames::Resolve(ReadSteamId(record.data(), player))
+		: names[player];
+
+	return ReplayNames::Pick(stored, CharaTables::Name(ReadChara(record.data(), player)), player);
+}
+
+void RememberNames(const std::vector<uint8_t>& record, const std::string names[2])
+{
+	for (int player = 0; player < 2; ++player)
+		KnownNames::Remember(ReadSteamId(record.data(), player), ShownName(record, names, player));
+}
+
 std::string Matchup(const std::vector<uint8_t>& record, const std::string names[2])
 {
 	std::string text;
 
 	for (int player = 0; player < 2; ++player)
 	{
-		std::string name = names[player];
-
-		if (name.empty())
-			name = SteamNames::Resolve(ReadSteamId(record.data(), player));
-
-		if (name.empty())
-			name = player == 0 ? "P1" : "P2";
+		const std::string name = ShownName(record, names, player);
 
 		text += player == 0 ? name : " vs " + name;
 	}
@@ -1183,6 +1210,7 @@ void Play(std::vector<uint8_t>& record, const std::string names[2])
 {
 	_snprintf_s(g_status, _TRUNCATE, "playing %s", Matchup(record, names).c_str());
 
+	RememberNames(record, names);
 	g_playbackRecord.swap(record);
 	InterlockedExchange(&g_playbackRequest, 1);
 }
@@ -1235,6 +1263,23 @@ bool Launch(const std::string& path, bool patchAlreadyLoaded, std::string& outEr
 bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError)
 {
 	return Launch(path, false, outError);
+}
+
+std::string ReplayFiles::MatchupOf(const std::string& path)
+{
+	std::vector<uint8_t> record;
+	std::string names[2];
+	std::string error;
+
+	if (!ReadRecordFile(path, record, names, error) || record.size() != kRecordSize)
+		return std::string();
+
+	return Matchup(record, names);
+}
+
+bool ReplayFiles::IsLoadingPatch()
+{
+	return g_queuedPhase != Queue_None;
 }
 
 namespace {

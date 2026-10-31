@@ -102,7 +102,8 @@ void PatchWindow::DrawRestart()
 	const int chosen = GamePatches::ChosenIndex();
 	const int replay = GamePatches::ReplayWanted();
 
-	const int wanted = chosen != boot ? chosen : (replay >= 0 && replay != boot ? replay : boot);
+	const bool replayNeedsReload = replay >= 0 && !GamePatches::TablesAgreeWith(replay);
+	const int wanted = chosen != boot ? chosen : (replayNeedsReload ? replay : boot);
 
 	if (wanted != boot)
 	{

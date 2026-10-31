@@ -164,6 +164,8 @@
     <ClCompile Include="src\Core\Formats\Json.cpp" />
     <ClCompile Include="src\Core\Formats\Markdown.cpp" />
     <ClCompile Include="src\Game\Lobby\NameCensor.cpp" />
+    <ClCompile Include="src\Game\Lobby\KnownNames.cpp" />
+    <ClCompile Include="src\Game\Lobby\PersonaNameHook.cpp" />
     <ClCompile Include="src\Game\Lobby\RoomNameCensor.cpp" />
     <ClCompile Include="src\Game\Lobby\IrHider.cpp" />
     <ClCompile Include="src\Game\Customize\AnnouncerKeep.cpp" />
@@ -216,6 +218,7 @@
     <ClCompile Include="src\Game\Audio\AudioFile.cpp" />
     <ClCompile Include="src\Game\Audio\OggWriter.cpp" />
     <ClCompile Include="src\Game\Audio\MusicRefresh.cpp" />
+    <ClCompile Include="src\Game\Audio\LibraryRemap.cpp" />
     <ClCompile Include="src\Core\HexText.cpp" />
     <ClCompile Include="src\Core\LegacyFolder.cpp" />
     <ClCompile Include="src\Core\FileIndex.cpp" />
@@ -228,6 +231,7 @@
     <ClCompile Include="src\Game\Menus\TrainingHud.cpp" />
     <ClCompile Include="src\Game\Files\DataSearchPath.cpp" />
     <ClCompile Include="src\Game\Patches\GamePatches.cpp" />
+    <ClCompile Include="src\Game\Patches\InstalledBuild.cpp" />
     <ClCompile Include="src\Game\Patches\PatchLibrary.cpp" />
     <ClCompile Include="src\Overlay\Windows\PatchWindow.cpp" />
     <ClCompile Include="src\Game\Audio\UserMusic.cpp" />
@@ -377,6 +381,7 @@
     <ClCompile Include="src\Game\Replays\ReplayRescue.cpp" />
     <ClCompile Include="src\Game\Replays\ReplayRecord.cpp" />
     <ClCompile Include="src\Game\Replays\ReplayPatchPlan.cpp" />
+    <ClCompile Include="src\Game\Replays\ReplayNames.cpp" />
     <ClCompile Include="src\Game\Replays\LiveRecording.cpp" />
     <ClCompile Include="src\Network\GameEnding.cpp" />
     <ClCompile Include="src\Network\SideReadout.cpp" />
@@ -810,6 +815,8 @@
     <ClInclude Include="src\Core\Formats\Json.h" />
     <ClInclude Include="src\Core\Formats\Markdown.h" />
     <ClInclude Include="src\Game\Lobby\NameCensor.h" />
+    <ClInclude Include="src\Game\Lobby\KnownNames.h" />
+    <ClInclude Include="src\Game\Lobby\PersonaNameHook.h" />
     <ClInclude Include="src\Game\Lobby\RoomNameCensor.h" />
     <ClInclude Include="src\Game\Lobby\IrHider.h" />
     <ClInclude Include="src\Game\Customize\AnnouncerKeep.h" />
@@ -864,6 +871,7 @@
     <ClInclude Include="src\Game\Audio\AudioFile.h" />
     <ClInclude Include="src\Game\Audio\OggWriter.h" />
     <ClInclude Include="src\Game\Audio\MusicRefresh.h" />
+    <ClInclude Include="src\Game\Audio\LibraryRemap.h" />
     <ClInclude Include="src\Core\HexText.h" />
     <ClInclude Include="src\Core\LegacyFolder.h" />
     <ClInclude Include="src\Core\FileIndex.h" />
@@ -876,6 +884,7 @@
     <ClInclude Include="src\Game\Menus\TrainingHud.h" />
     <ClInclude Include="src\Game\Files\DataSearchPath.h" />
     <ClInclude Include="src\Game\Patches\GamePatches.h" />
+    <ClInclude Include="src\Game\Patches\InstalledBuild.h" />
     <ClInclude Include="src\Game\Patches\PatchLibrary.h" />
     <ClInclude Include="src\Overlay\Windows\PatchWindow.h" />
     <ClInclude Include="src\Game\Audio\UserMusic.h" />
@@ -1025,6 +1034,7 @@
     <ClInclude Include="src\Game\Replays\ReplayRescue.h" />
     <ClInclude Include="src\Game\Replays\ReplayRecord.h" />
     <ClInclude Include="src\Game\Replays\ReplayPatchPlan.h" />
+    <ClInclude Include="src\Game\Replays\ReplayNames.h" />
     <ClInclude Include="src\Game\Replays\LiveRecording.h" />
     <ClInclude Include="src\Network\GameEnding.h" />
     <ClInclude Include="src\Network\SideReadout.h" />

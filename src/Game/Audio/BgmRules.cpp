@@ -4,6 +4,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
+#include "Game/Audio/LibraryRemap.h"
 #include "Game/Audio/BgmTable.h"
 
 #include <Windows.h>
@@ -131,6 +132,25 @@ int ResolveKind(int kind, int requestedBgm, int left, int right)
 	return -1;
 }
 
+}
+
+void BgmRules::Remap(const std::vector<std::string>& before, const std::vector<std::string>& after)
+{
+	int moved = 0;
+
+	for (int i = 0; i < g_count; ++i)
+	{
+		const int bgm = LibraryRemap::Id(g_rules[i].bgm, before, after, BgmLibrary::kFirstId);
+
+		if (bgm == g_rules[i].bgm)
+			continue;
+
+		g_rules[i].bgm = bgm;
+		++moved;
+	}
+
+	if (moved > 0)
+		LOG("BgmRules: %d rule(s) follow their track to its new place in the library", moved);
 }
 
 void BgmRules::Load()

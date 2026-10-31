@@ -47,6 +47,7 @@
 #include "Game/Files/ModFiles.h"
 #include "Game/Lobby/IrHider.h"
 #include "Game/Lobby/NameCensor.h"
+#include "Game/Lobby/PersonaNameHook.h"
 #include "Game/Lobby/RoomNameCensor.h"
 #include "Game/Lobby/RoomStage.h"
 #include "Game/Menus/BattleCockpit.h"
@@ -205,6 +206,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: input history", [] { InputHistoryView::Install(); } },
 	{ "game hooks: training hud", [] { ProrationHud::Install(); }, FeatureCatalog::Id_Training },
 	{ "game hooks: name censor", [] { NameCensor::Install(); }, FeatureCatalog::Id_Privacy },
+	{ "game hooks: replay names", [] { PersonaNameHook::Install(); }, FeatureCatalog::Id_Replays },
 	{ "game hooks: room name censor", [] { RoomNameCensor::Install(); }, FeatureCatalog::Id_Privacy },
 	{ "game hooks: ir hider", [] { IrHider::Install(); }, FeatureCatalog::Id_Privacy },
 	{ "game hooks: announcer keep", [] { AnnouncerKeep::Install(); }, FeatureCatalog::Id_CharacterArt },

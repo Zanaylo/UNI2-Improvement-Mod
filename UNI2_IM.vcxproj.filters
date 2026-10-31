@@ -333,6 +333,12 @@
     <ClCompile Include="src\Game\Lobby\NameCensor.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Lobby\KnownNames.cpp">
+      <Filter>Game\Lobby</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Lobby\PersonaNameHook.cpp">
+      <Filter>Game\Lobby</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Lobby\RoomNameCensor.cpp">
       <Filter>Game\Lobby</Filter>
     </ClCompile>
@@ -489,6 +495,9 @@
     <ClCompile Include="src\Game\Audio\MusicRefresh.cpp">
       <Filter>Game\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Audio\LibraryRemap.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\HexText.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -523,6 +532,9 @@
       <Filter>Game\Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Patches\GamePatches.cpp">
+      <Filter>Game\Patches</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Patches\InstalledBuild.cpp">
       <Filter>Game\Patches</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Patches\PatchLibrary.cpp">
@@ -970,6 +982,9 @@
       <Filter>Game\Replays</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Replays\ReplayPatchPlan.cpp">
+      <Filter>Game\Replays</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Replays\ReplayNames.cpp">
       <Filter>Game\Replays</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Replays\LiveRecording.cpp">
@@ -2366,6 +2381,12 @@
     <ClInclude Include="src\Game\Lobby\NameCensor.h">
       <Filter>Game\Lobby</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Lobby\KnownNames.h">
+      <Filter>Game\Lobby</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Lobby\PersonaNameHook.h">
+      <Filter>Game\Lobby</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Lobby\RoomNameCensor.h">
       <Filter>Game\Lobby</Filter>
     </ClInclude>
@@ -2528,6 +2549,9 @@
     <ClInclude Include="src\Game\Audio\MusicRefresh.h">
       <Filter>Game\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Audio\LibraryRemap.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\HexText.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -2562,6 +2586,9 @@
       <Filter>Game\Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Patches\GamePatches.h">
+      <Filter>Game\Patches</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Patches\InstalledBuild.h">
       <Filter>Game\Patches</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Patches\PatchLibrary.h">
@@ -3009,6 +3036,9 @@
       <Filter>Game\Replays</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Replays\ReplayPatchPlan.h">
+      <Filter>Game\Replays</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Replays\ReplayNames.h">
       <Filter>Game\Replays</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Replays\LiveRecording.h">

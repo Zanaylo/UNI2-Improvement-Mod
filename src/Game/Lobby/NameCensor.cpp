@@ -1,11 +1,8 @@
 ﻿#include "Game/Lobby/NameCensor.h"
 
 #include "Core/logger.h"
-#include "Core/utils.h"
-#include "Game/Engine/GameOffsets.h"
-#include "Hooks/GameHook.h"
+#include "Game/Lobby/PersonaNameHook.h"
 #include "Network/Steam/SteamInterfaces.h"
-#include "Game/Engine/CodeSignatures.h"
 
 #include <Windows.h>
 
@@ -14,12 +11,9 @@
 
 namespace {
 
-typedef void(__fastcall* ResolveNameFn)(const uint64_t*, char*);
-
 constexpr int kSeenMax = 64;
 
-GameHook<ResolveNameFn> g_resolveNameHook("ResolvePersonaName");
-
+bool g_installed = false;
 bool g_enabled = false;
 bool g_coversMyName = false;
 uint64_t g_seen[kSeenMax] = {};
@@ -57,7 +51,7 @@ void Remember(uint64_t steamId)
 
 void Summarise()
 {
-	if (!g_resolveNameHook.IsLive())
+	if (!g_installed)
 	{
 		strncpy_s(g_status, "the game's player name code is not where this game version expects it",
 			_TRUNCATE);
@@ -74,47 +68,20 @@ void Summarise()
 		g_mask);
 }
 
-void __fastcall HookedResolveName(const uint64_t* id, char* out)
-{
-	g_resolveNameHook.Original()(id, out);
-
-	if (id == nullptr)
-		return;
-
-	NameCensor::Apply(*id, out);
-}
-
 }
 
 bool NameCensor::Install()
 {
-	if (g_resolveNameHook.IsLive())
-		return true;
-
-	void* const target = reinterpret_cast<void*>(CodeSignatures::Address(GameOffsets::kFnResolvePersonaName));
-
-	if (!IsAddressInGameModule(reinterpret_cast<uintptr_t>(target)))
-	{
-		Summarise();
-		LOG("NameCensor: %s", g_status);
-		return false;
-	}
-
-	if (!g_resolveNameHook.Install(target, &HookedResolveName))
-	{
-		Summarise();
-		LOG("NameCensor: %s", g_status);
-		return false;
-	}
+	g_installed = PersonaNameHook::Install();
 
 	Summarise();
 	LOG("NameCensor: %s", g_status);
-	return true;
+	return g_installed;
 }
 
 bool NameCensor::IsAvailable()
 {
-	return g_resolveNameHook.IsLive();
+	return g_installed;
 }
 
 bool NameCensor::IsEnabled()
@@ -161,7 +128,7 @@ void NameCensor::SetCoversMyName(bool covers)
 
 bool NameCensor::Applies(uint64_t steamId)
 {
-	if (!g_enabled)
+	if (!g_installed || !g_enabled)
 		return false;
 
 	if (g_coversMyName)
