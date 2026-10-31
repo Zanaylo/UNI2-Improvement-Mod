@@ -436,7 +436,7 @@ void SoundWindow::DrawGetVoice()
 
 void SoundWindow::DrawReplace()
 {
-	UiText::Muted("Pick a character and its pack, then give any of its sounds your own file. "
+	UiText::Muted("Pick a character and its pack, then give any of its sounds a new file. "
 		"Back to original restores the game's sound.");
 
 	ImGui::Spacing();

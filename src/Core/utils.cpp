@@ -495,7 +495,7 @@ bool IsHotkeyPressed(int virtualKey)
 
 	previousState[virtualKey] = isDown || messageAt != 0;
 
-	if (KeyboardCapture::OwnsKeyboard())
+	if (KeyboardCapture::HoldsKeyboard())
 		return false;
 
 	return asyncEdge || messageEdge;
@@ -503,7 +503,7 @@ bool IsHotkeyPressed(int virtualKey)
 
 bool IsHotkeyHeld(int virtualKey)
 {
-	if (virtualKey <= 0 || virtualKey > 255 || KeyboardCapture::OwnsKeyboard())
+	if (virtualKey <= 0 || virtualKey > 255 || KeyboardCapture::HoldsKeyboard())
 		return false;
 
 	return AsyncKeyDown(virtualKey);
@@ -521,7 +521,7 @@ bool IsHotkeyRepeating(int virtualKey, unsigned delayMs, unsigned intervalMs)
 	const bool wasDown = down[virtualKey];
 	down[virtualKey] = isDown;
 
-	if (!isDown || KeyboardCapture::OwnsKeyboard())
+	if (!isDown || KeyboardCapture::HoldsKeyboard())
 		return false;
 
 	const DWORD now = GetTickCount();

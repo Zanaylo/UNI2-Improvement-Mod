@@ -77,7 +77,7 @@ bool Ours(int number)
 
 bool Offered(int number, uintptr_t record, const uint8_t* unlocks, bool online)
 {
-	if (online && (!StageLibrary::GameOwns(number) || ExtraStages::HiddenFromRandom(number)))
+	if (online && (!StageLibrary::IsGameStage(number) || ExtraStages::HiddenFromRandom(number)))
 		return false;
 
 	if (Ours(number))
@@ -153,7 +153,7 @@ void Pick()
 	*pending = chosen;
 
 	if (online)
-		sprintf_s(g_status, "online, so picks only from the game's own %d stage(s). Last pick: %d",
+		sprintf_s(g_status, "online, so picks only from the game's %d stage(s). Last pick: %d",
 			count, chosen);
 	else
 		sprintf_s(g_status, "picks from %d stage(s), %d of them added by the mod. Last pick: %d",

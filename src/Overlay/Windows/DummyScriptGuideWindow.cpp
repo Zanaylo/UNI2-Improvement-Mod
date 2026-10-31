@@ -38,7 +38,7 @@ void DummyScriptGuideWindow::Draw()
 	ImGui::SeparatorText("What this is");
 
 	ImGui::TextWrapped("Type what a character should do instead of recording it. There is a tab for "
-		"each side, each with its own script, and Play runs it one step per frame.");
+		"each side, each with a separate script, and Play runs it one step per frame.");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("The notation");
@@ -77,7 +77,7 @@ void DummyScriptGuideWindow::Draw()
 	ImGui::Spacing();
 	ImGui::SeparatorText("One tab per side");
 
-	ImGui::TextWrapped("Each side has its own script, name and saved list. The two run on their own, "
+	ImGui::TextWrapped("Each side has a separate script, name and saved list. The two run independently, "
 		"so start both and a whole scenario plays out.");
 
 	ImGui::Spacing();

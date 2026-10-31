@@ -48,7 +48,7 @@ bool KeyboardCapture::IsKeyCaptureActive()
 	return g_keyCaptureHold.load(std::memory_order_relaxed) > 0;
 }
 
-bool KeyboardCapture::OwnsKeyboard()
+bool KeyboardCapture::HoldsKeyboard()
 {
 	return g_textInputHold.load(std::memory_order_relaxed) > 0 ||
 		g_keyCaptureHold.load(std::memory_order_relaxed) > 0;

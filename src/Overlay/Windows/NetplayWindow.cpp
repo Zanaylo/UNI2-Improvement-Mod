@@ -399,11 +399,11 @@ void NetplayWindow::DrawNetcodeTab()
 	bool changed = DrawNetcodeOptions();
 
 	ImGui::Separator();
-	ImGui::BeginDisabled(NetcodeChoice::IsGameOwn(m_netcode));
+	ImGui::BeginDisabled(NetcodeChoice::IsGameDefault(m_netcode));
 
 	if (ImGui::Button("Use UNI2's native netcode"))
 	{
-		m_netcode = NetcodeChoice::GameOwn();
+		m_netcode = NetcodeChoice::GameDefaults();
 		changed = true;
 	}
 
@@ -470,7 +470,7 @@ void NetplayWindow::DrawNetcodeStatus()
 {
 	const NetcodeChoice::Values running = RunningNetcode();
 
-	if (NetcodeChoice::IsGameOwn(running))
+	if (NetcodeChoice::IsGameDefault(running))
 		UiText::Muted("Running now: UNI2's native netcode.");
 	else
 		UiText::Good("Running now: the mod's netcode changes.");
@@ -501,20 +501,20 @@ void NetplayWindow::DrawNetworkLogTab()
 
 	bool ggpo = GgpoLogCapture::IsEnabled();
 
-	if (ImGui::Checkbox("Include GGPO's own lines", &ggpo))
+	if (ImGui::Checkbox("Include GGPO's lines", &ggpo))
 	{
 		GgpoLogCapture::SetEnabled(ggpo);
 		g_modVals.netLogGgpo = GgpoLogCapture::IsEnabled();
 		Settings::SaveInt("Netplay", "CaptureGgpoLog", g_modVals.netLogGgpo ? 1 : 0);
 	}
 
-	UiText::Help("Adds GGPO's own messages: syncing, lost packets, disconnects. "
+	UiText::Help("Adds GGPO's messages: syncing, lost packets, disconnects. "
 		"Only needed for detailed reports. Stops at 8 MB.");
 
 	UiText::Muted("%s", GgpoLogCapture::StatusText());
 
 	if (NetLog::IsOverBudget())
-		UiText::Warn("The file reached 8 MB, so GGPO's lines have stopped. The mod's own carry on.");
+		UiText::Warn("The file reached 8 MB, so GGPO's lines have stopped. The mod's lines carry on.");
 
 	ImGui::Separator();
 	ImGui::TextUnformatted("How the mod stays out of the connection");
@@ -842,13 +842,13 @@ void NetplayWindow::DrawPrivacyTab()
 
 	UiText::Help("Press Enter to save. It gets cut to the length of each name.");
 
-	bool own = NameCensor::CoversOwnName();
+	bool coversName = NameCensor::CoversMyName();
 
-	if (ImGui::Checkbox("Cover my own name too", &own))
+	if (ImGui::Checkbox("Cover my name too", &coversName))
 	{
-		NameCensor::SetCoversOwnName(own);
-		g_modVals.censorOwnName = own;
-		Settings::SaveInt("Privacy", "CensorMyName", own ? 1 : 0);
+		NameCensor::SetCoversMyName(coversName);
+		g_modVals.censorMyName = coversName;
+		Settings::SaveInt("Privacy", "CensorMyName", coversName ? 1 : 0);
 	}
 
 	ImGui::Separator();
@@ -1030,7 +1030,7 @@ void NetplayWindow::DrawSpectateHost()
 void NetplayWindow::DrawSpectateWatch()
 {
 	ImGui::TextUnformatted("Watch someone");
-	UiText::Help("Pick a friend to watch. You can't be in your own room while watching.");
+	UiText::Help("Pick a friend to watch. You can't be in your room while watching.");
 
 	std::vector<SteamFriends::Friend> friends;
 	SpectateViewer::Friends(friends);

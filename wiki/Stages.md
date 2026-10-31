@@ -31,11 +31,42 @@ the game reads from these, each laid over the one before:
 1. UNI2's own list.
 2. Every mod pack that has `bg\BgList.txt` or `bg\BgList_str.txt`, in the order of the Mods tab.
 3. Your own `UNI2-IM\Mods\bg\BgList.txt` and `BgList_str.txt`.
-4. The stages you installed with the mod.
+4. The stages you installed with the mod, and the stage folders of mod packs.
 
 A pack or your file can be a whole `BgList.txt` or just one `Bg_NNN = { ... }` block. Each block
 adds that stage or changes it, and leaves every other stage alone. A stage number a pack or your
 file uses is never given to a stage the mod installs.
+
+### A pack does not need a BgList.txt
+
+Every `bg\bgNNN` folder in a pack that holds a `bg.fbx.bin` joins the stage list as stage `NNN`,
+with no `BgList.txt` at all. Its values come from the folder's `stage.txt` (the file the mod writes
+for every stage you install, so a stage copied out of `UNI2-IM\Mods\bg` works as it is), and the
+mod's defaults fill in the rest. A pack can hold any number of them.
+
+The pack's `mod.ini` can give each one a name and a picture in the pack's own stage select sheet
+(`grpdat\CSel\stage_thumb01.dds`):
+
+```ini
+[bg068]
+Name = Garden at Night
+Card = 30
+```
+
+Without a name, the one in `stage.txt` is used, or else the folder name. Without a card, the stage
+has no picture.
+
+A folder is left out when:
+
+- its number is one of UNI2's own stages: the pack only replaces that stage's files;
+- a `Bg_NNN` block for that number is in a pack or your own `BgList.txt`: the block is used;
+- two packs have the same number: the one higher in the Mods tab is used;
+- a stage you installed uses the same folder number: yours is kept.
+
+Stages from a pack appear after a restart, like every change to the stage list. The extras the mod
+adds to an installed stage (lamps, fades, the frame clock) only work once the stage is installed. If
+`object.txt` loads files from another stage's folder, the log says so: that is the usual cause of
+`.pat` errors in a copied stage.
 
 To change the order of the picker, or take a stage out of it, you can write a `BgSelectList` in your
 own `Mods\bg\BgList.txt`. When it changes, the picker follows it: the stages it lists, in that order,
@@ -94,7 +125,7 @@ stage loads. Each part has its own **Reset**, and **Reset all** puts back every 
 with. The window stays open when you close or collapse the Stages window.
 
 The game's own stages have **Advanced** too. They have no `stage.txt` of their own, so the changes go
-in `UNI2-IM\Mods\bg\own\bgNNN\stage.txt` and are laid over the game's entry for that stage. Export is only
+in `UNI2-IM\Mods\bg\base\bgNNN\stage.txt` and are laid over the game's entry for that stage. Export is only
 for ports.
 
 **Rename** edits a port's name in place. Press Enter to save, Esc to cancel. The new name is kept
@@ -197,7 +228,7 @@ stage's original values.
 **Every stage keeps its own settings file**, `settings.ini`, with its colour, glow, size, position
 and camera. A port's is in its own folder, `UNI2-IM\Mods\bg\bgNNN\settings.ini`, so it goes wherever
 the stage goes and is deleted with it. The game's own stages keep theirs in
-`UNI2-IM\Mods\bg\own\bgNNN\settings.ini`. Settings an older build left in the ini (now `Config\Mod.ini`)
+`UNI2-IM\Mods\bg\base\bgNNN\settings.ini`. Settings an older build left in the ini (now `Config\Mod.ini`)
 (`[StageColour]`, `[StagePlacement]`) move into these files the next time the game starts, and are
 taken out of the ini. A line whose stage is no longer installed stays in the ini.
 

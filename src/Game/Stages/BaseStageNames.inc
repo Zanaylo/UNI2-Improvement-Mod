@@ -1,4 +1,4 @@
-static const OwnStageName kOwnStageNames[] = {
+static const BaseStageName kBaseStageNames[] = {
 	{ 1, "Metropolitan Center: Intersection" },
 	{ 2, "High-Rise Building: Rooftop" },
 	{ 3, "Quiet Park" },

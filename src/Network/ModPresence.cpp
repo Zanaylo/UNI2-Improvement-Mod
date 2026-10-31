@@ -80,7 +80,7 @@ void Scan(uint64_t lobby, DWORD now)
 	g_lastScan = now;
 
 	if (g_self == 0)
-		g_self = SteamInterfaces::GetOwnSteamId();
+		g_self = SteamInterfaces::GetLocalSteamId();
 
 	const int count = SteamInterfaces::GetNumLobbyMembers(lobby);
 	const int size = count < ModPresence::kMaxMembers ? count : ModPresence::kMaxMembers;

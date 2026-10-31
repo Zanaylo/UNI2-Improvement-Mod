@@ -351,7 +351,7 @@ LRESULT WindowManager::HandleWindowMessage(HWND window, UINT message, WPARAM wPa
 		return 1;
 	}
 
-	if (KeyboardCapture::OwnsKeyboard() && IsKeyboardMessage(message))
+	if (KeyboardCapture::HoldsKeyboard() && IsKeyboardMessage(message))
 	{
 		outHandled = true;
 		return 1;
@@ -490,7 +490,7 @@ void WindowManager::ReportHotkeyGate(DWORD now)
 		m_focusFromSystem ? (m_hasFocus ? "active" : "inactive") : "never seen",
 		FocusEvidenceIsFresh(now) ? 1 : 0,
 		static_cast<void*>(GetForegroundWindow()), ForegroundIsThisProcess() ? "ours" : "other",
-		KeyboardCapture::OwnsKeyboard() ? 1 : 0,
+		KeyboardCapture::HoldsKeyboard() ? 1 : 0,
 		GetNameFromVirtualKey(key), m_togglePolled ? 1 : 0, m_toggleMessaged ? 1 : 0,
 		m_windowProcMine ? "the mod's" : "taken");
 
@@ -832,7 +832,7 @@ bool WantsSoftwareCursor()
 	const auto mode = static_cast<PointerRule::OverlayPointer>(g_modVals.overlayCursor);
 	const bool exclusive = DeviceHooks::GetPresentParameters().Windowed == FALSE;
 
-	return PointerRule::DrawsOwnPointer(mode, exclusive, GraphicsWrapper::IsPresent(), WindowsPointer::IsKept());
+	return PointerRule::DrawsModPointer(mode, exclusive, GraphicsWrapper::IsPresent(), WindowsPointer::IsKept());
 }
 
 }

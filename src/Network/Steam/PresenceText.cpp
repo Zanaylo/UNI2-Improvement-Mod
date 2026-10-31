@@ -49,9 +49,9 @@ std::string Describe(const PresenceText::Situation& situation)
 	case Place::CharacterSelect:
 		return "Choosing a character";
 	case Place::Training:
-		return Playing("Training", situation.ownCharacter);
+		return Playing("Training", situation.localCharacter);
 	case Place::Offline:
-		return Playing("Playing offline", situation.ownCharacter);
+		return Playing("Playing offline", situation.localCharacter);
 	case Place::Replays:
 		return "Watching replays";
 	case Place::Room:

@@ -5,6 +5,7 @@
 #include "Game/Stages/StageImport.h"
 #include "Game/Stages/StageLibrary.h"
 #include "Game/Stages/StagePlacement.h"
+#include "Game/Stages/StageSettings.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
 
@@ -219,10 +220,10 @@ void StageFieldsWindow::BeforeDraw()
 
 void StageFieldsWindow::Draw()
 {
-	const bool gameOwns = StageLibrary::GameOwns(m_id);
+	const bool isGameStage = StageLibrary::IsGameStage(m_id);
 	StageLibrary::Entry entry = {};
 
-	if (!gameOwns && !StageLibrary::Of(m_id, entry))
+	if (!isGameStage && !StageLibrary::Of(m_id, entry))
 	{
 		Close();
 		return;
@@ -231,10 +232,10 @@ void StageFieldsWindow::Draw()
 	if (m_revision != StageLibrary::Revision() && !ImGui::IsAnyItemActive())
 		Refresh();
 
-	m_slot = gameOwns ? m_id : entry.slot;
+	m_slot = isGameStage ? m_id : entry.slot;
 
 	UiText::Muted("The camera is saved with the Size column, the rest in %sbg%03d\\stage.txt. A "
-		"change shows the next time the stage loads.", gameOwns ? "own\\" : "", m_id);
+		"change shows the next time the stage loads.", isGameStage ? StageSettings::kBaseFolderSlash : "", m_id);
 
 	ImGui::PushItemWidth(Ui::Scaled(kFieldWidth));
 
@@ -259,7 +260,7 @@ void StageFieldsWindow::Draw()
 
 	DrawResetAll();
 
-	if (!gameOwns)
+	if (!isGameStage)
 		DrawExport();
 }
 

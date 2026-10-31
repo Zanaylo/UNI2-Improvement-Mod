@@ -28,7 +28,7 @@ constexpr const char* kRenamedKey = "Renamed";
 constexpr const char* kModel = "bg.fbx.bin";
 constexpr uint64_t kFnvOffset = 0xcbf29ce484222325ull;
 constexpr uint64_t kFnvPrime = 0x100000001b3ull;
-constexpr int kOwnEntries = 30;
+constexpr int kGameEntries = 30;
 constexpr size_t kFirstSectionBytes = 8192;
 constexpr size_t kLastSectionBytes = 512 * 1024;
 
@@ -41,7 +41,7 @@ volatile long g_revision = 0;
 bool g_ownedKnown = false;
 bool g_slotsFromOwned = false;
 bool g_owned[StageLibrary::kSlotLast + 1] = {};
-int g_ownEntries = kOwnEntries;
+int g_gameEntries = kGameEntries;
 bool g_taken[StageLibrary::kSlotLast + 1] = {};
 int g_takenCount = 0;
 
@@ -57,7 +57,7 @@ void LearnOwned()
 
 	std::vector<int> numbers;
 
-	if (!BgListOverride::OwnNumbers(numbers))
+	if (!BgListOverride::GameNumbers(numbers))
 		return;
 
 	int highest = -1;
@@ -71,10 +71,10 @@ void LearnOwned()
 		highest = number > highest ? number : highest;
 	}
 
-	g_ownEntries = static_cast<int>(numbers.size());
+	g_gameEntries = static_cast<int>(numbers.size());
 	g_ownedKnown = true;
 
-	LOG("StageLibrary: the game's own list claims %d stage(s), up to bg%03d", g_ownEntries,
+	LOG("StageLibrary: the game's list claims %d stage(s), up to bg%03d", g_gameEntries,
 		highest);
 }
 
@@ -444,7 +444,7 @@ int FirstFree(const std::vector<int>& reserved)
 {
 	for (int id = StageLibrary::kSlotFirst; id <= StageLibrary::kIdLast; ++id)
 	{
-		if (StageLibrary::GameOwns(id) || Known(id) || Taken(id))
+		if (StageLibrary::IsGameStage(id) || Known(id) || Taken(id))
 			continue;
 
 		if (std::find(reserved.begin(), reserved.end(), id) != reserved.end())
@@ -625,7 +625,7 @@ void Adopt()
 		}
 
 		if (id < StageLibrary::kSlotFirst || id > StageLibrary::kIdLast
-			|| StageLibrary::GameOwns(id) || Known(id)
+			|| StageLibrary::IsGameStage(id) || Known(id)
 			|| StageTrash::Pending(StageLibrary::FolderOf(id)))
 		{
 			continue;
@@ -699,7 +699,7 @@ void StageLibrary::Load()
 	ReleaseSRWLockExclusive(&g_lock);
 }
 
-bool StageLibrary::GameOwns(int number)
+bool StageLibrary::IsGameStage(int number)
 {
 	LearnOwned();
 
@@ -747,7 +747,7 @@ void StageLibrary::Reserve(const std::vector<int>& taken)
 bool StageLibrary::Bindable(int slot)
 {
 	return slot >= kSlotFirst && slot <= kSlotLast && slot < BgCeiling::Numbers() &&
-		!GameOwns(slot) && !Taken(slot);
+		!IsGameStage(slot) && !Taken(slot);
 }
 
 int StageLibrary::SlotBudget()
@@ -755,7 +755,7 @@ int StageLibrary::SlotBudget()
 	LearnOwned();
 
 	const int slots = static_cast<int>(Slots().size());
-	const int room = BgCeiling::ListEntries() - g_ownEntries - g_takenCount;
+	const int room = BgCeiling::ListEntries() - g_gameEntries - g_takenCount;
 
 	return slots < room ? slots : room;
 }
@@ -797,16 +797,16 @@ void StageLibrary::Snapshot(std::vector<Entry>& out)
 
 int StageLibrary::Total()
 {
-	int own = 0;
+	int gameStages = 0;
 
 	for (int i = 0; i < ExtraStages::StageCount(); ++i)
 	{
 		const ExtraStages::Stage* const stage = ExtraStages::StageAt(i);
 
-		own += stage != nullptr && GameOwns(stage->number) ? 1 : 0;
+		gameStages += stage != nullptr && IsGameStage(stage->number) ? 1 : 0;
 	}
 
-	return own + Count();
+	return gameStages + Count();
 }
 
 int StageLibrary::Count()

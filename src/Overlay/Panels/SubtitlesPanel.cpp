@@ -65,7 +65,7 @@ void SubtitlesPanel::DrawSwitch()
 {
 	ImGui::TextUnformatted("Subtitles");
 	UiText::Help("Shows what characters say as text on screen. If the game already has a subtitle "
-		"for a voice line, the game draws your text with its own font, position and timing. Every "
+		"for a voice line, the game draws your text with its font, position and timing. Every "
 		"other line is drawn by the overlay as soon as it plays.");
 
 	bool on = SubtitleWatch::IsEnabled();

@@ -18,7 +18,7 @@ on the next launch.
 | `Config\Palettes.ini` | `[Palette]` |
 | `Config\Replays.ini` | `[Replays]` |
 | `Config\Stages.ini` | `[Stages]` |
-| `Config\Debug.ini` | `[Debug]`, `[GameDebug]` |
+| `Config\Debug.ini` | `[Debug]` |
 | `Data\Stages.ini` | `[StageLibrary]`, `[StageIcons]`, `[Extras]` |
 | `Data\Palettes.ini` | `[PaletteChoice]`, `[PaletteSlots]` |
 | `Data\Portraits.ini` | `[Portraits]` |
@@ -234,7 +234,6 @@ restores them. Change the other keys only if you want to push one further than t
 
 | Key | Default | What it does |
 |---|---|---|
-| `MemoryDebug` | `0` | Loads the Memory debug window, opened with Ctrl+F1. |
 | `Profiler` | `0` | Frame interval and per-section timing, shown in the Performance window's Metrics tab. |
 | `MeterTrace` | `0` | The frame meter's diagnostic capture and its CSV. |
 | `SpikeReportMs` | `25` | With logging on, every frame that takes at least this many milliseconds is written to the log with what took the time: the game's file reads, texture loads, shader and buffer creation, the wait inside Present, the game's own update and the mod's slowest task. `0` turns it off. |

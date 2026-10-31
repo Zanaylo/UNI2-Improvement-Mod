@@ -484,12 +484,12 @@ void RefreshCode()
 	if (g_codeReady != 0)
 		return;
 
-	const uint64_t own = SteamInterfaces::GetOwnSteamId();
+	const uint64_t self = SteamInterfaces::GetLocalSteamId();
 
-	if (own == 0)
+	if (self == 0)
 		return;
 
-	SpectateCode::Encode(own, g_code, sizeof(g_code));
+	SpectateCode::Encode(self, g_code, sizeof(g_code));
 	InterlockedExchange(&g_codeReady, 1);
 }
 

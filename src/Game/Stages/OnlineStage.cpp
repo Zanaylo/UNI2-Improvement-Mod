@@ -13,7 +13,7 @@
 
 namespace {
 
-int g_ownPick = 0;
+int g_localPick = 0;
 int g_sent = 0;
 int g_received = 0;
 bool g_forced = false;
@@ -54,7 +54,7 @@ bool Online()
 
 bool Added(int stage)
 {
-	return stage > 0 && !StageLibrary::GameOwns(stage) && ExtraStages::RecordAt(stage) != 0;
+	return stage > 0 && !StageLibrary::IsGameStage(stage) && ExtraStages::RecordAt(stage) != 0;
 }
 
 void HoldOutgoing()
@@ -62,7 +62,7 @@ void HoldOutgoing()
 	const uintptr_t field = RecordStage(GameOffsets::kMatchRecordLocal);
 	int stage = 0;
 
-	if (!ReadStage(field, stage) || StageLibrary::GameOwns(stage))
+	if (!ReadStage(field, stage) || StageLibrary::IsGameStage(stage))
 		return;
 
 	WriteStage(field, StageLibrary::kStockStage);
@@ -81,7 +81,7 @@ void HoldIncoming()
 	const uintptr_t field = RecordStage(GameOffsets::kMatchRecordRemote);
 	int stage = 0;
 
-	if (!ReadStage(field, stage) || StageLibrary::GameOwns(stage))
+	if (!ReadStage(field, stage) || StageLibrary::IsGameStage(stage))
 		return;
 
 	WriteStage(field, StageLibrary::kStockStage);
@@ -98,13 +98,13 @@ void HoldIncoming()
 void Hold()
 {
 	void* const option = reinterpret_cast<void*>(RvaToAddress(GameOffsets::kStageSyncOption));
-	const uint8_t own = GameOffsets::kStageSyncOwn;
+	const uint8_t separatePicks = GameOffsets::kStageSyncSeparate;
 
 	if (!g_forced && !TryReadMemory(&g_option, option, sizeof(g_option)))
 		return;
 
 	g_forced = true;
-	TryWriteMemory(option, &own, sizeof(own));
+	TryWriteMemory(option, &separatePicks, sizeof(separatePicks));
 }
 
 void Release()
@@ -116,15 +116,15 @@ void Release()
 	uint8_t now = 0;
 
 	g_forced = false;
-	g_ownPick = 0;
+	g_localPick = 0;
 
 	sprintf_s(g_status, "the stage you picked is one the game ships, so both sides see the same one");
 
-	if (TryReadMemory(&now, option, sizeof(now)) && now == GameOffsets::kStageSyncOwn)
+	if (TryReadMemory(&now, option, sizeof(now)) && now == GameOffsets::kStageSyncSeparate)
 		TryWriteMemory(option, &g_option, sizeof(g_option));
 }
 
-void ShowOwnStage(int pick)
+void ShowLocalStage(int pick)
 {
 	if (pick == 0)
 	{
@@ -133,12 +133,12 @@ void ShowOwnStage(int pick)
 	}
 
 	Hold();
-	WriteStage(GameOffsets::kStageOwnPick, pick);
+	WriteStage(GameOffsets::kStageLocalPick, pick);
 
-	if (pick == g_ownPick)
+	if (pick == g_localPick)
 		return;
 
-	g_ownPick = pick;
+	g_localPick = pick;
 
 	sprintf_s(g_status, "stage %d is added, so it stays on this screen and the opponent plays stage %d",
 		pick, StageLibrary::kStockStage);
@@ -161,7 +161,7 @@ void OnlineStage::OnFrame()
 	if (!ReadStage(GameOffsets::kNetworkStagePick, pick))
 		return;
 
-	ShowOwnStage(Online() && Added(pick) ? pick : 0);
+	ShowLocalStage(Online() && Added(pick) ? pick : 0);
 }
 
 const char* OnlineStage::StatusText()

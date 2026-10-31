@@ -58,12 +58,12 @@ bool IsValidBgm(int id)
 	if (id >= BgmLibrary::kFirstId)
 		return id < BgmLibrary::kFirstId + BgmLibrary::kMaxTracks;
 
-	return id >= 0 && id < BgmTable::kSlotCount;
+	return id >= 0 && id < BgmTable::SlotCount();
 }
 
 bool IsValidSlot(int id)
 {
-	return id >= 0 && id < BgmTable::kSlotCount;
+	return id >= 0 && id < BgmTable::SlotCount();
 }
 
 bool IsValidRule(const BgmRules::Rule& rule)

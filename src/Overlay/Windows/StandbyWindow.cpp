@@ -51,7 +51,7 @@ void StandbyWindow::DrawReason() const
 	}
 	else
 	{
-		sprintf_s(text, "UNI2 was updated. The mod only knows %s, so it stays off until its own update comes "
+		sprintf_s(text, "UNI2 was updated. The mod only knows %s, so it stays off until its next update comes "
 			"out.", UNI2_IM_SUPPORTED_GAME_VERSION);
 	}
 

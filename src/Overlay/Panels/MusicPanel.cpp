@@ -158,7 +158,7 @@ int StepListed(int from, int steps, bool sceneOnly)
 {
 	std::vector<int> pool;
 
-	const int total = sceneOnly ? BgmTable::kSlotCount : BgmCatalog::Count();
+	const int total = sceneOnly ? BgmTable::SlotCount() : BgmCatalog::Count();
 
 	for (int index = 0; index < total; ++index)
 	{
@@ -303,7 +303,7 @@ void MusicPanel::DrawSoundpacks()
 	}
 
 	UiText::Help("Applying a soundpack sets every screen to that game's music. It only changes the "
-		"replace rules, so switching is instant and your own rules stay.");
+		"replace rules, so switching is instant and your rules stay.");
 
 	const int apply = DrawSoundpackTable(count, active);
 
@@ -642,7 +642,7 @@ void MusicPanel::DrawMyMusicTable()
 
 void MusicPanel::DrawGetOst()
 {
-	UiText::Muted("Take the soundtrack from another game you own");
+	UiText::Muted("Take the soundtrack from another game you have");
 	UiText::Help("Pick the folder with UNIclr.exe, UNIst.exe, MBTL.exe or MBAA.exe. The mod reads "
 		"that game's music from your copy and installs it as a soundpack, with song titles and loop "
 		"points. Nothing is downloaded, and running it again on the same game replaces what it "
@@ -1230,7 +1230,7 @@ bool MusicPanel::DrawSceneCombo(int& scene)
 	if (!ImGui::BeginCombo("##scene", current))
 		return false;
 
-	for (int id = 0; id < BgmTable::kSlotCount; ++id)
+	for (int id = 0; id < BgmTable::SlotCount(); ++id)
 	{
 		if (!IsScene(id))
 			continue;
@@ -1270,7 +1270,7 @@ bool MusicPanel::DrawTrackComboList(bool sceneOnly, int& bgm)
 
 	ImGui::Separator();
 
-	const int total = sceneOnly ? BgmTable::kSlotCount : BgmCatalog::Count();
+	const int total = sceneOnly ? BgmTable::SlotCount() : BgmCatalog::Count();
 
 	bool changed = false;
 

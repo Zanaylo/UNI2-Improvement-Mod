@@ -470,7 +470,7 @@ void Settings::ApplySettings()
 		g_modVals.potatoMode = PotatoMode::Level_Off;
 
 	NameCensor::SetMask(g_settings.censorNameMask.c_str());
-	NameCensor::SetCoversOwnName(g_modVals.censorOwnName);
+	NameCensor::SetCoversMyName(g_modVals.censorMyName);
 	NameCensor::SetEnabled(g_modVals.censorNames);
 
 	RoomNameCensor::SetEnabled(g_modVals.censorRoomNames);

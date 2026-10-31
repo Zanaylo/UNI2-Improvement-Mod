@@ -48,7 +48,7 @@ void Standby::Decide()
 
 	TurnTheModOff();
 	LOG("Standby: this game build (stamp 0x%08x) is %s than %s, so the mod stays off and only looks for its "
-		"own update", GetGameBuildStamp(), Describe(g_age), UNI2_IM_SUPPORTED_GAME_VERSION);
+		"next update", GetGameBuildStamp(), Describe(g_age), UNI2_IM_SUPPORTED_GAME_VERSION);
 }
 
 bool Standby::IsOn()

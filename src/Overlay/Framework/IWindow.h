@@ -14,8 +14,8 @@ public:
 
 	bool IsOpen() const { return m_isOpen; }
 	void Open() { m_isOpen = true; }
-	void Close() { m_isOpen = false; }
-	void Toggle() { m_isOpen = !m_isOpen; }
+	void Close();
+	void Toggle();
 
 	const std::string& GetTitle() const { return m_title; }
 
@@ -23,6 +23,7 @@ protected:
 	virtual void Draw() = 0;
 	virtual void BeforeDraw() {}
 	virtual void AfterDraw() {}
+	virtual void OnClosed() {}
 
 	virtual bool GrowsToFitContent() const { return false; }
 

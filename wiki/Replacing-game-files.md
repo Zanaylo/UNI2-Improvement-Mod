@@ -67,13 +67,31 @@ top of this page. It is always on and always first, and it is the place to test 
 unpacking anyone's folder. Below it come the mods, in your order, and last the game's own `d` archive.
 A loaded [game patch](Patches) sits above all of them.
 
-### Two mods, one stage
+### Stages
 
-A stage is more than files. It has to be registered in the game's stage list, and the game reads that
-list once at startup. So a mod with a stage gets an **Install as a stage** button instead of using the
-switch, and installing uses **the next free stage number**. Two mods made for the same number no
-longer conflict: the second one goes to another number and both are playable. The row warns you before
-you press the button.
+A stage has to be in the game's stage list, and the game reads that list once at startup. Every
+`bg\bgNNN` folder in a mod with a `bg.fbx.bin` is added to it, so a stage from a mod appears after a
+restart. If two mods have the same stage number, the one higher in the list is used. The details,
+including names and pictures in `mod.ini`, are on [Stages](Stages).
+
+### Music
+
+The game reads its music list, `Bgm\bgm.txt`, once at startup too. It is not replaced by the highest
+mod's copy: every mod's tracks are added to the game's own list, with yours from `UNI2-IM\Mods\Bgm`.
+
+- Slots up to 99 are the game's. A mod's copy of them is ignored; to change one of the game's songs,
+  replace its `.ogg` instead.
+- Slots 100 to 998 are for mods: the game only has 200 slots, and the mod gives it 1000. When two
+  mods use the same slot, the higher one keeps it and the other track moves to the next free slot, so
+  both can be played. Your own file always keeps its slots. Slot 999 stays free for the mod's music
+  library.
+- `[Music] WidenMusicTable = 0` in `UNI2-IM\Config\Audio.ini` keeps the game's own 200 slots. Mods then
+  get slots 100 to 198, and 199 is the free one.
+- A mod's `grpdat\CSel\bgmselect.txt` is added to the game's Stage & BGM Select, and an entry follows
+  its track when the track moves.
+
+The Mods window says how many tracks each mod adds and how many moved. The list the game reads is in
+`UNI2-IM\Generated\bgm.txt`; editing it does nothing.
 
 ### Making one
 

@@ -73,7 +73,7 @@ const Setting kSettings[] = {
 	{ "Characters and text filters", "Draw characters and text at the stage resolution too. Needs a restart.",
 		SceneLayer::Level_COUNT, &SceneLayer::GetLevelName, SceneLayer::Level_Native,
 		&SceneLayer::GetLevel, &SceneLayer::Apply },
-	{ "Character edges", "Smooth softens the character art. Pixels shows its own pixels, enlarged.",
+	{ "Character edges", "Smooth softens the character art. Pixels shows the original pixels, enlarged.",
 		SceneLookLevels::kCount, &SceneLookLevels::CharacterName, SceneLookLevels::Character_Smooth,
 		&SceneLooks::GetCharacterLevel, &SceneLooks::ApplyCharacter },
 	{ "Text edges", "Smooth draws the text like the frame meter. Sharp gives it hard edges.",

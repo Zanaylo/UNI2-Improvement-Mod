@@ -2,6 +2,7 @@
 
 #include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
+#include "Core/LegacyFolder.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Stages/StageLibrary.h"
@@ -18,7 +19,7 @@ namespace {
 
 constexpr const char* kLeaf = "settings.ini";
 constexpr const char* kNoteLeaf = "stage.txt";
-constexpr const char* kOwnFolder = "own";
+constexpr const char* kLegacyBaseFolder = "own";
 constexpr const char* kHashedPrefix = "Stage_";
 constexpr const char* kNumberedPrefix = "Stage";
 constexpr size_t kHashLength = 16;
@@ -47,13 +48,13 @@ struct Line
 
 std::string FolderOf(int number)
 {
-	if (!StageLibrary::GameOwns(number))
+	if (!StageLibrary::IsGameStage(number))
 		return StageLibrary::FolderOf(number);
 
 	char leaf[16] = {};
 	sprintf_s(leaf, "bg%03d", number);
 
-	return StageLibrary::Root() + "\\" + kOwnFolder + "\\" + leaf;
+	return StageLibrary::Root() + "\\" + StageSettings::kBaseFolder + "\\" + leaf;
 }
 
 bool Exists(const std::string& folder)
@@ -117,7 +118,7 @@ int NumberedStage(const std::string& digits, const char* section)
 
 	const int number = atoi(digits.c_str());
 
-	if (StageLibrary::GameOwns(number))
+	if (StageLibrary::IsGameStage(number))
 		return number;
 
 	StageLibrary::Entry entry = {};
@@ -204,6 +205,31 @@ void MigrateSection(const char* section, int& moved, int& kept)
 		Settings::SaveString(section, nullptr, nullptr);
 }
 
+const char* OutcomeText(LegacyFolder::Outcome outcome)
+{
+	switch (outcome)
+	{
+	case LegacyFolder::Outcome::Moved:
+		return "was renamed";
+	case LegacyFolder::Outcome::BothKept:
+		return "stays where it is, because the new folder already exists";
+	default:
+		return "could NOT be renamed";
+	}
+}
+
+void AdoptLegacyFolder()
+{
+	const std::string root = StageLibrary::Root() + "\\";
+	const LegacyFolder::Outcome outcome = LegacyFolder::Adopt(root + kLegacyBaseFolder, root + StageSettings::kBaseFolder);
+
+	if (outcome == LegacyFolder::Outcome::NothingToMove)
+		return;
+
+	LOG("StageSettings: Mods\\bg\\%s %s to Mods\\bg\\%s", kLegacyBaseFolder, OutcomeText(outcome),
+		StageSettings::kBaseFolder);
+}
+
 }
 
 std::string StageSettings::PathOf(int number)
@@ -232,7 +258,7 @@ bool StageSettings::Write(int number, const char* section, const char* key,
 
 	if (!Exists(folder))
 	{
-		if (value.empty() || !StageLibrary::GameOwns(number) || !CreateDirectoryTree(folder))
+		if (value.empty() || !StageLibrary::IsGameStage(number) || !CreateDirectoryTree(folder))
 			return false;
 	}
 
@@ -242,6 +268,8 @@ bool StageSettings::Write(int number, const char* section, const char* key,
 
 void StageSettings::Migrate()
 {
+	AdoptLegacyFolder();
+
 	int moved = 0;
 	int kept = 0;
 

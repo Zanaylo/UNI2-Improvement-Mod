@@ -22,10 +22,10 @@ bool PointerRule::Restore(ShowCursor_t original)
 	return false;
 }
 
-bool PointerRule::DrawsOwnPointer(OverlayPointer mode, bool exclusive, bool wrapper, bool windowsPointerKept)
+bool PointerRule::DrawsModPointer(OverlayPointer mode, bool exclusive, bool wrapper, bool windowsPointerKept)
 {
 	if (mode != OverlayPointer::Automatic)
-		return mode == OverlayPointer::Own;
+		return mode == OverlayPointer::Mod;
 
 	if (wrapper)
 		return true;

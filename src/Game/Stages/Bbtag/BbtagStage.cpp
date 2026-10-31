@@ -40,7 +40,7 @@ constexpr float kWindowBand = 0.6f;
 constexpr float kWindowMatch = 0.25f;
 constexpr int kWindowBands = 8;
 constexpr int kWindowHold = 180;
-constexpr const char* kModelTake = "(the model's own)";
+constexpr const char* kModelTake = "(the model's default)";
 constexpr const char* kObjectList = "object.txt";
 
 constexpr double kUni2EyeHeight = 280.0 / 360.0;
@@ -1348,12 +1348,12 @@ std::vector<float> MotionOf(const Piece& piece, const std::map<int, Takes>& movi
 
 	if (piece.run == nullptr)
 	{
-		const Takes::const_iterator own = track->second.find(kModelTake);
+		const Takes::const_iterator modelTake = track->second.find(kModelTake);
 
-		if (own == track->second.end())
+		if (modelTake == track->second.end())
 			return entry;
 
-		for (const std::vector<float>& step : own->second.frames)
+		for (const std::vector<float>& step : modelTake->second.frames)
 			Append(entry, step, at);
 
 		return entry;

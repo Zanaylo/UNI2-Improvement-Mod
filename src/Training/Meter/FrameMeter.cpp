@@ -723,11 +723,11 @@ FrameMeter::State Classify(int player, const PlayerState::State& state)
 			? FrameMeter::State::Cancellable : FrameMeter::State::Recovery;
 	}
 
-	const bool startingOwnMove = (state.actionKind & GameOffsets::kActionKindAnyMove) != 0 &&
+	const bool startingCharaMove = (state.actionKind & GameOffsets::kActionKindAnyMove) != 0 &&
 		!tracked.sawActive && !tracked.inMove &&
 		PatternHasAttack(tracked.charaNumber, state.pattern);
 
-	if (tracked.canAct && !startingOwnMove)
+	if (tracked.canAct && !startingCharaMove)
 		return FrameMeter::State::Idle;
 
 	if (state.actionKind == 0 && tracked.heldPending)
@@ -1339,7 +1339,7 @@ void LogTrace()
 	}
 	else
 	{
-		LOG_RAW("game frame info: the game is not holding one. Turn the game's own Frame info on in "
+		LOG_RAW("game frame info: the game is not holding one. Turn the game's Frame info on in "
 			"training to compare against it");
 	}
 
@@ -1780,7 +1780,7 @@ void FrameMeter::SampleFromGameThread()
 				g_moveEndFrame[p] = -1;
 
 				g_lockHeldAtFree[p] = states[p].actionLock != 0 &&
-					(states[p].actionKind & GameOffsets::kActionKindOwnMove) != 0;
+					(states[p].actionKind & GameOffsets::kActionKindCharaMove) != 0;
 				g_lockEndAt[p] = -1;
 				g_lockEndFrame[p] = -1;
 

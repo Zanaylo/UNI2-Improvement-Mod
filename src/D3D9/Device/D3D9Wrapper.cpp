@@ -86,7 +86,7 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 	if (FAILED(result) && presentParameters != nullptr &&
 		memcmp(&asked, presentParameters, sizeof(asked)) != 0)
 	{
-		LogAttempt("refused the tuned parameters, retrying with the game's own", result, adapter,
+		LogAttempt("refused the tuned parameters, retrying with the game's originals", result, adapter,
 			deviceType, behaviorFlags, *presentParameters);
 
 		*presentParameters = asked;
@@ -96,7 +96,7 @@ HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3D
 
 	if (FAILED(result) && presentParameters != nullptr)
 	{
-		LogAttempt("refused the game's own parameters", result, adapter, deviceType, behaviorFlags,
+		LogAttempt("refused the game's parameters", result, adapter, deviceType, behaviorFlags,
 			*presentParameters);
 	}
 
@@ -206,14 +206,14 @@ void HookCreateDeviceThroughProbe()
 
 	if (DgVoodoo::IsEnabled() && DgVoodoo::IsInstalled())
 	{
-		LOG("dgVoodoo is on, so CreateDevice is hooked on the game's own Direct3D object instead of "
+		LOG("dgVoodoo is on, so CreateDevice is hooked on the game's Direct3D object instead of "
 			"a probe");
 		return;
 	}
 
 	if (Dxvk::IsEnabled() && Dxvk::IsInstalled())
 	{
-		LOG("DXVK is on, so CreateDevice is hooked on the game's own Direct3D object instead of "
+		LOG("DXVK is on, so CreateDevice is hooked on the game's Direct3D object instead of "
 			"a probe");
 		return;
 	}
@@ -223,7 +223,7 @@ void HookCreateDeviceThroughProbe()
 	if (!RuntimeIsTheSystems(runtime, MAX_PATH))
 	{
 		InterlockedExchange(&g_holdUntilInit, 1);
-		LOG("d3d9.dll is %s, not the system's, so no probe object is made through it. The game's own "
+		LOG("d3d9.dll is %s, not the system's, so no probe object is made through it. The game's "
 			"Direct3DCreate9 waits until the mod has finished installing its hooks, so the wrapper never starts "
 			"while the mod is patching code", runtime);
 		return;

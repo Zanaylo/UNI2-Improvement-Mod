@@ -237,10 +237,10 @@ void ResolveStyle()
 		if (slot.gamePart < 0 || cardHeight <= 0)
 			continue;
 
-		PatFile::Part own = {};
+		PatFile::Part part = {};
 
-		if (PatFile::GetPart(g_pat, slot.gamePart, own) && own.height > 0)
-			slot.gameZoom = static_cast<float>(cardHeight) / own.height;
+		if (PatFile::GetPart(g_pat, slot.gamePart, part) && part.height > 0)
+			slot.gameZoom = static_cast<float>(cardHeight) / part.height;
 	}
 
 	for (int side = 0; side < CharaGrid::kSideCount; ++side)
@@ -250,7 +250,7 @@ void ResolveStyle()
 			: PatFile::FindPartBySuffix(g_style.pat, g_style.tag[side].c_str());
 	}
 
-	sprintf_s(g_status, "%d slot(s), %d wearing the theme's own card, card height %d",
+	sprintf_s(g_status, "%d slot(s), %d wearing the theme's card, card height %d",
 		static_cast<int>(g_slots.size()), dressed, cardHeight);
 
 	LOG("CharaGrid: %s", g_status);
@@ -273,7 +273,7 @@ bool CharaGrid::Prepare(IDirect3DDevice9* device)
 
 	if (!DataArchive::IsAvailable())
 	{
-		strncpy_s(g_status, "the game's own archive could not be read", _TRUNCATE);
+		strncpy_s(g_status, "the game's archive could not be read", _TRUNCATE);
 		LOG("CharaGrid: %s", g_status);
 		return false;
 	}

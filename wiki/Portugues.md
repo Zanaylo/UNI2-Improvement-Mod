@@ -351,7 +351,7 @@ Só em janela e borderless.
 
 ### Memory debug
 
-Desligado por padrão. Ponha `[Debug] MemoryDebug = 1` e aperte **Ctrl+F1**. Mostra leituras cruas
+Abra pela janela principal, aba **Debug**, cartão **Debug view**, ou aperte **Ctrl+F1**. Mostra leituras cruas
 de memória e as ferramentas de busca usadas para criar o mod.
 
 ## O arquivo ini

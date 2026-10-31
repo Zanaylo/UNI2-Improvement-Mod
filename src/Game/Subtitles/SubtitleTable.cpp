@@ -389,7 +389,7 @@ bool SubtitleTable::Attach(int chara)
 	if (!DataArchive::Read(folder.c_str(), (folder + "_se_list.txt").c_str(), bytes))
 	{
 		g_chara[chara].attached = true;
-		LOG("SubtitleTable: %s_se_list.txt is not in the game's own files", folder.c_str());
+		LOG("SubtitleTable: %s_se_list.txt is not in the game's files", folder.c_str());
 		return false;
 	}
 
@@ -401,7 +401,7 @@ bool SubtitleTable::Attach(int chara)
 	if (voicePath < 0)
 	{
 		g_chara[chara].attached = true;
-		LOG("SubtitleTable: %s names no battle_se folder of its own", folder.c_str());
+		LOG("SubtitleTable: %s names no separate battle_se folder", folder.c_str());
 		return false;
 	}
 

@@ -23,13 +23,13 @@ constexpr int kSettleFrames = 60;
 constexpr int kFirstStage = 1;
 constexpr int kFlagCount = 3;
 
-struct OwnStageName
+struct BaseStageName
 {
 	int number;
 	const char* name;
 };
 
-#include "Game/Stages/OwnStageNames.inc"
+#include "Game/Stages/BaseStageNames.inc"
 
 constexpr uintptr_t kFlagFields[kFlagCount] = {
 	GameOffsets::kBgRecordSelectDisable,
@@ -83,7 +83,7 @@ std::string ReadText(uintptr_t record, uintptr_t field, size_t maxBytes)
 
 std::string InEnglish(int number)
 {
-	for (const OwnStageName& known : kOwnStageNames)
+	for (const BaseStageName& known : kBaseStageNames)
 	{
 		if (known.number == number)
 			return known.name;
@@ -107,7 +107,7 @@ std::string Readable(uintptr_t record, int number)
 
 	std::string authored;
 
-	if (!token || !BgListOverride::OwnName(number, authored))
+	if (!token || !BgListOverride::GameStageName(number, authored))
 		return drawn;
 
 	std::string out;

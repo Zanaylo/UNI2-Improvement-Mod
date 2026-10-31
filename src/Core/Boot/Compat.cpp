@@ -127,7 +127,7 @@ void Compat::Detect()
 	if (!g_rtss)
 		return;
 
-	LOG("RTSS is in this process. Hooks will be installed at the end of the jump chain so its own "
+	LOG("RTSS is in this process. Hooks will be installed at the end of the jump chain so the mod's "
 		"hooks are never overwritten.");
 }
 

@@ -222,7 +222,7 @@ bool LimiterIsMeasured()
 
 	if (g_readiness == Readiness::Refused)
 	{
-		LOG("DisplaySync: rva 0x%x is not the measured 1.40 code, frames keep the game's own timing",
+		LOG("DisplaySync: rva 0x%x is not the measured 1.40 code, frames keep the game's timing",
 			static_cast<unsigned>(kLimiterCode[mismatch].siteRva));
 
 		return false;
@@ -239,7 +239,7 @@ bool LimiterIsMeasured()
 	if (*g_game.passCallback != nullptr)
 	{
 		g_readiness = Readiness::Refused;
-		LOG("DisplaySync: the frame wait already calls 0x%p on every pass, frames keep the game's own timing",
+		LOG("DisplaySync: the frame wait already calls 0x%p on every pass, frames keep the game's timing",
 			reinterpret_cast<void*>(*g_game.passCallback));
 
 		return false;

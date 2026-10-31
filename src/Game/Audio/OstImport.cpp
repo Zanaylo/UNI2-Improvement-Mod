@@ -2,8 +2,10 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Audio/BgmLayers.h"
 #include "Game/Audio/BgmLibrary.h"
 #include "Game/Audio/BgmSelectFile.h"
+#include "Game/Audio/BgmTable.h"
 #include "Game/Audio/BgmTableFile.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Audio/BgmThemes.h"
@@ -56,8 +58,7 @@ struct OstMbtlEntry
 #include "Game/Audio/OstDfciScenes.inc"
 #include "Game/Audio/OstDfciTracks.inc"
 
-constexpr int kFirstSlot = 100;
-constexpr int kLastSlot = 198;
+constexpr int kFirstSlot = BgmLayers::kFirstPackSlot;
 constexpr int kPickerLimit = 96;
 constexpr size_t kNameLimit = 31;
 
@@ -326,20 +327,20 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 
 	if (table.empty())
 	{
-		strncpy_s(g_status, "the game's own bgm.txt could not be read", _TRUNCATE);
+		strncpy_s(g_status, "the game's bgm.txt could not be read", _TRUNCATE);
 		return false;
 	}
 
 	if (!BgmTableFile::Refresh(table))
 	{
-		strncpy_s(g_status, "the game's own slot table could not be found", _TRUNCATE);
+		strncpy_s(g_status, "the game's slot table could not be found", _TRUNCATE);
 		return false;
 	}
 
 	DropPackBlock(table, packName);
 
-	bool used[200] = {};
-	CollectUsedSlots(table, used, 200);
+	bool used[BgmTable::kMaxSlotCount] = {};
+	CollectUsedSlots(table, used, BgmTable::SlotCount());
 
 	std::string added;
 	std::string pack = std::string("#pack ") + packName + "\r\n#tag " + tag +
@@ -373,12 +374,12 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 		track.audio.clear();
 		track.audio.shrink_to_fit();
 
-		while (slot < 200 && used[slot])
+		while (slot < BgmTable::SlotCount() && used[slot])
 			++slot;
 
 		char line[512] = {};
 
-		if (slot <= kLastSlot)
+		if (slot <= BgmTable::LastPackSlot())
 		{
 			track.slot = slot;
 			used[slot] = true;
@@ -457,7 +458,7 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 
 		std::string ini = "[Theme]\r\nName = ";
 		ini += packName;
-		ini += "\r\nAuthor = Raito\r\nNotes = Imported from your own copy\r\n\r\n[Map]\r\n";
+		ini += "\r\nAuthor = Raito\r\nNotes = Imported from your copy\r\n\r\n[Map]\r\n";
 
 		for (const Track& track : tracks)
 		{
@@ -475,7 +476,7 @@ bool InstallTracks(std::vector<Track>& tracks, const char* tag, const char* pref
 			reinterpret_cast<const uint8_t*>(ini.data()), ini.size());
 	}
 
-	sprintf_s(g_status, "%d track(s) installed, %d of them in the game's own music list. "
+	sprintf_s(g_status, "%d track(s) installed, %d of them in the game's music list. "
 		"Restart the game so it reads the new bgm.txt", written, mirrored);
 	LOG("OstImport: %s", g_status);
 	return true;

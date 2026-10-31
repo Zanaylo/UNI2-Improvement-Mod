@@ -31,7 +31,7 @@ std::vector<int> Scenes()
 {
 	std::vector<int> scenes;
 
-	for (int id = 0; id < 100 && id < BgmTable::kSlotCount; ++id)
+	for (int id = 0; id < 100 && id < BgmTable::SlotCount(); ++id)
 	{
 		if (BgmTable::IsPresent(id))
 			scenes.push_back(id);

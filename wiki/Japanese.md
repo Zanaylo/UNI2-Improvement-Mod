@@ -220,7 +220,7 @@ Performance ウィンドウのタブです。60 fps が出ない PC 向けです
 
 ### Memory debug
 
-既定では無効です。`[Debug] MemoryDebug = 1` を設定して **Ctrl+F1** を押します。
+メインウィンドウの **Debug** タブ、**Debug view** カードから開くか、**Ctrl+F1** を押します。
 
 ## ini ファイル
 

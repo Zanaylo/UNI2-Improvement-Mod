@@ -64,7 +64,7 @@ void CharaSmoothing::NoteCompiled(bool compiled)
 {
 	InterlockedExchange(&g_live, compiled ? 1 : 0);
 	sprintf_s(g_status, compiled ? "on, characters are smoothed where they are drawn larger"
-		: "the smoothed character shader did not compile, the game's own is used");
+		: "the smoothed character shader did not compile, the game's shader is used");
 	LOG("CharaSmoothing: %s", g_status);
 }
 

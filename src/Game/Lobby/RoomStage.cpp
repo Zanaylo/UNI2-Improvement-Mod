@@ -47,12 +47,12 @@ int* StageField(void* record)
 
 bool Shareable(int stage)
 {
-	return StageLibrary::GameOwns(stage);
+	return StageLibrary::IsGameStage(stage);
 }
 
 bool Loadable(int stage)
 {
-	return StageLibrary::GameOwns(stage) || ExtraStages::RecordAt(stage) != 0;
+	return StageLibrary::IsGameStage(stage) || ExtraStages::RecordAt(stage) != 0;
 }
 
 void Report(const char* format, int stage, int& last)

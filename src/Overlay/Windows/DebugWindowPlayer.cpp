@@ -331,8 +331,6 @@ void DebugWindow::DrawCharaSlotsSection()
 	if (!ImGui::TreeNode("Chara slots"))
 		return;
 
-	ImGui::TextWrapped("One row per engine slot, live. Players and spawned objects share this array.");
-
 	if (ImGui::BeginTable("charaslots", 14, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
 		ImGuiTableFlags_ScrollX | ImGuiTableFlags_SizingFixedFit))
 	{
@@ -516,6 +514,18 @@ void DebugWindow::DrawHitboxSection()
 	}
 }
 
+void DebugWindow::RefreshSaveFiles()
+{
+	const DWORD now = GetTickCount();
+
+	if (m_saveListedAt != 0 && now - m_saveListedAt < kSaveListIntervalMs)
+		return;
+
+	m_saveListedAt = now;
+	m_saveFiles.clear();
+	m_saveListed = SaveData::ListFiles(m_saveFiles);
+}
+
 void DebugWindow::DrawSaveSection()
 {
 	if (!ImGui::CollapsingHeader("SYS-DATA"))
@@ -541,10 +551,10 @@ void DebugWindow::DrawSaveSection()
 		state.headerValid ? "ok" : "bad", state.size, GameOffsets::kSaveFileSize);
 
 	if (!state.enabled)
-		ImGui::TextDisabled("saving is switched off, so the dirty flag reads 0");
+		ImGui::TextDisabled("saving is off");
 
 	if (state.mode == 0)
-		ImGui::TextDisabled("the pump is skipped while the mode is idle, so a request may wait");
+		ImGui::TextDisabled("idle: a request may wait");
 
 	if (ImGui::Button("Request save"))
 		SaveData::Request();
@@ -554,11 +564,12 @@ void DebugWindow::DrawSaveSection()
 	if (ImGui::Button("Set dirty flag"))
 		SaveData::MarkDirty();
 
-	std::vector<SaveData::File> files;
+	RefreshSaveFiles();
+	const std::vector<SaveData::File>& files = m_saveFiles;
 
-	if (!SaveData::ListFiles(files))
+	if (!m_saveListed)
 	{
-		ImGui::TextDisabled("no SYS-DATA under the game's Save folder");
+		ImGui::TextDisabled("no SYS-DATA in the Save folder");
 		return;
 	}
 

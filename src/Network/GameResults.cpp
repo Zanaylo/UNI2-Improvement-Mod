@@ -115,7 +115,7 @@ void Capture(const Seat& seat)
 {
 	g_pending = GameResults::Report();
 	g_pending.localSide = seat.side;
-	g_pending.steamId[seat.side] = SteamInterfaces::GetOwnSteamId();
+	g_pending.steamId[seat.side] = SteamInterfaces::GetLocalSteamId();
 	g_pending.steamId[1 - seat.side] = seat.opponent;
 
 	for (int side = 0; side < kSides; ++side)

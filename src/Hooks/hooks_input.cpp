@@ -76,7 +76,7 @@ BOOL WINAPI HookedGetKeyboardState(PBYTE keyState)
 	BackgroundKeyboard::Fill(keyState);
 	InjectedKeys::Merge(keyState);
 
-	if (KeyboardCapture::OwnsKeyboard())
+	if (KeyboardCapture::HoldsKeyboard())
 	{
 		HoldDownKeys(keyState);
 		memset(keyState, 0, kKeyCount);
@@ -100,7 +100,7 @@ SHORT WINAPI HookedGetKeyState(int virtualKey)
 
 	const bool down = (state & 0x8000) != 0;
 
-	if (KeyboardCapture::OwnsKeyboard())
+	if (KeyboardCapture::HoldsKeyboard())
 	{
 		g_held[virtualKey] = g_held[virtualKey] || down;
 		return 0;

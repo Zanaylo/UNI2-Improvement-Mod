@@ -148,7 +148,7 @@ void Gather(std::vector<Listed>& out)
 	{
 		const ExtraStages::Stage* const stage = ExtraStages::StageAt(i);
 
-		if (stage == nullptr || !StageLibrary::GameOwns(stage->number))
+		if (stage == nullptr || !StageLibrary::IsGameStage(stage->number))
 			continue;
 
 		Listed row = {};
@@ -397,7 +397,7 @@ void StagesPanel::DrawHidden()
 
 void StagesPanel::DrawSource()
 {
-	UiText::Muted("Take a stage from another game you own");
+	UiText::Muted("Take a stage from another game you have");
 
 	ImGui::BeginDisabled(StageImport::IsBusy());
 
@@ -506,17 +506,17 @@ void StagesPanel::DrawReplace()
 		return std::string(title);
 	};
 
-	std::vector<const ExtraStages::Stage*> own;
+	std::vector<const ExtraStages::Stage*> gameStages;
 	std::string preview = "Pick a stage";
 
 	for (int i = 0; i < ExtraStages::StageCount(); ++i)
 	{
 		const ExtraStages::Stage* const stage = ExtraStages::StageAt(i);
 
-		if (stage == nullptr || stage->number <= 0 || !StageLibrary::GameOwns(stage->number))
+		if (stage == nullptr || stage->number <= 0 || !StageLibrary::IsGameStage(stage->number))
 			continue;
 
-		own.push_back(stage);
+		gameStages.push_back(stage);
 
 		if (stage->number == m_replaceNumber)
 			preview = titled(*stage);
@@ -526,7 +526,7 @@ void StagesPanel::DrawReplace()
 
 	if (ImGui::BeginCombo("##replace", preview.c_str()))
 	{
-		for (const ExtraStages::Stage* stage : own)
+		for (const ExtraStages::Stage* stage : gameStages)
 		{
 			if (ImGui::Selectable(titled(*stage).c_str(), stage->number == m_replaceNumber))
 				m_replaceNumber = stage->number;
@@ -1054,7 +1054,7 @@ void StagesPanel::DrawHelp()
 	ImGui::SeparatorText("Brightness, Glow and Size");
 
 	UiText::Muted("These columns show when Advanced stage options is ticked, in the mod window under "
-		"Config. Each one is a percentage of that stage's own default, so 100%% is always the stage "
+		"Config. Each one is a percentage of that stage's default, so 100%% is always the stage "
 		"as it comes. Brightness lights the whole stage. Glow changes only the glowing parts: lamps, "
 		"flares and light beams. Size is how big the scenery is around the fight. Drag a value, use "
 		"- and +, or double click it to type any number. Default puts one stage back.");
@@ -1062,7 +1062,7 @@ void StagesPanel::DrawHelp()
 	ImGui::SeparatorText("The list");
 
 	UiText::Muted("A green name is the stage playing right now. UNI2's stages can be "
-		"recoloured but not removed. Their Advanced changes are kept in Mods\\bg\\own.");
+		"recoloured but not removed. Their Advanced changes are kept in Mods\\bg\\base.");
 
 	ImGui::SeparatorText("Replacing a game stage");
 

@@ -9,7 +9,7 @@ namespace {
 
 using Pair = StageArchive::Pair;
 
-const char* const kOwnKeys[] = {
+const char* const kNoteKeys[] = {
 	"Name", "From", "Source", "DataFile", "StageSelTex", "Flow", "VertexAlpha", "CharaTint", "EngineClock", "PaintOrder",
 };
 
@@ -40,9 +40,9 @@ bool Among(const char* const* first, const char* const* last, const std::string&
 	return std::any_of(first, last, [&key](const char* listed) { return key == listed; });
 }
 
-bool Own(const std::string& key)
+bool IsNoteKey(const std::string& key)
 {
-	return NumberedAfter(key, kLampPrefix) || Among(std::begin(kOwnKeys), std::end(kOwnKeys), key);
+	return NumberedAfter(key, kLampPrefix) || Among(std::begin(kNoteKeys), std::end(kNoteKeys), key);
 }
 
 bool Shared(const std::string& key)
@@ -102,7 +102,7 @@ void Collect(const std::string& text, std::vector<Pair>& out)
 			continue;
 		}
 
-		if (!Own(pair.key) && !Held(out, pair.key))
+		if (!IsNoteKey(pair.key) && !Held(out, pair.key))
 			out.push_back(pair);
 	}
 }

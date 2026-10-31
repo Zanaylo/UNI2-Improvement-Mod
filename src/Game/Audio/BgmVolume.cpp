@@ -27,8 +27,8 @@ typedef void(__fastcall* SetVolumeFn)(int base, int track);
 typedef int(__fastcall* StreamVolumeFn)(void* stream, void* unused, int scalar);
 
 std::map<std::string, int> g_picks;
-int g_original[BgmTable::kSlotCount] = {};
-bool g_written[BgmTable::kSlotCount] = {};
+int g_original[BgmTable::kMaxSlotCount] = {};
+bool g_written[BgmTable::kMaxSlotCount] = {};
 
 GameHook<SetVolumeFn> g_setVolumeHook("BgmSetVolume");
 GameHook<StreamVolumeFn> g_streamVolumeHook("StreamSetVolume");
@@ -74,7 +74,7 @@ const int* Find(int id)
 
 bool Wanted(int slot, int id, int& out)
 {
-	if (slot < 0 || slot >= BgmTable::kSlotCount)
+	if (slot < 0 || slot >= BgmTable::SlotCount())
 		return false;
 
 	if (BgmVolume::IsCustom(id))
@@ -216,7 +216,7 @@ void BgmVolume::Load()
 {
 	g_picks.clear();
 
-	for (int slot = 0; slot < BgmTable::kSlotCount; ++slot)
+	for (int slot = 0; slot < BgmTable::SlotCount(); ++slot)
 	{
 		g_original[slot] = kEngineFull;
 		g_written[slot] = false;
@@ -240,7 +240,7 @@ void BgmVolume::Load()
 		g_picks[std::string(entry, separator)] = Clamp(atoi(separator + 1));
 	}
 
-	LOG("BgmVolume: %d track(s) with a volume of their own", static_cast<int>(g_picks.size()));
+	LOG("BgmVolume: %d track(s) with a custom volume", static_cast<int>(g_picks.size()));
 }
 
 void BgmVolume::Save()
@@ -306,7 +306,7 @@ int BgmVolume::EngineValue(int percent)
 
 void BgmVolume::ApplyToSlot(int slot, int id)
 {
-	if (slot < 0 || slot >= BgmTable::kSlotCount)
+	if (slot < 0 || slot >= BgmTable::SlotCount())
 		return;
 
 	const bool custom = IsCustom(id);

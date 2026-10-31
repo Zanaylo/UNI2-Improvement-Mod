@@ -6,6 +6,7 @@
 #include "Core/Formats/ZipArchive.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Audio/BgmOverride.h"
 #include "Game/Stages/BgListOverride.h"
 
 #include <Windows.h>
@@ -25,7 +26,9 @@ constexpr const char* kOrderKey = "Order";
 constexpr const char* kOffKey = "Off";
 constexpr char kSeparator = '|';
 constexpr int kListBytes = 4096;
-constexpr int kNoStage = -1;
+constexpr const char* kStageNameKey = "Name";
+constexpr const char* kStageCardKey = "Card";
+constexpr int kNoCard = -1;
 
 struct Entry
 {
@@ -126,22 +129,21 @@ int PlaceOf(const std::vector<std::string>& order, const std::string& id)
 	return static_cast<int>(found - order.begin());
 }
 
-int StageIn(const FileIndex& files)
+std::vector<PackStages::Folder> StagesIn(const FileIndex& files)
 {
-	const std::string prefix = "bg\\bg";
+	std::vector<std::string> keys;
+	keys.reserve(files.Entries().size());
 
 	for (const FileIndex::Map::value_type& entry : files.Entries())
-	{
-		if (entry.first.compare(0, prefix.size(), prefix) != 0)
-			continue;
+		keys.push_back(entry.first);
 
-		const int number = atoi(entry.first.c_str() + prefix.size());
+	return PackStages::Find(keys);
+}
 
-		if (number > 0)
-			return number;
-	}
-
-	return kNoStage;
+bool HasStage(const ModPacks::Pack& pack, int number)
+{
+	return std::any_of(pack.stages.begin(), pack.stages.end(),
+		[number](const PackStages::Folder& folder) { return folder.number == number; });
 }
 
 void Weigh()
@@ -158,7 +160,7 @@ void Weigh()
 
 		for (const FileIndex::Map::value_type& entry : pack.files.Entries())
 		{
-			if (BgListOverride::IsTable(entry.first))
+			if (BgListOverride::IsTable(entry.first) || BgmOverride::IsTable(entry.first))
 				continue;
 
 			const std::string* const already = seen.Find(entry.first);
@@ -229,7 +231,7 @@ void Take(const std::string& folder, const std::string& id, const std::vector<st
 	pack.files.Remove(FileIndex::Key(kDescription));
 
 	pack.info.files = pack.files.Count();
-	pack.info.stage = StageIn(pack.files);
+	pack.info.stages = StagesIn(pack.files);
 
 	g_packs.push_back(pack);
 }
@@ -408,21 +410,43 @@ bool ModPacks::Install(const std::string& zip, char* status, int statusSize)
 	return true;
 }
 
+std::vector<ModPacks::Pack> ModPacks::EnabledTopDown()
+{
+	std::vector<Pack> enabled;
+
+	for (const Entry& pack : g_packs)
+	{
+		if (pack.info.enabled)
+			enabled.push_back(pack.info);
+	}
+
+	return enabled;
+}
+
 int ModPacks::StageOwner(int number, int except)
 {
-	if (number == kNoStage)
-		return -1;
-
 	for (int i = 0; i < Count(); ++i)
 	{
 		if (i == except || !g_packs[i].info.enabled)
 			continue;
 
-		if (g_packs[i].info.stage == number)
+		if (HasStage(g_packs[i].info, number))
 			return i;
 	}
 
 	return -1;
+}
+
+void ModPacks::StageDeclared(const Pack& pack, int number, std::string& name, int& card)
+{
+	const std::string description = pack.path + "\\" + kDescription;
+	const std::string section = PackStages::FolderName(number);
+
+	char value[192] = {};
+	Ini::GetString(section.c_str(), kStageNameKey, "", value, sizeof(value), description.c_str());
+
+	name = value;
+	card = static_cast<int>(Ini::GetInt(section.c_str(), kStageCardKey, kNoCard, description.c_str()));
 }
 
 std::string ModPacks::Root()

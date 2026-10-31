@@ -48,5 +48,5 @@ void ModuleInventory::LogForeignModules(const char* when)
 		++listed;
 	}
 
-	LOG("Modules %s: %d loaded from outside Windows' own folders", when, listed);
+	LOG("Modules %s: %d loaded from outside Windows' folders", when, listed);
 }

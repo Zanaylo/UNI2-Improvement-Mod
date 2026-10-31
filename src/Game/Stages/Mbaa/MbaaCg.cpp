@@ -28,7 +28,7 @@ enum Type
 	Type_Skip = -1,
 	Type_Indexed = 0,
 	Type_Direct = 1,
-	Type_OwnPalette = 2,
+	Type_EmbeddedPalette = 2,
 	Type_ColourKey = 3,
 	Type_IndexedAlpha = 4,
 };
@@ -54,7 +54,7 @@ int16_t Short(const uint8_t* data, size_t at)
 
 bool CarriesPalette(int type)
 {
-	return type == Type_OwnPalette || type == Type_IndexedAlpha;
+	return type == Type_EmbeddedPalette || type == Type_IndexedAlpha;
 }
 
 int RowBytes(int type)
@@ -269,7 +269,7 @@ bool MbaaCg::Draw(int index, Picture& out) const
 	if (width <= 0 || height <= 0 || width > 8192 || height > 8192)
 		return false;
 
-	uint32_t own[256] = {};
+	uint32_t imagePalette[256] = {};
 	const uint32_t* palette = m_palette;
 
 	if (image.bpp == 32 && image.type == Type_ColourKey && image.pixels + 4 <= m_size)
@@ -277,16 +277,16 @@ bool MbaaCg::Draw(int index, Picture& out) const
 		const uint32_t colour = Dword(m_data, image.pixels) & 0x00ffffffu;
 
 		for (uint32_t i = 1; i < 256; ++i)
-			own[i] = (i << 24) | colour;
+			imagePalette[i] = (i << 24) | colour;
 
-		palette = own;
+		palette = imagePalette;
 	}
 	else if (image.bpp == 32 && CarriesPalette(image.type) && image.pixels + kPaletteBytes <= m_size)
 	{
 		for (size_t i = 0; i < 256; ++i)
-			own[i] = Dword(m_data, image.pixels + i * 4) | kOpaque;
+			imagePalette[i] = Dword(m_data, image.pixels + i * 4) | kOpaque;
 
-		palette = own;
+		palette = imagePalette;
 	}
 
 	out.left = left;

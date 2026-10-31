@@ -64,7 +64,7 @@ size_t g_textBytes = 0;
 bool g_lifted = false;
 bool g_restacked = false;
 uintptr_t g_table = 0;
-char g_status[224] = "the game's own hundred stage numbers";
+char g_status[224] = "the game's hundred stage numbers";
 
 bool TakeText()
 {

@@ -27,9 +27,9 @@
 #include "D3D9/Device/SceneScale.h"
 #include "D3D9/Post/ShaderPack.h"
 #include "Game/Patches/GamePatches.h"
+#include "Game/Audio/BgmCeiling.h"
 #include "Game/Audio/BgmPicker.h"
 #include "Game/Stages/BgCeiling.h"
-#include "Game/Debug/GameDebug.h"
 #include "Game/Files/InstallCheck.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Stages/StageImport.h"
@@ -215,8 +215,8 @@ void Stage_Netplay()
 void Stage_FileOverrides()
 {
 	BgCeiling::Initialize();
+	BgmCeiling::Initialize();
 	BgmPicker::Initialize();
-	GameDebug::Prepare();
 	ModFiles::Initialize();
 
 	if (Features::IsLoaded(FeatureCatalog::Id_Stages))

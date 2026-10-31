@@ -404,7 +404,7 @@ bool HookTargetIsAvailable(void* requested, void* resolved, const char* label)
 {
 	if (AddressIsInModModule(resolved) || IsCountingStub(resolved))
 	{
-		LOG("CreateHook '%s' refused: 0x%p already ends in this mod's own handler", label, requested);
+		LOG("CreateHook '%s' refused: 0x%p already ends in this mod's handler", label, requested);
 		return false;
 	}
 

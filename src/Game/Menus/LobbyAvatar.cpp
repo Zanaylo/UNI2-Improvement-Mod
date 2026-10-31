@@ -20,9 +20,9 @@ constexpr int kSides = PalettePaint::kPlayers;
 constexpr int kNoCharacter = -1;
 constexpr int kNoColour = -1;
 constexpr int kCandidates = LobbyPalettes::kMaxMembers + 1;
-constexpr uint64_t kOwnId = 0;
+constexpr uint64_t kLocalId = 0;
 
-struct Own
+struct LocalAvatar
 {
 	NetworkPick::Pick pick;
 	char file[NetworkPick::kFileLength];
@@ -40,8 +40,8 @@ struct Candidate
 	uint8_t effects[PalettePaint::kBytes];
 };
 
-Own g_own = { { kNoCharacter, kNoColour, "", false, {} }, "", false, false, {}, {} };
-unsigned g_ownRevision = 0;
+LocalAvatar g_local = { { kNoCharacter, kNoColour, "", false, {} }, "", false, false, {}, {} };
+unsigned g_localRevision = 0;
 
 Candidate g_candidates[kCandidates] = {};
 
@@ -49,7 +49,7 @@ struct Seat
 {
 	bool decided;
 	unsigned revision;
-	unsigned own;
+	unsigned localRevision;
 	uint8_t signature[PaletteSignature::kBytes];
 	bool staged;
 	char status[64];
@@ -58,31 +58,31 @@ struct Seat
 Seat g_seats[kSides] = {};
 char g_status[160] = "not in a room";
 
-bool IsUsable(const Own& own)
+bool IsUsable(const LocalAvatar& avatar)
 {
-	return own.loaded && own.pick.hasSignature;
+	return avatar.loaded && avatar.pick.hasSignature;
 }
 
 void Publish()
 {
 	char text[LobbyPaletteCodec::kTextBytes] = {};
 	char effects[LobbyPaletteCodec::kEffectTextBytes] = {};
-	const bool share = g_own.shared && IsUsable(g_own) &&
-		LobbyPaletteCodec::Encode(g_own.pick.chara, g_own.pick.colour, g_own.pick.signature, g_own.colours, text,
+	const bool share = g_local.shared && IsUsable(g_local) &&
+		LobbyPaletteCodec::Encode(g_local.pick.chara, g_local.pick.colour, g_local.pick.signature, g_local.colours, text,
 			sizeof(text)) &&
-		LobbyPaletteCodec::EncodeEffects(g_own.effects, effects, sizeof(effects));
+		LobbyPaletteCodec::EncodeEffects(g_local.effects, effects, sizeof(effects));
 
-	LobbyPalettes::SetOwn(share ? text : "", share ? effects : "");
+	LobbyPalettes::SetLocal(share ? text : "", share ? effects : "");
 }
 
 bool SamePick(const NetworkPick::Pick& pick, const std::string& file, bool shared)
 {
-	return pick.chara == g_own.pick.chara && pick.colour == g_own.pick.colour && file == g_own.file &&
-		shared == g_own.shared && pick.hasSignature == g_own.pick.hasSignature &&
-		memcmp(pick.signature, g_own.pick.signature, PaletteSignature::kBytes) == 0;
+	return pick.chara == g_local.pick.chara && pick.colour == g_local.pick.colour && file == g_local.file &&
+		shared == g_local.shared && pick.hasSignature == g_local.pick.hasSignature &&
+		memcmp(pick.signature, g_local.pick.signature, PaletteSignature::kBytes) == 0;
 }
 
-void RefreshOwn()
+void RefreshLocal()
 {
 	NetworkPick::Pick pick = { kNoCharacter, kNoColour, "", false, {} };
 	NetworkPick::Recall(pick);
@@ -93,28 +93,28 @@ void RefreshOwn()
 	if (SamePick(pick, file, shared))
 		return;
 
-	g_own.pick = pick;
-	g_own.shared = shared;
-	strncpy_s(g_own.file, file.c_str(), _TRUNCATE);
-	g_own.loaded = PaletteLibrary::LoadWithEffects(pick.chara, g_own.file, g_own.colours, g_own.effects);
-	++g_ownRevision;
+	g_local.pick = pick;
+	g_local.shared = shared;
+	strncpy_s(g_local.file, file.c_str(), _TRUNCATE);
+	g_local.loaded = PaletteLibrary::LoadWithEffects(pick.chara, g_local.file, g_local.colours, g_local.effects);
+	++g_localRevision;
 
-	if (g_own.loaded && !pick.hasSignature)
+	if (g_local.loaded && !pick.hasSignature)
 		LOG("lobby avatar: the network pick has no colour signature yet, confirm it again at Character Select");
 
 	Publish();
 }
 
-int GatherOwn()
+int GatherLocal()
 {
-	if (!IsUsable(g_own))
+	if (!IsUsable(g_local))
 		return 0;
 
-	Candidate& own = g_candidates[0];
-	own.id = kOwnId;
-	memcpy(own.signature, g_own.pick.signature, PaletteSignature::kBytes);
-	memcpy(own.colours, g_own.colours, PalettePaint::kBytes);
-	memcpy(own.effects, g_own.effects, PalettePaint::kBytes);
+	Candidate& local = g_candidates[0];
+	local.id = kLocalId;
+	memcpy(local.signature, g_local.pick.signature, PaletteSignature::kBytes);
+	memcpy(local.colours, g_local.colours, PalettePaint::kBytes);
+	memcpy(local.effects, g_local.effects, PalettePaint::kBytes);
 	return 1;
 }
 
@@ -164,7 +164,7 @@ void Wear(int side, const Candidate& candidate)
 {
 	Seat& seat = g_seats[side];
 
-	if (candidate.id == kOwnId)
+	if (candidate.id == kLocalId)
 		strncpy_s(seat.status, "our palette", _TRUNCATE);
 	else
 		sprintf_s(seat.status, "member %llu", static_cast<unsigned long long>(candidate.id));
@@ -194,7 +194,7 @@ void Decide(int side, const uint8_t* shown, int count)
 
 bool AlreadyDecided(const Seat& seat, const uint8_t* signature, unsigned revision)
 {
-	return seat.decided && revision == seat.revision && g_ownRevision == seat.own &&
+	return seat.decided && revision == seat.revision && g_localRevision == seat.localRevision &&
 		memcmp(signature, seat.signature, PaletteSignature::kBytes) == 0;
 }
 
@@ -214,11 +214,11 @@ void Follow(int side, unsigned revision, int& count)
 
 	seat.decided = true;
 	seat.revision = revision;
-	seat.own = g_ownRevision;
+	seat.localRevision = g_localRevision;
 	memcpy(seat.signature, signature, PaletteSignature::kBytes);
 
 	if (count < 0)
-		count = GatherMembers(GatherOwn());
+		count = GatherMembers(GatherLocal());
 
 	Decide(side, shown, count);
 	Describe();
@@ -228,7 +228,7 @@ void Follow(int side, unsigned revision, int& count)
 
 void LobbyAvatar::OnFrame()
 {
-	RefreshOwn();
+	RefreshLocal();
 
 	const unsigned revision = LobbyPalettes::Revision();
 	int gathered = -1;

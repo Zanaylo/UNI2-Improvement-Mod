@@ -10,7 +10,7 @@ namespace NetcodeChoice
 		bool smoothRoundTrip;
 	};
 
-	Values GameOwn();
-	bool IsGameOwn(const Values& values);
+	Values GameDefaults();
+	bool IsGameDefault(const Values& values);
 	bool Same(const Values& a, const Values& b);
 }

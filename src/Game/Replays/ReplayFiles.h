@@ -29,7 +29,7 @@ namespace ReplayFiles
 
 	int AccountCount();
 	int SelectedAccount();
-	bool IsOwnAccount();
+	bool IsSignedInAccount();
 	std::string AccountLabel(int index);
 	void SelectAccount(int index);
 

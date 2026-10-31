@@ -23,6 +23,5 @@ enum WindowType
 	WindowType_Misc,
 	WindowType_Debug,
 	WindowType_UpdateNotifier,
-	WindowType_GameDebug,
 	WindowType_COUNT
 };

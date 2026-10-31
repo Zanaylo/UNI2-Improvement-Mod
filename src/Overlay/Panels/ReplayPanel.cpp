@@ -94,7 +94,7 @@ void DrawReplayAccounts()
 		"picked here. Other accounts are read only, and loading a file into the replay list always "
 		"writes to yours.");
 
-	if (!ReplayFiles::IsOwnAccount())
+	if (!ReplayFiles::IsSignedInAccount())
 	{
 		UiText::Warn("Reading another account's replays. Nothing is written to it, and new matches "
 			"still save to yours.");
@@ -111,7 +111,7 @@ void DrawReplaySection()
 	const bool readable = ReplayFiles::IsAvailable();
 	const bool live = ReplayFiles::IsLive();
 
-	ImGui::TextWrapped("Each new replay is saved to UNI2-IM\\Replays as its own file, so you can "
+	ImGui::TextWrapped("Each new replay is saved to UNI2-IM\\Replays as a separate file, so you can "
 		"share a single match. Files are named after the two players, or P1 and P2 when Steam "
 		"cannot find a name. Press Export all to also save the replays already in REP-DATA.");
 
@@ -244,7 +244,7 @@ void DrawReplaySection()
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::SetTooltip("Writes it over the oldest unprotected slot. It shows up in the Replay "
-				"screen under its own date. Protect any replay you want to keep first.");
+				"screen under its date. Protect any replay you want to keep first.");
 		}
 	}
 

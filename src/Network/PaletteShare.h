@@ -10,13 +10,13 @@ namespace PaletteShare
 
 	const char* GetStatusText();
 
-	int GetOwnSide();
+	int GetLocalSide();
 
 	const char* GetRemoteName(int player);
 
 	struct Diagnostics
 	{
-		int ownSide;
+		int localSide;
 		int framesInMatch;
 		int sendsDone;
 		int sendsAllowed;

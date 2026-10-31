@@ -144,7 +144,7 @@ void Restore()
 	for (int player = 0; player < QuickTraining::kPlayers; ++player)
 		ColourPicker::Choose(player, g_original.chara[player], ColourSlots::kNoExtended);
 
-	LOG("QuickTraining: the game's own pick restored");
+	LOG("QuickTraining: the game's pick restored");
 }
 
 bool CanApply()

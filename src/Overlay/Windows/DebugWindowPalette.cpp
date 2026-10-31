@@ -17,6 +17,25 @@
 
 #include <imgui.h>
 
+namespace {
+
+constexpr float kChannelMax = 255.0f;
+constexpr float kRound = 0.5f;
+
+uint8_t Channel(float value)
+{
+	return static_cast<uint8_t>(value * kChannelMax + kRound);
+}
+
+}
+
+void DebugWindow::SetForcedEffectTint()
+{
+	const uint8_t rgb[3] = { Channel(m_forceEffectRgb[0]), Channel(m_forceEffectRgb[1]), Channel(m_forceEffectRgb[2]) };
+
+	EffectPaint::SetForced(m_forceEffectTint, rgb, m_forceEffectEntry);
+}
+
 void DebugWindow::DrawPaletteOwnerSection()
 {
 	if (!ImGui::CollapsingHeader("Palette owners"))
@@ -114,29 +133,13 @@ void DebugWindow::DrawPaletteOwnerSection()
 	ImGui::SeparatorText("Effects");
 
 	if (ImGui::Checkbox("Force every effect tint", &m_forceEffectTint))
-	{
-		const uint8_t rgb[3] = {
-			static_cast<uint8_t>(m_forceEffectRgb[0] * 255.0f + 0.5f),
-			static_cast<uint8_t>(m_forceEffectRgb[1] * 255.0f + 0.5f),
-			static_cast<uint8_t>(m_forceEffectRgb[2] * 255.0f + 0.5f),
-		};
-
-		EffectPaint::SetForced(m_forceEffectTint, rgb, m_forceEffectEntry);
-	}
+		SetForcedEffectTint();
 
 	ImGui::SameLine();
 	Ui::SetItemWidth(160.0f);
 
 	if (ImGui::ColorEdit3("##forcedcolour", m_forceEffectRgb, ImGuiColorEditFlags_NoInputs))
-	{
-		const uint8_t rgb[3] = {
-			static_cast<uint8_t>(m_forceEffectRgb[0] * 255.0f + 0.5f),
-			static_cast<uint8_t>(m_forceEffectRgb[1] * 255.0f + 0.5f),
-			static_cast<uint8_t>(m_forceEffectRgb[2] * 255.0f + 0.5f),
-		};
-
-		EffectPaint::SetForced(m_forceEffectTint, rgb, m_forceEffectEntry);
-	}
+		SetForcedEffectTint();
 
 	ImGui::SameLine();
 	Ui::SetItemWidth(120.0f);
@@ -149,11 +152,11 @@ void DebugWindow::DrawPaletteOwnerSection()
 		if (m_forceEffectEntry >= EffectPaint::kColours)
 			m_forceEffectEntry = EffectPaint::kColours - 1;
 
-		EffectPaint::SetForced(m_forceEffectTint, nullptr, m_forceEffectEntry);
+		SetForcedEffectTint();
 	}
 
-	ImGui::TextDisabled("-1 means every entry. This ignores who owns the effect, so if nothing on "
-		"screen changes, fixing the owner will not help.");
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("-1 = every entry. Ignores who owns the effect.");
 
 	int byWorn = 0;
 	int byStock = 0;
@@ -280,7 +283,10 @@ void DebugWindow::DrawPaletteOwnerSection()
 	bool enabled = PaletteOwnerProbe::IsEnabled();
 
 	if (ImGui::Checkbox("Watch draws", &enabled))
+	{
 		PaletteOwnerProbe::SetEnabled(enabled);
+		m_probeTurnedOn = enabled;
+	}
 
 	ImGui::SameLine();
 
@@ -291,7 +297,7 @@ void DebugWindow::DrawPaletteOwnerSection()
 
 	if (count == 0)
 	{
-		ImGui::TextDisabled("nothing seen yet. Tick the box and play a few frames of a match.");
+		ImGui::TextDisabled("nothing yet");
 		return;
 	}
 

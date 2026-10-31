@@ -199,7 +199,7 @@ void DrawPaletteOptions()
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("At character select, pressing right past the game's last colour reaches "
-			"one extra slot per saved palette that has no colour of its own (EX 1, EX 2...).\n"
+			"one extra slot per saved palette that no colour holds (EX 1, EX 2...).\n"
 			"Players without the mod see the game's first colour.\nPicker: %s",
 			ColourPicker::StatusText());
 	}
@@ -214,7 +214,7 @@ void DrawPaletteOptions()
 	}
 
 	ImGui::TextDisabled("%s", PaletteControl::IsSpectating()
-		? "watching: the colours are the players' own"
+		? "watching: the colours are the ones the players picked"
 		: (PaletteControl::LocalPlayer() >= 0
 			? (PaletteControl::LocalPlayer() == 0 ? "you are playing P1" : "you are playing P2")
 			: "both characters are yours to dress"));

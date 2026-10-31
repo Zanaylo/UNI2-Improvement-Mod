@@ -256,6 +256,31 @@ void FlushLogger()
 	Drain();
 }
 
+bool IsLoggerOpen()
+{
+	return g_open.load();
+}
+
+bool IsLoggingForced()
+{
+	return UNI2_IM_FORCE_LOGGING != 0;
+}
+
+void SetLogging(bool enabled)
+{
+	Settings::SaveInt("Debug", "Logging", enabled ? 1 : 0);
+
+	if (enabled)
+	{
+		OpenLogger();
+		LOG("logging turned on from the overlay");
+		return;
+	}
+
+	LOG("logging turned off from the overlay");
+	CloseLogger();
+}
+
 void WriteLog(const char* format, ...)
 {
 	if (!g_open.load())

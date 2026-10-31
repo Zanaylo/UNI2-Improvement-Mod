@@ -82,7 +82,7 @@ PresenceText::Situation OnlineMatch()
 	const int remote = 1 - local;
 
 	situation.place = Place::OnlineMatch;
-	situation.fighter[local] = { PlayerName(SteamInterfaces::GetOwnSteamId()), CharacterOf(local) };
+	situation.fighter[local] = { PlayerName(SteamInterfaces::GetLocalSteamId()), CharacterOf(local) };
 	situation.fighter[remote] = { PlayerName(NetLink::Peer()), CharacterOf(remote) };
 	return situation;
 }
@@ -91,7 +91,7 @@ PresenceText::Situation OfflineMatch()
 {
 	PresenceText::Situation situation;
 	situation.place = GameState::IsTrainingBattle() ? Place::Training : Place::Offline;
-	situation.ownCharacter = CharacterOf(LocalSide());
+	situation.localCharacter = CharacterOf(LocalSide());
 	return situation;
 }
 

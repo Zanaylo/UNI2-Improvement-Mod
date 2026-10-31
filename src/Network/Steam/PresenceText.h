@@ -31,7 +31,7 @@ namespace PresenceText
 	struct Situation
 	{
 		Place place = Place::Menus;
-		std::string ownCharacter;
+		std::string localCharacter;
 		Fighter fighter[kSides];
 		std::string note;
 	};

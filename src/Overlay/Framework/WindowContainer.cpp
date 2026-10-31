@@ -3,9 +3,7 @@
 #include "Core/Boot/Standby.h"
 #include "Core/info.h"
 #include "Core/Config/interfaces.h"
-#include "Game/Debug/GameDebug.h"
 #include "Overlay/Windows/DebugWindow.h"
-#include "Overlay/Windows/GameDebugWindow.h"
 #include "Overlay/Windows/DummyScriptGuideWindow.h"
 #include "Overlay/Windows/FrameMeterLegendWindow.h"
 #include "Overlay/Windows/HitboxLegendWindow.h"
@@ -90,11 +88,7 @@ WindowContainer::WindowContainer()
 	if (!ScreenDirector::kOnHold)
 		m_windows[WindowType_Theme] = std::make_unique<ThemeWindow>("Theme", true);
 
-	if (g_modVals.memoryDebugEnabled)
-		m_windows[WindowType_Debug] = std::make_unique<DebugWindow>("Memory debug", true);
-
-	if (GameDebug::IsEnabled())
-		m_windows[WindowType_GameDebug] = std::make_unique<GameDebugWindow>("Game debug options", true);
+	m_windows[WindowType_Debug] = std::make_unique<DebugWindow>("Debug view", true);
 }
 
 void WindowContainer::UpdateAll()

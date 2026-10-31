@@ -23,6 +23,9 @@ private:
 	void DrawAudioTab();
 	void DrawOnlineTab();
 	void DrawModTab();
+	void DrawDebugTab();
+	void DrawLogSection();
+	void DrawDebugViewSection();
 	void DrawConfigTab();
 
 	void DrawMusicSection();
@@ -36,5 +39,4 @@ private:
 	void DrawModsSection();
 	void DrawPalettesSection();
 	void DrawMiscSection();
-	void DrawGameDebugSection();
 };

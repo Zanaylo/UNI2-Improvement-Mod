@@ -10,5 +10,5 @@ namespace KeyboardCapture
 	void ReleaseAll();
 
 	bool IsKeyCaptureActive();
-	bool OwnsKeyboard();
+	bool HoldsKeyboard();
 }

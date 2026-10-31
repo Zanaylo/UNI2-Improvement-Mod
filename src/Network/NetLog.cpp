@@ -188,8 +188,8 @@ void Flush()
 
 		if (g_bytes >= kMaxBytes && InterlockedExchange(&g_overBudget, 1) == 0)
 		{
-			fprintf(g_file, "(this log reached %ld MB, so GGPO's own lines are dropped from here on; "
-				"the mod's own lines carry on)\n", kMaxBytes / (1024 * 1024));
+			fprintf(g_file, "(this log reached %ld MB, so GGPO's lines are dropped from here on; "
+				"the mod's lines carry on)\n", kMaxBytes / (1024 * 1024));
 		}
 
 		const LONG dropped = g_dropped;

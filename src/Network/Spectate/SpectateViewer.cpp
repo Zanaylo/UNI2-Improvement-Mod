@@ -245,7 +245,7 @@ void Enter()
 
 	if (ReadGame(GameOffsets::kGgpoSession) != 0 || NetLink::Lobby() != 0)
 	{
-		Become(SpectateViewer::State_Waiting, "you are in your own match or room, so this match was skipped");
+		Become(SpectateViewer::State_Waiting, "you are in a match or room yourself, so this match was skipped");
 		return;
 	}
 
@@ -575,9 +575,9 @@ bool SpectateViewer::Watch(uint64_t host)
 	if (host == 0)
 		return false;
 
-	if (host == SteamInterfaces::GetOwnSteamId())
+	if (host == SteamInterfaces::GetLocalSteamId())
 	{
-		strncpy_s(g_status, "that is your own code", _TRUNCATE);
+		strncpy_s(g_status, "that is your code", _TRUNCATE);
 		return false;
 	}
 

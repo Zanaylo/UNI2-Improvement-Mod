@@ -147,7 +147,7 @@ void WriteRowSample(FILE* file, const char* label, int texture, int row, bool pr
 void WriteSeatSignals(FILE* file)
 {
 	fprintf(file, "\n=== who the mod thinks it is ===\n");
-	fprintf(file, "  PaletteShare::GetOwnSide()  %d\n", PaletteShare::GetOwnSide());
+	fprintf(file, "  PaletteShare::GetLocalSide()  %d\n", PaletteShare::GetLocalSide());
 
 	uint32_t raw = 0;
 	const bool read = TryReadDword(
@@ -407,7 +407,7 @@ void WriteSharing(FILE* file)
 	PaletteShare::GetDiagnostics(share);
 
 	fprintf(file, "\n=== what crossed the wire ===\n");
-	fprintf(file, "  our seat %d, %d frames into the match, peer 0x%016llx\n", share.ownSide,
+	fprintf(file, "  our seat %d, %d frames into the match, peer 0x%016llx\n", share.localSide,
 		share.framesInMatch, static_cast<unsigned long long>(share.matchPeer));
 
 	fprintf(file, "  sends %d of %d used, next at frame %d, %d packets out, %d in\n",

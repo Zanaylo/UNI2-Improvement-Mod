@@ -130,7 +130,7 @@ void Settle(HMODULE owner)
 
 	if (!g_wrapper)
 	{
-		sprintf_s(g_status, "Direct3D 9 is the system's own");
+		sprintf_s(g_status, "Direct3D 9 is the system's");
 		return;
 	}
 

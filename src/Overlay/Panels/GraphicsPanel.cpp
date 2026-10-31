@@ -390,7 +390,7 @@ void GraphicsPanel::DrawOverlayAppearance()
 	SliderOnRelease("Overlay scale", &g_modVals.uiScale, 0.5f, 4.0f, "%.2fx", "UiScale");
 	SliderOnRelease("Font size", &g_modVals.fontSize, 10.0f, 32.0f, "%.0f px", "FontSize");
 
-	Help("Applied when you let go of the slider. To use your own .ttf font, set [Overlay] FontPath in the ini.");
+	Help("Applied when you let go of the slider. To use another .ttf font, set [Overlay] FontPath in the ini.");
 
 	Muted("%s", OverlayFont::GetStatusText());
 	Muted("Japanese and other scripts fall back to %s", OverlayFont::GetFallbackText());

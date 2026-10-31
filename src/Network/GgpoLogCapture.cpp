@@ -150,7 +150,7 @@ void GgpoLogCapture::SetEnabled(bool enabled)
 		Switch(enabled);
 
 	g_enabled = enabled;
-	strncpy_s(g_status, enabled ? "on, GGPO's own lines go to the network log" : "off", _TRUNCATE);
+	strncpy_s(g_status, enabled ? "on, GGPO's lines go to the network log" : "off", _TRUNCATE);
 	NetLog::Write("ggpo log capture %s", enabled ? "on" : "off");
 }
 

@@ -150,12 +150,12 @@ bool Intact(void* menu)
 		rows.begin != nullptr && rows.end >= rows.begin;
 }
 
-bool Owns(void* menu)
+bool HoldsMenu(void* menu)
 {
 	return menu != nullptr && g_extra.ready && g_owner.load() == menu && Intact(menu);
 }
 
-bool OwnsLiveMenu()
+bool HoldsLiveMenu()
 {
 	void* live = nullptr;
 
@@ -309,7 +309,7 @@ void Disown(const char* why)
 
 void ShowExtra(void* menu, bool wanted)
 {
-	if (!Owns(menu) || g_extra.shown == wanted)
+	if (!HoldsMenu(menu) || g_extra.shown == wanted)
 		return;
 
 	if (!SwapRows(menu, wanted ? g_extra.mod : g_extra.game))
@@ -326,12 +326,12 @@ int LogicalPage(void* menu)
 {
 	const int page = Field<int>(menu, GameOffsets::kTrainingMenuPage);
 
-	return page == kLastSlot && Owns(menu) && g_extra.shown ? kExtraPage : page;
+	return page == kLastSlot && HoldsMenu(menu) && g_extra.shown ? kExtraPage : page;
 }
 
 void RememberPage(void* menu)
 {
-	if (!Owns(menu) || Field<int>(menu, GameOffsets::kTrainingMenuWindowActive) == 0)
+	if (!HoldsMenu(menu) || Field<int>(menu, GameOffsets::kTrainingMenuWindowActive) == 0)
 		return;
 
 	if (g_memory.restorePending)
@@ -496,9 +496,9 @@ int SelectedId(void* menu)
 	return static_cast<const MenuItem*>(items.begin[index])->id;
 }
 
-bool ConfirmedOwnRow(void* menu)
+bool ConfirmedModRow(void* menu)
 {
-	if (!Owns(menu) || !g_extra.shown || Field<int>(menu, GameOffsets::kTrainingMenuWindowActive) == 0)
+	if (!HoldsMenu(menu) || !g_extra.shown || Field<int>(menu, GameOffsets::kTrainingMenuWindowActive) == 0)
 		return false;
 
 	MenuInput::State input = {};
@@ -533,7 +533,7 @@ void ReportBuild(int added)
 {
 	if (added == kAppendFaulted)
 	{
-		sprintf_s(g_status, "adding the mod's page faulted, the game's own menu is unchanged");
+		sprintf_s(g_status, "adding the mod's page faulted, the game's menu is unchanged");
 		LOG("TrainingMenu: %s", g_status);
 		return;
 	}
@@ -578,7 +578,7 @@ void __fastcall HookedUpdate(void* menu, void* unused)
 
 	g_menu = menu;
 
-	if (!HoldForModal(menu) && !ConfirmedOwnRow(menu))
+	if (!HoldForModal(menu) && !ConfirmedModRow(menu))
 	{
 		ClampCursor(menu);
 		g_client->BeforeUpdate();
@@ -604,7 +604,7 @@ int __fastcall HookedOpenPicker(void* menu, void* unused, int id, int flag)
 
 int __fastcall HookedTurnPage(void* menu, void* unused, int delta)
 {
-	if (!Owns(menu) || delta == 0)
+	if (!HoldsMenu(menu) || delta == 0)
 		return g_turnHook.Original()(menu, unused, delta);
 
 	const int from = LogicalPage(menu);
@@ -625,7 +625,7 @@ int __fastcall HookedResetPage(void* menu, void* unused, int page)
 {
 	const uintptr_t caller = reinterpret_cast<uintptr_t>(_ReturnAddress()) - GetGameBaseAddress();
 
-	if (!Owns(menu) || page != kLastSlot || caller != GameOffsets::kTrainingMenuResetAllReturn)
+	if (!HoldsMenu(menu) || page != kLastSlot || caller != GameOffsets::kTrainingMenuResetAllReturn)
 		return g_resetHook.Original()(menu, unused, page);
 
 	const bool shown = g_extra.shown;
@@ -639,7 +639,7 @@ int __fastcall HookedResetPage(void* menu, void* unused, int page)
 
 void __cdecl AdjustDots(uintptr_t caller, int* arguments)
 {
-	if (caller - GetGameBaseAddress() != GameOffsets::kMenuPageDotsTrainingReturn || !OwnsLiveMenu())
+	if (caller - GetGameBaseAddress() != GameOffsets::kMenuPageDotsTrainingReturn || !HoldsLiveMenu())
 		return;
 
 	arguments[1] += 1;

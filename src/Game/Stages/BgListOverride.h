@@ -43,11 +43,11 @@ namespace BgListOverride
 
 	bool SelectOrder(std::vector<int>& out);
 
-	bool OwnName(int number, std::string& out);
+	bool GameStageName(int number, std::string& out);
 
-	bool OwnNumbers(std::vector<int>& out);
+	bool GameNumbers(std::vector<int>& out);
 
-	int HighestOwnCard();
+	int HighestGameCard();
 
 	bool NeedsRestart();
 }

@@ -12,7 +12,6 @@
 #include "Core/Input/WindowsPointer.h"
 #include "Core/StallSampler.h"
 #include "Game/Audio/SoundVolumeBackground.h"
-#include "Game/Debug/GameDebug.h"
 #include "Core/logger.h"
 #include "D3D9/Device/SceneScale.h"
 #include "D3D9/Post/SceneUpscale.h"
@@ -282,7 +281,6 @@ const Task kFrame[] = {
 	[] { if (Loaded(FeatureCatalog::Id_VoicesAndSound)) { if (SoundPacks::ConsumeScanRequest()) SoundPacks::Scan(); } },
 	[] { if (Loaded(FeatureCatalog::Id_VoicesAndSound)) { if (SoundPacks::ConsumeChanged()) ModFiles::Rescan(); } },
 	[] { SoundVolumeBackground::OnFrame(); },
-	[] { GameDebug::OnFrame(); },
 };
 
 const Task kReplay[] = {

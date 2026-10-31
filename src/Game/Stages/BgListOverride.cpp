@@ -205,7 +205,7 @@ std::vector<TableLayer> Layers(const std::vector<std::string>& ourFiles)
 
 		if (!dropped.empty())
 		{
-			LOG("BgListOverride: %d stage(s) in %s%s are copies of the mod's own stages, the mod places those itself",
+			LOG("BgListOverride: %d stage(s) in %s%s are copies of the mod's stages, the mod places those itself",
 				static_cast<int>(dropped.size()), layer.folder.c_str(), kList);
 		}
 
@@ -243,14 +243,14 @@ bool Retire(const std::string& path)
 	return MoveFileExA(path.c_str(), (path + kRetiredSuffix).c_str(), MOVEFILE_REPLACE_EXISTING) != 0;
 }
 
-std::vector<int> Foreign(const std::string& list, const std::vector<int>& own, const std::vector<int>& owned,
+std::vector<int> Foreign(const std::string& list, const std::vector<int>& gameNumbers, const std::vector<int>& owned,
 	const std::vector<std::string>& ourFiles)
 {
 	std::vector<int> foreign;
 
 	for (int number : BgTable::Numbers(list))
 	{
-		if (Contains(own, number) || Contains(owned, number) || ContainsText(ourFiles, BgTable::Key(list, number)))
+		if (Contains(gameNumbers, number) || Contains(owned, number) || ContainsText(ourFiles, BgTable::Key(list, number)))
 			continue;
 
 		foreign.push_back(number);
@@ -328,7 +328,7 @@ void FollowList(const std::vector<TableLayer>& layers, const BgTable::Text& comp
 		Store(kLearnKey, std::string());
 
 		LOG("BgListOverride: no mod pack or Mods\\bg\\BgList.txt has a BgSelectList any more, the picker goes "
-			"back to the stage table's own order");
+			"back to the stage table's order");
 		return;
 	}
 
@@ -471,10 +471,10 @@ void BgListOverride::Settle(const std::vector<int>& owned, const std::vector<std
 	BgTable::Text made = original;
 	Rework(made, reworked);
 
-	const std::vector<int> own = BgTable::Numbers(original.list);
-	const std::vector<int> foreign = Foreign(old.list, own, owned, ourFiles);
+	const std::vector<int> gameNumbers = BgTable::Numbers(original.list);
+	const std::vector<int> foreign = Foreign(old.list, gameNumbers, owned, ourFiles);
 	const BgTable::Text theirs = BgTable::Fragment(old, foreign);
-	const BgTable::Text edits = BgTable::Edits(old, original, made, own);
+	const BgTable::Text edits = BgTable::Edits(old, original, made, gameNumbers);
 	const BgTable::Text kept = { theirs.list + edits.list, theirs.names + edits.names };
 
 	if (!Retire(UserPath(kList)) || !Retire(UserPath(kNames)))
@@ -506,7 +506,7 @@ void BgListOverride::Settle(const std::vector<int>& owned, const std::vector<std
 	Store(kLayeredKey, kOn);
 
 	LOG("BgListOverride: the stage table is composed from layers now; the old Mods\\bg\\BgList.txt %s, "
-		"%d stage(s) of its own, %d hand edit(s) of the game's stages and %d name(s) kept in a new one",
+		"%d added stage(s), %d hand edit(s) of the game's stages and %d name(s) kept in a new one",
 		old.list.empty() ? "was not there" : "is BgList.txt.old", static_cast<int>(foreign.size()),
 		static_cast<int>(BgTable::Numbers(edits.list).size()), static_cast<int>(BgTable::Named(kept.names).size()));
 }
@@ -516,14 +516,14 @@ std::vector<int> BgListOverride::Taken(const std::vector<std::string>& ourFiles)
 	std::string original;
 	Original(kList, original);
 
-	const std::vector<int> own = BgTable::Numbers(original);
+	const std::vector<int> gameNumbers = BgTable::Numbers(original);
 	std::vector<int> taken;
 
 	for (const TableLayer& layer : Layers(ourFiles))
 	{
 		for (int number : BgTable::Numbers(layer.text.list))
 		{
-			if (!Contains(own, number) && !Contains(taken, number))
+			if (!Contains(gameNumbers, number) && !Contains(taken, number))
 				taken.push_back(number);
 		}
 	}
@@ -664,7 +664,7 @@ bool BgListOverride::SelectOrder(std::vector<int>& out)
 	});
 }
 
-bool BgListOverride::OwnName(int number, std::string& out)
+bool BgListOverride::GameStageName(int number, std::string& out)
 {
 	out = WithCurrent([number](const BgTable::Text& text)
 	{
@@ -674,7 +674,7 @@ bool BgListOverride::OwnName(int number, std::string& out)
 	return !out.empty();
 }
 
-bool BgListOverride::OwnNumbers(std::vector<int>& out)
+bool BgListOverride::GameNumbers(std::vector<int>& out)
 {
 	std::string original;
 
@@ -688,7 +688,7 @@ bool BgListOverride::OwnNumbers(std::vector<int>& out)
 	return !out.empty();
 }
 
-int BgListOverride::HighestOwnCard()
+int BgListOverride::HighestGameCard()
 {
 	std::string original;
 

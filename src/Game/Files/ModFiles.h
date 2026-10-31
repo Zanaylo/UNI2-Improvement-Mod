@@ -12,7 +12,7 @@ namespace ModFiles
 	void OnFrame();
 
 	int Count();
-	int OwnCount();
+	int UserFileCount();
 	int Hits();
 
 	bool Find(const char* gamePath, std::string& out);

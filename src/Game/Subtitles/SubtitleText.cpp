@@ -141,7 +141,7 @@ void Report(const char* key, int chara, const char* written)
 		return;
 	}
 
-	LOG("SubtitleText: the game asked for %s and kept its own - %s", key,
+	LOG("SubtitleText: the game asked for %s and kept the original - %s", key,
 		SubtitleTable::IsAttached(chara) ? "no line is written for that voice"
 		: "that character's lines are not loaded");
 }
@@ -251,7 +251,7 @@ bool SubtitleText::Install()
 		return false;
 	}
 
-	strncpy_s(g_status, "on, the game shows mod lines like its own", _TRUNCATE);
+	strncpy_s(g_status, "on, the game shows mod lines like native ones", _TRUNCATE);
 	LOG("SubtitleText: %s", g_status);
 
 	return true;

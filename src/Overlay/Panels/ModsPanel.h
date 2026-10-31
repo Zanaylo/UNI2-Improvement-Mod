@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/AsyncFileDialog.h"
+#include "Game/Files/ModPacks.h"
 
 class ModsPanel
 {
@@ -10,8 +11,12 @@ public:
 private:
 	void DrawTools();
 	void DrawList();
-	void DrawOwnRow();
+	void DrawUserRow();
 	void DrawRow(int index);
+	void DrawStages(int index, const ModPacks::Pack& pack);
+	void DrawStageClash(int index, int number);
+	void DrawStageInstall(const ModPacks::Pack& pack, int number);
+	void DrawMusic(const ModPacks::Pack& pack);
 	void DrawFooter();
 	void DrawHelp();
 

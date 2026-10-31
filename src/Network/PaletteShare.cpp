@@ -131,11 +131,11 @@ Answered g_answered[kAskers] = {};
 
 int g_statusStamp = -1;
 
-int ReadOwnSide();
+int ReadLocalSide();
 
 void UpdateStatus()
 {
-	const int seat = ReadOwnSide();
+	const int seat = ReadLocalSide();
 
 	const int stamp = (g_sentCount << 6) | (g_receivedCount << 4) | ((seat + 1) << 2) |
 		(SteamNetwork::IsReady() ? 2 : 0) | (NetLink::HasPeer() ? 1 : 0);
@@ -166,7 +166,7 @@ int Resends()
 	return known ? kResendsKnown : 0;
 }
 
-int ReadOwnSide()
+int ReadLocalSide()
 {
 	uint32_t side = 0;
 	if (!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kPlayerSideIndex)),
@@ -178,17 +178,17 @@ int ReadOwnSide()
 	return side <= 1 ? static_cast<int>(side) : -1;
 }
 
-int OwnPlayer()
+int LocalSide()
 {
 	if (PaletteControl::IsSpectating())
 		return -1;
 
 	const int local = PaletteControl::LocalPlayer();
 
-	return local >= 0 ? local : ReadOwnSide();
+	return local >= 0 ? local : ReadLocalSide();
 }
 
-unsigned OwnRevision(int player)
+unsigned LocalRevision(int player)
 {
 	if (player < 0)
 		return 0;
@@ -218,10 +218,10 @@ int SideForPeer(int chara, int claimed)
 {
 	if (!PaletteControl::IsSpectating())
 	{
-		const int own = OwnPlayer();
+		const int local = LocalSide();
 
-		if (own == 0 || own == 1)
-			return 1 - own;
+		if (local == 0 || local == 1)
+			return 1 - local;
 	}
 
 	const int byChara = SideForChara(chara);
@@ -252,40 +252,40 @@ void Stamp(PacketV3& packet, int chara, int side)
 	packet.side = static_cast<int8_t>(side);
 }
 
-bool BuildOwn(int own, PacketV3& packet)
+bool BuildLocal(int local, PacketV3& packet)
 {
-	const uint8_t* colors = PalettePaint::GetStaged(own);
+	const uint8_t* colors = PalettePaint::GetStaged(local);
 	uint8_t original[PaletteFile::kBytes] = {};
 	char name[PaletteFile::kNameLength] = {};
 	const bool bare = colors == nullptr;
 
 	if (bare && !g_everSent)
 	{
-		PaletteTrace::Note("send skipped, p%d has never worn one of ours", own);
+		PaletteTrace::Note("send skipped, p%d has never worn one of ours", local);
 		return false;
 	}
 
-	if (bare && !PalettePaint::ReadGameColours(own, original))
+	if (bare && !PalettePaint::ReadGameColours(local, original))
 	{
-		PaletteTrace::Note("send skipped, p%d has no palette and no original to fall back on", own);
+		PaletteTrace::Note("send skipped, p%d has no palette and no original to fall back on", local);
 		return false;
 	}
 
 	if (bare)
 		colors = original;
 	else
-		WornName(own, name, sizeof(name));
+		WornName(local, name, sizeof(name));
 
-	const bool hasEffects = !bare && EffectPaint::GetEditedCount(own) > 0;
+	const bool hasEffects = !bare && EffectPaint::GetEditedCount(local) > 0;
 
 	packet = {};
-	Stamp(packet, PaletteMemory::GetCharaNumber(own), own);
+	Stamp(packet, PaletteMemory::GetCharaNumber(local), local);
 	strncpy_s(packet.name, name, _TRUNCATE);
 	memcpy(packet.colors, colors, sizeof(packet.colors));
 	packet.hasEffect = hasEffects ? 1 : 0;
 
 	if (hasEffects)
-		EffectPaint::GetBlock(own, packet.effectColors);
+		EffectPaint::GetBlock(local, packet.effectColors);
 
 	return true;
 }
@@ -298,9 +298,9 @@ void SendOurs()
 		return;
 	}
 
-	const int own = OwnPlayer();
+	const int local = LocalSide();
 
-	if (own < 0)
+	if (local < 0)
 	{
 		PaletteTrace::Note("send skipped, our seat is unknown");
 		return;
@@ -308,7 +308,7 @@ void SendOurs()
 
 	PacketV3 packet = {};
 
-	if (!BuildOwn(own, packet))
+	if (!BuildLocal(local, packet))
 		return;
 
 	if (!ModChannel::SendToPeer(&packet, sizeof(packet), kSendTtlMs, "palette"))
@@ -317,14 +317,14 @@ void SendOurs()
 		return;
 	}
 
-	g_sentRevision = OwnRevision(own);
+	g_sentRevision = LocalRevision(local);
 	g_everSent = true;
 	++g_sentCount;
 
 	PaletteTrace::Note("sent '%s' chara %d from seat %d with %s, send %d of %d", packet.name,
-		packet.chara, own, packet.hasEffect ? "effects" : "no effects", g_sent, Resends());
+		packet.chara, local, packet.hasEffect ? "effects" : "no effects", g_sent, Resends());
 
-	LOG("PaletteShare: queued '%s' for character %d on side %d", packet.name, packet.chara, own);
+	LOG("PaletteShare: queued '%s' for character %d on side %d", packet.name, packet.chara, local);
 }
 
 bool AnsweredLately(uint64_t id, DWORD now)
@@ -353,13 +353,13 @@ bool AnsweredLately(uint64_t id, DWORD now)
 
 void AnswerSpectator(uint64_t from)
 {
-	const int own = OwnPlayer();
+	const int local = LocalSide();
 
-	if (from == 0 || !g_inMatch || own < 0 || !g_modVals.sharePalettes || AnsweredLately(from, GetTickCount()))
+	if (from == 0 || !g_inMatch || local < 0 || !g_modVals.sharePalettes || AnsweredLately(from, GetTickCount()))
 		return;
 
 	PacketV3 packet = {};
-	const bool ours = BuildOwn(own, packet) &&
+	const bool ours = BuildLocal(local, packet) &&
 		ModChannel::SendTo(from, &packet, sizeof(packet), kSendTtlMs, "palette for a spectator");
 	const bool theirs = g_relay.valid &&
 		ModChannel::SendTo(from, &g_relay.packet, sizeof(g_relay.packet), kSendTtlMs, "opponent palette for a spectator");
@@ -514,14 +514,14 @@ void HandlePacket(const uint8_t* data, int size, uint64_t from)
 		return;
 	}
 
-	const int own = OwnPlayer();
+	const int local = LocalSide();
 	const int side = SideForPeer(incoming.chara, incoming.claimed);
 
 	PaletteTrace::Note("got '%s' chara %d with %s, marked seat %d, our seat %d, so it is p%d's",
 		incoming.name, incoming.chara, incoming.effects != nullptr ? "effects" : "no effects",
-		incoming.claimed, own, side);
+		incoming.claimed, local, side);
 
-	if (side < 0 || side == own)
+	if (side < 0 || side == local)
 		return;
 
 	KeepForRelay(packet, side);
@@ -579,9 +579,9 @@ void PaletteShare::Initialize()
 	UpdateStatus();
 }
 
-int PaletteShare::GetOwnSide()
+int PaletteShare::GetLocalSide()
 {
-	return ReadOwnSide();
+	return ReadLocalSide();
 }
 
 const char* PaletteShare::GetRemoteName(int player)
@@ -656,7 +656,7 @@ void PaletteShare::OnFrame()
 	if (!g_sideLogged)
 	{
 		g_sideLogged = true;
-		LOG("PaletteShare: peer is up and [0x597940] reads %d", GetOwnSide());
+		LOG("PaletteShare: peer is up and [0x597940] reads %d", GetLocalSide());
 	}
 
 	if (PaletteControl::IsSpectating())
@@ -666,15 +666,15 @@ void PaletteShare::OnFrame()
 		return;
 	}
 
-	const int own = OwnPlayer();
+	const int local = LocalSide();
 
-	if (own < 0)
+	if (local < 0)
 	{
 		UpdateStatus();
 		return;
 	}
 
-	const unsigned revision = OwnRevision(own);
+	const unsigned revision = LocalRevision(local);
 
 	if (revision != g_seenRevision)
 	{
@@ -688,7 +688,7 @@ void PaletteShare::OnFrame()
 
 	if (g_everSent && g_settled == kSettleFrames && revision != g_sentRevision)
 	{
-		PaletteTrace::Note("p%d changed, sending it again", own);
+		PaletteTrace::Note("p%d changed, sending it again", local);
 
 		g_sent = 0;
 		g_frames = kSendDelayFrames;
@@ -710,7 +710,7 @@ void PaletteShare::GetDiagnostics(Diagnostics& out)
 {
 	out = {};
 
-	out.ownSide = OwnPlayer();
+	out.localSide = LocalSide();
 	out.framesInMatch = g_frames;
 	out.sendsDone = g_sent;
 	out.sendsAllowed = Resends();

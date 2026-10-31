@@ -153,23 +153,23 @@ int g_account = -1;
 
 int Browsing()
 {
-	const int own = ReplayArchive::OwnIndex();
+	const int signedIn = ReplayArchive::SignedInIndex();
 
 	if (g_account < 0 || g_account >= ReplayArchive::Count())
-		return own;
+		return signedIn;
 
 	return g_account;
 }
 
-bool OnOwn()
+bool OnSignedIn()
 {
-	return Browsing() == ReplayArchive::OwnIndex();
+	return Browsing() == ReplayArchive::SignedInIndex();
 }
 
-struct HoldOwn
+struct HoldSignedIn
 {
-	HoldOwn() : m_previous(g_account) { g_account = ReplayArchive::OwnIndex(); }
-	~HoldOwn() { g_account = m_previous; }
+	HoldSignedIn() : m_previous(g_account) { g_account = ReplayArchive::SignedInIndex(); }
+	~HoldSignedIn() { g_account = m_previous; }
 
 	int m_previous;
 };
@@ -179,16 +179,16 @@ std::string RepDataPath(uint64_t* outStamp = nullptr)
 	if (outStamp != nullptr)
 		*outStamp = 0;
 
-	const ReplayArchive::Account* const own = ReplayArchive::Get(ReplayArchive::OwnIndex());
+	const ReplayArchive::Account* const signedIn = ReplayArchive::Get(ReplayArchive::SignedInIndex());
 
-	if (own == nullptr)
+	if (signedIn == nullptr)
 		return std::string();
 
 	if (outStamp != nullptr)
 	{
 		WIN32_FILE_ATTRIBUTE_DATA attributes = {};
 
-		if (GetFileAttributesExA(own->path.c_str(), GetFileExInfoStandard, &attributes))
+		if (GetFileAttributesExA(signedIn->path.c_str(), GetFileExInfoStandard, &attributes))
 		{
 			*outStamp =
 				(static_cast<uint64_t>(attributes.ftLastWriteTime.dwHighDateTime) << 32) |
@@ -196,7 +196,7 @@ std::string RepDataPath(uint64_t* outStamp = nullptr)
 		}
 	}
 
-	return own->path;
+	return signedIn->path;
 }
 
 struct DiskLoad
@@ -319,7 +319,7 @@ bool ReadSlotAt(int slot, size_t offset, void* out, size_t bytes)
 
 	const size_t at = static_cast<size_t>(slot) * ReplayFiles::kRecordSize + offset;
 
-	if (!OnOwn())
+	if (!OnSignedIn())
 	{
 		const uint8_t* const image = ReplayArchive::Image(Browsing());
 
@@ -583,7 +583,7 @@ void RefreshStats()
 
 bool ReplayFiles::IsAvailable()
 {
-	if (!OnOwn())
+	if (!OnSignedIn())
 		return ReplayArchive::Image(Browsing()) != nullptr;
 
 	return MemoryImage() != nullptr || LoadDisk();
@@ -591,7 +591,7 @@ bool ReplayFiles::IsAvailable()
 
 bool ReplayFiles::IsLive()
 {
-	return OnOwn() && MemoryImage() != nullptr;
+	return OnSignedIn() && MemoryImage() != nullptr;
 }
 
 int ReplayFiles::AccountCount()
@@ -604,9 +604,9 @@ int ReplayFiles::SelectedAccount()
 	return Browsing();
 }
 
-bool ReplayFiles::IsOwnAccount()
+bool ReplayFiles::IsSignedInAccount()
 {
-	return OnOwn();
+	return OnSignedIn();
 }
 
 std::string ReplayFiles::AccountLabel(int index)
@@ -617,7 +617,7 @@ std::string ReplayFiles::AccountLabel(int index)
 		return std::string();
 
 	char text[96] = {};
-	sprintf_s(text, "%s%s, %d replays", account->id.c_str(), account->own ? " (this account)" : "",
+	sprintf_s(text, "%s%s, %d replays", account->id.c_str(), account->signedIn ? " (this account)" : "",
 		ReplayArchive::Used(index));
 
 	return text;
@@ -903,7 +903,7 @@ int ReplayFiles::ExportAll(std::string& outError)
 
 int ReplayFiles::FindFreeSlot()
 {
-	const HoldOwn own;
+	const HoldSignedIn held;
 
 	int oldest = -1;
 	uint64_t oldestKey = ~0ull;
@@ -1006,7 +1006,7 @@ bool ReplayFiles::Import(const std::string& path, std::string& outError)
 {
 	outError.clear();
 
-	const HoldOwn own;
+	const HoldSignedIn held;
 
 	if (!IsAvailable())
 	{
@@ -1192,7 +1192,7 @@ bool ReplayFiles::RequestPlayback(const std::string& path, std::string& outError
 		g_queuedWait = kQueueFrames;
 		g_queuedSettle = 0;
 
-		_snprintf_s(g_status, _TRUNCATE, "loading %s for this replay, it starts on its own", name);
+		_snprintf_s(g_status, _TRUNCATE, "loading %s for this replay, it starts by itself", name);
 		LOG("replay files: %s", g_status);
 		return true;
 	}
@@ -1496,7 +1496,7 @@ void ReplayFiles::Update()
 	if (NetLink::InSession())
 		return;
 
-	const HoldOwn own;
+	const HoldSignedIn held;
 
 	if (!SourceIsCurrent())
 		return;

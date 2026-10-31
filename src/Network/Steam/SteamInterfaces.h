@@ -10,7 +10,7 @@ namespace SteamInterfaces
 	bool Initialize();
 	bool IsReady();
 
-	uint64_t GetOwnSteamId();
+	uint64_t GetLocalSteamId();
 
 	bool SetLobbyMemberData(uint64_t lobby, const char* key, const char* value);
 

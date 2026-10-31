@@ -1,9 +1,11 @@
 #include "Overlay/Panels/ModsPanel.h"
 
 #include "Core/ShellOpen.h"
+#include "Game/Audio/BgmOverride.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Files/ModPacks.h"
 #include "Game/Stages/StageImport.h"
+#include "Game/Stages/StageLibrary.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Overlay/Panels/RestartPrompt.h"
@@ -21,13 +23,19 @@ constexpr float kListHeight = 300.0f;
 constexpr float kSwitchColumn = 40.0f;
 constexpr float kFilesColumn = 70.0f;
 constexpr float kOrderColumn = 100.0f;
+constexpr size_t kStageListBytes = 256;
 constexpr const char* kZipFilter = "A mod (*.zip)\0*.zip\0All files\0*.*\0";
 
-const ImVec4 kOwnText(0.45f, 0.90f, 0.50f, 1.0f);
+const ImVec4 kUserText(0.45f, 0.90f, 0.50f, 1.0f);
 
 void Open(const std::string& folder)
 {
 	ShellOpen::Open(folder);
+}
+
+bool IsNewStage(int number)
+{
+	return number <= StageLibrary::kSlotLast && !StageLibrary::IsGameStage(number);
 }
 
 }
@@ -106,7 +114,7 @@ void ModsPanel::DrawList()
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
 
-	DrawOwnRow();
+	DrawUserRow();
 
 	for (int i = 0; i < ModPacks::Count(); ++i)
 		DrawRow(i);
@@ -124,7 +132,7 @@ void ModsPanel::DrawList()
 	ModFiles::Rescan();
 }
 
-void ModsPanel::DrawOwnRow()
+void ModsPanel::DrawUserRow()
 {
 	ImGui::TableNextRow();
 
@@ -132,7 +140,7 @@ void ModsPanel::DrawOwnRow()
 	ImGui::TextDisabled("--");
 
 	ImGui::TableNextColumn();
-	ImGui::TextColored(kOwnText, "Your files");
+	ImGui::TextColored(kUserText, "Your files");
 
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("%s", ModFiles::Root());
@@ -141,7 +149,7 @@ void ModsPanel::DrawOwnRow()
 	UiText::Muted("always on, always first");
 
 	ImGui::TableNextColumn();
-	ImGui::Text("%d", ModFiles::OwnCount());
+	ImGui::Text("%d", ModFiles::UserFileCount());
 
 	ImGui::TableNextColumn();
 
@@ -191,43 +199,8 @@ void ModsPanel::DrawRow(int index)
 			pack->beaten, pack->beatenBy.c_str());
 	}
 
-	if (pack->stage > 0)
-	{
-		const int owner = ModPacks::StageOwner(pack->stage, index);
-		const ModPacks::Pack* const other = owner < 0 ? nullptr : ModPacks::At(owner);
-
-		if (other != nullptr)
-		{
-			UiText::Warn("Stage %d is also used by %s. Installing either one moves it to a free "
-				"number.", pack->stage, other->name.c_str());
-		}
-		else
-		{
-			UiText::Muted("Includes stage %d.", pack->stage);
-		}
-
-		ImGui::BeginDisabled(StageImport::IsBusy());
-
-		if (ImGui::SmallButton("Install as a stage"))
-		{
-			char folder[MAX_PATH] = {};
-			sprintf_s(folder, "%s\\bg\\bg%03d", pack->path.c_str(), pack->stage);
-
-			const bool started = StageImport::InstallFolder(folder, pack->name.c_str());
-
-			sprintf_s(m_status, "%s", started
-				? "installing. Restart the game when it finishes."
-				: StageImport::StatusText());
-		}
-
-		ImGui::EndDisabled();
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("A stage must be installed, not just dropped in, and the game reads "
-				"its stage list only at startup. This copies it to the next free stage number.");
-		}
-	}
+	DrawStages(index, *pack);
+	DrawMusic(*pack);
 
 	ImGui::TableNextColumn();
 	ImGui::Text("%d", pack->files);
@@ -253,6 +226,89 @@ void ModsPanel::DrawRow(int index)
 
 	ImGui::EndDisabled();
 	ImGui::PopID();
+}
+
+void ModsPanel::DrawStages(int index, const ModPacks::Pack& pack)
+{
+	char ready[kStageListBytes] = {};
+	size_t used = 0;
+
+	for (const PackStages::Folder& folder : pack.stages)
+	{
+		if (!folder.ready || !IsNewStage(folder.number) || used >= sizeof(ready))
+			continue;
+
+		const int written = snprintf(ready + used, sizeof(ready) - used, used == 0 ? "%d" : ", %d", folder.number);
+		used += written > 0 ? static_cast<size_t>(written) : sizeof(ready);
+	}
+
+	if (used != 0)
+		UiText::Muted("Stages %s join the stage list when the game starts.", ready);
+
+	for (const PackStages::Folder& folder : pack.stages)
+	{
+		if (!IsNewStage(folder.number))
+			continue;
+
+		ImGui::PushID(folder.number);
+
+		if (folder.ready)
+			DrawStageClash(index, folder.number);
+		else
+			DrawStageInstall(pack, folder.number);
+
+		ImGui::PopID();
+	}
+}
+
+void ModsPanel::DrawStageClash(int index, int number)
+{
+	const int owner = ModPacks::StageOwner(number, index);
+	const ModPacks::Pack* const other = owner < 0 ? nullptr : ModPacks::At(owner);
+
+	if (other == nullptr)
+		return;
+
+	UiText::Warn("Stage %d is also in %s. The mod higher in the list is used.", number, other->name.c_str());
+}
+
+void ModsPanel::DrawStageInstall(const ModPacks::Pack& pack, int number)
+{
+	UiText::Muted("bg%03d is not ready to play yet.", number);
+	ImGui::SameLine();
+	ImGui::BeginDisabled(StageImport::IsBusy());
+
+	if (ImGui::SmallButton("Install as a stage"))
+	{
+		const std::string folder = pack.path + "\\bg\\" + PackStages::FolderName(number);
+		const bool started = StageImport::InstallFolder(folder.c_str(), pack.name.c_str());
+
+		sprintf_s(m_status, "%s", started
+			? "installing. Restart the game when it finishes."
+			: StageImport::StatusText());
+	}
+
+	ImGui::EndDisabled();
+
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		ImGui::SetTooltip("Builds the stage from its model and adds it to your stages.");
+}
+
+void ModsPanel::DrawMusic(const ModPacks::Pack& pack)
+{
+	BgmOverride::PackMusic music = {};
+
+	if (!BgmOverride::Report(pack.path, music))
+		return;
+
+	if (music.tracks > 0)
+		UiText::Muted("%d music track(s) join the game's music list.", music.tracks);
+
+	if (music.moved > 0)
+		UiText::Muted("%d of them use another slot, because a mod higher in the list uses theirs.", music.moved);
+
+	if (music.dropped > 0)
+		UiText::Warn("%d music track(s) are left out: every music slot is in use.", music.dropped);
 }
 
 void ModsPanel::DrawFooter()
@@ -283,7 +339,7 @@ void ModsPanel::DrawHelp()
 	ImGui::Spacing();
 	ImGui::SeparatorText("Turning a mod off");
 
-	ImGui::TextWrapped("The game uses its own file again the next time it loads it, on the next "
+	ImGui::TextWrapped("The game uses its original file again the next time it loads it, on the next "
 		"match or screen. Nothing is copied over the game and the d archive is never touched, so "
 		"removing every mod leaves your install exactly as Steam put it.");
 
@@ -304,10 +360,20 @@ void ModsPanel::DrawHelp()
 	ImGui::Spacing();
 	ImGui::SeparatorText("Stages are different");
 
-	ImGui::TextWrapped("A stage must be added to the game's stage list, and that list is only read "
-		"when the game starts. So a mod with a stage gets an Install as a stage button instead of "
-		"using the switch. Installing picks the next free stage number, so two mods that use the "
-		"same number both end up playable.");
+	ImGui::TextWrapped("The game reads its stage list only when it starts, so a stage from a mod "
+		"appears after a restart. Every bg\\bgNNN folder with a bg.fbx.bin is added, with the values "
+		"from its stage.txt. If two mods use the same number, the higher one is used.");
+
+	ImGui::Spacing();
+	ImGui::TextWrapped("A folder with only a model to convert gets an Install as a stage button "
+		"instead.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Music");
+
+	ImGui::TextWrapped("Every mod's Bgm\\bgm.txt is added to the game's music list, with yours, after "
+		"a restart. If two mods use the same slot, the higher one keeps it and the other track moves "
+		"to a free slot, so both can be played. The mod's grpdat\\CSel\\bgmselect.txt follows the move.");
 
 	ImGui::Spacing();
 	ImGui::SeparatorText("Making a mod");
@@ -320,7 +386,14 @@ void ModsPanel::DrawHelp()
 		"Note = His UNI[st] voice, all 96 lines.");
 
 	ImGui::Spacing();
-	ImGui::TextWrapped("To share a mod, send the folder. Your switches and order stay in your own "
+	ImGui::TextWrapped("A stage can have a section, named after its folder, to set its name "
+		"and its picture in your mod's stage select sheet:");
+
+	ImGui::Spacing();
+	ImGui::TextUnformatted("[bg068]\nName = Garden at Night\nCard = 30");
+
+	ImGui::Spacing();
+	ImGui::TextWrapped("To share a mod, send the folder. Your switches and order stay in your "
 		"ini.");
 
 	ImGui::Spacing();

@@ -14,7 +14,7 @@ bool MainTabs::Visible(Tab tab, const Shown& shown)
 		return shown.netplay || shown.patches || shown.replays;
 
 	case Tab_Mod:
-		return shown.modPacks || shown.gameDebug;
+		return shown.modPacks;
 
 	default:
 		return true;

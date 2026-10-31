@@ -630,7 +630,7 @@ bool StageThumb::RetireLeftoverSheet()
 		return false;
 
 	LOG("StageThumb: removed the copy of the game's picker sheet older versions kept in Mods, so a "
-		"pack's or the player's own stage_thumb01.dds is the one the game reads");
+		"pack's or the player's stage_thumb01.dds is the one the game reads");
 	return true;
 }
 
@@ -644,17 +644,17 @@ bool StageThumb::PickerSheet(std::vector<uint8_t>& out)
 		return true;
 	}
 
-	LOG("StageThumb: the picker sheet is the game's own");
+	LOG("StageThumb: the picker sheet is the game's original");
 	return DataArchive::Read(kOurFolder, kPickerSheet, out) && !out.empty();
 }
 
 int StageThumb::FirstFreeCell()
 {
 	static const int first = [] {
-		const int highest = BgListOverride::HighestOwnCard();
+		const int highest = BgListOverride::HighestGameCard();
 		const int open = highest < kFirstCell ? kFallbackFreeCell : highest + 1;
 
-		LOG("StageThumb: the game's own stages use picker cards up to %d, ports take %d to %d", highest,
+		LOG("StageThumb: the game's stages use picker cards up to %d, ports take %d to %d", highest,
 			open, kLastCell);
 
 		return open > kLastCell ? kLastCell : open;
@@ -699,7 +699,7 @@ bool StageThumb::TakeFolder(const std::string& folder, int id)
 	if (!Paint(card, 0, 0, card.width, card.height, id, true))
 		return false;
 
-	LOG("StageThumb: stage %d takes the Thumbnail in its own folder", id);
+	LOG("StageThumb: stage %d takes the Thumbnail in its folder", id);
 	return true;
 }
 

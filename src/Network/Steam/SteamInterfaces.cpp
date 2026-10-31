@@ -138,7 +138,7 @@ bool SteamInterfaces::IsReady()
 	return g_ready;
 }
 
-uint64_t SteamInterfaces::GetOwnSteamId()
+uint64_t SteamInterfaces::GetLocalSteamId()
 {
 	if (!g_ready && !Initialize())
 		return 0;

@@ -4,6 +4,9 @@
 
 namespace StageSettings
 {
+	constexpr const char* kBaseFolder = "base";
+	constexpr const char* kBaseFolderSlash = "base\\";
+
 	std::string PathOf(int number);
 	std::string NoteOf(int number);
 

@@ -174,7 +174,7 @@ HRESULT STDMETHODCALLTYPE HookedReset(IDirect3DDevice9* device, D3DPRESENT_PARAM
 
 	if (FAILED(result) && tunable && memcmp(&asked, presentParameters, sizeof(asked)) != 0)
 	{
-		LOG("Reset refused the tuned parameters (0x%08lx), retrying with the game's own",
+		LOG("Reset refused the tuned parameters (0x%08lx), retrying with the game's originals",
 			static_cast<unsigned long>(result));
 
 		*presentParameters = asked;

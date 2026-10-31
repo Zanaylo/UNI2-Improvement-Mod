@@ -54,7 +54,7 @@ DWORD g_barrierSeenAt = 0;
 bool g_sessionSeen = false;
 bool g_endpointAdded = false;
 bool g_setupFinished = false;
-int g_ownRemoteSide = 0;
+int g_savedRemoteSide = 0;
 RoomWatchWire::Accepted g_accepted = {};
 WatchOffers g_offers;
 char g_status[192] = "not watching";
@@ -110,13 +110,13 @@ bool IsCandidate(uint64_t id)
 
 std::vector<uint64_t> RoomMembersWithMod()
 {
-	const uint64_t own = SteamInterfaces::GetOwnSteamId();
+	const uint64_t self = SteamInterfaces::GetLocalSteamId();
 	std::vector<uint64_t> found;
 	ModPresence::Member member = {};
 
 	for (int i = 0; ModPresence::MemberAt(i, member); ++i)
 	{
-		if (member.hasMod && member.id != 0 && member.id != own)
+		if (member.hasMod && member.id != 0 && member.id != self)
 			found.push_back(member.id);
 	}
 
@@ -155,7 +155,7 @@ void LogBlock(const char* whose, const int32_t* values)
 
 bool TakeHostSides(const RoomWatchWire::Accepted& accepted)
 {
-	g_ownRemoteSide = ReadGameInt(GameOffsets::kMatchRemoteSide);
+	g_savedRemoteSide = ReadGameInt(GameOffsets::kMatchRemoteSide);
 
 	return TryWriteMemory(reinterpret_cast<void*>(RvaToAddress(GameOffsets::kMatchRecords)), accepted.records,
 		sizeof(accepted.records)) &&
@@ -169,9 +169,9 @@ bool ReturnToSpectatorSides()
 	const int local = GameOffsets::kMatchSpectatorSide;
 
 	return WriteGameInt(GameOffsets::kMatchLocalSide, local) &&
-		WriteGameInt(GameOffsets::kMatchRemoteSide, g_ownRemoteSide) &&
+		WriteGameInt(GameOffsets::kMatchRemoteSide, g_savedRemoteSide) &&
 		WriteGameInt(GameOffsets::kMatchSideFlag, SpectatorSides::IsNotFirstSide(local) ? 1 : 0) &&
-		WriteGameInt(GameOffsets::kMatchViewSide, SpectatorSides::ViewSide(settingsWin, local, g_ownRemoteSide));
+		WriteGameInt(GameOffsets::kMatchViewSide, SpectatorSides::ViewSide(settingsWin, local, g_savedRemoteSide));
 }
 
 bool ApplyHostBlock(const RoomWatchWire::Accepted& accepted)
@@ -252,7 +252,7 @@ void Enter(const RoomWatchWire::Accepted& accepted)
 
 	if (!TakeHostSides(accepted) || !JoinAsRoomSpectator() || !LeaveRoomScreenForBattle())
 	{
-		Stop("the game refused the room's own spectator steps");
+		Stop("the game refused the room's spectator steps");
 		return;
 	}
 

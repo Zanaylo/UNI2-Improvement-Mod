@@ -16,7 +16,7 @@ namespace {
 constexpr int kSlotNameLimit = 31;
 
 const char* const kReadme =
-	"Your own music\r\n"
+	"Your music\r\n"
 	"==============\r\n"
 	"\r\n"
 	"Drop MP3, OGG Vorbis or WAV files in here and the mod loads them when the game starts. No\r\n"
@@ -40,11 +40,11 @@ const char* const kReadme =
 	"\r\n"
 	"The game's slot table has a 31 character name field. A longer name, a name already taken, or a\r\n"
 	"name with characters that field cannot hold no longer costs you the track: the mod gives it a\r\n"
-	"short name of its own and keeps the title you gave the file. Music -> Add music lists every\r\n"
+	"unique short name and keeps the title you gave the file. Music -> Add music lists every\r\n"
 	"file it found, what it did with it, and why anything was skipped.\r\n"
 	"\r\n"
 	"Once they are here they behave like any other track: playable from Browse, usable in a rule,\r\n"
-	"pickable into a soundpack of your own, and they travel with Export soundpacks.\r\n";
+	"pickable into a soundpack you make, and they travel with Export soundpacks.\r\n";
 
 std::vector<UserMusic::Entry> g_entries;
 std::mutex g_lock;

@@ -16,7 +16,7 @@ namespace LobbyPalettes
 		uint8_t effects[LobbyPaletteCodec::kRgbaBytes];
 	};
 
-	void SetOwn(const char* text, const char* effects);
+	void SetLocal(const char* text, const char* effects);
 	void Tick(const NetLink::Snapshot& snapshot);
 
 	unsigned Revision();

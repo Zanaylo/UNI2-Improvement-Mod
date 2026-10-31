@@ -18,8 +18,8 @@ constexpr uint64_t kTestMember = 1;
 
 SRWLOCK g_lock = SRWLOCK_INIT;
 
-char g_own[LobbyPaletteCodec::kTextBytes] = "";
-char g_ownEffects[LobbyPaletteCodec::kEffectTextBytes] = "";
+char g_local[LobbyPaletteCodec::kTextBytes] = "";
+char g_localEffects[LobbyPaletteCodec::kEffectTextBytes] = "";
 LobbyPalettes::Member g_members[LobbyPalettes::kMaxMembers] = {};
 int g_count = 0;
 unsigned g_revision = 0;
@@ -30,7 +30,7 @@ LobbyPalettes::Member g_scan[LobbyPalettes::kMaxMembers] = {};
 char g_published[LobbyPaletteCodec::kTextBytes] = "";
 char g_publishedEffects[LobbyPaletteCodec::kEffectTextBytes] = "";
 bool g_isPublished = false;
-bool g_ownReadable = false;
+bool g_localReadable = false;
 DWORD g_lastAttempt = 0;
 DWORD g_lastScan = 0;
 uint64_t g_lobby = 0;
@@ -47,22 +47,22 @@ void Forget(uint64_t lobby)
 	g_isPublished = false;
 	g_published[0] = '\0';
 	g_publishedEffects[0] = '\0';
-	g_ownReadable = false;
+	g_localReadable = false;
 	g_lastAttempt = 0;
 	g_lastScan = 0;
 }
 
 void Publish(uint64_t lobby, DWORD now)
 {
-	char own[LobbyPaletteCodec::kTextBytes] = {};
+	char entry[LobbyPaletteCodec::kTextBytes] = {};
 	char effects[LobbyPaletteCodec::kEffectTextBytes] = {};
 
 	AcquireSRWLockShared(&g_lock);
-	strncpy_s(own, g_own, _TRUNCATE);
-	strncpy_s(effects, g_ownEffects, _TRUNCATE);
+	strncpy_s(entry, g_local, _TRUNCATE);
+	strncpy_s(effects, g_localEffects, _TRUNCATE);
 	ReleaseSRWLockShared(&g_lock);
 
-	if (g_isPublished && strcmp(own, g_published) == 0 && strcmp(effects, g_publishedEffects) == 0)
+	if (g_isPublished && strcmp(entry, g_published) == 0 && strcmp(effects, g_publishedEffects) == 0)
 		return;
 
 	if (g_lastAttempt != 0 && now - g_lastAttempt < kRetryMs)
@@ -70,30 +70,30 @@ void Publish(uint64_t lobby, DWORD now)
 
 	g_lastAttempt = now;
 
-	if (!SteamInterfaces::SetLobbyMemberData(lobby, kPaletteKey, own) ||
+	if (!SteamInterfaces::SetLobbyMemberData(lobby, kPaletteKey, entry) ||
 		!SteamInterfaces::SetLobbyMemberData(lobby, kEffectKey, effects))
 	{
 		return;
 	}
 
 	g_isPublished = true;
-	strncpy_s(g_published, own, _TRUNCATE);
+	strncpy_s(g_published, entry, _TRUNCATE);
 	strncpy_s(g_publishedEffects, effects, _TRUNCATE);
 	NetLog::Write("lobby palettes: published %u characters and %u of effects in lobby %llu",
-		static_cast<unsigned>(strlen(own)), static_cast<unsigned>(strlen(effects)),
+		static_cast<unsigned>(strlen(entry)), static_cast<unsigned>(strlen(effects)),
 		static_cast<unsigned long long>(lobby));
 }
 
-void CheckOwn(uint64_t lobby)
+void CheckLocal(uint64_t lobby)
 {
 	LobbyPaletteCodec::Entry entry = {};
 	const bool readable = LobbyPaletteCodec::Decode(SteamInterfaces::GetLobbyMemberData(lobby, g_self, kPaletteKey), entry);
 
-	if (readable == g_ownReadable)
+	if (readable == g_localReadable)
 		return;
 
-	g_ownReadable = readable;
-	NetLog::Write("lobby palettes: our own entry reads back %s", readable ? "whole" : "empty");
+	g_localReadable = readable;
+	NetLog::Write("lobby palettes: our entry reads back %s", readable ? "whole" : "empty");
 }
 
 int ScanMembers(uint64_t lobby)
@@ -131,9 +131,9 @@ void Scan(uint64_t lobby, DWORD now)
 	g_lastScan = now;
 
 	if (g_self == 0)
-		g_self = SteamInterfaces::GetOwnSteamId();
+		g_self = SteamInterfaces::GetLocalSteamId();
 
-	CheckOwn(lobby);
+	CheckLocal(lobby);
 
 	const int found = ScanMembers(lobby);
 
@@ -155,11 +155,11 @@ void Scan(uint64_t lobby, DWORD now)
 
 }
 
-void LobbyPalettes::SetOwn(const char* text, const char* effects)
+void LobbyPalettes::SetLocal(const char* text, const char* effects)
 {
 	AcquireSRWLockExclusive(&g_lock);
-	strncpy_s(g_own, text != nullptr ? text : "", _TRUNCATE);
-	strncpy_s(g_ownEffects, effects != nullptr ? effects : "", _TRUNCATE);
+	strncpy_s(g_local, text != nullptr ? text : "", _TRUNCATE);
+	strncpy_s(g_localEffects, effects != nullptr ? effects : "", _TRUNCATE);
 	ReleaseSRWLockExclusive(&g_lock);
 }
 

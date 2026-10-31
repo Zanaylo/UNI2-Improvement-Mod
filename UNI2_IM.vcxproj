@@ -210,6 +210,7 @@
     <ClCompile Include="src\Game\Audio\OggWriter.cpp" />
     <ClCompile Include="src\Game\Audio\MusicRefresh.cpp" />
     <ClCompile Include="src\Core\HexText.cpp" />
+    <ClCompile Include="src\Core\LegacyFolder.cpp" />
     <ClCompile Include="src\Core\FileIndex.cpp" />
     <ClCompile Include="src\Game\Battle\BalanceRules.cpp" />
     <ClCompile Include="src\Game\Battle\MatchBlock.cpp" />
@@ -237,6 +238,10 @@
     <ClCompile Include="src\Game\Audio\SoundpackBuilder.cpp" />
     <ClCompile Include="src\Game\Audio\BgmLibrary.cpp" />
     <ClCompile Include="src\Game\Audio\BgmPicker.cpp" />
+    <ClCompile Include="src\Game\Audio\BgmLayers.cpp" />
+    <ClCompile Include="src\Game\Audio\BgmCeiling.cpp" />
+    <ClCompile Include="src\Game\Audio\BgmTableSites.cpp" />
+    <ClCompile Include="src\Game\Audio\BgmOverride.cpp" />
     <ClCompile Include="src\Game\Audio\BgmSelectFile.cpp" />
     <ClCompile Include="src\Game\Files\ModFiles.cpp" />
     <ClCompile Include="src\Game\Files\ModFileFilter.cpp" />
@@ -247,6 +252,7 @@
     <ClCompile Include="src\Game\Stages\BgListOverride.cpp" />
     <ClCompile Include="src\Game\Stages\PickerOrder.cpp" />
     <ClCompile Include="src\Game\Stages\BgTable.cpp" />
+    <ClCompile Include="src\Game\Stages\PackStages.cpp" />
     <ClCompile Include="src\Game\Stages\SquirrelText.cpp" />
     <ClCompile Include="src\Game\Stages\BgObjectFix.cpp" />
     <ClCompile Include="src\Game\Stages\ObjectList.cpp" />
@@ -435,12 +441,7 @@
     <ClCompile Include="src\Hooks\HookManager.cpp" />
     <ClCompile Include="src\Hooks\HookStub.cpp" />
     <ClCompile Include="src\Hooks\CompareTrampoline.cpp" />
-    <ClCompile Include="src\Core\Harness\GameDebugCommands.cpp" />
-    <ClCompile Include="src\Overlay\Windows\GameDebugWindow.cpp" />
     <ClCompile Include="src\Network\OnlineContext.cpp" />
-    <ClCompile Include="src\Game\Debug\GameDebug.cpp" />
-    <ClCompile Include="src\Game\Debug\ScriptDefines.cpp" />
-    <ClCompile Include="src\Game\Debug\ScriptConsole.cpp" />
     <ClCompile Include="src\Game\Audio\SoundVolumeBackground.cpp" />
     <ClCompile Include="src\Game\Audio\VolumeQueue.cpp" />
     <ClCompile Include="src\Core\StallSampler.cpp" />
@@ -846,6 +847,7 @@
     <ClInclude Include="src\Game\Audio\OggWriter.h" />
     <ClInclude Include="src\Game\Audio\MusicRefresh.h" />
     <ClInclude Include="src\Core\HexText.h" />
+    <ClInclude Include="src\Core\LegacyFolder.h" />
     <ClInclude Include="src\Core\FileIndex.h" />
     <ClInclude Include="src\Game\Battle\BalanceRules.h" />
     <ClInclude Include="src\Game\Battle\MatchBlock.h" />
@@ -874,6 +876,10 @@
     <ClInclude Include="src\Game\Audio\SoundpackBuilder.h" />
     <ClInclude Include="src\Game\Audio\BgmLibrary.h" />
     <ClInclude Include="src\Game\Audio\BgmPicker.h" />
+    <ClInclude Include="src\Game\Audio\BgmLayers.h" />
+    <ClInclude Include="src\Game\Audio\BgmCeiling.h" />
+    <ClInclude Include="src\Game\Audio\BgmTableSites.h" />
+    <ClInclude Include="src\Game\Audio\BgmOverride.h" />
     <ClInclude Include="src\Game\Audio\BgmSelectFile.h" />
     <ClInclude Include="src\Game\Files\ModFiles.h" />
     <ClInclude Include="src\Game\Files\ModFileFilter.h" />
@@ -881,6 +887,7 @@
     <ClInclude Include="src\Game\Stages\BgListOverride.h" />
     <ClInclude Include="src\Game\Stages\PickerOrder.h" />
     <ClInclude Include="src\Game\Stages\BgTable.h" />
+    <ClInclude Include="src\Game\Stages\PackStages.h" />
     <ClInclude Include="src\Game\Stages\SquirrelText.h" />
     <ClInclude Include="src\Game\Stages\BgObjectFix.h" />
     <ClInclude Include="src\Game\Stages\ObjectList.h" />
@@ -1042,12 +1049,7 @@
     <ClInclude Include="src\Hooks\HookManager.h" />
     <ClInclude Include="src\Hooks\HookStub.h" />
     <ClInclude Include="src\Hooks\CompareTrampoline.h" />
-    <ClInclude Include="src\Core\Harness\GameDebugCommands.h" />
-    <ClInclude Include="src\Overlay\Windows\GameDebugWindow.h" />
     <ClInclude Include="src\Network\OnlineContext.h" />
-    <ClInclude Include="src\Game\Debug\GameDebug.h" />
-    <ClInclude Include="src\Game\Debug\ScriptDefines.h" />
-    <ClInclude Include="src\Game\Debug\ScriptConsole.h" />
     <ClInclude Include="src\Game\Audio\SoundVolumeBackground.h" />
     <ClInclude Include="src\Game\Audio\VolumeQueue.h" />
     <ClInclude Include="src\Core\StallSampler.h" />
@@ -1331,7 +1333,7 @@
     <ClInclude Include="src\Game\Audio\OstUniScenes.inc" />
     <ClInclude Include="src\Game\Audio\OstUniTracks.inc" />
     <ClInclude Include="src\Game\Files\ModPacks.h" />
-    <ClInclude Include="src\Game\Stages\OwnStageNames.inc" />
+    <ClInclude Include="src\Game\Stages\BaseStageNames.inc" />
     <ClInclude Include="src\Game\Stages\StageMbtlIndex.inc" />
     <ClInclude Include="src\Game\Stages\StageNames.inc" />
     <ClInclude Include="src\Hooks\GameHook.h" />

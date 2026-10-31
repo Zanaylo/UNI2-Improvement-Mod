@@ -62,7 +62,7 @@ void StageReplacements::Load()
 
 	for (int number = kFirstNumber; number <= StageLibrary::kDebugStage; ++number)
 	{
-		if (!StageLibrary::GameOwns(number))
+		if (!StageLibrary::IsGameStage(number))
 			continue;
 
 		Replacement replacement = {};

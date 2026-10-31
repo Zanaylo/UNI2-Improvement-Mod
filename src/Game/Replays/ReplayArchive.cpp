@@ -85,8 +85,8 @@ void Sort()
 	std::stable_sort(g_accounts.begin(), g_accounts.end(),
 		[](const Held& left, const Held& right)
 		{
-			if (left.account.own != right.account.own)
-				return left.account.own;
+			if (left.account.signedIn != right.account.signedIn)
+				return left.account.signedIn;
 
 			return left.account.stamp > right.account.stamp;
 		});
@@ -133,7 +133,7 @@ void ReplayArchive::Load()
 		held.account.stamp =
 			(static_cast<uint64_t>(attributes.ftLastWriteTime.dwHighDateTime) << 32) |
 			attributes.ftLastWriteTime.dwLowDateTime;
-		held.account.own = !cloud.empty() && held.account.id == cloud;
+		held.account.signedIn = !cloud.empty() && held.account.id == cloud;
 		held.used = -1;
 
 		g_accounts.push_back(std::move(held));
@@ -145,12 +145,12 @@ void ReplayArchive::Load()
 	if (cloud.empty() && !g_accounts.empty())
 	{
 		Sort();
-		g_accounts.front().account.own = true;
+		g_accounts.front().account.signedIn = true;
 	}
 
 	Sort();
 
-	LOG("replay archive: %d save folder(s), own account is %s",
+	LOG("replay archive: %d save folder(s), signed-in account is %s",
 		static_cast<int>(g_accounts.size()),
 		g_accounts.empty() ? "none" : g_accounts.front().account.id.c_str());
 }
@@ -169,11 +169,11 @@ const ReplayArchive::Account* ReplayArchive::Get(int index)
 	return &g_accounts[index].account;
 }
 
-int ReplayArchive::OwnIndex()
+int ReplayArchive::SignedInIndex()
 {
 	for (int i = 0; i < Count(); ++i)
 	{
-		if (g_accounts[i].account.own)
+		if (g_accounts[i].account.signedIn)
 			return i;
 	}
 

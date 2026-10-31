@@ -8,7 +8,7 @@ const PortraitTweaks::Tweak kTweaks[] = {
 #include "Game/Customize/PortraitTweaks.inc"
 };
 
-const PortraitTweaks::Tweak* OwnTweak(const PortraitCatalog::Art& art, PortraitFrames::Frame frame)
+const PortraitTweaks::Tweak* ArtTweak(const PortraitCatalog::Art& art, PortraitFrames::Frame frame)
 {
 	for (const PortraitTweaks::Tweak& tweak : kTweaks)
 	{
@@ -34,7 +34,7 @@ const PortraitTweaks::Tweak* FighterTweak(int chara, PortraitFrames::Frame frame
 
 const PortraitTweaks::Tweak* PortraitTweaks::Find(const PortraitCatalog::Art& art, PortraitFrames::Frame frame)
 {
-	const Tweak* const own = OwnTweak(art, frame);
+	const Tweak* const artTweak = ArtTweak(art, frame);
 
-	return own != nullptr ? own : FighterTweak(art.chara, frame);
+	return artTweak != nullptr ? artTweak : FighterTweak(art.chara, frame);
 }

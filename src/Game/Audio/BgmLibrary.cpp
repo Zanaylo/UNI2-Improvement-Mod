@@ -200,13 +200,13 @@ void CollectTags()
 
 int PickWindow()
 {
-	for (int id = BgmTable::kSlotCount - 1; id >= 100; --id)
+	for (int id = BgmTable::SlotCount() - 1; id >= 100; --id)
 	{
 		if (!BgmTable::IsPresent(id))
 			return id;
 	}
 
-	return BgmTable::kSlotCount - 1;
+	return BgmTable::SlotCount() - 1;
 }
 
 }
@@ -246,7 +246,7 @@ void BgmLibrary::Load()
 
 	CollectTags();
 
-	sprintf_s(g_status, "%d track(s) from %d pack(s), %d of your own",
+	sprintf_s(g_status, "%d track(s) from %d pack(s), %d of yours",
 		static_cast<int>(g_tracks.size()), packs, mine);
 	LOG("BgmLibrary: %s", g_status);
 }
@@ -319,7 +319,7 @@ bool BgmLibrary::IsPlayable(int id)
 	if (IsLibraryId(id))
 		return true;
 
-	return id >= 0 && id < BgmTable::kSlotCount && BgmTable::IsPresent(id);
+	return id >= 0 && id < BgmTable::SlotCount() && BgmTable::IsPresent(id);
 }
 
 bool BgmLibrary::Loops(int id)

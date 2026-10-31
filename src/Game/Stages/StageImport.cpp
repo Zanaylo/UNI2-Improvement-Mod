@@ -1,9 +1,11 @@
 ﻿#include "Game/Stages/StageImport.h"
 
+#include "Core/Config/Features.h"
 #include "Core/Formats/TextEncoding.h"
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Stages/BgCeiling.h"
 #include "Game/Stages/BgGrade.h"
 #include "Game/Stages/BgListOverride.h"
 #include "Game/Stages/BgMipmaps.h"
@@ -11,7 +13,9 @@
 #include "Game/Files/FbGameFolder.h"
 #include "Game/Stages/FbxExLocal.h"
 #include "Game/Files/ModFiles.h"
+#include "Game/Files/ModPacks.h"
 #include "Game/Stages/BgObjectFix.h"
+#include "Game/Stages/PackStages.h"
 #include "Game/Files/DataArchive.h"
 #include "Game/Stages/Bbtag/BbtagScript.h"
 #include "Game/Stages/StageArchive.h"
@@ -435,10 +439,10 @@ std::string Sharpened(const std::string& block)
 void Carry(int id, const char* key, std::string value, std::string& out)
 {
 	if (Capped(key, value))
-		LOG("StageImport: stage %d asked for a bigger %s than the game's own stages use", id, key);
+		LOG("StageImport: stage %d asked for a bigger %s than the game's stages use", id, key);
 
 	if (Floored(key, value))
-		LOG("StageImport: stage %d asked for a smaller %s than the game's own stages use", id,
+		LOG("StageImport: stage %d asked for a smaller %s than the game's stages use", id,
 			key);
 
 	out += std::string("\t\t") + key + " = " + value + ",\r\n";
@@ -709,7 +713,7 @@ void LiftImages(const std::string& target, const std::string& donor)
 			continue;
 
 		if (WriteWhole(path, wanted))
-			LOG("StageImport: %s comes from the game's own %s", image.name,
+			LOG("StageImport: %s comes from the game's %s", image.name,
 				donor.empty() ? kImageFolder : donor.c_str());
 	}
 }
@@ -914,14 +918,22 @@ bool FetchFolder(Job& job)
 	return true;
 }
 
-void NameFromNote(Job& job)
+std::string NoteName(const std::string& note)
 {
 	std::string name;
 
-	if (job.name != job.stage || !StageArchive::Field(job.list, "Name", name))
+	if (!StageArchive::Field(note, "Name", name))
+		return std::string();
+
+	return StageArchive::Unquoted(name);
+}
+
+void NameFromNote(Job& job)
+{
+	if (job.name != job.stage)
 		return;
 
-	const std::string unquoted = StageArchive::Unquoted(name);
+	const std::string unquoted = NoteName(job.list);
 
 	if (!unquoted.empty())
 		job.name = unquoted;
@@ -1077,7 +1089,7 @@ void Unreplace(const Job& job)
 	DeleteTree(StageLibrary::FolderOf(job.id));
 
 	StageReplacements::Forget(job.id);
-	sprintf_s(g_status, "stage %d is the game's own again", job.id);
+	sprintf_s(g_status, "stage %d is the game's original again", job.id);
 
 	LOG("StageImport: %s", g_status);
 }
@@ -1329,7 +1341,7 @@ void RestoreStale()
 	{
 		StageReplacements::Forget(number);
 
-		LOG("StageImport: stage %d lost its stage.txt, so it is the game's own again", number);
+		LOG("StageImport: stage %d lost its stage.txt, so it is the game's original again", number);
 	}
 }
 
@@ -1355,12 +1367,12 @@ std::vector<BgListOverride::Reworked> Reworks()
 	std::vector<StageReplacements::Replacement> replaced;
 	StageReplacements::Snapshot(replaced);
 
-	std::vector<int> own;
-	BgListOverride::OwnNumbers(own);
+	std::vector<int> gameNumbers;
+	BgListOverride::GameNumbers(gameNumbers);
 
 	std::vector<BgListOverride::Reworked> reworked;
 
-	for (int number : own)
+	for (int number : gameNumbers)
 		reworked.push_back(Reworking(number, replaced));
 
 	return reworked;
@@ -1370,17 +1382,17 @@ void Retune(int id, const std::vector<std::string>& keys)
 {
 	std::string block;
 
-	if (!StageLibrary::GameOwns(id) || !BgListOverride::Body(id, block))
+	if (!StageLibrary::IsGameStage(id) || !BgListOverride::Body(id, block))
 		return;
 
 	BgRecord::Retune(id, block, keys);
 }
 
-bool OwnField(int id, const char* key, std::string& out)
+bool GameStageField(int id, const char* key, std::string& out)
 {
 	std::string block;
 
-	return StageLibrary::GameOwns(id) && BgListOverride::Body(id, block)
+	return StageLibrary::IsGameStage(id) && BgListOverride::Body(id, block)
 		&& StageArchive::Field(block, key, out);
 }
 
@@ -1409,6 +1421,111 @@ std::vector<std::string> LibraryFiles(const std::vector<StageLibrary::Entry>& en
 	return files;
 }
 
+struct PackStage
+{
+	int number;
+	std::string folder;
+	std::string pack;
+	std::string name;
+	int card;
+};
+
+bool OpenForPack(int number, const std::vector<int>& taken, const std::vector<std::string>& ourFiles)
+{
+	if (StageLibrary::IsGameStage(number) || std::find(taken.begin(), taken.end(), number) != taken.end())
+		return false;
+
+	if (number > StageLibrary::kSlotLast || number >= BgCeiling::Numbers())
+	{
+		LOG("StageImport: a mod has stage folder %s, past the highest stage number the game takes now (%d)",
+			PackStages::FolderName(number).c_str(), BgCeiling::Numbers() - 1);
+		return false;
+	}
+
+	if (std::find(ourFiles.begin(), ourFiles.end(), PackStages::FolderName(number)) != ourFiles.end())
+	{
+		LOG("StageImport: a mod has stage folder %s, and a stage you installed uses that folder, so yours is kept",
+			PackStages::FolderName(number).c_str());
+		return false;
+	}
+
+	return true;
+}
+
+std::vector<PackStage> PackStagesToSeat(const std::vector<int>& taken, const std::vector<std::string>& ourFiles)
+{
+	if (!Features::IsLoaded(FeatureCatalog::Id_ModPacks))
+		return std::vector<PackStage>();
+
+	const std::vector<ModPacks::Pack> packs = ModPacks::EnabledTopDown();
+	std::vector<std::vector<PackStages::Folder>> folders;
+
+	for (const ModPacks::Pack& pack : packs)
+		folders.push_back(pack.stages);
+
+	const std::vector<PackStages::Claimed> claimed = PackStages::Claim(folders,
+		[&taken, &ourFiles](int number) { return OpenForPack(number, taken, ourFiles); });
+
+	std::vector<PackStage> stages;
+
+	for (const PackStages::Claimed& claim : claimed)
+	{
+		const ModPacks::Pack& pack = packs[claim.pack];
+
+		PackStage stage = { claim.number, pack.path + "\\bg\\" + PackStages::FolderName(claim.number), pack.name,
+			std::string(), kNoThumbnail };
+		ModPacks::StageDeclared(pack, claim.number, stage.name, stage.card);
+
+		stages.push_back(stage);
+	}
+
+	return stages;
+}
+
+void WarnForeignObjects(const PackStage& stage)
+{
+	std::vector<uint8_t> objects;
+
+	if (!ReadWhole(stage.folder + "\\" + kObjectList, objects))
+		return;
+
+	const std::string text(objects.begin(), objects.end());
+
+	for (const std::string& folder : PackStages::ForeignFolders(text, stage.number))
+	{
+		LOG("StageImport: %s\\%s loads files from bg\\%s, not from its folder %s", stage.pack.c_str(),
+			kObjectList, folder.c_str(), PackStages::FolderName(stage.number).c_str());
+	}
+}
+
+BgListOverride::Slotted PackSlotted(const PackStage& stage)
+{
+	std::vector<uint8_t> blob;
+	ReadWhole(stage.folder + "\\" + kStageNote, blob);
+
+	const std::string note(blob.begin(), blob.end());
+	std::string name = stage.name.empty() ? NoteName(note) : stage.name;
+
+	if (name.empty())
+		name = PackStages::FolderName(stage.number);
+
+	StageLibrary::Entry placed = {};
+	placed.id = stage.number;
+	placed.slot = stage.number;
+
+	BgListOverride::Slotted one;
+	one.number = stage.number;
+	one.shiftJisName = ShiftJis(name);
+	one.entry = EntryText(note, placed, one.shiftJisName, stage.card, FbGameFolder::Game_None);
+
+	WarnForeignObjects(stage);
+
+	LOG("StageImport: stage %d '%s' comes from the mod %s%s", stage.number, name.c_str(), stage.pack.c_str(),
+		note.empty() ? ", which has no stage.txt for it, so it uses default values" : "");
+
+	return one;
+}
+
 void SyncList(Compositions& made)
 {
 	RestoreStale();
@@ -1420,7 +1537,14 @@ void SyncList(Compositions& made)
 	const std::vector<BgListOverride::Reworked> reworked = Reworks();
 
 	BgListOverride::Settle(OwnedSlots(), ourFiles, reworked);
-	StageLibrary::Reserve(BgListOverride::Taken(ourFiles));
+
+	std::vector<int> taken = BgListOverride::Taken(ourFiles);
+	const std::vector<PackStage> packStages = PackStagesToSeat(taken, ourFiles);
+
+	for (const PackStage& stage : packStages)
+		taken.push_back(stage.number);
+
+	StageLibrary::Reserve(taken);
 	StageLibrary::Snapshot(entries);
 
 	const int budget = StageLibrary::SlotBudget();
@@ -1443,6 +1567,9 @@ void SyncList(Compositions& made)
 
 		ours.push_back(one);
 	}
+
+	for (const PackStage& stage : packStages)
+		ours.push_back(PackSlotted(stage));
 
 	BgListOverride::Sync(ours, owned, ourFiles, reworked);
 
@@ -1471,7 +1598,7 @@ void Rehome()
 
 	for (const StageLibrary::Entry& entry : entries)
 	{
-		if (!StageLibrary::GameOwns(entry.id))
+		if (!StageLibrary::IsGameStage(entry.id))
 			continue;
 
 		const int id = StageLibrary::FreeId(std::vector<int>());
@@ -1498,7 +1625,7 @@ void Rehome()
 		StageLibrary::Erase(entry.id);
 		StageLibrary::Put(moved);
 
-		LOG("StageImport: '%s' sat on bg%03d, which is the game's own, and is bg%03d now",
+		LOG("StageImport: '%s' sat on bg%03d, which belongs to the game, and is bg%03d now",
 			moved.name.c_str(), entry.id, id);
 	}
 }
@@ -1837,7 +1964,7 @@ bool StageImport::Remove(int id)
 
 bool StageImport::ReplaceFolder(const char* folder, int number)
 {
-	if (folder == nullptr || folder[0] == 0 || number <= 0 || !StageLibrary::GameOwns(number))
+	if (folder == nullptr || folder[0] == 0 || number <= 0 || !StageLibrary::IsGameStage(number))
 		return false;
 
 	if (_stricmp(folder, StageLibrary::FolderOf(number).c_str()) == 0)
@@ -1857,7 +1984,7 @@ bool StageImport::ReplaceFolder(const char* folder, int number)
 
 bool StageImport::Restore(int number)
 {
-	if (number <= 0 || !StageLibrary::GameOwns(number))
+	if (number <= 0 || !StageLibrary::IsGameStage(number))
 		return false;
 
 	Job job = RemovalJob(number);
@@ -1953,7 +2080,7 @@ std::string StageImport::FieldOf(int id, const char* key)
 {
 	std::string value;
 
-	if (StageFields::Read(id, key, value) || OwnField(id, key, value))
+	if (StageFields::Read(id, key, value) || GameStageField(id, key, value))
 		return value;
 
 	for (const Defaulted& fallback : kDefaults)

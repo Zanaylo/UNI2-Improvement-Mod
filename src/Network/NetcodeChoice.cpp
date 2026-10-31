@@ -2,14 +2,14 @@
 
 #include "Network/TimeSyncTuning.h"
 
-NetcodeChoice::Values NetcodeChoice::GameOwn()
+NetcodeChoice::Values NetcodeChoice::GameDefaults()
 {
 	return { TimeSyncTuning::kGameInterval, true, false, false };
 }
 
-bool NetcodeChoice::IsGameOwn(const Values& values)
+bool NetcodeChoice::IsGameDefault(const Values& values)
 {
-	return Same(values, GameOwn());
+	return Same(values, GameDefaults());
 }
 
 bool NetcodeChoice::Same(const Values& a, const Values& b)

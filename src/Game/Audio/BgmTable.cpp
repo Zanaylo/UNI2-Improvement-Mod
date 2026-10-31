@@ -2,6 +2,7 @@
 
 #include "Game/Engine/GameOffsets.h"
 #include "Core/utils.h"
+#include "Game/Audio/BgmLibrary.h"
 
 #include <cstring>
 
@@ -9,10 +10,10 @@ namespace {
 
 uintptr_t RecordAddress(int id)
 {
-	if (id < 0 || id >= BgmTable::kSlotCount)
+	if (id < 0 || id >= BgmTable::SlotCount())
 		return 0;
 
-	return RvaToAddress(GameOffsets::kBgmTableBase) + id * GameOffsets::kBgmTableStride;
+	return BgmCeiling::Table() + id * GameOffsets::kBgmTableStride;
 }
 
 struct SlotName
@@ -35,9 +36,24 @@ constexpr SlotName kSlotNames[] = {
 	{ 98, 98, "Win demo" },
 	{ 99, 99, "Character select" },
 	{ 100, 139, "Story talk (reserved)" },
-	{ 140, 199, "Free slot" },
 };
 
+constexpr int kFirstFreeSlot = 140;
+constexpr const char* kFreeSlot = "Free slot";
+constexpr int kWindowSlots = 1;
+
+static_assert(BgmCeiling::kWideSlots <= BgmLibrary::kFirstId, "music slots and library ids share one id space");
+
+}
+
+int BgmTable::SlotCount()
+{
+	return BgmCeiling::Slots();
+}
+
+int BgmTable::LastPackSlot()
+{
+	return SlotCount() - 1 - kWindowSlots;
 }
 
 bool BgmTable::Read(int id, Entry& out)
@@ -172,7 +188,7 @@ int BgmTable::CollectPresent(int* outIds, int maxIds)
 
 	int count = 0;
 
-	for (int id = 0; id < kSlotCount && count < maxIds; ++id)
+	for (int id = 0; id < SlotCount() && count < maxIds; ++id)
 	{
 		if (!IsPresent(id))
 			continue;
@@ -191,6 +207,9 @@ const char* BgmTable::DescribeSlot(int id)
 		if (id >= name.first && id <= name.last)
 			return name.text;
 	}
+
+	if (id >= kFirstFreeSlot && id < SlotCount())
+		return kFreeSlot;
 
 	return "";
 }

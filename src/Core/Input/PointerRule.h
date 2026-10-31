@@ -12,11 +12,11 @@ namespace PointerRule
 	enum class OverlayPointer
 	{
 		Automatic,
-		Own,
+		Mod,
 		Windows,
 	};
 
 	int Answer(BOOL show, ShowCursor_t original);
-	bool DrawsOwnPointer(OverlayPointer mode, bool exclusive, bool wrapper, bool windowsPointerKept);
+	bool DrawsModPointer(OverlayPointer mode, bool exclusive, bool wrapper, bool windowsPointerKept);
 	bool Restore(ShowCursor_t original);
 }

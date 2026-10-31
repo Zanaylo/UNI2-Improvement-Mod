@@ -1608,11 +1608,11 @@ void PaletteWindow::DrawSummon(int player)
 {
 	if (!m_hasCompanion[player])
 	{
-		ImGui::TextDisabled("this character has no doppel of its own.");
+		ImGui::TextDisabled("this character has no separate doppel.");
 		return;
 	}
 
-	ImGui::TextWrapped("The doppel reads its own colours. Changing one here leaves the character "
+	ImGui::TextWrapped("The doppel reads separate colours. Changing one here leaves the character "
 		"alone.");
 
 	unsigned char entries[LivePalette::kColours] = {};
@@ -1660,9 +1660,9 @@ void PaletteWindow::FollowPartTints(int player)
 			continue;
 
 		const uint8_t* const wanted = m_composed[player] + entry * 4;
-		const uint8_t* const own = m_colours[player].baseline + entry * 4;
+		const uint8_t* const baseline = m_colours[player].baseline + entry * 4;
 
-		if (wanted[0] == own[0] && wanted[1] == own[1] && wanted[2] == own[2])
+		if (wanted[0] == baseline[0] && wanted[1] == baseline[1] && wanted[2] == baseline[2])
 		{
 			if (!m_tinted[player][entry])
 				continue;

@@ -128,10 +128,10 @@ void Settle(Choice& choice, int extended)
 
 int RememberedExtended(int side, int chara)
 {
-	const int own = ColourSlots::ExtendedOf(chara, ColourSlotMemory::Recall(side, chara));
+	const int remembered = ColourSlots::ExtendedOf(chara, ColourSlotMemory::Recall(side, chara));
 
-	if (own != ColourSlotStep::kNoExtended || !GameState::IsNetworkSelection())
-		return own;
+	if (remembered != ColourSlotStep::kNoExtended || !GameState::IsNetworkSelection())
+		return remembered;
 
 	NetworkPick::Pick pick = {};
 
@@ -334,9 +334,9 @@ int ColourPicker::ExtendedFor(int side, int chara)
 	if (!g_modVals.paletteExtendedSlots || !IsSide(side) || !IsCharacter(chara))
 		return ColourSlotStep::kNoExtended;
 
-	const Choice& own = g_choices[side];
+	const Choice& choice = g_choices[side];
 
-	return own.chara == chara ? own.extended : ColourSlotStep::kNoExtended;
+	return choice.chara == chara ? choice.extended : ColourSlotStep::kNoExtended;
 }
 
 void ColourPicker::Choose(int side, int chara, int extended)

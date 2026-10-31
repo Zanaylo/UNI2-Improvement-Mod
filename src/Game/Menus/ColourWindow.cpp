@@ -163,7 +163,7 @@ bool ColourWindow::Install()
 	}
 
 	strncpy_s(g_status, "on", _TRUNCATE);
-	LOG("colour window: hooked, extended slots are drawn in the game's own window");
+	LOG("colour window: hooked, extended slots are drawn in the game's window");
 	return true;
 }
 

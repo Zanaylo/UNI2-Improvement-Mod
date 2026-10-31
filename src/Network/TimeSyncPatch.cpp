@@ -80,7 +80,7 @@ bool TimeSyncPatch::Install()
 
 	if (count == 0)
 	{
-		LOG("TimeSync: the game's own pacing, a check every %d frames with its tail %s, correcting %s",
+		LOG("TimeSync: the game's pacing, a check every %d frames with its tail %s, correcting %s",
 			g_modVals.timeSyncInterval, g_modVals.timeSyncTail ? "on" : "off", GapText());
 		return false;
 	}

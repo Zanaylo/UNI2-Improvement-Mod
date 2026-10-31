@@ -15,8 +15,8 @@ namespace NameCensor
 	const char* Mask();
 	void SetMask(const char* text);
 
-	bool CoversOwnName();
-	void SetCoversOwnName(bool covers);
+	bool CoversMyName();
+	void SetCoversMyName(bool covers);
 
 	bool Applies(uint64_t steamId);
 	void Apply(uint64_t steamId, char* text);

@@ -72,7 +72,7 @@ namespace GameOffsets
 
 	constexpr uint32_t kActionKindTechAction = 0x10;
 
-	constexpr uint32_t kActionKindOwnMove = 0x1;
+	constexpr uint32_t kActionKindCharaMove = 0x1;
 
 	constexpr uint32_t kActionKindAnyMove = 0x1 | 0x2 | 0x20 | 0x40 | 0x80 | 0x200;
 
@@ -444,7 +444,7 @@ namespace GameOffsets
 	constexpr uintptr_t kInputDisplayVisibleP1 = 0x10;
 	constexpr uintptr_t kInputDisplayVisibleP2 = 0xf0;
 
-	constexpr uint32_t kInputDisplayOwnSide = 2;
+	constexpr uint32_t kInputDisplayLocalSide = 2;
 	constexpr uint32_t kInputDisplayOtherSide = 1;
 
 	constexpr uintptr_t kInputDisplayOption = 0x87aa1c;
@@ -743,10 +743,6 @@ namespace GameOffsets
 	constexpr uintptr_t kFrameWaitSkipOnce = 0x6550cc;
 	constexpr uintptr_t kSiteFrameWaitSkipOnceRead = 0xdc1e7;
 	constexpr uintptr_t kSiteFrameWaitSkipOnceClear = 0xdc37a;
-	constexpr uintptr_t kScriptConsoleEnabled = 0x4439828;
-	constexpr uintptr_t kScriptConsoleHandle = 0x4439830;
-	constexpr uintptr_t kSiteScriptConsoleEnabledRead = 0x48082c;
-	constexpr uintptr_t kSiteScriptConsoleHandleRead = 0x48084a;
 	constexpr uintptr_t kFrameWaitPassCallback = 0x6550d8;
 	constexpr uintptr_t kFramePeriodSeconds = 0x569f58;
 	constexpr uintptr_t kSiteFrameWaitHasQpcRead = 0xdc0ca;
@@ -1014,12 +1010,12 @@ namespace GameOffsets
 	constexpr uintptr_t kFnSessionTeardown = 0x1c0550;
 	constexpr uintptr_t kOnlineMatchFlag = 0x1d595ed;
 	constexpr uintptr_t kStageSyncOption = 0x5a8572;
-	constexpr uint8_t kStageSyncOwn = 1;
+	constexpr uint8_t kStageSyncSeparate = 1;
 	constexpr uintptr_t kNetworkStagePick = 0xc7e694;
 	constexpr uintptr_t kNetworkProfile = 0xc7e670;
 	constexpr uintptr_t kNetworkProfileChara = 0x4;
 	constexpr uintptr_t kNetworkProfileColour = 0x8;
-	constexpr uintptr_t kStageOwnPick = 0x4448868;
+	constexpr uintptr_t kStageLocalPick = 0x4448868;
 	constexpr uintptr_t kAfterMatchState = 0x84380c;
 	constexpr int kAfterMatchAwaitRematch = 0x401;
 	constexpr int kBattleStartVsScreen = 2;

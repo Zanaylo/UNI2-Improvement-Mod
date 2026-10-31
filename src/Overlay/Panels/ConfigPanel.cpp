@@ -326,7 +326,7 @@ void DrawConfigGeneralTab()
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Shows Light and Size on the stage list, and the placement sliders under "
-			"it. Light only affects glowing (additive) parts, which UNI2's own stages do not have. "
+			"it. Light only affects glowing (additive) parts, which UNI2's stages do not have. "
 			"The right Size is different on every stage.");
 	}
 

@@ -16,7 +16,10 @@
 #include "Hooks/HookManager.h"
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Engine/MemoryScanner.h"
+#include "Palette/EffectPaint.h"
+#include "Palette/PaletteOwnerProbe.h"
 #include "Training/Dummy/DummyRecorder.h"
+#include "Training/Meter/StateRecorder.h"
 
 DebugWindow::DebugWindow(const std::string& title, bool closable, ImGuiWindowFlags windowFlags)
 	: IWindow(title, closable, windowFlags)
@@ -99,17 +102,15 @@ int DebugWindow::CountCandidates() const
 
 void DebugWindow::RefreshEntities()
 {
-
-	m_entityCount = MemoryMap::EnumerateCharaSlots(m_entities, kMaxEntities, false);
-
-	if (m_selectedEntity >= m_entityCount)
-		m_selectedEntity = 0;
-
 	const DWORD now = GetTickCount();
 	if (m_lastRefreshTick != 0 && now - m_lastRefreshTick < kRefreshIntervalMs)
 		return;
 
 	m_lastRefreshTick = now;
+	m_entityCount = MemoryMap::EnumerateCharaSlots(m_entities, kMaxEntities, false);
+
+	if (m_selectedEntity >= m_entityCount)
+		m_selectedEntity = 0;
 
 	for (int i = 0; i < m_entityCount; ++i)
 	{
@@ -151,6 +152,9 @@ void* DebugWindow::GetSelectedEntity() const
 }
 
 namespace {
+
+const ImVec4 kProblemColour(1.0f, 0.45f, 0.35f, 1.0f);
+const ImVec4 kRecordingColour(1.0f, 0.85f, 0.2f, 1.0f);
 
 void DrawHookCalls()
 {
@@ -213,124 +217,146 @@ void DrawCodeSignatures()
 
 void DebugWindow::Draw()
 {
-	char version[32] = {};
-	const bool hasVersion = MemoryMap::GetGameVersion(version, sizeof(version));
-
-	ImGui::Text("Module base: 0x%p   version: %s   build %08x", (void*)GetGameBaseAddress(),
-		hasVersion ? version : "<unreadable>", GetGameBuildStamp());
-	ImGui::Text("MemoryMap: %s", MemoryMap::GetStatusText());
-	ImGui::Text("Running on: %s%s", Compat::Describe(),
-		Compat::SafeMode() ? "   [compatibility safe mode]" : "");
-
-	if (HookManager::AnyHookBroken())
-	{
-		ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.35f, 1.0f), "Hooks: %s",
-			HookManager::IntegrityStatus());
-		ImGui::TextWrapped("Another overlay has taken a hooked function back. With RTSS, turn on "
-			"\"Use Microsoft Detours API hooking\" in Settings / General / Injection properties, "
-			"or set this game's RTSS profile Application detection level to None.");
-	}
-	else
-	{
-		ImGui::Text("Hooks: %s", HookManager::IntegrityStatus());
-	}
-
-	DrawHookCalls();
-	DrawCodeSignatures();
-
-	MemoryMap::CharaStackView stackView = {};
-	MemoryMap::ReadCharaStack(stackView);
-
-	ImGui::Text("battleMode %d   subMode %d   training %d   singleMode %d   ticking %d",
-		GameState::GetBattleMode(), GameState::GetTrainingFlag(),
-		GameState::IsTrainingBattle() ? 1 : 0, GameState::IsSingleMode() ? 1 : 0,
-		GameState::IsBattleTicking() ? 1 : 0);
-
-	ImGui::Text("dummy state %u / %u / %u   action %u   promote calls %llu (%llu deferred)",
-		DummyRecorder::GetState(), DummyRecorder::GetFieldB(), DummyRecorder::GetFieldC(),
-		DummyRecorder::GetActionSetting(),
-		(unsigned long long)DummyRecorder::GetCallCount(),
-		(unsigned long long)DummyRecorder::GetDeferredCount());
-
-	ImGui::Text("action mode %u   reversal hold %d   restarts seen %llu",
-		DummyRecorder::GetActionMode(), DummyRecorder::GetReversalHoldRemaining(),
-		(unsigned long long)DummyRecorder::GetRestartCount());
-
-	ImGui::Text("inMatch %d   charaStack base 0x%08x top 0x%08x depth %d   seeds %d",
-		GameState::IsInMatch() ? 1 : 0, (unsigned)stackView.basePointer,
-		(unsigned)stackView.topPointer, stackView.depth, CharaTracker::GetEntryCount());
+	DrawSummary();
 
 	if (!MemoryMap::IsValid())
 	{
-		ImGui::TextWrapped("Memory access is disabled. Offsets target uni2.exe Ver.0.10.0.");
+		ImGui::TextDisabled("Memory reads are off for this game version.");
 		return;
 	}
 
 	RefreshEntities();
 	UpdateComparison();
+	AdvanceCapture();
 
-	if (m_captureRemaining > 0)
+	DrawTools();
+	DrawStatusSection();
+	DrawEntitySection();
+	DrawHitboxSection();
+	DrawPlayerStateSection();
+	DrawMeterComparisonSection();
+	DrawStopTimeSection();
+	DrawTransformSection();
+	DrawDiffSearchSection();
+	DrawPointerSection();
+	DrawScannerSection();
+	DrawSaveSection();
+	DrawPaletteOwnerSection();
+	DrawStructSection();
+}
+
+void DebugWindow::OnClosed()
+{
+	m_captureRemaining = 0;
+
+	if (StateRecorder::IsRecording())
+		StateRecorder::Stop();
+
+	if (m_forceEffectTint)
 	{
-		CaptureFrame();
-		if (--m_captureRemaining == 0)
-			CaptureSummary();
+		m_forceEffectTint = false;
+		SetForcedEffectTint();
 	}
 
-	if (ImGui::Button("Dump snapshot to log"))
+	if (m_probeTurnedOn)
+	{
+		PaletteOwnerProbe::SetEnabled(false);
+		m_probeTurnedOn = false;
+	}
+
+	m_saveFiles.clear();
+	m_saveFiles.shrink_to_fit();
+	m_saveListed = false;
+	m_saveListedAt = 0;
+}
+
+void DebugWindow::AdvanceCapture()
+{
+	if (m_captureRemaining <= 0)
+		return;
+
+	CaptureFrame();
+
+	if (--m_captureRemaining == 0)
+		CaptureSummary();
+}
+
+void DebugWindow::DrawSummary()
+{
+	char version[32] = {};
+	const bool hasVersion = MemoryMap::GetGameVersion(version, sizeof(version));
+	const bool broken = HookManager::AnyHookBroken();
+	const ImVec4 colour = broken ? kProblemColour : ImGui::GetStyleColorVec4(ImGuiCol_Text);
+
+	ImGui::TextColored(colour, "%s   hooks: %s   functions: %s", hasVersion ? version : "?",
+		HookManager::IntegrityStatus(), CodeSignatures::StatusText());
+
+	if (broken && ImGui::IsItemHovered())
+		ImGui::SetTooltip("Another overlay took a hook back. In RTSS, turn on Microsoft Detours hooking.");
+}
+
+void DebugWindow::DrawTools()
+{
+	if (ImGui::Button("Dump to log"))
 		DumpToLog();
 
 	ImGui::SameLine();
+
 	if (ImGui::Button("Clear tracker"))
 	{
 		CharaTracker::Clear();
 		m_selectedEntity = 0;
 	}
 
+	ImGui::SameLine();
+
 	if (m_captureRemaining > 0)
 	{
-		ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f),
-			"RECORDING. Do the move now. %d frame(s) left, %d slot(s) seen active.",
-			m_captureRemaining, m_capturePeakActive);
+		ImGui::TextColored(kRecordingColour, "Recording: %d frames left", m_captureRemaining);
+		return;
 	}
-	else if (ImGui::Button("Record 5s of hitbox data to log (press, then do the move)"))
-	{
+
+	if (ImGui::Button("Record hitboxes (5 s)"))
 		BeginCapture();
-	}
 
-	ImGui::TextDisabled("Writes every slot, every frame, to UNI2_IM.log.");
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Press, then do the move. Every slot, every frame, goes to the log.");
+}
 
-	ImGui::Separator();
-	DrawEntitySection();
-	ImGui::Separator();
-	DrawHitboxSection();
-	ImGui::Separator();
-	DrawPlayerStateSection();
-	ImGui::Separator();
-	DrawMeterComparisonSection();
-	ImGui::Separator();
-	DrawStopTimeSection();
-	ImGui::Separator();
-	DrawTransformSection();
-	ImGui::Separator();
-	DrawDiffSearchSection();
-	ImGui::Separator();
-	DrawPointerSection();
-	ImGui::Separator();
-	DrawScannerSection();
-	ImGui::Separator();
-	DrawSaveSection();
-	ImGui::Separator();
-	DrawPaletteOwnerSection();
-	ImGui::Separator();
-	DrawStructSection();
+void DebugWindow::DrawStatusSection()
+{
+	if (!ImGui::CollapsingHeader("Status"))
+		return;
+
+	ImGui::Text("base 0x%p   build %08x   %s%s", (void*)GetGameBaseAddress(), GetGameBuildStamp(),
+		Compat::Describe(), Compat::SafeMode() ? " (safe mode)" : "");
+	ImGui::Text("memory map: %s", MemoryMap::GetStatusText());
+
+	MemoryMap::CharaStackView stackView = {};
+	MemoryMap::ReadCharaStack(stackView);
+
+	ImGui::Text("battle mode %d   sub %d   training %d   single %d   ticking %d   in match %d",
+		GameState::GetBattleMode(), GameState::GetTrainingFlag(), GameState::IsTrainingBattle() ? 1 : 0,
+		GameState::IsSingleMode() ? 1 : 0, GameState::IsBattleTicking() ? 1 : 0,
+		GameState::IsInMatch() ? 1 : 0);
+	ImGui::Text("chara stack 0x%08x..0x%08x   depth %d   seeds %d", (unsigned)stackView.basePointer,
+		(unsigned)stackView.topPointer, stackView.depth, CharaTracker::GetEntryCount());
+	ImGui::Text("dummy %u/%u/%u   action %u (mode %u, hold %d)   calls %llu (%llu deferred)   restarts %llu",
+		DummyRecorder::GetState(), DummyRecorder::GetFieldB(), DummyRecorder::GetFieldC(),
+		DummyRecorder::GetActionSetting(), DummyRecorder::GetActionMode(),
+		DummyRecorder::GetReversalHoldRemaining(),
+		(unsigned long long)DummyRecorder::GetCallCount(),
+		(unsigned long long)DummyRecorder::GetDeferredCount(),
+		(unsigned long long)DummyRecorder::GetRestartCount());
+
+	DrawHookCalls();
+	DrawCodeSignatures();
 }
 
 void DebugWindow::DrawScannerSection()
 {
 	if (!ImGui::CollapsingHeader("Global scanner"))
 		return;
-
-	ImGui::TextWrapped("Type the number, Find, change it in game, Find again. Repeat until few remain.");
 
 	Ui::SetItemWidth(140.0f);
 	ImGui::InputInt("Exact value", &m_scanValue);
@@ -344,7 +370,7 @@ void DebugWindow::DrawScannerSection()
 
 	if (!MemoryScanner::IsReady())
 	{
-		ImGui::TextDisabled("no search yet. The first pass takes a moment; the game will hitch.");
+		ImGui::TextDisabled("No search yet. The first one hitches the game.");
 		return;
 	}
 
@@ -472,8 +498,6 @@ void DebugWindow::DrawDiffSearchSection()
 	if (!ImGui::CollapsingHeader("Diff search"))
 		return;
 
-	ImGui::TextWrapped("Snapshot, change something in game, then filter. Repeat until few candidates remain.");
-
 	if (ImGui::Button("Snapshot / reset"))
 		TakeSnapshot(true);
 
@@ -550,10 +574,6 @@ void DebugWindow::DrawPointerSection()
 	if (ImGui::InputInt("struct offset", &offset, 4, 64))
 		m_followOffset = (uintptr_t)(offset < 0 ? 0 : offset) & ~3u;
 
-	ImGui::SameLine();
-	ImGui::TextDisabled("(+0x%x is passed to the collision routine)",
-			static_cast<unsigned>(GameOffsets::kCharaFrameObject));
-
 	ImGui::SliderInt("rows", &m_followRows, 8, 128);
 
 	uint32_t pointer = 0;
@@ -568,7 +588,7 @@ void DebugWindow::DrawPointerSection()
 	uint32_t probe = 0;
 	if (!TryReadDword((const void*)(uintptr_t)pointer, probe))
 	{
-		ImGui::TextDisabled("target not readable (not a pointer, or freed)");
+		ImGui::TextDisabled("not a readable pointer");
 		return;
 	}
 
@@ -622,7 +642,7 @@ void DebugWindow::DrawEntitySection()
 
 	if (m_entityCount == 0)
 	{
-		ImGui::TextDisabled("The chara array did not validate. Enter a match.");
+		ImGui::TextDisabled("Enter a match.");
 		return;
 	}
 
@@ -631,8 +651,6 @@ void DebugWindow::DrawEntitySection()
 		if (ImGui::RadioButton(m_entityRows[i].label, m_selectedEntity == i))
 			m_selectedEntity = i;
 	}
-
-	ImGui::TextDisabled("On-screen but 'failed' or 'boxes 0' is the case to report.");
 
 	DrawCharaSlotsSection();
 

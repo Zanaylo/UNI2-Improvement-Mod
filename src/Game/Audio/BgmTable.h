@@ -1,8 +1,13 @@
 #pragma once
 
+#include "Game/Audio/BgmCeiling.h"
+
 namespace BgmTable
 {
-	constexpr int kSlotCount = 200;
+	constexpr int kMaxSlotCount = BgmCeiling::kWideSlots;
+
+	int SlotCount();
+	int LastPackSlot();
 
 	struct Entry
 	{

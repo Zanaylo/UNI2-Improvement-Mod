@@ -145,7 +145,7 @@ bool SpectatorStore::SetActive(bool active)
 		g_syncInputHook.SetEnabled(false);
 	}
 
-	NetLog::Write("spectator store %s", g_active ? "active, the spectator can fall behind past the game's own input buffer" :
+	NetLog::Write("spectator store %s", g_active ? "active, the spectator can fall behind past the game's input buffer" :
 		"could not hook the spectator session");
 	return g_active;
 }

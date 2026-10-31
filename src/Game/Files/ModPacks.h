@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Game/Stages/PackStages.h"
+
 #include <string>
 #include <vector>
 
@@ -16,9 +18,9 @@ namespace ModPacks
 		std::string note;
 		std::string path;
 		std::string beatenBy;
+		std::vector<PackStages::Folder> stages;
 		int files;
 		int beaten;
-		int stage;
 		bool described;
 		bool enabled;
 	};
@@ -36,9 +38,11 @@ namespace ModPacks
 
 	void Layer(FileIndex& into);
 	std::vector<std::string> EnabledFolders();
+	std::vector<Pack> EnabledTopDown();
 
 	bool Install(const std::string& zip, char* status, int statusSize);
 	int StageOwner(int number, int except);
+	void StageDeclared(const Pack& pack, int number, std::string& name, int& card);
 
 	std::string Root();
 	const char* StatusText();

@@ -9,6 +9,7 @@ namespace MainTabs
 		Tab_Audio,
 		Tab_Online,
 		Tab_Mod,
+		Tab_Debug,
 		Tab_Config,
 		Tab_COUNT
 	};
@@ -23,7 +24,6 @@ namespace MainTabs
 		bool patches;
 		bool replays;
 		bool modPacks;
-		bool gameDebug;
 	};
 
 	bool Visible(Tab tab, const Shown& shown);

@@ -81,14 +81,14 @@ struct Legend
 			{ Band(State::Backdash), FrameMeter::GetStateName(State::Backdash), "Ground or air backdash",
 				"A backdash, on the ground or in the air." },
 			{ Band(State::Jump), FrameMeter::GetStateName(State::Jump), "Off the ground",
-				"Off the ground under their own power." },
+				"Jumped off the ground, not launched." },
 			{ Band(State::AirMovement), FrameMeter::GetStateName(State::AirMovement),
 				"Assault or air dash", "An assault, an air dash or an air backdash." },
 			{ Band(State::Idle), FrameMeter::GetStateName(State::Idle), "Free to act",
 				"Free to act: nothing is running and every cancel is open." },
 			{ Mark(FrameMeter::Marker_Projectile), FrameMeter::GetMarkerName(FrameMeter::Marker_Projectile),
 				"A projectile of theirs is out",
-				"A projectile this character owns has an attack box out. The owner's own band shows as "
+				"A projectile this character owns has an attack box out. The owner's band shows as "
 				"a strip on top of the cell." },
 			{ Mark(FrameMeter::Marker_Tech), FrameMeter::GetMarkerName(FrameMeter::Marker_Tech),
 				"Recovering", "Air, ground or emergency recovery. Fills the whole cell." } },
@@ -156,7 +156,7 @@ struct Legend
 			{ kGuideNoSwatch, "Chip", "Damage from blocked hits",
 				"Damage from blocked hits. Starts over when either side gets hit." },
 			{ kGuideNoSwatch, "Self", "HP Carmine spent",
-				"HP Carmine spent on his own moves. Starts over after 3 seconds without a change." },
+				"HP Carmine spent on his moves. Starts over after 3 seconds without a change." },
 			{ kGuideNoSwatch, "Heal", "HP Carmine got back",
 				"HP Carmine got back. Training mode's refill is not counted. Starts over after 3 seconds "
 				"without a change." } },

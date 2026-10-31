@@ -401,7 +401,7 @@ void ScreenTheme::Clear()
 	g_settings.screenTheme.clear();
 	Settings::SaveString("Theme", "Screens", "");
 
-	LOG("ScreenTheme: back to the game's own screens");
+	LOG("ScreenTheme: back to the game's screens");
 }
 
 const ScreenTheme::Screen* ScreenTheme::ScreenForScene(uint32_t scene)

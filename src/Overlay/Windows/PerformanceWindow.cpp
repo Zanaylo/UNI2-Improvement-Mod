@@ -69,7 +69,7 @@ void DrawSceneLooks()
 {
 	DrawLookChoice("Characters", SceneLooks::GetCharacterLevel(), &SceneLookLevels::CharacterName,
 		&SceneLooks::ApplyCharacter);
-	UiText::Help("Smooth softens the edges of the character art. Pixels shows the art's own pixels, enlarged. "
+	UiText::Help("Smooth softens the edges of the character art. Pixels shows the art's original pixels, enlarged. "
 		"Applies right away.");
 
 	DrawLookChoice("Text", SceneLooks::GetTextLevel(), &SceneLookLevels::TextName, &SceneLooks::ApplyText);
@@ -350,7 +350,7 @@ void DrawSections(bool hasBaseline)
 {
 	ImGui::SeparatorText("Where the frame time goes");
 
-	Muted("The mod's own work in milliseconds, averaged over recent frames. oPresent and "
+	Muted("The mod's work in milliseconds, averaged over recent frames. oPresent and "
 		"oFrameUpdate are the game itself, shown for comparison.");
 
 	if (!ImGui::BeginTable("##sections", 4,
@@ -755,8 +755,8 @@ bool PerformanceWindow::DrawDisplayGroup()
 
 	if (windowed)
 	{
-		Muted("Greyed out because the game is windowed. A window cannot set its own refresh rate, "
-			"and Windows already holds a frame of its own.");
+		Muted("Greyed out because the game is windowed. A window cannot set the refresh rate, "
+			"and Windows already holds a frame itself.");
 	}
 
 	return changed;
@@ -876,7 +876,7 @@ void PerformanceWindow::DrawMetricsTab()
 		Settings::SaveInt("Debug", "Profiler", measuring ? 1 : 0);
 	}
 
-	Help("Times each frame, how long Present waits, and every step of the mod's own work. Off by "
+	Help("Times each frame, how long Present waits, and every step of the mod's work. Off by "
 		"default, so it costs nothing when you are not measuring.");
 
 	if (!measuring)

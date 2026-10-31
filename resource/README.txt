@@ -42,7 +42,7 @@ To uninstall, delete dinput8.dll. Nothing else is touched and no game file is
 modified.
 
 When UNI2 updates, the mod pauses itself: it shows a notice, changes nothing
-in the game, and only looks for its own update, again every 15 minutes. When
+in the game, and only looks for its next update, again every 15 minutes. When
 the fixed version is out it offers it, and installs it once you agree.
 
 
@@ -50,7 +50,7 @@ LINUX AND STEAM DECK (PROTON)
 -----------------------------
 
 Install it exactly as on Windows first: dinput8.dll next to uni2.exe, nothing
-else. Proton 9 and newer load a mod's own dinput8.dll by themselves, so on a
+else. Proton 9 and newer load a mod's dinput8.dll by themselves, so on a
 current Proton that is all there is to it.
 
 Older Proton does not. Wine picks which dinput8.dll to load from a prefix
@@ -90,7 +90,7 @@ happened to it. Either of these fixes it:
   - RTSS, Settings / General / Injection properties: tick
     "Use Microsoft Detours API hooking".
   - RTSS, this game's profile: set Application detection level to None. RTSS
-    then leaves the game alone entirely, its own overlay included.
+    then leaves the game alone entirely, its overlay included.
 
 
 KEYS
@@ -99,7 +99,7 @@ KEYS
   F1  overlay      F2  hitbox viewer     F3  frame meter
   F5  pause        F6  step one frame
 
-**Do not press F5 in an online match.** The freeze stops the game's own tick and
+**Do not press F5 in an online match.** The freeze stops the game's tick and
 would desync the match. Everything else only reads or paints and is safe.
 
 
@@ -112,7 +112,7 @@ WHAT IS NEW SINCE 0.1.0
     keep working online on purpose: painting a palette texture never touches the
     simulation.
 
-    The lock is the game's own peer traffic, which is the one thing no offline
+    The lock is the game's peer traffic, which is the one thing no offline
     mode does. If you ever see the tools disabled in a LOCAL match, that is a
     bug and worth reporting immediately - the mod window's status line and the
     log both say "online" or "offline" outright.
@@ -136,7 +136,7 @@ WHAT IS NEW SINCE 0.1.0
 THE TEST: SHARING A PALETTE
 ---------------------------
 
-Both players need this build. Then, each on your own machine:
+Both players need this build. Then, each on your machine:
 
 1. Press F1, open Custom palettes, press "Load Palettes" once. That creates
    UNI2-IM\Palettes\<character>\ for every character.
@@ -188,7 +188,7 @@ WHAT IT DOES NOT DO
     affect the match. A player without the mod sees nothing at all.
   - It does not save what the other player sent. Their palette is painted for
     that match and forgotten.
-  - It does not override your own choice. If you picked a palette for your
+  - It does not override your choice. If you picked a palette for your
     character, that is what you see.
   - It does not modify, patch or replace any game file.
 

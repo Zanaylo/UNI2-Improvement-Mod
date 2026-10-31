@@ -3,7 +3,7 @@
 namespace {
 
 const FeatureCatalog::Entry kEntries[FeatureCatalog::Id_COUNT] = {
-	{ "Music", "Music", "Soundpacks, your own tracks and the rules for what plays where." },
+	{ "Music", "Music", "Soundpacks, your tracks and the rules for what plays where." },
 	{ "Subtitles", "Subtitles", "On-screen lines for what each character says." },
 	{ "Privacy", "Privacy", "Hides opponent names, room names and IR." },
 	{ "NetcodePatches", "Netcode patches", "The mod's time sync and round trip tuning for online matches." },

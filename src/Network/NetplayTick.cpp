@@ -90,7 +90,7 @@ bool NetplayTick::Initialize()
 	NetWorker::Start();
 
 	g_initialized = true;
-	LOG("NetplayTick: network layer up, Steam work on its own thread, network log %s",
+	LOG("NetplayTick: network layer up, Steam work on a separate thread, network log %s",
 		g_modVals.netLog ? "on" : "off");
 	return true;
 }

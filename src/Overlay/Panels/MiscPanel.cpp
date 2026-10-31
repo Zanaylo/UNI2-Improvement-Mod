@@ -228,7 +228,7 @@ void MiscPanel::WearStyle(int option)
 void MiscPanel::DrawAnnouncers()
 {
 	UiText::Muted("Takes the announcers from MELTY BLOOD TYPE LUMINA and puts the ticked ones in Customize, "
-		"Announcer Character, each with its own icon.");
+		"Announcer Character, each with an icon.");
 
 	ImGui::Spacing();
 	ImGui::BeginDisabled(AnnouncerImport::IsBusy());

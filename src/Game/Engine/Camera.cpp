@@ -303,7 +303,7 @@ void Camera::LogDiagnostic()
 		const bool transformed = hasTransform &&
 			TransformPoint(transform, pixelX, pixelY, screenX, screenY);
 
-		LOG_RAW("player %d: world (%d, %d)  pixel (%.1f, %.1f)  mod's own screen calc (%.1f, %.1f)%s"
+		LOG_RAW("player %d: world (%d, %d)  pixel (%.1f, %.1f)  mod's screen calc (%.1f, %.1f)%s"
 			"  facing %d", i, worldX, worldY, pixelX, pixelY, screenX, screenY,
 			transformed ? "" : "  (transform FAILED)", GetFacing(entities[i]));
 	}

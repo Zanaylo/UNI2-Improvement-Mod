@@ -343,7 +343,7 @@ void ReportTableOnce()
 	int vanilla = 0;
 	int custom = 0;
 
-	for (int id = 0; id < BgmTable::kSlotCount; ++id)
+	for (int id = 0; id < BgmTable::SlotCount(); ++id)
 	{
 		if (!BgmTable::IsPresent(id))
 			continue;
@@ -410,7 +410,7 @@ void CarryOnThroughRound(int asked, int chosen, uint32_t state)
 
 	ParkPaused("the round change");
 
-	LOG("BgmControl: the game asked for its own %d again mid-match, so %d carries on instead of "
+	LOG("BgmControl: the game asked for its track %d again mid-match, so %d carries on instead of "
 		"starting over", asked, chosen);
 }
 
@@ -470,7 +470,7 @@ bool AbsorbHeldPause(int asked)
 	g_heldPauseFrames = 0;
 	g_carryStart = true;
 
-	LOG("BgmControl: the game asked for its own %d again mid-match, so %d plays on through the "
+	LOG("BgmControl: the game asked for its track %d again mid-match, so %d plays on through the "
 		"round change without a pause", asked, g_playing);
 
 	return true;
@@ -529,13 +529,13 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 		g_menuTrack = id;
 	else if (g_modVals.keepMenuMusic && g_menuTrack >= 0 && g_menuTrack != id)
 	{
-		const bool ownTrack = BgmTable::IsPresent(id);
+		const bool dedicatedTrack = BgmTable::IsPresent(id);
 
 		LOG("BgmControl: the menu chooser asked for %d while the menu had %d, slot %s", id,
-			g_menuTrack, ownTrack ? "has a track of its own - following it"
+			g_menuTrack, dedicatedTrack ? "has a dedicated track - following it"
 			: "is empty - keeping the menu's");
 
-		if (!ownTrack)
+		if (!dedicatedTrack)
 			asked = g_menuTrack;
 	}
 
@@ -752,7 +752,7 @@ bool HoldRoundPause()
 
 	g_heldPauseFrames = kHeldPauseFrames;
 
-	LOG("BgmControl: pause held, %d is the mod's own track mid-match and the game is about to "
+	LOG("BgmControl: pause held, %d is the mod's track mid-match and the game is about to "
 		"ask for its %d again", g_playing, static_cast<int>(g_lastRequested));
 
 	return true;
@@ -785,7 +785,7 @@ void __cdecl HookedBgmPause()
 	if (!resume)
 		return;
 
-	ParkPaused("the game's own pause");
+	ParkPaused("the game's pause");
 }
 
 }

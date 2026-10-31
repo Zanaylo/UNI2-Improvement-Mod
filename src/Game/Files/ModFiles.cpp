@@ -4,12 +4,12 @@
 #include "Core/FileIndex.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
-#include "Game/Debug/GameDebug.h"
 #include "Game/Files/DataSearchPath.h"
 #include "Game/Files/ModFileFilter.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Customize/PortraitLayer.h"
 #include "Game/Files/ModPacks.h"
+#include "Game/Audio/BgmOverride.h"
 #include "Game/Audio/BgmPicker.h"
 #include "Game/Audio/SoundPacks.h"
 #include "Game/Audio/UserMusic.h"
@@ -54,7 +54,7 @@ DWORD g_loadFirst = 0;
 DWORD g_loadLast = 0;
 char g_loadStatus[160] = "no ported stage has loaded yet";
 volatile long g_indexed = 0;
-volatile long g_own = 0;
+volatile long g_userFileCount = 0;
 bool g_hasLanguageEntries = false;
 char g_languageRoot[32] = {};
 
@@ -451,10 +451,10 @@ uint64_t Fingerprint(const FileIndex& index)
 
 bool Rebuild()
 {
-	FileIndex own;
-	own.Walk(g_root);
+	FileIndex user;
+	user.Walk(g_root);
 
-	const uint64_t fingerprint = Fingerprint(own);
+	const uint64_t fingerprint = Fingerprint(user);
 	const bool changed = fingerprint != g_fingerprint;
 	g_fingerprint = fingerprint;
 
@@ -466,11 +466,9 @@ bool Rebuild()
 	if (Features::IsLoaded(FeatureCatalog::Id_CharacterArt))
 		PortraitLayer::Layer(built);
 
-	GameDebug::Layer(built);
-
 	const bool stagesOn = Features::IsLoaded(FeatureCatalog::Id_Stages);
 
-	for (const FileIndex::Map::value_type& entry : own.Entries())
+	for (const FileIndex::Map::value_type& entry : user.Entries())
 	{
 		if (ModFileFilter::Keeps(entry.first, stagesOn))
 			built.Add(entry.first, entry.second);
@@ -479,9 +477,12 @@ bool Rebuild()
 	if (stagesOn)
 		BgListOverride::Layer(built);
 
+	if (Features::IsLoaded(FeatureCatalog::Id_ModPacks))
+		BgmOverride::Layer(built);
+
 	BgmPicker::Layer(built);
 
-	InterlockedExchange(&g_own, own.Count());
+	InterlockedExchange(&g_userFileCount, user.Count());
 
 	IndexUserMusic(built);
 	if (Features::IsLoaded(FeatureCatalog::Id_VoicesAndSound))
@@ -622,7 +623,7 @@ void ModFiles::Rescan()
 
 	if (!Rebuild() && !packs)
 	{
-		LOG("ModFiles: only the mod's own bookkeeping changed, %s", g_status);
+		LOG("ModFiles: only the mod's bookkeeping changed, %s", g_status);
 		return;
 	}
 
@@ -660,9 +661,9 @@ void ModFiles::OnFrame()
 	Rescan();
 }
 
-int ModFiles::OwnCount()
+int ModFiles::UserFileCount()
 {
-	return static_cast<int>(g_own);
+	return static_cast<int>(g_userFileCount);
 }
 
 int ModFiles::Count()

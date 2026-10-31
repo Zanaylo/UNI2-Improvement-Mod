@@ -44,7 +44,7 @@ uint32_t NextRandom()
 
 int BgmCatalog::Count()
 {
-	return BgmTable::kSlotCount + BgmLibrary::Count();
+	return BgmTable::SlotCount() + BgmLibrary::Count();
 }
 
 int BgmCatalog::IdAt(int index)
@@ -52,10 +52,10 @@ int BgmCatalog::IdAt(int index)
 	if (index < 0 || index >= Count())
 		return -1;
 
-	if (index < BgmTable::kSlotCount)
+	if (index < BgmTable::SlotCount())
 		return index;
 
-	return BgmLibrary::IdAt(index - BgmTable::kSlotCount);
+	return BgmLibrary::IdAt(index - BgmTable::SlotCount());
 }
 
 bool BgmCatalog::IsListed(int id)

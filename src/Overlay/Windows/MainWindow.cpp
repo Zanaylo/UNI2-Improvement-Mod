@@ -8,6 +8,7 @@
 #include "Overlay/Panels/TrainingPanel.h"
 
 #include "Core/info.h"
+#include "Core/logger.h"
 #include "Core/Config/Features.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Config/Settings.h"
@@ -103,7 +104,6 @@ MainTabs::Shown TabContents()
 		Features::Shows(FeatureCatalog::Id_GamePatches),
 		Features::Shows(FeatureCatalog::Id_Replays),
 		Features::Shows(FeatureCatalog::Id_ModPacks),
-		WindowOf(WindowType_GameDebug) != nullptr,
 	};
 }
 
@@ -197,6 +197,7 @@ void MainWindow::DrawTabs()
 		{ MainTabs::Tab_Audio, "Audio", &MainWindow::DrawAudioTab, nullptr },
 		{ MainTabs::Tab_Online, "Online", &MainWindow::DrawOnlineTab, nullptr },
 		{ MainTabs::Tab_Mod, "Mod", &MainWindow::DrawModTab, nullptr },
+		{ MainTabs::Tab_Debug, "Debug", &MainWindow::DrawDebugTab, nullptr },
 		{ MainTabs::Tab_Config, "Config", &MainWindow::DrawConfigTab, &ConfigPanel::Hide },
 	};
 
@@ -268,7 +269,44 @@ void MainWindow::DrawOnlineTab()
 void MainWindow::DrawModTab()
 {
 	DrawModsSection();
-	DrawGameDebugSection();
+}
+
+void MainWindow::DrawDebugTab()
+{
+	DrawLogSection();
+	DrawDebugViewSection();
+}
+
+void MainWindow::DrawLogSection()
+{
+	const Cards::Scope card("##log");
+
+	if (!card)
+		return;
+
+	const bool forced = IsLoggingForced();
+	bool logging = forced || IsLoggerOpen();
+
+	ImGui::BeginDisabled(forced);
+
+	if (ImGui::Checkbox("Write the mod's log", &logging))
+		SetLogging(logging);
+
+	ImGui::EndDisabled();
+	Description(forced ? "Always on in this build." :
+		"Keeps the full log in the Logs folder. Turn it on before sending a bug report. Default: off.");
+}
+
+void MainWindow::DrawDebugViewSection()
+{
+	const Cards::Scope card("##debugView");
+
+	if (!card)
+		return;
+
+	LauncherTitle("Debug view", WindowType_Debug);
+	Description("Raw readouts of the game's memory and the search tools used to build the mod. "
+		"Ctrl+F1 opens it too.");
 }
 
 void MainWindow::DrawConfigTab()
@@ -426,7 +464,7 @@ void MainWindow::DrawStagesSection()
 		return;
 
 	LauncherTitle("Stages", WindowType_Stages);
-	Description("Hidden stages, and stages from other French-Bread games you own.");
+	Description("Hidden stages, and stages from other French-Bread games you have.");
 	UiText::Good("%d/%d stages.", StageLibrary::Total(), BgCeiling::Numbers());
 }
 
@@ -461,19 +499,6 @@ void MainWindow::DrawMiscSection()
 	Description("Alternate character art and the MELTY BLOOD TYPE LUMINA announcers.");
 }
 
-void MainWindow::DrawGameDebugSection()
-{
-	if (WindowOf(WindowType_GameDebug) == nullptr)
-		return;
-
-	const Cards::Scope card("##gamedebug");
-
-	if (!card)
-		return;
-
-	LauncherTitle("Game debug options", WindowType_GameDebug);
-	Description("French Bread's own debug logs and switches.");
-}
 
 void MainWindow::DrawModsSection()
 {

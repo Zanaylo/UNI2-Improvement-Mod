@@ -258,7 +258,7 @@ bool Run(const std::string& folder, int chara)
 
 	if (tag.empty())
 	{
-		strncpy_s(g_status, "this game's own voice files could not be read", _TRUNCATE);
+		strncpy_s(g_status, "this game's voice files could not be read", _TRUNCATE);
 		return false;
 	}
 

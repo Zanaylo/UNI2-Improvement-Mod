@@ -32,4 +32,27 @@ void IWindow::Update()
 	ImGui::End();
 
 	AfterDraw();
+
+	if (!m_isOpen)
+		OnClosed();
+}
+
+void IWindow::Close()
+{
+	if (!m_isOpen)
+		return;
+
+	m_isOpen = false;
+	OnClosed();
+}
+
+void IWindow::Toggle()
+{
+	if (m_isOpen)
+	{
+		Close();
+		return;
+	}
+
+	Open();
 }

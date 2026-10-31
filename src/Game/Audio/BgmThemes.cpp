@@ -74,7 +74,7 @@ int ReadMapSection(const std::string& path, Entry* out, int maxEntries)
 			const int vanilla = atoi(cursor);
 			const int replacement = BgmLibrary::ParseRef(separator + 1);
 
-			if (vanilla >= 0 && vanilla < BgmTable::kSlotCount && replacement >= 0)
+			if (vanilla >= 0 && vanilla < BgmTable::SlotCount() && replacement >= 0)
 			{
 				out[count].vanilla = vanilla;
 				out[count].replacement = replacement;

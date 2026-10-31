@@ -605,7 +605,7 @@ HRESULT CreateEffectGraded(void* device, const void* source, UINT bytes,
 			return graded;
 		}
 
-		strncpy_s(g_status, "the changed stage shader did not compile, so the game's own shader is "
+		strncpy_s(g_status, "the changed stage shader did not compile, so the game's shader is "
 			"used", _TRUNCATE);
 
 		LOG("BgGrade: %s", g_status);
@@ -657,24 +657,24 @@ HRESULT STDMETHODCALLTYPE HookedSetRenderState(IDirect3DDevice9* device,
 	return result;
 }
 
-bool Overlaps(UINT start, UINT count, UINT ownStart, UINT ownCount)
+bool Overlaps(UINT start, UINT count, UINT keptStart, UINT keptCount)
 {
-	return start < ownStart + ownCount && start + count > ownStart;
+	return start < keptStart + keptCount && start + count > keptStart;
 }
 
 HRESULT Overlaid(SetPixelShaderConstantF_t original, IDirect3DDevice9* device, UINT start,
-	const float* data, UINT count, UINT ownStart, UINT ownCount, const float* own)
+	const float* data, UINT count, UINT keptStart, UINT keptCount, const float* kept)
 {
 	const UINT stop = start + count;
-	const UINT ownStop = ownStart + ownCount;
-	const UINT first = start > ownStart ? start : ownStart;
-	const UINT last = stop < ownStop ? stop : ownStop;
+	const UINT keptStop = keptStart + keptCount;
+	const UINT first = start > keptStart ? start : keptStart;
+	const UINT last = stop < keptStop ? stop : keptStop;
 	HRESULT result = D3D_OK;
 
 	if (start < first)
 		result = original(device, start, data, first - start);
 
-	const HRESULT mine = original(device, first, own + 4 * (first - ownStart), last - first);
+	const HRESULT mine = original(device, first, kept + 4 * (first - keptStart), last - first);
 
 	if (last < stop)
 		result = original(device, last, data + 4 * (last - start), stop - last);
@@ -691,7 +691,7 @@ HRESULT STDMETHODCALLTYPE HookedSetPixelShaderConstantF(IDirect3DDevice9* device
 	const long seen = InterlockedIncrement(&g_touched);
 
 	if (seen <= kReported)
-		LOG("BgGrade: the game wrote c%u..c%u, so the mod kept its own there", start, start + count - 1);
+		LOG("BgGrade: the game wrote c%u..c%u, so the mod kept its values there", start, start + count - 1);
 
 	BgVertexProbe::Arm();
 
@@ -891,12 +891,12 @@ void BgGrade::Update()
 		g_live[kContrastFirst + i] = grade.contrast;
 	}
 
-	const bool own = grade.lift == kGameLift && grade.contrast == kGameContrast
+	const bool untouched = grade.lift == kGameLift && grade.contrast == kGameContrast
 		&& g_glow == kGameGlow;
 
-	InterlockedExchange(&g_altered, own ? 0 : 1);
+	InterlockedExchange(&g_altered, untouched ? 0 : 1);
 
-	if (own)
+	if (untouched)
 		Upload();
 
 	if (stage != held)
@@ -955,7 +955,7 @@ void BgGrade::Update()
 		InterlockedExchange(&g_fading, fading ? 1 : 0);
 
 		if (flowing)
-			LOG("BgGrade: stage %d scrolls %d surface(s) from its own stage.txt", stage,
+			LOG("BgGrade: stage %d scrolls %d surface(s) from its stage.txt", stage,
 				static_cast<int>(std::count_if(g_rate, g_rate + kFlowSlots,
 					[](float r) { return r != 0.0f; })));
 

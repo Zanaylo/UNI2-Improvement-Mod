@@ -609,7 +609,7 @@ bool CharaSounds::Replace(int index, const std::string& source, char* status, in
 
 	if (root.empty())
 	{
-		strncpy_s(status, statusSize, "this character needs a pack of its own first", _TRUNCATE);
+		strncpy_s(status, statusSize, "this character needs a dedicated pack first", _TRUNCATE);
 		return false;
 	}
 

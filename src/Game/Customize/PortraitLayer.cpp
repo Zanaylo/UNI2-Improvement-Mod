@@ -5,9 +5,9 @@
 
 void PortraitLayer::Layer(FileIndex& into)
 {
-	FileIndex own;
-	own.Walk(PortraitCompose::Folder());
+	FileIndex composed;
+	composed.Walk(PortraitCompose::Folder());
 
-	for (const FileIndex::Map::value_type& entry : own.Entries())
+	for (const FileIndex::Map::value_type& entry : composed.Entries())
 		into.Add(entry.first, entry.second);
 }

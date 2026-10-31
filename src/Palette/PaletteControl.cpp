@@ -29,7 +29,7 @@ void PaletteControl::OnFrame()
 			g_playerForSide[side] = player;
 	}
 
-	const int seat = g_online && !g_spectating ? PaletteShare::GetOwnSide() : -1;
+	const int seat = g_online && !g_spectating ? PaletteShare::GetLocalSide() : -1;
 
 	g_local = seat >= 0 && seat < kPlayers ? seat : -1;
 

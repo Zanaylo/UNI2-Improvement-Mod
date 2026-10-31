@@ -551,7 +551,7 @@ bool DummyScript::ReadFromSlot(int slot, char* outText, int size)
 		return false;
 	}
 
-	const char* how = "the slot's own record";
+	const char* how = "the slot's record";
 
 	int frames = static_cast<int>(bytes / 4u);
 	uint32_t position = start;
@@ -570,7 +570,7 @@ bool DummyScript::ReadFromSlot(int slot, char* outText, int size)
 		{
 			position = mine;
 			frames = recordSane && frames <= span ? frames : used;
-			how = "the mod's own region";
+			how = "the mod's region";
 		}
 		else if (!recordSane)
 		{

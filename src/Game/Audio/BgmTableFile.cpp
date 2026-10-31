@@ -2,6 +2,7 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Audio/BgmLayers.h"
 
 #include <Windows.h>
 
@@ -13,7 +14,7 @@
 namespace {
 
 constexpr uint32_t kLargestTable = 256u * 1024u;
-constexpr int kFirstPackSlot = 100;
+constexpr int kFirstPackSlot = BgmLayers::kFirstPackSlot;
 
 std::string OverridePath()
 {
@@ -40,7 +41,7 @@ bool LooksLikeTable(const std::vector<uint8_t>& blob)
 	return text.find("IsLoop") != std::string::npos && BgmTableFile::HasVanillaSlots(blob);
 }
 
-size_t OwnSection(const std::string& text)
+size_t PackSection(const std::string& text)
 {
 	for (size_t at = 0; at < text.size();)
 	{
@@ -113,7 +114,7 @@ bool BgmTableFile::ReadGameTable(std::vector<uint8_t>& out)
 			continue;
 
 		out.swap(blob);
-		LOG("BgmTableFile: the game's own slot table is d\\%s, %d bytes",
+		LOG("BgmTableFile: the game's slot table is d\\%s, %d bytes",
 			found.cFileName, static_cast<int>(out.size()));
 		break;
 	}
@@ -131,9 +132,9 @@ bool BgmTableFile::Refresh(std::vector<uint8_t>& table)
 		return false;
 
 	const std::string text(table.begin(), table.end());
-	const size_t own = OwnSection(text);
+	const size_t packSection = PackSection(text);
 
-	if (own != std::string::npos)
+	if (packSection != std::string::npos)
 	{
 		if (!refreshed.empty() && refreshed.back() != '\n')
 		{
@@ -141,7 +142,7 @@ bool BgmTableFile::Refresh(std::vector<uint8_t>& table)
 			refreshed.push_back('\n');
 		}
 
-		refreshed.insert(refreshed.end(), table.begin() + own, table.end());
+		refreshed.insert(refreshed.end(), table.begin() + packSection, table.end());
 	}
 
 	table.swap(refreshed);
@@ -161,7 +162,7 @@ void BgmTableFile::Repair()
 
 	if (!Refresh(refreshed))
 	{
-		LOG("BgmTableFile: the game's own slot table could not be found, so %s is left as it is",
+		LOG("BgmTableFile: the game's slot table could not be found, so %s is left as it is",
 			path.c_str());
 		return;
 	}
@@ -169,6 +170,6 @@ void BgmTableFile::Repair()
 	if (refreshed == current || !WriteWhole(path, refreshed))
 		return;
 
-	LOG("BgmTableFile: %s carries the game's own slots as the installed game ships them again",
+	LOG("BgmTableFile: %s carries the game's slots as the installed game ships them again",
 		path.c_str());
 }

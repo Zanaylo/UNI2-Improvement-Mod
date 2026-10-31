@@ -11,6 +11,10 @@
 void OpenLogger();
 void CloseLogger();
 void FlushLogger();
+
+bool IsLoggerOpen();
+bool IsLoggingForced();
+void SetLogging(bool enabled);
 void WriteLog(const char* format, ...);
 
 void WriteLogRaw(const char* format, ...);

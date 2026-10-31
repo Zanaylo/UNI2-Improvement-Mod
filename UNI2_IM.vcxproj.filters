@@ -67,9 +67,6 @@
     <Filter Include="Game\Customize">
       <UniqueIdentifier>{24d751bc-9847-8364-096a-ccda9036303e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Game\Debug">
-      <UniqueIdentifier>{aed4b22d-0ad2-2d2c-8460-d356f72fcd8e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Game\Display">
       <UniqueIdentifier>{86eef5fb-8022-6699-d478-2e83e8ce0c19}</UniqueIdentifier>
     </Filter>
@@ -468,6 +465,9 @@
     <ClCompile Include="src\Core\HexText.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\LegacyFolder.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\FileIndex.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -549,6 +549,18 @@
     <ClCompile Include="src\Game\Audio\BgmPicker.cpp">
       <Filter>Game\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Audio\BgmLayers.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\BgmCeiling.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\BgmTableSites.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\BgmOverride.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Audio\BgmSelectFile.cpp">
       <Filter>Game\Audio</Filter>
     </ClCompile>
@@ -577,6 +589,9 @@
       <Filter>Game\Stages</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\BgTable.cpp">
+      <Filter>Game\Stages</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Stages\PackStages.cpp">
       <Filter>Game\Stages</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Stages\SquirrelText.cpp">
@@ -1143,23 +1158,8 @@
     <ClCompile Include="src\Hooks\CompareTrampoline.cpp">
       <Filter>Hooks</Filter>
     </ClCompile>
-    <ClCompile Include="src\Core\Harness\GameDebugCommands.cpp">
-      <Filter>Core\Harness</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Overlay\Windows\GameDebugWindow.cpp">
-      <Filter>Overlay\Windows</Filter>
-    </ClCompile>
     <ClCompile Include="src\Network\OnlineContext.cpp">
       <Filter>Network</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\Debug\GameDebug.cpp">
-      <Filter>Game\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\Debug\ScriptDefines.cpp">
-      <Filter>Game\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Game\Debug\ScriptConsole.cpp">
-      <Filter>Game\Debug</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Audio\SoundVolumeBackground.cpp">
       <Filter>Game\Audio</Filter>
@@ -2471,6 +2471,9 @@
     <ClInclude Include="src\Core\HexText.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\LegacyFolder.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\FileIndex.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -2555,6 +2558,18 @@
     <ClInclude Include="src\Game\Audio\BgmPicker.h">
       <Filter>Game\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmLayers.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmCeiling.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmTableSites.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmOverride.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Audio\BgmSelectFile.h">
       <Filter>Game\Audio</Filter>
     </ClInclude>
@@ -2574,6 +2589,9 @@
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\BgTable.h">
+      <Filter>Game\Stages</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Stages\PackStages.h">
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\SquirrelText.h">
@@ -3059,23 +3077,8 @@
     <ClInclude Include="src\Hooks\CompareTrampoline.h">
       <Filter>Hooks</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\Harness\GameDebugCommands.h">
-      <Filter>Core\Harness</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Overlay\Windows\GameDebugWindow.h">
-      <Filter>Overlay\Windows</Filter>
-    </ClInclude>
     <ClInclude Include="src\Network\OnlineContext.h">
       <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\Debug\GameDebug.h">
-      <Filter>Game\Debug</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\Debug\ScriptDefines.h">
-      <Filter>Game\Debug</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Game\Debug\ScriptConsole.h">
-      <Filter>Game\Debug</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Audio\SoundVolumeBackground.h">
       <Filter>Game\Audio</Filter>
@@ -3926,7 +3929,7 @@
     <ClInclude Include="src\Game\Files\ModPacks.h">
       <Filter>Game\Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Game\Stages\OwnStageNames.inc">
+    <ClInclude Include="src\Game\Stages\BaseStageNames.inc">
       <Filter>Game\Stages</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Stages\StageMbtlIndex.inc">

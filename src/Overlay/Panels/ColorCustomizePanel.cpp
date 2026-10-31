@@ -623,7 +623,7 @@ void ColorCustomizePanel::DrawExport()
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::SetTooltip("Saves these colours as a .pal in this character's palette folder, so "
-			"the mod can use them in a match. Only needed if you picked your own colours.");
+			"the mod can use them in a match. Only needed if you picked custom colours.");
 	}
 
 	if (!save)

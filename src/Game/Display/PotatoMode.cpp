@@ -26,7 +26,7 @@ struct Preset
 constexpr Preset kPresets[PotatoMode::Level_COUNT] = {
 	{
 		"Off",
-		"Everything as the game ships it, at the size its own Display option picks.",
+		"Everything as the game ships it, at the size its Display option picks.",
 		0, 0, false, false, false, false,
 	},
 	{

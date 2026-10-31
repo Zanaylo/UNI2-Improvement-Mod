@@ -21,21 +21,21 @@ constexpr int kSeenMax = 64;
 GameHook<ResolveNameFn> g_resolveNameHook("ResolvePersonaName");
 
 bool g_enabled = false;
-bool g_coversOwn = false;
+bool g_coversMyName = false;
 uint64_t g_seen[kSeenMax] = {};
 volatile long g_seenCount = 0;
 
 char g_mask[NameCensor::kMaskMax + 1] = "Player";
 char g_status[160] = "the game's persona name resolver is not where this game version expects it";
 
-uint64_t g_own = 0;
+uint64_t g_selfId = 0;
 
-uint64_t OwnId()
+uint64_t SelfId()
 {
-	if (g_own == 0)
-		g_own = SteamInterfaces::GetOwnSteamId();
+	if (g_selfId == 0)
+		g_selfId = SteamInterfaces::GetLocalSteamId();
 
-	return g_own;
+	return g_selfId;
 }
 
 void Remember(uint64_t steamId)
@@ -70,7 +70,7 @@ void Summarise()
 		return;
 	}
 
-	sprintf_s(g_status, "on, everyone%s is shown as '%s'", g_coversOwn ? "" : " but you",
+	sprintf_s(g_status, "on, everyone%s is shown as '%s'", g_coversMyName ? "" : " but you",
 		g_mask);
 }
 
@@ -145,17 +145,17 @@ void NameCensor::SetMask(const char* text)
 	Summarise();
 }
 
-bool NameCensor::CoversOwnName()
+bool NameCensor::CoversMyName()
 {
-	return g_coversOwn;
+	return g_coversMyName;
 }
 
-void NameCensor::SetCoversOwnName(bool covers)
+void NameCensor::SetCoversMyName(bool covers)
 {
-	if (covers == g_coversOwn)
+	if (covers == g_coversMyName)
 		return;
 
-	g_coversOwn = covers;
+	g_coversMyName = covers;
 	Summarise();
 }
 
@@ -164,12 +164,12 @@ bool NameCensor::Applies(uint64_t steamId)
 	if (!g_enabled)
 		return false;
 
-	if (g_coversOwn)
+	if (g_coversMyName)
 		return true;
 
-	const uint64_t own = OwnId();
+	const uint64_t self = SelfId();
 
-	return own == 0 || own != steamId;
+	return self == 0 || self != steamId;
 }
 
 void NameCensor::Apply(uint64_t steamId, char* text)

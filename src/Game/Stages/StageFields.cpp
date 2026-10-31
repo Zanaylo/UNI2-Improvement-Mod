@@ -33,7 +33,7 @@ bool Load(int id, std::string& out)
 	std::vector<uint8_t> data;
 
 	if (!ReadWholeFile(StageSettings::NoteOf(id), data) || data.empty())
-		return StageLibrary::GameOwns(id);
+		return StageLibrary::IsGameStage(id);
 
 	out.assign(data.begin(), data.end());
 	return true;

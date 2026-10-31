@@ -152,7 +152,7 @@ bool SaveStatePatch::Install()
 
 	if (!g_modVals.saveStatePool)
 	{
-		LOG("SaveStatePool: off in the ini, GGPO save states use the game's own malloc");
+		LOG("SaveStatePool: off in the ini, GGPO save states use the game's malloc");
 		return false;
 	}
 

@@ -92,16 +92,16 @@ int LocalStage(const SpectateMatch::Snapshot& in)
 {
 	const int stage = in.block[kStageSlot];
 
-	return PlayableStage(StageLibrary::GameOwns(stage) ? stage : SlotNamed(in.stageName));
+	return PlayableStage(StageLibrary::IsGameStage(stage) ? stage : SlotNamed(in.stageName));
 }
 
 int HostStage()
 {
-	const int own = ReadInt(GameOffsets::kStageOwnPick);
-	const bool ownShown = ReadByte(GameOffsets::kStageSyncOption) != 0 &&
-		ReadByte(GameOffsets::kOnlineMatchFlag) != 0 && own > 0;
+	const int hostPick = ReadInt(GameOffsets::kStageLocalPick);
+	const bool hostPickShown = ReadByte(GameOffsets::kStageSyncOption) != 0 &&
+		ReadByte(GameOffsets::kOnlineMatchFlag) != 0 && hostPick > 0;
 
-	return ownShown ? own : ReadInt(GameOffsets::kBgPendingNumber);
+	return hostPickShown ? hostPick : ReadInt(GameOffsets::kBgPendingNumber);
 }
 
 bool RunRankSetup()
@@ -161,7 +161,7 @@ void SpectateMatch::ResolveStage(Snapshot& snapshot)
 
 	StageLibrary::Entry entry = {};
 
-	if (StageLibrary::GameOwns(stage) || !StageLibrary::Of(StageLibrary::IdForSlot(stage), entry))
+	if (StageLibrary::IsGameStage(stage) || !StageLibrary::Of(StageLibrary::IdForSlot(stage), entry))
 		return;
 
 	strncpy_s(snapshot.stageName, entry.name.c_str(), _TRUNCATE);
@@ -198,7 +198,7 @@ bool SpectateMatch::Apply(const Snapshot& in)
 		return false;
 	}
 
-	WriteInt(GameOffsets::kStageOwnPick, stage);
+	WriteInt(GameOffsets::kStageLocalPick, stage);
 	WriteInt(GameOffsets::kMatchLocalSide, GameOffsets::kMatchSpectatorSide);
 
 	LOG("SpectateMatch: match applied, characters %d and %d, stage %d, data %s", copy.block[0], copy.block[kSlotsPerSide],

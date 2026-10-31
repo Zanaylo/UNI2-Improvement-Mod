@@ -8,6 +8,7 @@
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
 #include "Game/Audio/BgmNames.h"
+#include "Game/Audio/BgmOverride.h"
 #include "Game/Audio/BgmSelectFile.h"
 #include "Game/Engine/CodeSignatures.h"
 #include "Game/Engine/GameOffsets.h"
@@ -126,13 +127,14 @@ bool Write()
 
 	if (contents.records.empty())
 	{
-		strncpy_s(g_status, "the game's own music list could not be read", _TRUNCATE);
+		strncpy_s(g_status, "the game's music list could not be read", _TRUNCATE);
 		LOG("BgmPicker: %s", g_status);
 		return false;
 	}
 
-	const int own = static_cast<int>(contents.records.size());
-	const int added = AddLibrary(contents);
+	const int listed = static_cast<int>(contents.records.size());
+	const int fromMods = BgmOverride::AddPackRecords(contents, SectionLimit());
+	const int added = fromMods + AddLibrary(contents);
 
 	if (!Store(BgmSelectFile::Compose(contents)))
 	{
@@ -141,7 +143,7 @@ bool Write()
 		return false;
 	}
 
-	sprintf_s(g_status, "%d track(s) in the game's music list, %d added by the mod%s", own + added,
+	sprintf_s(g_status, "%d track(s) in the game's music list, %d added by the mod%s", listed + added,
 		added, g_widened ? "" : " (the game's 100 entry limit is still in place)");
 	LOG("BgmPicker: %s", g_status);
 	return true;
@@ -208,7 +210,7 @@ bool Fail(const char* why)
 bool BgmPicker::Initialize()
 {
 	if (!Wanted())
-		return Fail("off, the game's music list only holds its own tracks");
+		return Fail("off, the game's music list only holds the game's tracks");
 
 	if (!g_buildHook.InstallRva(GameOffsets::kFnBgmSelectBuild, &HookedBuild))
 		return Fail("the game's music list is not where this game version expects it");

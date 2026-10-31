@@ -132,9 +132,9 @@ Watcher* Find(uint64_t id)
 	return nullptr;
 }
 
-bool MayAnnounceTo(const ModPresence::Member& member, uint64_t own, uint64_t opponent)
+bool MayAnnounceTo(const ModPresence::Member& member, uint64_t self, uint64_t opponent)
 {
-	return member.hasMod && member.id != 0 && member.id != own && member.id != opponent && Find(member.id) == nullptr;
+	return member.hasMod && member.id != 0 && member.id != self && member.id != opponent && Find(member.id) == nullptr;
 }
 
 void Announce(DWORD now)
@@ -145,14 +145,14 @@ void Announce(DWORD now)
 	g_announcedAt = now;
 	g_announced.clear();
 
-	const uint64_t own = SteamInterfaces::GetOwnSteamId();
+	const uint64_t self = SteamInterfaces::GetLocalSteamId();
 	const uint64_t opponent = NetLink::Peer();
 	const RoomWatchWire::Message available = RoomWatchWire::Make(RoomWatchWire::Type_Available, 0);
 	ModPresence::Member member = {};
 
 	for (int i = 0; ModPresence::MemberAt(i, member); ++i)
 	{
-		if (!MayAnnounceTo(member, own, opponent))
+		if (!MayAnnounceTo(member, self, opponent))
 			continue;
 
 		Send(member.id, &available, sizeof(available), kAnnounceTtlMs, "room watch available");

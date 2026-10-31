@@ -3,10 +3,12 @@
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/HitboxData.h"
 #include "Game/Engine/PlayerState.h"
+#include "Game/Engine/SaveData.h"
 #include "Overlay/Framework/IWindow.h"
 
 #include <Windows.h>
 #include <cstdint>
+#include <vector>
 
 class DebugWindow : public IWindow
 {
@@ -17,6 +19,7 @@ public:
 
 protected:
 	void Draw() override;
+	void OnClosed() override;
 
 private:
 	enum class FilterMode
@@ -30,6 +33,7 @@ private:
 	static constexpr int kDwordCount = static_cast<int>(GameOffsets::kPlayerDataSize) / 4;
 	static constexpr int kMaxEntities = GameOffsets::kCharaArrayCount;
 	static constexpr DWORD kRefreshIntervalMs = 250;
+	static constexpr DWORD kSaveListIntervalMs = 1000;
 
 	struct EntityRow
 	{
@@ -37,6 +41,12 @@ private:
 	};
 
 	void RefreshEntities();
+	void RefreshSaveFiles();
+	void AdvanceCapture();
+	void DrawSummary();
+	void DrawTools();
+	void DrawStatusSection();
+	void SetForcedEffectTint();
 	void DumpToLog();
 	void BeginCapture();
 	void CaptureFrame();
@@ -118,6 +128,11 @@ private:
 	bool m_forceEffectTint = false;
 	float m_forceEffectRgb[3] = { 1.0f, 0.0f, 1.0f };
 	int m_forceEffectEntry = -1;
+
+	std::vector<SaveData::File> m_saveFiles;
+	DWORD m_saveListedAt = 0;
+	bool m_saveListed = false;
+	bool m_probeTurnedOn = false;
 
 	int m_stopTimeFrames = 60;
 	bool m_recordDeltas = true;

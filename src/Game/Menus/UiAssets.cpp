@@ -77,7 +77,7 @@ void UiAssets::Ensure()
 	g_ready = present == kAssetCount;
 
 	if (g_ready && lifted > 0)
-		sprintf_s(g_status, "%d of %d taken from the game's own data", lifted, kAssetCount);
+		sprintf_s(g_status, "%d of %d taken from the game's data", lifted, kAssetCount);
 	else if (g_ready)
 		strncpy_s(g_status, "already in the Assets folder", _TRUNCATE);
 	else if (!DataArchive::IsAvailable())

@@ -10,7 +10,7 @@ namespace ReplayArchive
 		std::string id;
 		std::string path;
 		uint64_t stamp;
-		bool own;
+		bool signedIn;
 	};
 
 	void Load();
@@ -18,7 +18,7 @@ namespace ReplayArchive
 	int Count();
 	const Account* Get(int index);
 
-	int OwnIndex();
+	int SignedInIndex();
 	int IndexOfPath(const std::string& path);
 
 	const uint8_t* Image(int index);
