@@ -519,6 +519,18 @@ void WatchFolder(int which, const std::string& folder)
 	LOG("ModFiles: %s cannot be watched, so a file dropped in it needs a rescan", folder.c_str());
 }
 
+void RebuildAndCount(bool packsChanged)
+{
+	if (!Rebuild() && !packsChanged)
+	{
+		LOG("ModFiles: only the mod's bookkeeping changed, %s", g_status);
+		return;
+	}
+
+	InterlockedIncrement(&g_revision);
+	LOG("ModFiles: %s", g_status);
+}
+
 bool Stirred()
 {
 	bool stirred = false;
@@ -613,22 +625,13 @@ void ModFiles::Rescan()
 {
 	g_stirred = false;
 
-	const bool packs = g_packsStirred;
-
-	if (packs)
+	if (g_packsStirred)
 	{
 		g_packsStirred = false;
-		ModPacks::Scan();
+		ModPacks::RequestScan();
 	}
 
-	if (!Rebuild() && !packs)
-	{
-		LOG("ModFiles: only the mod's bookkeeping changed, %s", g_status);
-		return;
-	}
-
-	InterlockedIncrement(&g_revision);
-	LOG("ModFiles: %s", g_status);
+	RebuildAndCount(false);
 }
 
 long ModFiles::Revision()
@@ -649,6 +652,9 @@ void ModFiles::OnFrame()
 	{
 		CloseLoad();
 	}
+
+	if (ModPacks::AdoptScan())
+		RebuildAndCount(true);
 
 	if (Stirred())
 		return;

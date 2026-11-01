@@ -16,6 +16,7 @@ namespace ThreadRole
 	Role Current();
 
 	const char* Name(Role role);
+	const char* Tag(Role role);
 
 	struct Site
 	{

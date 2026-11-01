@@ -7,6 +7,7 @@
 #include "Overlay/Windows/DummyScriptGuideWindow.h"
 #include "Overlay/Windows/FrameMeterLegendWindow.h"
 #include "Overlay/Windows/HitboxLegendWindow.h"
+#include "Overlay/Windows/LogWindow.h"
 #include "Overlay/Windows/PaletteEditorWindow.h"
 #include "Overlay/Windows/PaletteWindow.h"
 #include "Overlay/Windows/MusicWindow.h"
@@ -89,6 +90,8 @@ WindowContainer::WindowContainer()
 		m_windows[WindowType_Theme] = std::make_unique<ThemeWindow>("Theme", true);
 
 	m_windows[WindowType_Debug] = std::make_unique<DebugWindow>("Debug view", true);
+
+	m_windows[WindowType_Log] = std::make_unique<LogWindow>("Log", true);
 }
 
 void WindowContainer::UpdateAll()

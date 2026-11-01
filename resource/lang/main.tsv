@@ -217,7 +217,6 @@ Display	Exibição	Pantalla
 Display side, estimated: %.1f ms	Lado da tela, estimado: %.1f ms	Lado de pantalla, estimado: %.1f ms
 Dither	Dither	Dither
 Doppel		
-Down	Baixo	Abajo
 Download DXVK yourself (github.com/doitsujin/dxvk) and extract it. Press \"Pick the DXVK folder...\", tick the box and restart the game. Every change here needs a restart.\n\nThe mod copies x32\\d3d9.dll into UNI2-IM\\DXVK. Nothing in the game folder is touched. DXVK translates the game's Direct3D 9 calls to Vulkan, unlike dgVoodoo which goes through Direct3D 11/12.\n\nThe first few matches after enabling this load slower while DXVK compiles and caches shaders; it gets faster from there.\n\nOnly one Direct3D wrapper can run at a time; turning this on turns dgVoodoo off.	Baixe o DXVK (github.com/doitsujin/dxvk) e extraia. Aperte \"Pick the DXVK folder...\", marque a caixa e reinicie o jogo. Toda mudança aqui exige reiniciar.\n\nO mod copia x32\\d3d9.dll para UNI2-IM\\DXVK, sem mexer na pasta do jogo. O DXVK traduz o Direct3D 9 do jogo para Vulkan; o dgVoodoo passa pelo Direct3D 11/12.\n\nAs primeiras partidas depois de ligar carregam mais devagar enquanto o DXVK compila e guarda os shaders. Depois fica mais rápido.\n\nSó um wrapper de Direct3D funciona por vez: ligar este desliga o dgVoodoo.	Descarga DXVK (github.com/doitsujin/dxvk) y extráelo. Presiona \"Pick the DXVK folder...\", marca la casilla y reinicia el juego. Todo cambio aquí requiere reiniciar.\n\nEl mod copia x32\\d3d9.dll a UNI2-IM\\DXVK, sin tocar la carpeta del juego. DXVK traduce el Direct3D 9 del juego a Vulkan; dgVoodoo pasa por Direct3D 11/12.\n\nLas primeras partidas después de activarlo cargan más lento mientras DXVK compila y guarda los shaders. Después va más rápido.\n\nSolo funciona un wrapper de Direct3D a la vez: activar este desactiva dgVoodoo.
 Download dgVoodoo2 yourself and extract it. Press \"Pick the dgVoodoo folder...\", tick the box and restart the game. Every change here needs a restart.\n\nThe mod copies the dlls into UNI2-IM\\dgVoodoo and writes dgVoodoo.conf from these options. Nothing in the game folder is touched.\n\nForcing texture filtering or anti-aliasing can break the character colours. Keep them on UNI2's or off unless you know you want them.\n\nOnly one Direct3D wrapper can run at a time; turning this on turns DXVK off.	Baixe o dgVoodoo2 e extraia. Aperte \"Pick the dgVoodoo folder...\", marque a caixa e reinicie o jogo. Toda mudança aqui exige reiniciar.\n\nO mod copia as dlls para UNI2-IM\\dgVoodoo e gera o dgVoodoo.conf com estas opções, sem mexer na pasta do jogo.\n\nForçar filtro de textura ou anti-aliasing pode estragar as cores dos personagens. Deixe no padrão do UNI2 ou desligado, a não ser que tenha certeza.\n\nSó um wrapper de Direct3D funciona por vez: ligar este desliga o DXVK.	Descarga dgVoodoo2 y extráelo. Presiona \"Pick the dgVoodoo folder...\", marca la casilla y reinicia el juego. Todo cambio aquí requiere reiniciar.\n\nEl mod copia las dlls a UNI2-IM\\dgVoodoo y genera dgVoodoo.conf con estas opciones, sin tocar la carpeta del juego.\n\nForzar el filtrado de texturas o el antialiasing puede romper los colores de los personajes. Déjalos como en UNI2 o desactivados, salvo que estés seguro.\n\nSolo funciona un wrapper de Direct3D a la vez: activar este desactiva DXVK.
 Download the portrait pack	Baixar o pack de retratos	Descargar el pack de retratos
@@ -799,7 +798,6 @@ The list	A lista	La lista
 The list: the scripts saved for that side's character.	A lista: os scripts salvos para o personagem daquele lado.	La lista: los scripts guardados para el personaje de ese lado.
 The main menu's Training shortcut skips character select. This picks the characters and colours it starts with.\nGame default: your last training pick, or Hyde vs Linne.	O atalho de Training do menu principal pula a seleção de personagem. Isto define os personagens e as cores iniciais.\nPadrão do jogo: sua última escolha no treino, ou Hyde vs Linne.	El atajo de Training del menú principal se salta la selección de personaje. Esto define los personajes y colores iniciales.\nPredeterminado del juego: tu última elección en entrenamiento, o Hyde vs Linne.
 The menu has room for a limited number. Change the ticks and press the button again to swap them. The game has to be restarted before they show up.	O menu tem espaço limitado. Mude as marcações e aperte o botão de novo para trocar. Eles só aparecem depois de reiniciar o jogo.	El menú tiene lugar limitado. Cambia las marcas y presiona el botón otra vez para cambiarlos. Solo aparecen después de reiniciar el juego.
-The mod higher in the list wins that file only. The rest of the lower mod still applies. The row tells you when this happens and names the winning mod, so use Up and Down to choose which one wins.	O mod mais acima na lista vence só nesse arquivo; o resto do mod de baixo continua valendo. A linha avisa quando isso acontece e mostra qual mod venceu. Use Subir e Descer para escolher.	El mod más arriba en la lista gana solo en ese archivo; el resto del mod de abajo sigue aplicándose. La fila avisa cuando pasa y muestra qué mod ganó. Usa Subir y Bajar para elegir.
 The mod's work in milliseconds, averaged over recent frames. oPresent and oFrameUpdate are the game itself, shown for comparison.	O trabalho do mod em milissegundos, na média dos últimos frames. oPresent e oFrameUpdate são o próprio jogo, para comparação.	El trabajo del mod en milisegundos, promediado en los últimos frames. oPresent y oFrameUpdate son el propio juego, para comparar.
 The name has no version number, so engine values stay as they are.	O nome não tem número de versão, então os valores do motor não mudam.	El nombre no tiene número de versión, así que los valores del motor no cambian.
 The notation	A notação	La notación
@@ -864,7 +862,6 @@ Undo	Desfazer	Deshacer
 Undo the last change. %d left.	Desfazer a última mudança. Restam %d.	Deshacer el último cambio. Quedan %d.
 Undoes the changes made since you opened this slot.	Desfaz as mudanças feitas desde que você abriu este slot.	Deshace los cambios hechos desde que abriste este slot.
 Untick to show this stage in UNI2's colour, without the mod's Brightness or Glow. Your values are kept for when you tick it again.	Desmarque para mostrar este cenário com a cor do UNI2, sem o Brilho e a Luz do mod. Seus valores ficam guardados para quando marcar de novo.	Desmarca para mostrar este escenario con el color de UNI2, sin el Brillo y la Luz del mod. Tus valores se guardan para cuando lo vuelvas a marcar.
-Up	Cima	Arriba
 Update	Atualizar	Actualizar
 Update available	Atualização disponível	Actualización disponible
 Update my ping location every 30 s	Atualizar minha localização de ping a cada 30 s	Actualizar mi ubicación de ping cada 30 s
@@ -990,3 +987,96 @@ Reading...	Lendo...	Leyendo...
 The GGPO session could not be read on this game version.	Não foi possível ler a sessão do GGPO nesta versão do jogo.	No se pudo leer la sesión de GGPO en esta versión del juego.
 The game was updated. Game features stay off until the mod is updated too.	O jogo foi atualizado. Os recursos de jogo ficam desligados até o mod ser atualizado também.	El juego se actualizó. Las funciones de juego quedan desactivadas hasta que el mod también se actualice.
 This copy of the game is out of date. Game features stay off until it is updated.	Esta cópia do jogo está desatualizada. Os recursos de jogo ficam desligados até ela ser atualizada.	Esta copia del juego está desactualizada. Las funciones de juego quedan desactivadas hasta que se actualice.
+%d file(s)	%d arquivo(s)	%d archivo(s)
+%d file(s) are used from %s instead.	%d arquivo(s) vêm de %s no lugar destes.	%d archivo(s) se usan de %s en su lugar.
+%d file(s) change gameplay. Online, the other player needs this mod too, or the match will desync.	%d arquivo(s) mudam a gameplay. Online, o rival também precisa deste mod, senão a partida dessincroniza.	%d archivo(s) cambian el gameplay. Online, el rival también necesita este mod o la partida se desincroniza.
+%d mod(s) it needs were turned on too.	%d mod(s) de que ele precisa também foram ligados.	También se activaron %d mod(s) que necesita.
+%d of %d file(s). Orange files change gameplay.	%d de %d arquivo(s). Os laranja mudam a gameplay.	%d de %d archivo(s). Los naranjas cambian el gameplay.
+%d of %d line(s)	%d de %d linha(s)	%d de %d línea(s)
+%d problem(s) need attention. The mods marked (!) say why.	%d problema(s) precisam de atenção. Os mods marcados com (!) dizem o motivo.	%d problema(s) requieren atención. Los mods marcados con (!) dicen por qué.
+%u error(s) and %u warning(s) this session. Open the log to see them.	%u erro(s) e %u aviso(s) nesta sessão. Abra o log para ver.	%u error(es) y %u advertencia(s) en esta sesión. Abre el log para verlos.
+(none)	(nenhum)	(ninguno)
+A profile saves which mods are on and their order. Pick one to switch the whole list at once. A * after its name means the list changed since it was saved.	Um perfil guarda quais mods estão ligados e a ordem deles. Escolha um para trocar a lista inteira de uma vez. Um * depois do nome indica que a lista mudou desde que ele foi salvo.	Un perfil guarda qué mods están activados y su orden. Elige uno para cambiar toda la lista de una vez. Un * después del nombre indica que la lista cambió desde que se guardó.
+About	Sobre	Acerca de
+Above and Below: mods it must sit above or below	Above e Below: mods acima ou abaixo dos quais ele fica	Above y Below: mods sobre o bajo los cuales debe quedar
+All off	Desligar todos	Desactivar todos
+All on	Ligar todos	Activar todos
+Also written to %s	Também salvo em %s	También se guarda en %s
+Category: %s	Categoria: %s	Categoría: %s
+Category: one word to group it, like Voices	Category: uma palavra para agrupar, como Voices	Category: una palabra para agruparlo, como Voices
+Changes gameplay. Online, the other player needs it too.	Muda a gameplay. Online, o rival também precisa dele.	Cambia el gameplay. Online, el rival también lo necesita.
+Choose a mod	Escolha um mod	Elige un mod
+Choose a mod's folder	Escolha a pasta de um mod	Elige la carpeta de un mod
+Conflicts	Conflitos	Conflictos
+Conflicts: mods it does not work with	Conflicts: mods com os quais ele não funciona	Conflicts: mods con los que no funciona
+Copies the folder into your mods. The original stays where it is.	Copia a pasta para os seus mods. A original fica onde está.	Copia la carpeta a tus mods. La original queda donde está.
+Copies the lines shown, to paste in a bug report.	Copia as linhas exibidas para colar num relato de bug.	Copia las líneas mostradas para pegarlas en un reporte de bug.
+Copy	Copiar	Copiar
+Copy this line	Copiar esta linha	Copiar esta línea
+Does not work with %s. Turn one of them off.	Não funciona com %s. Desligue um dos dois.	No funciona con %s. Desactiva uno de los dos.
+Error	Erro	Error
+Every category	Todas as categorias	Todas las categorías
+Every message of this session, with filters. Nothing went wrong so far.	Todas as mensagens desta sessão, com filtros. Nada deu errado até agora.	Todos los mensajes de esta sesión, con filtros. Nada salió mal hasta ahora.
+File	Arquivo	Archivo
+Files	Arquivos	Archivos
+Filter the files	Filtrar arquivos	Filtrar archivos
+Fix the folder	Corrigir a pasta	Corregir la carpeta
+Follow new lines	Seguir novas linhas	Seguir líneas nuevas
+Id: the name other mods use for it. Default: the folder name	Id: o nome que outros mods usam para ele. Padrão: o nome da pasta	Id: el nombre que otros mods usan para él. Predeterminado: el nombre de la carpeta
+Info		
+Install a folder...	Instalar uma pasta...	Instalar una carpeta...
+Level	Nível	Nivel
+Log		
+Looking for changes in the mods folder...	Procurando mudanças na pasta de mods...	Buscando cambios en la carpeta de mods...
+Message	Mensagem	Mensaje
+Mods with such files are marked gameplay in the list.	Mods com esses arquivos aparecem marcados como gameplay na lista.	Los mods con esos archivos aparecen marcados como gameplay en la lista.
+Move %s to the Recycle Bin?	Mover %s para a Lixeira?	¿Mover %s a la Papelera de reciclaje?
+Move down	Mover para baixo	Bajar
+Move to the Recycle Bin...	Mover para a Lixeira...	Mover a la Papelera...
+Move to the bottom	Mover para o fim	Mover al final
+Move to the top	Mover para o topo	Mover al principio
+Move up	Mover para cima	Subir
+Moves each mod to where its mod.ini asks to be.	Move cada mod para a posição que o mod.ini dele pede.	Mueve cada mod a la posición que pide su mod.ini.
+Needs %s, which is not installed.	Precisa de %s, que não está instalado.	Necesita %s, que no está instalado.
+Needs %s, which is off.	Precisa de %s, que está desligado.	Necesita %s, que está desactivado.
+Needs attention. Select it to see why.	Precisa de atenção. Selecione para ver o motivo.	Requiere atención. Selecciónalo para ver por qué.
+Needs: %s	Precisa de: %s	Necesita: %s
+No file of this mod is in another mod that is on.	Nenhum arquivo deste mod está em outro mod ligado.	Ningún archivo de este mod está en otro mod activado.
+No mod.ini, so it is listed by its folder name.	Sem mod.ini, então aparece com o nome da pasta.	Sin mod.ini, así que aparece con el nombre de la carpeta.
+None.	Nenhum.	Ninguno.
+On		
+Only this mod on	Só este mod ligado	Solo este mod activado
+Open its folder	Abrir a pasta dele	Abrir su carpeta
+Open the log file	Abrir o arquivo de log	Abrir el archivo de log
+Open the mod's page	Abrir a página do mod	Abrir la página del mod
+Optional keys in [Mod]:	Chaves opcionais em [Mod]:	Claves opcionales en [Mod]:
+Other mod	Outro mod	Otro mod
+Pick a mod in the list to see its details.	Escolha um mod na lista para ver os detalhes.	Elige un mod de la lista para ver sus detalles.
+Profile	Perfil	Perfil
+Profile name	Nome do perfil	Nombre del perfil
+Reading order	Ordem de leitura	Orden de lectura
+Replaced by a mod higher in the list (%d)	Substituídos por um mod acima na lista (%d)	Reemplazados por un mod más arriba en la lista (%d)
+Requires: mods it needs, by folder name or Id	Requires: mods de que ele precisa, pelo nome da pasta ou Id	Requires: mods que necesita, por nombre de carpeta o Id
+Save as...	Salvar como...	Guardar como...
+Search	Buscar	Buscar
+Search the log	Buscar no log	Buscar en el log
+Should be above %s in the list. Sort by rules fixes it.	Deveria ficar acima de %s na lista. Ordenar pelas regras corrige.	Debería estar arriba de %s en la lista. Ordenar por reglas lo corrige.
+Should be below %s in the list. Sort by rules fixes it.	Deveria ficar abaixo de %s na lista. Ordenar pelas regras corrige.	Debería estar debajo de %s en la lista. Ordenar por reglas lo corrige.
+Sort by rules	Ordenar pelas regras	Ordenar por reglas
+The files are inside an extra folder, %s, so the game cannot find them.	Os arquivos estão dentro de uma pasta a mais, %s, e o jogo não os encontra.	Los archivos están dentro de una carpeta de más, %s, y el juego no los encuentra.
+The list changed since this profile was saved.	A lista mudou desde que este perfil foi salvo.	La lista cambió desde que se guardó este perfil.
+The log file is off, so only warnings and errors are kept here.	O arquivo de log está desligado, então só avisos e erros ficam aqui.	El archivo de log está desactivado, así que aquí solo quedan advertencias y errores.
+The mod higher in the list wins that file only. The rest of the lower mod still applies. Drag a mod up or down, or right-click it, to choose which one wins. The Conflicts tab of a mod lists every shared file and which mod wins it.	O mod mais acima na lista vence só nesse arquivo; o resto do mod de baixo continua valendo. Arraste um mod para cima ou para baixo, ou clique nele com o botão direito, para escolher qual vence. A aba Conflitos de um mod lista cada arquivo compartilhado e qual mod vence.	El mod más arriba en la lista gana solo en ese archivo; el resto del mod de abajo sigue aplicándose. Arrastra un mod arriba o abajo, o haz clic derecho en él, para elegir cuál gana. La pestaña Conflictos de un mod lista cada archivo compartido y qué mod lo gana.
+The mods' rules contradict each other, so nothing was moved.	As regras dos mods se contradizem, então nada foi movido.	Las reglas de los mods se contradicen, así que no se movió nada.
+Thread		
+Time	Hora	Hora
+Turn it on	Ligar	Activar
+Url: the mod's web page	Url: a página do mod na web	Url: la página web del mod
+Used from this mod (%d)	Usados deste mod (%d)	Usados de este mod (%d)
+Warning	Aviso	Advertencia
+While this window is open you can also drop zips and folders on the game window to install them.	Com esta janela aberta, você também pode arrastar zips e pastas para a janela do jogo para instalar.	Con esta ventana abierta, también puedes arrastrar zips y carpetas a la ventana del juego para instalarlos.
+Yes, remove it	Sim, remover	Sí, quitarlo
+You can also drop a zip or a folder on the game window.	Você também pode arrastar um zip ou uma pasta para a janela do jogo.	También puedes arrastrar un zip o una carpeta a la ventana del juego.
+gameplay		
+installing. Restart the game when it finishes.	instalando. Reinicie o jogo quando terminar.	instalando. Reinicia el juego cuando termine.
+partly replaced	parcialmente substituído	parcialmente reemplazado

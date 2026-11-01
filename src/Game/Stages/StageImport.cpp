@@ -1472,7 +1472,7 @@ std::vector<PackStage> PackStagesToSeat(const std::vector<int>& taken, const std
 	{
 		const ModPacks::Pack& pack = packs[claim.pack];
 
-		PackStage stage = { claim.number, pack.path + "\\bg\\" + PackStages::FolderName(claim.number), pack.name,
+		PackStage stage = { claim.number, pack.path + "\\bg\\" + PackStages::FolderName(claim.number), pack.manifest.name,
 			std::string(), kNoThumbnail };
 		ModPacks::StageDeclared(pack, claim.number, stage.name, stage.card);
 

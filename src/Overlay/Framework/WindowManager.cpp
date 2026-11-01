@@ -24,6 +24,7 @@
 #include "Game/Engine/OnlineState.h"
 #include "Game/Engine/SceneWatch.h"
 #include "Hooks/InputProbe.h"
+#include "Overlay/Framework/FileDrop.h"
 #include "Overlay/Hud/FrameMeterHud.h"
 #include "Overlay/Hud/NotificationBar.h"
 #include "Overlay/Hud/SubtitleHud.h"
@@ -311,6 +312,7 @@ void WindowManager::InstallWindowProc(HWND window)
 		SetWindowLongPtrA(window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&ModWindowProc)));
 
 	m_originalWndProc = g_originalWndProc;
+	FileDrop::Attach(window);
 	LOG("Window procedure installed (original 0x%p)", (void*)g_originalWndProc);
 }
 
@@ -338,6 +340,12 @@ LRESULT WindowManager::HandleWindowMessage(HWND window, UINT message, WPARAM wPa
 
 	if (!m_initialized)
 		return 0;
+
+	if (FileDrop::Handle(message, wParam))
+	{
+		outHandled = true;
+		return 0;
+	}
 
 	if (m_overlayActive)
 	{

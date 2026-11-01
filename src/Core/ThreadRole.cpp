@@ -9,6 +9,8 @@ thread_local ThreadRole::Role t_role = ThreadRole::Role_Unknown;
 const char* const kNames[ThreadRole::Role_COUNT] = { "an unmarked thread", "the game thread", "Present",
 	"the game's loader thread", "a mod worker" };
 
+const char* const kTags[ThreadRole::Role_COUNT] = { "-", "game", "render", "loader", "worker" };
+
 }
 
 void ThreadRole::Mark(Role role)
@@ -24,6 +26,11 @@ ThreadRole::Role ThreadRole::Current()
 const char* ThreadRole::Name(Role role)
 {
 	return role >= 0 && role < Role_COUNT ? kNames[role] : kNames[Role_Unknown];
+}
+
+const char* ThreadRole::Tag(Role role)
+{
+	return role >= 0 && role < Role_COUNT ? kTags[role] : kTags[Role_Unknown];
 }
 
 void ThreadRole::Expect(Role role, Site& site)

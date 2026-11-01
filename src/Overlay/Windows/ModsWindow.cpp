@@ -13,12 +13,17 @@ ModsWindow::ModsWindow(const std::string& title, bool closable, ImGuiWindowFlags
 
 void ModsWindow::BeforeDraw()
 {
-	ImGui::SetNextWindowSize(ImVec2(Ui::Scaled(620.0f), Ui::Scaled(520.0f)), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(Ui::Scaled(460.0f), Ui::Scaled(320.0f)),
+	ImGui::SetNextWindowSize(ImVec2(Ui::Scaled(900.0f), Ui::Scaled(600.0f)), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(Ui::Scaled(620.0f), Ui::Scaled(420.0f)),
 		ImVec2(FLT_MAX, FLT_MAX));
 }
 
 void ModsWindow::Draw()
 {
 	m_panel.Draw();
+}
+
+void ModsWindow::OnClosed()
+{
+	m_panel.OnClosed();
 }

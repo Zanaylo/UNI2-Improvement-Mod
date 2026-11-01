@@ -19,6 +19,9 @@
     <Filter Include="Core\Input">
       <UniqueIdentifier>{3370b467-1f15-127a-d992-4e1fe1113ea4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Log">
+      <UniqueIdentifier>{d9a68022-063e-0f0c-ca9b-484789269686}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core\Text">
       <UniqueIdentifier>{40283212-4446-4c55-ae23-5cfcd4890b45}</UniqueIdentifier>
     </Filter>
@@ -1079,6 +1082,45 @@
     </ClCompile>
     <ClCompile Include="src\Core\logger.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Log\LogText.cpp">
+      <Filter>Core\Log</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Log\LogRing.cpp">
+      <Filter>Core\Log</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Log\LogFormat.cpp">
+      <Filter>Core\Log</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Boot\CrashReport.cpp">
+      <Filter>Core\Boot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Text\TextList.cpp">
+      <Filter>Core\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Files\ModManifest.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Files\ModRules.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Files\ModLayout.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Files\ModProfiles.cpp">
+      <Filter>Game\Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Framework\FileDrop.cpp">
+      <Filter>Overlay\Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\ModDetails.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Panels\ModProfileBar.cpp">
+      <Filter>Overlay\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\LogWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Core\Boot\Compat.cpp">
       <Filter>Core\Boot</Filter>
@@ -3100,6 +3142,48 @@
     </ClInclude>
     <ClInclude Include="src\Core\logger.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Log\LogLevel.h">
+      <Filter>Core\Log</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Log\LogText.h">
+      <Filter>Core\Log</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Log\LogRing.h">
+      <Filter>Core\Log</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Log\LogFormat.h">
+      <Filter>Core\Log</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Boot\CrashReport.h">
+      <Filter>Core\Boot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Text\TextList.h">
+      <Filter>Core\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\ModManifest.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\ModRules.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\ModLayout.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Files\ModProfiles.h">
+      <Filter>Game\Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Framework\FileDrop.h">
+      <Filter>Overlay\Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\ModDetails.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Panels\ModProfileBar.h">
+      <Filter>Overlay\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\LogWindow.h">
+      <Filter>Overlay\Windows</Filter>
     </ClInclude>
     <ClInclude Include="src\Core\Boot\Compat.h">
       <Filter>Core\Boot</Filter>

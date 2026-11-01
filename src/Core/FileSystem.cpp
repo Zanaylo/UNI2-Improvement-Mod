@@ -1,8 +1,13 @@
 #include "Core/FileSystem.h"
 
 #include <Windows.h>
+#include <ShlObj.h>
+#include <shellapi.h>
+
+#pragma comment(lib, "shell32.lib")
 
 #include <cstdio>
+#include <cstring>
 
 namespace {
 
@@ -19,6 +24,47 @@ bool FolderIdentity(const std::string& folder, BY_HANDLE_FILE_INFORMATION& out)
 	CloseHandle(handle);
 
 	return read && (out.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}
+
+bool IsDots(const char* name)
+{
+	return strcmp(name, ".") == 0 || strcmp(name, "..") == 0;
+}
+
+bool CopyInto(const std::string& from, const std::string& to, int& files)
+{
+	if (CreateDirectoryA(to.c_str(), nullptr) == FALSE && GetLastError() != ERROR_ALREADY_EXISTS)
+		return false;
+
+	WIN32_FIND_DATAA found = {};
+	const HANDLE search = FindFirstFileA((from + "\\*").c_str(), &found);
+
+	if (search == INVALID_HANDLE_VALUE)
+		return true;
+
+	bool copied = true;
+
+	do
+	{
+		if (IsDots(found.cFileName))
+			continue;
+
+		const std::string source = from + "\\" + found.cFileName;
+		const std::string target = to + "\\" + found.cFileName;
+
+		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+		{
+			copied = CopyInto(source, target, files);
+			continue;
+		}
+
+		copied = CopyFileA(source.c_str(), target.c_str(), FALSE) != FALSE;
+		files += copied ? 1 : 0;
+	}
+	while (copied && FindNextFileA(search, &found) != 0);
+
+	FindClose(search);
+	return copied;
 }
 
 }
@@ -89,4 +135,35 @@ std::vector<std::string> ListFileNames(const std::string& folder)
 
 	FindClose(search);
 	return names;
+}
+
+bool CopyDirectoryTree(const std::string& from, const std::string& to, int& outFiles)
+{
+	outFiles = 0;
+
+	const DWORD attributes = GetFileAttributesA(from.c_str());
+
+	if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+		return false;
+
+	const size_t slash = to.find_last_of('\\');
+
+	if (slash != std::string::npos)
+		SHCreateDirectoryExA(nullptr, to.substr(0, slash).c_str(), nullptr);
+
+	return CopyInto(from, to, outFiles);
+}
+
+bool MoveToRecycleBin(const std::string& path)
+{
+	std::vector<char> from(path.begin(), path.end());
+	from.push_back('\0');
+	from.push_back('\0');
+
+	SHFILEOPSTRUCTA operation = {};
+	operation.wFunc = FO_DELETE;
+	operation.pFrom = from.data();
+	operation.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI;
+
+	return SHFileOperationA(&operation) == 0 && operation.fAnyOperationsAborted == FALSE;
 }

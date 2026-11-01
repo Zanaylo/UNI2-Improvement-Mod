@@ -8,6 +8,7 @@
 #include "Overlay/Panels/TrainingPanel.h"
 
 #include "Core/info.h"
+#include "Core/Log/LogRing.h"
 #include "Core/logger.h"
 #include "Core/Config/Features.h"
 #include "Core/Config/interfaces.h"
@@ -111,6 +112,21 @@ MainTabs::Shown TabContents()
 void Description(const char* text)
 {
 	UiText::Muted("%s", text);
+}
+
+void DrawLogCounts()
+{
+	const LogRing& history = GetLogHistory();
+	const uint32_t errors = history.Count(LogLevel::Error);
+	const uint32_t warnings = history.Count(LogLevel::Warn);
+
+	if (errors == 0 && warnings == 0)
+	{
+		Description("Every message of this session, with filters. Nothing went wrong so far.");
+		return;
+	}
+
+	UiText::Warn("%u error(s) and %u warning(s) this session. Open the log to see them.", errors, warnings);
 }
 
 }
@@ -284,6 +300,9 @@ void MainWindow::DrawLogSection()
 
 	if (!card)
 		return;
+
+	LauncherTitle("Log", WindowType_Log);
+	DrawLogCounts();
 
 	const bool forced = IsLoggingForced();
 	bool logging = forced || IsLoggerOpen();
@@ -519,4 +538,7 @@ void MainWindow::DrawModsSection()
 		UiText::Good("%d of %d mod(s) on, %d file(s).", ModPacks::EnabledCount(), ModPacks::Count(),
 			ModPacks::FileCount());
 	}
+
+	if (ModPacks::IssueCount() > 0)
+		UiText::Warn("%d problem(s) need attention. The mods marked (!) say why.", ModPacks::IssueCount());
 }

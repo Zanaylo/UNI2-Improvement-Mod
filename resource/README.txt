@@ -11,9 +11,12 @@ When something does not work, set
 
 in UNI2-IM\Config\Debug.ini and run the game once. The log lands in UNI2-IM\Logs
 next to the game and says what the mod loaded, what it is running on, every hook
-it installed and where, and anything that faulted. Nothing is written without
-that setting. The logs are plain text and contain nothing personal beyond the
-Steam ID of whoever you played.
+it installed and where, and anything that faulted. Without that setting the
+only files written there are crash reports: if the game crashes, a
+crash_<date>.txt with the last warnings and errors lands beside the .dmp, so send
+both. The logs are plain text and contain nothing personal beyond the Steam ID
+of whoever you played. The Log window (main window, Debug tab) shows the same
+messages in the game, with filters and a Copy button.
 
 The settings live in UNI2-IM\Config, one file per part of the mod (Graphics.ini,
 Training.ini, Netplay.ini and so on), and what the mod keeps for itself, like

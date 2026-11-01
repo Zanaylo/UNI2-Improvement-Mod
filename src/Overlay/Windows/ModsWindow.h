@@ -13,6 +13,7 @@ public:
 protected:
 	void BeforeDraw() override;
 	void Draw() override;
+	void OnClosed() override;
 
 private:
 	ModsPanel m_panel;

@@ -2,6 +2,9 @@
 
 #include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
+#include "Core/Log/LogRing.h"
+#include "Core/Log/LogText.h"
+#include "Core/ThreadRole.h"
 #include "Core/TimeStamp.h"
 #include "Core/utils.h"
 
@@ -25,8 +28,15 @@ constexpr int kMaxSessionLogs = 20;
 constexpr size_t kLineBytes = 2048;
 constexpr size_t kPendingReserve = 64 * 1024;
 constexpr size_t kPendingLimit = 8 * 1024 * 1024;
+constexpr size_t kBytesPerMegabyte = 1024 * 1024;
+constexpr size_t kFileLimit = 64 * kBytesPerMegabyte;
+constexpr size_t kHistoryEntries = 4000;
 constexpr DWORD kWriteIntervalMs = 100;
 constexpr std::chrono::milliseconds kFlushWait(200);
+
+constexpr uint32_t kMsPerSecond = 1000;
+constexpr uint32_t kSecondsPerMinute = 60;
+constexpr uint32_t kMinutesPerHour = 60;
 
 const char* const kIndent = "             ";
 
@@ -39,9 +49,20 @@ std::string g_pending;
 size_t g_dropped = 0;
 HANDLE g_wake = nullptr;
 std::atomic<bool> g_open{ false };
+std::atomic<bool> g_captureAll{ false };
 
 char g_lastLine[kLineBytes] = {};
+LogLevel g_lastLevel = LogLevel::Info;
 unsigned long g_repeats = 0;
+
+size_t g_fileBytes = 0;
+bool g_fileFull = false;
+
+LogRing& History()
+{
+	static LogRing history(kHistoryEntries);
+	return history;
+}
 
 void Append(const char* text)
 {
@@ -117,10 +138,19 @@ std::string TakePending()
 
 void WriteOut(const std::string& text)
 {
-	if (text.empty() || g_logFile == nullptr)
+	if (text.empty() || g_logFile == nullptr || g_fileFull)
 		return;
 
+	g_fileBytes += text.size();
 	fwrite(text.data(), 1, text.size(), g_logFile);
+
+	if (g_fileBytes >= kFileLimit)
+	{
+		g_fileFull = true;
+		fprintf(g_logFile, "%s(the log reached %zu MB, the rest of this session is kept in memory only)\n", kIndent,
+			kFileLimit / kBytesPerMegabyte);
+	}
+
 	fflush(g_logFile);
 }
 
@@ -167,11 +197,69 @@ void StartWriter()
 		CloseHandle(writer);
 }
 
-void Stamp(char* out, size_t size)
+uint32_t MsOfDay(const SYSTEMTIME& time)
+{
+	const uint32_t minutes = time.wHour * kMinutesPerHour + time.wMinute;
+	const uint32_t seconds = minutes * kSecondsPerMinute + time.wSecond;
+
+	return seconds * kMsPerSecond + time.wMilliseconds;
+}
+
+void AppendFooter()
+{
+	char footer[128] = {};
+	sprintf_s(footer, "===== session ended, %u warning(s), %u error(s) =====\n", History().Count(LogLevel::Warn),
+		History().Count(LogLevel::Error));
+	Append(footer);
+}
+
+bool TakeLock(std::unique_lock<std::timed_mutex>& lock, bool crashing)
+{
+	if (crashing)
+		return lock.try_lock_for(kFlushWait);
+
+	lock.lock();
+	return true;
+}
+
+void Record(LogLevel level, const char* line)
 {
 	SYSTEMTIME time = {};
 	GetLocalTime(&time);
-	sprintf_s(out, size, "[%02d:%02d:%02d.%03d] ", time.wHour, time.wMinute, time.wSecond, time.wMilliseconds);
+
+	const bool crashing = g_captureAll.load();
+	const uint8_t thread = static_cast<uint8_t>(ThreadRole::Current());
+
+	if (crashing)
+		History().TryPush(level, MsOfDay(time), thread, LogText::Category(line), line);
+	else
+		History().Push(level, MsOfDay(time), thread, LogText::Category(line), line);
+
+	if (!g_open.load())
+		return;
+
+	char stamp[32] = {};
+	sprintf_s(stamp, "[%02d:%02d:%02d.%03d] ", time.wHour, time.wMinute, time.wSecond, time.wMilliseconds);
+
+	std::unique_lock<std::timed_mutex> lock(g_logMutex, std::defer_lock);
+
+	if (!TakeLock(lock, crashing))
+		return;
+
+	if (level == g_lastLevel && strcmp(line, g_lastLine) == 0)
+	{
+		++g_repeats;
+		return;
+	}
+
+	FlushRepeats();
+	strncpy_s(g_lastLine, line, _TRUNCATE);
+	g_lastLevel = level;
+
+	Append(stamp);
+	Append(LogText::FileTag(level));
+	Append(line);
+	Append("\n");
 }
 
 }
@@ -179,6 +267,19 @@ void Stamp(char* out, size_t size)
 const std::string& GetLogSessionStamp()
 {
 	return g_sessionStamp;
+}
+
+std::string GetLogFilePath()
+{
+	if (g_sessionStamp.empty())
+		return std::string();
+
+	return GetModLogPath("UNI2_IM_" + g_sessionStamp + ".log");
+}
+
+const LogRing& GetLogHistory()
+{
+	return History();
 }
 
 void OpenLogger()
@@ -196,11 +297,12 @@ void OpenLogger()
 
 	PruneOldFiles("UNI2_IM_*.log", kMaxSessionLogs);
 
-	const std::string path = GetModLogPath("UNI2_IM_" + g_sessionStamp + ".log");
-
-	g_logFile = _fsopen(path.c_str(), "w", _SH_DENYWR);
+	g_logFile = _fsopen(GetLogFilePath().c_str(), "w", _SH_DENYWR);
 	if (g_logFile == nullptr)
 		return;
+
+	g_fileBytes = 0;
+	g_fileFull = false;
 
 	SYSTEMTIME time = {};
 	GetLocalTime(&time);
@@ -226,6 +328,7 @@ void CloseLogger()
 
 		FlushRepeats();
 		g_lastLine[0] = 0;
+		AppendFooter();
 	}
 
 	g_open.store(false);
@@ -270,9 +373,14 @@ void SetLogging(bool enabled)
 	CloseLogger();
 }
 
+void SetLogCaptureAll(bool capture)
+{
+	g_captureAll.store(capture);
+}
+
 void WriteLog(const char* format, ...)
 {
-	if (!g_open.load())
+	if (!g_open.load() && !g_captureAll.load())
 		return;
 
 	char line[kLineBytes] = {};
@@ -282,23 +390,22 @@ void WriteLog(const char* format, ...)
 	vsnprintf(line, sizeof(line), format, args);
 	va_end(args);
 
-	char stamp[32] = {};
-	Stamp(stamp, sizeof(stamp));
+	Record(LogText::Guess(line), line);
+}
 
-	std::lock_guard<std::timed_mutex> lock(g_logMutex);
-
-	if (strcmp(line, g_lastLine) == 0)
-	{
-		++g_repeats;
+void WriteLogAt(LogLevel level, const char* format, ...)
+{
+	if (!g_open.load() && !g_captureAll.load() && level < LogLevel::Warn)
 		return;
-	}
 
-	FlushRepeats();
-	strncpy_s(g_lastLine, line, _TRUNCATE);
+	char line[kLineBytes] = {};
 
-	Append(stamp);
-	Append(line);
-	Append("\n");
+	va_list args;
+	va_start(args, format);
+	vsnprintf(line, sizeof(line), format, args);
+	va_end(args);
+
+	Record(level, line);
 }
 
 void BootTrace(const char* format, ...)

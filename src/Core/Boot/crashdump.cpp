@@ -1,6 +1,7 @@
 #include "Core/Boot/crashdump.h"
 
 #include "Core/Boot/CrashContext.h"
+#include "Core/Boot/CrashReport.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 
@@ -53,10 +54,10 @@ bool g_dumpWritten = false;
 volatile LONG g_crashDumped = 0;
 volatile LONG g_hangDumped = 0;
 
-void PruneDumps()
+void PruneFiles(const char* pattern)
 {
 	WIN32_FIND_DATAA found = {};
-	const HANDLE handle = FindFirstFileA(GetModLogPath("crash_*.dmp").c_str(), &found);
+	const HANDLE handle = FindFirstFileA(GetModLogPath(pattern).c_str(), &found);
 
 	if (handle == INVALID_HANDLE_VALUE)
 		return;
@@ -78,6 +79,12 @@ void PruneDumps()
 
 	for (size_t i = 0; i + kKeepDumps <= names.size(); ++i)
 		DeleteFileA(GetModLogPath(names[i]).c_str());
+}
+
+void PruneDumps()
+{
+	PruneFiles("crash_*.dmp");
+	PruneFiles("crash_*.txt");
 }
 
 void BuildDumpPath(const char* kind)
@@ -152,13 +159,13 @@ bool RequestDump(const char* kind, EXCEPTION_POINTERS* pointers)
 	return written;
 }
 
-void LogFaultLocation(EXCEPTION_POINTERS* exceptionInfo)
+void DescribeFault(EXCEPTION_POINTERS* exceptionInfo, char* out, size_t size)
 {
 	const EXCEPTION_RECORD* const record = exceptionInfo != nullptr ? exceptionInfo->ExceptionRecord : nullptr;
 
 	if (record == nullptr)
 	{
-		LOG("CRASH: no exception record");
+		strncpy_s(out, size, "CRASH: no exception record", _TRUNCATE);
 		return;
 	}
 
@@ -178,22 +185,27 @@ void LogFaultLocation(EXCEPTION_POINTERS* exceptionInfo)
 		? static_cast<size_t>(reinterpret_cast<const char*>(address) - reinterpret_cast<const char*>(owner))
 		: 0;
 
-	LOG("CRASH: code 0x%08lx at 0x%p in %s (+0x%zx), thread %lu", static_cast<unsigned long>(record->ExceptionCode),
-		address, module, offset, GetCurrentThreadId());
+	sprintf_s(out, size, "CRASH: code 0x%08lx at 0x%p in %s (+0x%zx), thread %lu",
+		static_cast<unsigned long>(record->ExceptionCode), address, module, offset, GetCurrentThreadId());
 }
 
 void Report(const char* kind, EXCEPTION_POINTERS* pointers)
 {
 	const bool written = RequestDump(kind, pointers);
 
-	LogFaultLocation(pointers);
+	char fault[MAX_PATH + 128] = {};
+	DescribeFault(pointers, fault, sizeof(fault));
+
+	SetLogCaptureAll(true);
+	LOG_ERROR("%s", fault);
 	CrashContext::WriteAll();
 
 	if (written)
 		LOG("Crash dump written to %s", g_dumpPath);
 	else
-		LOG("Crash dump could not be written to %s (error %lu)", g_dumpPath, GetLastError());
+		LOG_ERROR("Crash dump could not be written to %s (error %lu)", g_dumpPath, GetLastError());
 
+	CrashReport::Write(g_dumpPath, kind, fault);
 	FlushLogger();
 	PruneDumps();
 }
@@ -321,7 +333,10 @@ void WriteHangDump(const char* reason)
 
 	const bool written = RequestDump("hang", nullptr);
 
-	LOG("Hang dump %s %s: %s", written ? "written to" : "could not be written to", g_dumpPath, reason);
+	SetLogCaptureAll(true);
+	LOG_ERROR("Hang dump %s %s: %s", written ? "written to" : "could not be written to", g_dumpPath, reason);
+	SetLogCaptureAll(false);
+	CrashReport::Write(g_dumpPath, "hang", reason);
 	FlushLogger();
 	PruneDumps();
 }

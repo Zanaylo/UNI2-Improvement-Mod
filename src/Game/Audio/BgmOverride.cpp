@@ -139,7 +139,7 @@ void BgmOverride::Layer(FileIndex& into)
 		packTable = ReadText(PackFile(pack.path, kServedTable), table) || packTable;
 
 		sources.push_back({ pack.path, false });
-		layers.push_back({ pack.name, table });
+		layers.push_back({ pack.manifest.name, table });
 	}
 
 	if (!packTable)

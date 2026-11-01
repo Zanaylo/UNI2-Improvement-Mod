@@ -11,7 +11,6 @@
 #include "Game/Files/DataArchive.h"
 #include "Game/Files/FbGameFolder.h"
 #include "Game/Files/MbtlArchive.h"
-#include "Game/Files/ModFiles.h"
 #include "Game/Files/ModPacks.h"
 #include "Game/Files/SteamLibrary.h"
 
@@ -499,8 +498,7 @@ void AnnouncerImport::Update()
 	if (!g_job.ConsumeFinished())
 		return;
 
-	ModPacks::Scan();
-	ModFiles::Rescan();
+	ModPacks::RequestScan();
 }
 
 bool AnnouncerImport::IsBusy()
