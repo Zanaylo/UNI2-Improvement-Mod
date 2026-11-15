@@ -1080,3 +1080,27 @@ You can also drop a zip or a folder on the game window.	Você também pode arras
 gameplay		
 installing. Restart the game when it finishes.	instalando. Reinicie o jogo quando terminar.	instalando. Reinicia el juego cuando termine.
 partly replaced	parcialmente substituído	parcialmente reemplazado
+%d entries picked	%d entradas selecionadas	%d entradas seleccionadas
+Apply gradient	Aplicar degradê	Aplicar degradado
+Blends the picked entries, from the first one picked to the last.	Mistura as entradas, da primeira selecionada até a última.	Mezcla las entradas, desde la primera seleccionada hasta la última.
+Ctrl+click adds an entry. Shift+click picks a range.	Ctrl+clique adiciona uma entrada. Shift+clique seleciona um intervalo.	Ctrl+clic agrega una entrada. Shift+clic selecciona un rango.
+Fills the picked entries with this gradient.	Preenche as entradas selecionadas com este degradê.	Rellena las entradas seleccionadas con este degradado.
+From	De	Desde
+Gradient	Degradê	Degradado
+One colour	Uma cor	Un color
+Paints every picked entry with this colour.	Pinta todas as entradas selecionadas com esta cor.	Pinta todas las entradas seleccionadas con este color.
+To	Até	Hasta
+entry %d	entrada %d	entrada %d
+entry %d (changed)	entrada %d (alterada)	entrada %d (cambiada)
+During a match, you can wear it from here.	Durante a partida, você pode vestir por aqui.	Durante la partida, puedes usarla desde aquí.
+Edit on P%d	Editar no P%d	Editar en P%d
+Every saved palette of every character. Put one on a colour or wear it from there.	Todas as palettes salvas de todos os personagens. Coloque uma numa cor ou vista por lá.	Todas las palettes guardadas de todos los personajes. Asigna una a un color o úsala desde ahí.
+No palettes yet. Save one in the editor, or put .pal files in UNI2-IM\\Palettes\\<character>.	Nenhuma palette ainda. Salve uma no editor ou coloque arquivos .pal em UNI2-IM\\Palettes\\<personagem>.	Todavía no hay palettes. Guarda una en el editor o coloca archivos .pal en UNI2-IM\\Palettes\\<personaje>.
+Palette library	Biblioteca de palettes	Biblioteca de palettes
+Pick a palette to see it here.	Escolha uma palette para ver aqui.	Elige una palette para verla aquí.
+Reading the palettes folder...	Lendo a pasta de palettes...	Leyendo la carpeta de palettes...
+Reading the picture...	Lendo a imagem...	Leyendo la imagen...
+Reads the palettes folder again, for palettes added while the game runs.	Lê a pasta de palettes de novo, para as adicionadas com o jogo aberto.	Vuelve a leer la carpeta de palettes, para las agregadas con el juego abierto.
+Search palettes or characters	Buscar palettes ou personagens	Buscar palettes o personajes
+This character is not in the match.	Este personagem não está na partida.	Este personaje no está en la partida.
+Wear on P%d	Vestir no P%d	Usar en P%d

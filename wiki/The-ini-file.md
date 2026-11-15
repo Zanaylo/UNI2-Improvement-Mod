@@ -140,6 +140,7 @@ gone. Also in the game's menu under Option, Display, Improvement Mod - HUD Opaci
 | `IdentifyByColours` | `0` | Lets the colour comparison decide which side is which. Leave it off: every time it was tested it got the sides backwards. |
 | `PaintOutOfMatch` | `0` | Also applies chosen palettes outside a match, such as the character select portrait and the lobby avatar. |
 | `PaintEffectRows` | `1` | Does nothing now. It stays so an older ini still loads. |
+| `EffectsFromPalette` | `1` | In a match, effects take their colours straight from the palette. |
 | `ShowLegacyTab` | `0` | Shows the tab of the first palette system. |
 | `GroupByPart` | `1` | Groups palette entries like the game's own colour screen does (hair, skin and so on). |
 | `FlashEntry` | `1` | When you pick an entry, everything else darkens and that entry blinks on the character. |

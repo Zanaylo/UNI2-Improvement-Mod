@@ -1293,6 +1293,9 @@
     <ClCompile Include="src\D3D9\Draw\FrozenFrame.cpp">
       <Filter>D3D9\Draw</Filter>
     </ClCompile>
+    <ClCompile Include="src\D3D9\Draw\TextureGraveyard.cpp">
+      <Filter>D3D9\Draw</Filter>
+    </ClCompile>
     <ClCompile Include="src\Overlay\Framework\WindowManager.cpp">
       <Filter>Overlay\Framework</Filter>
     </ClCompile>
@@ -1326,6 +1329,15 @@
     <ClCompile Include="src\Overlay\Widgets\ComboNav.cpp">
       <Filter>Overlay\Widgets</Filter>
     </ClCompile>
+    <ClCompile Include="src\Overlay\Widgets\PaletteThumbnails.cpp">
+      <Filter>Overlay\Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Widgets\ColourSlotCombo.cpp">
+      <Filter>Overlay\Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Widgets\EntryPicker.cpp">
+      <Filter>Overlay\Widgets</Filter>
+    </ClCompile>
     <ClCompile Include="src\Overlay\Widgets\CharaPreview.cpp">
       <Filter>Overlay\Widgets</Filter>
     </ClCompile>
@@ -1348,6 +1360,9 @@
       <Filter>Overlay\Panels</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Windows\PaletteWindow.cpp">
+      <Filter>Overlay\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Windows\PaletteLibraryWindow.cpp">
       <Filter>Overlay\Windows</Filter>
     </ClCompile>
     <ClCompile Include="src\Overlay\Windows\DebugWindow.cpp">
@@ -1476,6 +1491,30 @@
     <ClCompile Include="src\Palette\PaletteFile.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
+    <ClCompile Include="src\Palette\MirrorPairs.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\TintBuffer.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\EffectBuffer.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteSearch.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteCatalog.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteGradient.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\EntrySelection.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Palette\PaletteMirror.cpp">
+      <Filter>Palette</Filter>
+    </ClCompile>
     <ClCompile Include="src\Palette\PaletteLibrary.cpp">
       <Filter>Palette</Filter>
     </ClCompile>
@@ -1519,6 +1558,9 @@
       <Filter>Game\Customize</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Customize\PngPalette.cpp">
+      <Filter>Game\Customize</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Customize\SheetSamples.cpp">
       <Filter>Game\Customize</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Customize\CgImage.cpp">
@@ -3302,6 +3344,9 @@
     <ClInclude Include="src\D3D9\Draw\FrozenFrame.h">
       <Filter>D3D9\Draw</Filter>
     </ClInclude>
+    <ClInclude Include="src\D3D9\Draw\TextureGraveyard.h">
+      <Filter>D3D9\Draw</Filter>
+    </ClInclude>
     <ClInclude Include="src\Overlay\Framework\WindowManager.h">
       <Filter>Overlay\Framework</Filter>
     </ClInclude>
@@ -3335,6 +3380,15 @@
     <ClInclude Include="src\Overlay\Widgets\ComboNav.h">
       <Filter>Overlay\Widgets</Filter>
     </ClInclude>
+    <ClInclude Include="src\Overlay\Widgets\PaletteThumbnails.h">
+      <Filter>Overlay\Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Widgets\ColourSlotCombo.h">
+      <Filter>Overlay\Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Overlay\Widgets\EntryPicker.h">
+      <Filter>Overlay\Widgets</Filter>
+    </ClInclude>
     <ClInclude Include="src\Overlay\Widgets\CharaPreview.h">
       <Filter>Overlay\Widgets</Filter>
     </ClInclude>
@@ -3359,6 +3413,9 @@
     <ClInclude Include="src\Overlay\Windows\PaletteWindow.h">
       <Filter>Overlay\Windows</Filter>
     </ClInclude>
+    <ClInclude Include="src\Overlay\Windows\PaletteLibraryWindow.h">
+      <Filter>Overlay\Windows</Filter>
+    </ClInclude>
     <ClInclude Include="src\Game\Customize\PlayerCard.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>
@@ -3375,6 +3432,9 @@
       <Filter>Game\Customize</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Customize\PngPalette.h">
+      <Filter>Game\Customize</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Customize\SheetSamples.h">
       <Filter>Game\Customize</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Customize\CgImage.h">
@@ -3579,6 +3639,30 @@
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\PaletteFile.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\MirrorPairs.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\TintBuffer.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\EffectBuffer.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteSearch.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteCatalog.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteGradient.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\EntrySelection.h">
+      <Filter>Palette</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Palette\PaletteMirror.h">
       <Filter>Palette</Filter>
     </ClInclude>
     <ClInclude Include="src\Palette\PaletteLibrary.h">

@@ -98,6 +98,7 @@
 #include "Overlay/Native/HudOpacityItems.h"
 #include "Overlay/Native/OptionTitle.h"
 #include "Overlay/Native/TrainingMenuItems.h"
+#include "Palette/EffectBuffer.h"
 #include "Palette/EffectOwner.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteBinder.h"
@@ -322,6 +323,7 @@ const Task kPalette[] = {
 	[] { PalettePaint::OnFrame(); },
 	[] { ColourPreview::OnFrame(); },
 	[] { EffectOwner::OnFrame(); },
+	[] { EffectBuffer::OnFrame(); },
 	[] { PaletteChoice::OnFrame(); },
 	[] { PaletteTexture::OnFrame(); },
 	&LegacyPalettes,

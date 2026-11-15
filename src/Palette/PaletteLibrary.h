@@ -13,6 +13,7 @@ namespace PaletteLibrary
 	bool LoadWithEffects(int chara, const char* file, uint8_t* rgba, uint8_t* effects, bool* outHasEffects = nullptr);
 
 	void Rescan(int chara);
+	void Forget();
 
 	int GetCount(int chara);
 	const char* GetName(int chara, int index);

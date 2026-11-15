@@ -39,7 +39,7 @@ namespace EffectPaint
 	bool GetEdit(int player, int entry, uint8_t* outRgb);
 	int GetEditedCount(int player);
 
-	void PreviewObserved(int player, const uint8_t* rgb, int except, const uint8_t* exceptRgb);
+	void PreviewObserved(int player, const uint8_t* rgb, const bool* lit, const uint8_t* litRgb);
 	void EndPreview(int player);
 
 	void Forget();

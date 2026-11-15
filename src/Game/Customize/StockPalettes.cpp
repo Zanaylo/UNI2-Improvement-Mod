@@ -22,6 +22,7 @@ struct Character
 {
 	std::vector<uint8_t> rows;
 	int count = 0;
+	int stored = 0;
 };
 
 std::map<int, Character> g_characters;
@@ -55,8 +56,9 @@ bool Parse(const std::vector<uint8_t>& data, Character& out)
 	const size_t keep = stored < ColorCustomize::kStockLimit ? stored : ColorCustomize::kStockLimit;
 
 	out.rows.assign(data.begin() + kHeaderBytes,
-		data.begin() + kHeaderBytes + keep * kRowBytes);
+		data.begin() + kHeaderBytes + stored * kRowBytes);
 
+	out.stored = static_cast<int>(stored);
 	out.count = DistinctRows(out.rows, static_cast<int>(keep));
 	return true;
 }
@@ -112,4 +114,18 @@ const uint8_t* StockPalettes::GetRow(int chara, int palette)
 		return nullptr;
 
 	return character->rows.data() + static_cast<size_t>(palette) * kRowBytes;
+}
+
+int StockPalettes::GetStoredCount(int chara)
+{
+	const Character* const character = Find(chara);
+
+	return character == nullptr ? 0 : character->stored;
+}
+
+const uint8_t* StockPalettes::GetStoredRows(int chara)
+{
+	const Character* const character = Find(chara);
+
+	return character == nullptr ? nullptr : character->rows.data();
 }

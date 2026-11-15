@@ -84,6 +84,7 @@ const char* const kDefaultIniLines[] = {
 	"IdentifyByColours = 0",
 	"PaintOutOfMatch = 0",
 	"PaintEffectRows = 1",
+	"EffectsFromPalette = 1",
 	"ShowLegacyTab = 0",
 	"GroupByPart = 1",
 	"FlashEntry = 1",

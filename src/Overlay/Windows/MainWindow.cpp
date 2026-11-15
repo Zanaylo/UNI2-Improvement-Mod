@@ -39,7 +39,6 @@
 namespace {
 
 constexpr float kBaseWidthInFonts = 32.0f;
-constexpr float kHeightShareOfScreen = 0.85f;
 
 IWindow* WindowOf(WindowType type)
 {
@@ -72,6 +71,7 @@ const ModuleWindow kModuleWindows[] = {
 	{ FeatureCatalog::Id_Subtitles, WindowType_Subtitles },
 	{ FeatureCatalog::Id_GamePatches, WindowType_Patches },
 	{ FeatureCatalog::Id_Palettes, WindowType_Palette },
+	{ FeatureCatalog::Id_Palettes, WindowType_PaletteLibrary },
 	{ FeatureCatalog::Id_Palettes, WindowType_PaletteEditor },
 	{ FeatureCatalog::Id_Stages, WindowType_Stages },
 	{ FeatureCatalog::Id_Stages, WindowType_StageFields },
@@ -146,7 +146,7 @@ void MainWindow::BeforeDraw()
 
 	const float base = ImGui::GetFontSize() * kBaseWidthInFonts;
 
-	const float ceiling = ImGui::GetIO().DisplaySize.y * kHeightShareOfScreen;
+	const float ceiling = ImGui::GetIO().DisplaySize.y;
 
 	ImGui::SetNextWindowSizeConstraints(ImVec2(max(titleWidth + decorations, base), 0.0f),
 		ImVec2(FLT_MAX, ceiling > 0.0f ? ceiling : FLT_MAX));
@@ -252,11 +252,11 @@ void MainWindow::DrawTrainingTab()
 
 void MainWindow::DrawVisualsTab()
 {
+	DrawPalettesSection();
 	DrawPerformanceSection();
 	DrawStagesSection();
 	DrawThemeSection();
 	DrawMiscSection();
-	DrawPalettesSection();
 }
 
 void MainWindow::DrawPalettesSection()

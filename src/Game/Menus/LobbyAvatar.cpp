@@ -170,7 +170,7 @@ void Wear(int side, const Candidate& candidate)
 		sprintf_s(seat.status, "member %llu", static_cast<unsigned long long>(candidate.id));
 
 	seat.staged = true;
-	SelectLayer::Stage(side, candidate.colours, candidate.effects);
+	SelectLayer::Stage(side, kNoCharacter, candidate.colours, candidate.effects);
 	LOG("lobby avatar: p%d wears %s", side + 1, seat.status);
 }
 

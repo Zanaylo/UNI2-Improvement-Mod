@@ -9,6 +9,7 @@
 #include "Overlay/Windows/HitboxLegendWindow.h"
 #include "Overlay/Windows/LogWindow.h"
 #include "Overlay/Windows/PaletteEditorWindow.h"
+#include "Overlay/Windows/PaletteLibraryWindow.h"
 #include "Overlay/Windows/PaletteWindow.h"
 #include "Overlay/Windows/MusicWindow.h"
 #include "Overlay/Windows/SoundWindow.h"
@@ -64,6 +65,8 @@ WindowContainer::WindowContainer()
 		"Palette editor", true);
 
 	m_windows[WindowType_Palette] = std::make_unique<PaletteWindow>("Palette", true);
+
+	m_windows[WindowType_PaletteLibrary] = std::make_unique<PaletteLibraryWindow>("Palette library", true);
 
 	m_windows[WindowType_Performance] = std::make_unique<PerformanceWindow>("Performance editor", true);
 

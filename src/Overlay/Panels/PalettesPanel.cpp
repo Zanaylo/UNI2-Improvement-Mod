@@ -65,6 +65,17 @@ void DrawCustomSection()
 		if (window != nullptr && ImGui::Button(window->IsOpen() ? "Close editor" : "Open editor"))
 			window->Toggle();
 
+		IWindow* const library = container != nullptr
+			? container->GetWindow(WindowType_PaletteLibrary) : nullptr;
+
+		ImGui::SameLine();
+
+		if (library != nullptr && ImGui::Button(TrLabel("Palette library")))
+			library->Toggle();
+
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("%s", Tr("Every saved palette of every character. Put one on a colour or wear it from there."));
+
 		DrawPaletteChoosers();
 		DrawPaletteOptions();
 

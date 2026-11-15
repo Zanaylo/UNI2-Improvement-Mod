@@ -24,6 +24,7 @@ namespace EffectOwner
 	int PlayerFor(int entry, uint8_t r, uint8_t g, uint8_t b, Route& outRoute);
 
 	int PlayerForPalette(uintptr_t palette);
+	uintptr_t GetTintPalette(int player);
 
 	bool Claims(int player, int entry);
 

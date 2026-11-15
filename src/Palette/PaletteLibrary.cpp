@@ -9,17 +9,17 @@
 
 namespace {
 
-constexpr int kSlots = 2;
+constexpr int kSlots = 32;
 
 struct Shelf
 {
-	int chara;
-	int count;
+	int chara = -1;
+	int count = 0;
 	std::string names[PaletteLibrary::kMaxFiles];
-	uint64_t created[PaletteLibrary::kMaxFiles];
+	uint64_t created[PaletteLibrary::kMaxFiles] = {};
 };
 
-Shelf g_shelves[kSlots] = { { -1, 0, {}, {} }, { -1, 0, {}, {} } };
+Shelf g_shelves[kSlots];
 int g_next = 0;
 
 uint64_t TimeOf(const FILETIME& time)
@@ -115,6 +115,12 @@ bool PaletteLibrary::LoadWithEffects(int chara, const char* file, uint8_t* rgba,
 void PaletteLibrary::Rescan(int chara)
 {
 	Fill(ShelfFor(chara), chara);
+}
+
+void PaletteLibrary::Forget()
+{
+	for (Shelf& shelf : g_shelves)
+		shelf.chara = -1;
 }
 
 int PaletteLibrary::GetCount(int chara)

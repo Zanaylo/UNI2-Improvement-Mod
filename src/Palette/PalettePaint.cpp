@@ -9,6 +9,8 @@
 #include "Game/Engine/SceneWatch.h"
 #include "Palette/EffectPaint.h"
 #include "Palette/PaletteControl.h"
+#include "Palette/PaletteMemory.h"
+#include "Palette/PaletteMirror.h"
 #include "Palette/PaletteSeat.h"
 #include "Palette/PaletteTexture.h"
 #include "Palette/PlayerSides.h"
@@ -31,6 +33,7 @@ struct Player
 
 	uint8_t select[PalettePaint::kBytes];
 	bool hasSelect;
+	int selectChara;
 
 	uint8_t companion[PalettePaint::kBytes];
 	uint8_t previewCompanion[PalettePaint::kBytes];
@@ -220,6 +223,14 @@ uint32_t RowsFor(const Player& entry, int player)
 	return entry.rows != 0 ? entry.rows : 3u;
 }
 
+int CharaOf(int player)
+{
+	if (g_atPreview)
+		return g_players[player].hasSelect ? g_players[player].selectChara : -1;
+
+	return PaletteMemory::GetCharaNumber(player);
+}
+
 int GameRowOf(int player)
 {
 	if (g_atPreview)
@@ -230,9 +241,8 @@ int GameRowOf(int player)
 	return side >= 0 ? side : PlayerSides::ScreenSideOf(player);
 }
 
-void PaintSlot(Player& entry, int slot, const uint8_t* source, const uint8_t* companion, uint32_t drawn)
+void PaintSlot(Player& entry, int slot, const uint8_t* const (&sources)[PalettePaint::kRows], uint32_t drawn)
 {
-
 	uint8_t native[PalettePaint::kRows][PalettePaint::kBytes] = {};
 	const uint8_t* ready[PalettePaint::kRows] = {};
 	unsigned rows[PalettePaint::kRows] = {};
@@ -240,7 +250,7 @@ void PaintSlot(Player& entry, int slot, const uint8_t* source, const uint8_t* co
 
 	for (unsigned row = 0; row < PalettePaint::kRows; ++row)
 	{
-		const uint8_t* const from = row < 2 ? source : companion;
+		const uint8_t* const from = sources[row];
 
 		if (from == nullptr || (drawn & (1u << row)) == 0)
 			continue;
@@ -504,7 +514,7 @@ const uint8_t* PalettePaint::GetRemote(int player)
 	return g_players[player].remote;
 }
 
-void PalettePaint::StageSelect(int side, const uint8_t* colours)
+void PalettePaint::StageSelect(int side, int chara, const uint8_t* colours)
 {
 	if (side < 0 || side >= kPlayers || colours == nullptr)
 		return;
@@ -513,6 +523,7 @@ void PalettePaint::StageSelect(int side, const uint8_t* colours)
 
 	memcpy(entry.select, colours, kBytes);
 	entry.hasSelect = true;
+	entry.selectChara = chara;
 	NoteChange();
 }
 
@@ -656,6 +667,17 @@ bool PalettePaint::ReadGameColours(int player, uint8_t* rgba)
 	return PaletteTexture::ReadPristineRowAsRgba(index, static_cast<unsigned>(row), rgba);
 }
 
+bool PalettePaint::ReadWornColours(int player, uint8_t* rgba)
+{
+	if (!ReadGameColours(player, rgba))
+		return false;
+
+	if (!g_atPreview && PaletteMirror::IsMirroredRow(static_cast<unsigned>(GameRowOf(player))))
+		PaletteMirror::Unmirror(CharaOf(player), rgba);
+
+	return true;
+}
+
 void PalettePaint::OnDraw()
 {
 	if (!g_allowed)
@@ -688,10 +710,13 @@ void PalettePaint::OnDraw()
 		if (entry.hasCompanion && !g_atPreview)
 			companion = entry.previewing ? entry.previewCompanion : entry.companion;
 
+		uint8_t facingLeft[kBytes];
+		const uint8_t* const sources[kRows] = {
+			source, PaletteMirror::FacingLeft(CharaOf(player), source, facingLeft), companion, companion };
 		const uint32_t rows = RowsFor(entry, player);
 
 		for (int slot = 0; slot < entry.count; ++slot)
-			PaintSlot(entry, slot, source, companion, rows);
+			PaintSlot(entry, slot, sources, rows);
 	}
 }
 
@@ -712,6 +737,19 @@ const uint8_t* PalettePaint::GetStaged(int player)
 		return nullptr;
 
 	return g_players[player].colours;
+}
+
+const uint8_t* PalettePaint::GetWearing(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return nullptr;
+
+	const Player& entry = g_players[player];
+
+	if (entry.hasRemote)
+		return entry.remote;
+
+	return entry.staged ? entry.colours : nullptr;
 }
 
 const uint8_t* PalettePaint::GetStagedCompanion(int player)

@@ -348,24 +348,88 @@ struct DecodedImage
 	int width = 0;
 	int height = 0;
 	std::vector<uint8_t> bgra;
+	std::vector<uint8_t> indices;
 };
 
-bool ReadFromSheet(const DecodedImage& image, const PngPalette::Sheet& sheet, uint8_t* outRgba,
-	std::string& outError)
+struct DecodedSheet
+{
+	int width = 0;
+	int height = 0;
+	std::vector<uint8_t> indices;
+};
+
+uint32_t ColourAt(const std::vector<uint8_t>& bgra, size_t pixel)
+{
+	const uint8_t* const colour = &bgra[pixel * 4];
+
+	return (static_cast<uint32_t>(colour[2]) << 16) | (static_cast<uint32_t>(colour[1]) << 8) | colour[0];
+}
+
+uint32_t MostFrequent(std::vector<uint32_t>& values)
+{
+	std::sort(values.begin(), values.end());
+
+	uint32_t chosen = values.empty() ? 0 : values.front();
+	size_t longest = 0;
+	size_t run = 0;
+
+	while (run < values.size())
+	{
+		size_t end = run;
+
+		while (end < values.size() && values[end] == values[run])
+			++end;
+
+		if (end - run > longest)
+		{
+			longest = end - run;
+			chosen = values[run];
+		}
+
+		run = end;
+	}
+
+	return chosen;
+}
+
+bool AgreesWithSheet(const std::vector<uint8_t>& picture, const std::vector<uint8_t>& sheet)
+{
+	uint64_t drawn = 0;
+	uint64_t matching = 0;
+
+	for (size_t pixel = 0; pixel < sheet.size(); ++pixel)
+	{
+		if (sheet[pixel] == 0)
+			continue;
+
+		++drawn;
+		matching += picture[pixel] == sheet[pixel] ? 1 : 0;
+	}
+
+	return drawn > 0 && matching * 100 >= drawn * kMinAgreementPercent;
+}
+
+bool ReadFromAlignedIndices(const std::vector<uint8_t>& data, const DecodedImage& image,
+	const DecodedSheet& sheet, uint8_t* outRgba)
+{
+	if (image.indices.empty() || image.width != sheet.width || image.height != sheet.height)
+		return false;
+
+	if (!AgreesWithSheet(image.indices, sheet.indices))
+		return false;
+
+	return ReadPalette(data.data(), data.size(), outRgba);
+}
+
+bool ReadFromSheet(const DecodedImage& image, const DecodedSheet& decodedSheet, const PngPalette::Sheet& sheet,
+	uint8_t* outRgba, std::string& outError)
 {
 	const int width = image.width;
 	const int height = image.height;
 	const std::vector<uint8_t>& bgra = image.bgra;
-
-	int sheetWidth = 0;
-	int sheetHeight = 0;
-	std::vector<uint8_t> indices;
-
-	if (!PngImage::DecodeIndices(std::vector<uint8_t>(sheet.data, sheet.data + sheet.size), sheetWidth,
-		sheetHeight, indices))
-	{
-		return false;
-	}
+	const int sheetWidth = decodedSheet.width;
+	const int sheetHeight = decodedSheet.height;
+	const std::vector<uint8_t>& indices = decodedSheet.indices;
 
 	if (!IsSheetShaped(width, height, sheetWidth, sheetHeight))
 		return false;
@@ -381,11 +445,24 @@ bool ReadFromSheet(const DecodedImage& image, const PngPalette::Sheet& sheet, ui
 		return static_cast<size_t>(y * sheetWidth + x);
 	};
 
+	std::vector<uint32_t> backdrop;
+
+	for (size_t pixel = 0; pixel < pixels; ++pixel)
+	{
+		if (indices[sheetAt(pixel)] == 0)
+			backdrop.push_back(ColourAt(bgra, pixel));
+	}
+
+	const uint32_t background = MostFrequent(backdrop);
+
 	int best[kEntries];
 	std::fill(best, best + kEntries, -1);
 
 	for (size_t pixel = 0; pixel < pixels; ++pixel)
 	{
+		if (ColourAt(bgra, pixel) == background)
+			continue;
+
 		const size_t at = sheetAt(pixel);
 		best[indices[at]] = std::max<int>(best[indices[at]], depth[at]);
 	}
@@ -396,13 +473,12 @@ bool ReadFromSheet(const DecodedImage& image, const PngPalette::Sheet& sheet, ui
 	{
 		const size_t at = sheetAt(pixel);
 		const uint8_t index = indices[at];
+		const uint32_t colour = ColourAt(bgra, pixel);
 
-		if (index == 0 || depth[at] != best[index])
+		if (index == 0 || colour == background || depth[at] != best[index])
 			continue;
 
-		const uint8_t* const colour = &bgra[pixel * 4];
-		keys.push_back((static_cast<uint32_t>(index) << 24) | (static_cast<uint32_t>(colour[2]) << 16) |
-			(static_cast<uint32_t>(colour[1]) << 8) | colour[0]);
+		keys.push_back((static_cast<uint32_t>(index) << 24) | colour);
 	}
 
 	std::sort(keys.begin(), keys.end());
@@ -461,11 +537,26 @@ bool ReadFromAnySheet(const std::vector<uint8_t>& data, const std::vector<PngPal
 	if (!PngImage::Decode(data, image.width, image.height, image.bgra))
 		return false;
 
+	int indexWidth = 0;
+	int indexHeight = 0;
+	PngImage::DecodeIndices(data, indexWidth, indexHeight, image.indices);
+
 	for (const PngPalette::Sheet& sheet : sheets)
 	{
+		DecodedSheet decoded;
+
+		if (!PngImage::DecodeIndices(std::vector<uint8_t>(sheet.data, sheet.data + sheet.size), decoded.width,
+			decoded.height, decoded.indices))
+		{
+			continue;
+		}
+
+		if (ReadFromAlignedIndices(data, image, decoded, outRgba))
+			return true;
+
 		std::string sheetError;
 
-		if (ReadFromSheet(image, sheet, outRgba, sheetError))
+		if (ReadFromSheet(image, decoded, sheet, outRgba, sheetError))
 			return true;
 
 		if (!sheetError.empty())

@@ -118,8 +118,8 @@ struct Player
 	Entry entries[EffectPaint::kColours];
 
 	uint8_t previewRgb[3];
-	int previewExcept;
-	uint8_t previewExceptRgb[3];
+	bool previewLit[EffectPaint::kColours];
+	uint8_t previewLitRgb[3];
 	bool previewing;
 
 	int observedCount;
@@ -197,7 +197,7 @@ const uint8_t* WantedIgnoringWear(const Player& player, int index)
 		return SelectedColour(player, index);
 
 	if (player.previewing)
-		return index == player.previewExcept ? player.previewExceptRgb : player.previewRgb;
+		return player.previewLit[index] ? player.previewLitRgb : player.previewRgb;
 
 	if (player.entries[index].hasRemote)
 		return player.entries[index].remote;
@@ -399,7 +399,9 @@ void __fastcall Detour(void* self, void* edx, const char* name, const float* val
 		return;
 	}
 
-	const uint8_t* const rgb = WantedIgnoringWear(g_players[player], entry);
+	const bool readsTheBuffer = route == EffectOwner::Route::Draw && g_modVals.paletteEffectsFromPalette
+		&& !g_players[player].previewing;
+	const uint8_t* const rgb = readsTheBuffer ? nullptr : WantedIgnoringWear(g_players[player], entry);
 
 	if (rgb == nullptr)
 	{
@@ -668,24 +670,22 @@ int EffectPaint::GetEditedCount(int player)
 	return count;
 }
 
-void EffectPaint::PreviewObserved(int player, const uint8_t* rgb, int except,
-	const uint8_t* exceptRgb)
+void EffectPaint::PreviewObserved(int player, const uint8_t* rgb, const bool* lit, const uint8_t* litRgb)
 {
-	if (player < 0 || player >= kPlayers || rgb == nullptr)
+	if (player < 0 || player >= kPlayers || rgb == nullptr || lit == nullptr || litRgb == nullptr)
 		return;
 
 	Player& entry = g_players[player];
-	const uint8_t* const lit = exceptRgb != nullptr ? exceptRgb : rgb;
 
-	if (entry.previewing && entry.previewExcept == except && memcmp(entry.previewRgb, rgb, 3) == 0
-		&& memcmp(entry.previewExceptRgb, lit, 3) == 0)
+	if (entry.previewing && memcmp(entry.previewLit, lit, sizeof(entry.previewLit)) == 0
+		&& memcmp(entry.previewRgb, rgb, 3) == 0 && memcmp(entry.previewLitRgb, litRgb, 3) == 0)
 	{
 		return;
 	}
 
 	memcpy(entry.previewRgb, rgb, 3);
-	memcpy(entry.previewExceptRgb, lit, 3);
-	entry.previewExcept = except;
+	memcpy(entry.previewLitRgb, litRgb, 3);
+	memcpy(entry.previewLit, lit, sizeof(entry.previewLit));
 	entry.previewing = true;
 
 	NoteChange();

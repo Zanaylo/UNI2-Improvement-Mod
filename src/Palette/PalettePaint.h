@@ -33,7 +33,7 @@ namespace PalettePaint
 	void Preview(int player, const uint8_t* colours);
 	void EndPreview(int player);
 
-	void StageSelect(int side, const uint8_t* colours);
+	void StageSelect(int side, int chara, const uint8_t* colours);
 	void ClearSelect(int side);
 
 	void StageRemote(int player, const uint8_t* colours);
@@ -51,8 +51,10 @@ namespace PalettePaint
 	bool IsPainting(int player);
 
 	bool ReadGameColours(int player, uint8_t* rgba);
+	bool ReadWornColours(int player, uint8_t* rgba);
 
 	const uint8_t* GetStaged(int player);
+	const uint8_t* GetWearing(int player);
 	const uint8_t* GetStagedCompanion(int player);
 
 	unsigned GetRevision(int player);

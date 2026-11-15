@@ -1,4 +1,5 @@
-﻿#include "Overlay/Framework/WindowManager.h"
+﻿#include "D3D9/Draw/TextureGraveyard.h"
+#include "Overlay/Framework/WindowManager.h"
 
 #include "Core/Input/KeyboardCapture.h"
 #include "Core/Boot/ProcessTuning.h"
@@ -906,6 +907,8 @@ void WindowManager::Render()
 		ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 		m_device->EndScene();
 	}
+
+	TextureGraveyard::AfterRender();
 }
 
 void WindowManager::OnDeviceLost()

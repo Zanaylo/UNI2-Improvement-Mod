@@ -24,5 +24,6 @@ enum WindowType
 	WindowType_Debug,
 	WindowType_Log,
 	WindowType_UpdateNotifier,
+	WindowType_PaletteLibrary,
 	WindowType_COUNT
 };

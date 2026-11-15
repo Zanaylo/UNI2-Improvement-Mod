@@ -107,6 +107,7 @@ SETTING_BOOL(paletteOwnersFromDraws, "Palette", "OwnersFromDraws", 1)
 SETTING_BOOL(paletteIdentifyByColours, "Palette", "IdentifyByColours", 0)
 SETTING_BOOL(paletteOutOfMatch, "Palette", "PaintOutOfMatch", 0)
 SETTING_BOOL(paletteEffectRows, "Palette", "PaintEffectRows", 1)
+SETTING_BOOL(paletteEffectsFromPalette, "Palette", "EffectsFromPalette", 1)
 SETTING_INT(showlegacypalettes,     "Palette",  "ShowLegacyTab",        0)
 
 SETTING_BOOL(paletteGroupByPart, "Palette", "GroupByPart", 1)

@@ -3,9 +3,9 @@
 #include "Palette/EffectPaint.h"
 #include "Palette/PalettePaint.h"
 
-void SelectLayer::Stage(int side, const uint8_t* colours, const uint8_t* effects)
+void SelectLayer::Stage(int side, int chara, const uint8_t* colours, const uint8_t* effects)
 {
-	PalettePaint::StageSelect(side, colours);
+	PalettePaint::StageSelect(side, chara, colours);
 	EffectPaint::StageSelect(side, effects);
 }
 

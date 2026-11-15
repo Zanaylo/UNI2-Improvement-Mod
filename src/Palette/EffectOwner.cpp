@@ -426,6 +426,11 @@ int EffectOwner::PlayerFor(int entry, uint8_t r, uint8_t g, uint8_t b, Route& ou
 	return decided.player;
 }
 
+uintptr_t EffectOwner::GetTintPalette(int player)
+{
+	return player >= 0 && player < kPlayers ? g_tintPalette[player] : 0;
+}
+
 int EffectOwner::PlayerForPalette(uintptr_t palette)
 {
 	if (palette == 0)

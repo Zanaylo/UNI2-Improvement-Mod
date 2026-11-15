@@ -483,6 +483,7 @@
     <ClCompile Include="src\D3D9\Device\D3D9Wrapper.cpp" />
     <ClCompile Include="src\D3D9\Device\DeviceHooks.cpp" />
     <ClCompile Include="src\D3D9\Draw\FrozenFrame.cpp" />
+    <ClCompile Include="src\D3D9\Draw\TextureGraveyard.cpp" />
     <ClCompile Include="src\Overlay\Framework\WindowManager.cpp" />
     <ClCompile Include="src\Overlay\Hud\NotificationBar.cpp" />
     <ClCompile Include="src\Overlay\Widgets\UiText.cpp" />
@@ -494,6 +495,9 @@
     <ClCompile Include="src\Overlay\Widgets\OverlayFont.cpp" />
     <ClCompile Include="src\Overlay\Widgets\PlatePreview.cpp" />
     <ClCompile Include="src\Overlay\Widgets\ComboNav.cpp" />
+    <ClCompile Include="src\Overlay\Widgets\PaletteThumbnails.cpp" />
+    <ClCompile Include="src\Overlay\Widgets\ColourSlotCombo.cpp" />
+    <ClCompile Include="src\Overlay\Widgets\EntryPicker.cpp" />
     <ClCompile Include="src\Overlay\Widgets\CharaPreview.cpp" />
     <ClCompile Include="src\Overlay\Framework\IWindow.cpp" />
     <ClCompile Include="src\Overlay\Windows\MainWindow.cpp" />
@@ -502,6 +506,7 @@
     <ClCompile Include="src\Overlay\Panels\PlayerCardPanel.cpp" />
     <ClCompile Include="src\Overlay\Panels\ColorCustomizePanel.cpp" />
     <ClCompile Include="src\Overlay\Windows\PaletteWindow.cpp" />
+    <ClCompile Include="src\Overlay\Windows\PaletteLibraryWindow.cpp" />
     <ClCompile Include="src\Overlay\Windows\DebugWindow.cpp" />
     <ClCompile Include="src\Game\Engine\MemoryMap.cpp" />
     <ClCompile Include="src\Game\Engine\CharaTracker.cpp" />
@@ -544,6 +549,14 @@
     <ClCompile Include="src\Palette\PaletteMemory.cpp" />
     <ClCompile Include="src\Palette\PaletteTexture.cpp" />
     <ClCompile Include="src\Palette\PaletteFile.cpp" />
+    <ClCompile Include="src\Palette\MirrorPairs.cpp" />
+    <ClCompile Include="src\Palette\TintBuffer.cpp" />
+    <ClCompile Include="src\Palette\EffectBuffer.cpp" />
+    <ClCompile Include="src\Palette\PaletteSearch.cpp" />
+    <ClCompile Include="src\Palette\PaletteCatalog.cpp" />
+    <ClCompile Include="src\Palette\PaletteGradient.cpp" />
+    <ClCompile Include="src\Palette\EntrySelection.cpp" />
+    <ClCompile Include="src\Palette\PaletteMirror.cpp" />
     <ClCompile Include="src\Palette\PaletteLibrary.cpp" />
     <ClCompile Include="src\Palette\PaletteManager.cpp" />
     <ClCompile Include="src\Palette\PaletteReport.cpp" />
@@ -559,6 +572,7 @@
     <ClCompile Include="src\Game\Customize\ColorOverride.cpp" />
     <ClCompile Include="src\Game\Customize\LivePalette.cpp" />
     <ClCompile Include="src\Game\Customize\PngPalette.cpp" />
+    <ClCompile Include="src\Game\Customize\SheetSamples.cpp" />
     <ClCompile Include="src\Game\Customize\CgImage.cpp" />
     <ClCompile Include="src\Game\Customize\PatParts.cpp" />
     <ClCompile Include="src\Game\Battle\ScriptReload.cpp" />
@@ -1121,6 +1135,7 @@
     <ClInclude Include="src\D3D9\Device\D3D9Wrapper.h" />
     <ClInclude Include="src\D3D9\Device\DeviceHooks.h" />
     <ClInclude Include="src\D3D9\Draw\FrozenFrame.h" />
+    <ClInclude Include="src\D3D9\Draw\TextureGraveyard.h" />
     <ClInclude Include="src\Overlay\Framework\WindowManager.h" />
     <ClInclude Include="src\Overlay\Hud\NotificationBar.h" />
     <ClInclude Include="src\Overlay\Widgets\UiText.h" />
@@ -1132,6 +1147,9 @@
     <ClInclude Include="src\Overlay\Widgets\OverlayFont.h" />
     <ClInclude Include="src\Overlay\Widgets\PlatePreview.h" />
     <ClInclude Include="src\Overlay\Widgets\ComboNav.h" />
+    <ClInclude Include="src\Overlay\Widgets\PaletteThumbnails.h" />
+    <ClInclude Include="src\Overlay\Widgets\ColourSlotCombo.h" />
+    <ClInclude Include="src\Overlay\Widgets\EntryPicker.h" />
     <ClInclude Include="src\Overlay\Widgets\CharaPreview.h" />
     <ClInclude Include="src\Overlay\Framework\IWindow.h" />
     <ClInclude Include="src\Overlay\Windows\MainWindow.h" />
@@ -1140,12 +1158,14 @@
     <ClInclude Include="src\Overlay\Panels\PlayerCardPanel.h" />
     <ClInclude Include="src\Overlay\Panels\ColorCustomizePanel.h" />
     <ClInclude Include="src\Overlay\Windows\PaletteWindow.h" />
+    <ClInclude Include="src\Overlay\Windows\PaletteLibraryWindow.h" />
     <ClInclude Include="src\Game\Customize\PlayerCard.h" />
     <ClInclude Include="src\Game\Customize\PlateCatalog.h" />
     <ClInclude Include="src\Game\Customize\ColorCustomize.h" />
     <ClInclude Include="src\Game\Customize\ColorOverride.h" />
     <ClInclude Include="src\Game\Customize\LivePalette.h" />
     <ClInclude Include="src\Game\Customize\PngPalette.h" />
+    <ClInclude Include="src\Game\Customize\SheetSamples.h" />
     <ClInclude Include="src\Game\Customize\CgImage.h" />
     <ClInclude Include="src\Game\Customize\PatParts.h" />
     <ClInclude Include="src\Game\Battle\ScriptReload.h" />
@@ -1214,6 +1234,14 @@
     <ClInclude Include="src\Palette\PaletteMemory.h" />
     <ClInclude Include="src\Palette\PaletteTexture.h" />
     <ClInclude Include="src\Palette\PaletteFile.h" />
+    <ClInclude Include="src\Palette\MirrorPairs.h" />
+    <ClInclude Include="src\Palette\TintBuffer.h" />
+    <ClInclude Include="src\Palette\EffectBuffer.h" />
+    <ClInclude Include="src\Palette\PaletteSearch.h" />
+    <ClInclude Include="src\Palette\PaletteCatalog.h" />
+    <ClInclude Include="src\Palette\PaletteGradient.h" />
+    <ClInclude Include="src\Palette\EntrySelection.h" />
+    <ClInclude Include="src\Palette\PaletteMirror.h" />
     <ClInclude Include="src\Palette\PaletteLibrary.h" />
     <ClInclude Include="src\Palette\PaletteManager.h" />
     <ClInclude Include="src\Palette\PaletteReport.h" />

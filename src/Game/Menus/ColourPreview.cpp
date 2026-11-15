@@ -61,7 +61,7 @@ void Show(int side, int chara, const std::string& file)
 	shown.loaded = PaletteLibrary::LoadWithEffects(shown.chara, shown.file, shown.colours, shown.effects);
 
 	if (shown.loaded)
-		SelectLayer::Stage(side, shown.colours, shown.effects);
+		SelectLayer::Stage(side, shown.chara, shown.colours, shown.effects);
 	else
 		SelectLayer::Clear(side);
 }

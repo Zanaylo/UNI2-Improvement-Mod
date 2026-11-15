@@ -265,7 +265,7 @@ bool BuildLocal(int local, PacketV3& packet)
 		return false;
 	}
 
-	if (bare && !PalettePaint::ReadGameColours(local, original))
+	if (bare && !PalettePaint::ReadWornColours(local, original))
 	{
 		PaletteTrace::Note("send skipped, p%d has no palette and no original to fall back on", local);
 		return false;

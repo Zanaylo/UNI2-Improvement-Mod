@@ -17,12 +17,15 @@
 #include "Game/Customize/StockPalettes.h"
 #include "Game/Tables/UsedEntryTable.h"
 #include "Overlay/Panels/NetworkPalettePanel.h"
+#include "Overlay/Widgets/ColourSlotCombo.h"
 #include "Overlay/Widgets/ComboNav.h"
+#include "Overlay/Widgets/EntryPicker.h"
 #include "Network/PaletteShare.h"
 #include "Palette/ColourSlots.h"
 #include "Palette/EffectBlock.h"
 #include "Palette/EffectOwner.h"
 #include "Palette/EffectPaint.h"
+#include "Palette/EntrySelection.h"
 #include "Palette/PaletteChoice.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PaletteFile.h"
@@ -47,9 +50,8 @@ namespace {
 
 constexpr const char* kDefaultPalette = "Default";
 
-constexpr float kSwatch = 22.0f;
-constexpr int kPerRow = 14;
 constexpr int kFlashFrames = 90;
+constexpr int kFirstEntry = 1;
 
 constexpr const char* kPartNames[LivePalette::kParts] = {
 	"Base", "Part 1", "Part 2", "Part 3", "Part 4", "Part 5",
@@ -58,19 +60,6 @@ constexpr const char* kPartNames[LivePalette::kParts] = {
 int SheetSetFor(bool summon)
 {
 	return summon ? BasePals::kSummonSet : BasePals::kCharacterSet;
-}
-
-void ExtendedLabel(int chara, const char* file, char* out, size_t size)
-{
-	const int extended = ColourSlots::ExtendedOf(chara, file);
-
-	if (extended == ColourSlots::kNoExtended)
-	{
-		strncpy_s(out, size, "Extended", _TRUNCATE);
-		return;
-	}
-
-	sprintf_s(out, size, "Extended, EX %d of %d", extended, ColourSlots::ExtendedCount(chara));
 }
 
 constexpr const char* kPictureExtension = ".png";
@@ -121,7 +110,7 @@ int Luminance(const uint8_t* rgb)
 	return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
 }
 
-void DimForFlash(const uint8_t* colours, int keep, const uint8_t* lit, uint8_t* out)
+void DimForFlash(const uint8_t* colours, const EntrySelection* keep, const uint8_t* lit, uint8_t* out)
 {
 	memcpy(out, colours, LivePalette::kBytes);
 
@@ -134,8 +123,11 @@ void DimForFlash(const uint8_t* colours, int keep, const uint8_t* lit, uint8_t* 
 		out[i * 4 + 2] = grey;
 	}
 
-	if (keep >= 0)
-		memcpy(out + keep * 4, lit, 3);
+	if (keep == nullptr)
+		return;
+
+	for (int position = 0; position < keep->Count(); ++position)
+		memcpy(out + keep->At(position) * 4, lit, 3);
 }
 
 bool IsUsableName(const char* name)
@@ -159,19 +151,6 @@ void StripExtension(char* name)
 
 	if (length > suffix && _stricmp(name + length - suffix, PaletteFile::kExtension) == 0)
 		name[length - suffix] = 0;
-}
-
-bool PickColour(const char* id, const uint8_t* rgb, uint8_t* out)
-{
-	float picker[3] = { rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f };
-
-	if (!ImGui::ColorEdit3(id, picker, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel))
-		return false;
-
-	for (int c = 0; c < 3; ++c)
-		out[c] = static_cast<uint8_t>(picker[c] * 255.0f + 0.5f);
-
-	return true;
 }
 
 }
@@ -315,6 +294,8 @@ void PaletteWindow::DrawPlayer(int player)
 
 	ImGui::EndTabBar();
 
+	SettleEdit(player);
+
 	ImGui::Separator();
 	DrawFiles(player);
 
@@ -323,6 +304,8 @@ void PaletteWindow::DrawPlayer(int player)
 
 void PaletteWindow::DrawSwatches(int player, int chara)
 {
+	EntryPicker::DrawHint();
+
 	ImGui::BeginChild("swatches", Ui::Scaled(0.0f, 200.0f), ImGuiChildFlags_Borders);
 
 	const int parts = GameTables::GetPartCount(chara);
@@ -545,7 +528,7 @@ void PaletteWindow::DrawParts(int player)
 
 		uint8_t chosen[3] = {};
 
-		if (PickColour("##partpick", rgb, chosen))
+		if (EntryPicker::PickColour("##partpick", rgb, chosen))
 		{
 			if (ImGui::IsItemActivated() || !ImGui::IsItemActive())
 				Record(player);
@@ -579,75 +562,35 @@ void PaletteWindow::DrawGrid(int player, const unsigned char* entries, int count
 {
 	const LivePalette::Colours& colours = m_colours[player];
 
-	for (int n = 0; n < count; ++n)
-	{
-		const int i = entries[n];
+	const EntryPicker::GridResult grid = EntryPicker::DrawGrid(entries, count,
+		{ m_composed[player], colours.edited }, m_selection[player]);
 
-		ImGui::PushID(i);
+	if (grid.clicked)
+		StartFlash(player, false);
 
-		const uint8_t* const rgb = m_composed[player] + i * 4;
-		const ImVec4 colour(rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f, 1.0f);
-
-		const bool selected = i == m_selected[player];
-		const bool changed = colours.edited[i];
-
-		if (selected || changed)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Border, selected ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f)
-				: ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
-		}
-
-		if (ImGui::ColorButton("##swatch", colour,
-			ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
-			Ui::Scaled(kSwatch, kSwatch)))
-		{
-			m_selected[player] = i;
-			StartFlash(player, false);
-		}
-
-		if (selected || changed)
-		{
-			ImGui::PopStyleVar();
-			ImGui::PopStyleColor();
-		}
-
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(Tr("entry %d%s"), i, changed ? " (changed)" : "");
-
-		if (((n + 1) % kPerRow) != 0 && n + 1 < count)
-			ImGui::SameLine();
-
-		ImGui::PopID();
-	}
+	if (grid.hovered != EntryPicker::kNoEntry)
+		EntryPicker::DrawEntryTooltip(grid.hovered, colours.edited[grid.hovered]);
 }
 
 void PaletteWindow::DrawPicker(int player)
 {
 	LivePalette::Colours& colours = m_colours[player];
-	const int selected = m_selected[player];
+	const EntrySelection& selection = m_selection[player];
 
-	ImGui::Text(Tr("entry %d%s"), selected, colours.edited[selected] ? "  (changed)" : "");
+	uint8_t painted[LivePalette::kColours][3] = {};
 
-	float picked[3] = {
-		m_composed[player][selected * 4 + 0] / 255.0f,
-		m_composed[player][selected * 4 + 1] / 255.0f,
-		m_composed[player][selected * 4 + 2] / 255.0f,
-	};
-
-	Ui::SetItemWidth(170.0f);
-
-	if (ImGui::ColorPicker3("##entry", picked, ImGuiColorEditFlags_NoSidePreview |
-		ImGuiColorEditFlags_NoSmallPreview))
+	if (EntryPicker::DrawFill({ m_composed[player], colours.edited }, selection, m_fillGradient, painted))
 	{
+		NoteEdit(player);
 
-		if (ImGui::IsItemActivated() || !ImGui::IsItemActive())
-			Record(player);
+		for (int position = 0; position < selection.Count(); ++position)
+		{
+			const int entry = selection.At(position);
 
-		for (int c = 0; c < 3; ++c)
-			colours.entry[selected][c] = static_cast<uint8_t>(picked[c] * 255.0f + 0.5f);
+			memcpy(colours.entry[entry], painted[position], 3);
+			colours.edited[entry] = true;
+		}
 
-		colours.edited[selected] = true;
 		Apply(player);
 	}
 
@@ -734,6 +677,72 @@ void PaletteWindow::DrawPicker(int player)
 		ImGui::TextDisabled(Tr("applied, waiting for this character to appear"));
 }
 
+void PaletteWindow::ReadEffectColours(int player, const unsigned char* entries, int count, EffectColours& out) const
+{
+	for (int n = 0; n < count; ++n)
+	{
+		const int entry = entries[n];
+		uint8_t rgb[3] = {};
+
+		out.observed[entry] = EffectPaint::GetObserved(player, entry, rgb);
+
+		if (!out.observed[entry])
+			out.observed[entry] = EffectPaint::GetAnyObserved(entry, rgb);
+
+		if (!out.observed[entry])
+			memcpy(rgb, m_composed[player] + entry * 4, 3);
+
+		uint8_t edit[3] = {};
+
+		out.changed[entry] = EffectPaint::GetRemoteEntry(player, entry, edit)
+			|| EffectPaint::GetEdit(player, entry, edit);
+
+		memcpy(out.rgba + entry * 4, out.changed[entry] ? edit : rgb, 3);
+	}
+}
+
+void PaletteWindow::DrawEffectTooltip(int player, int entry, const EffectColours& colours) const
+{
+	const int parts = PartColourTable::GetPartCount(m_chara[player], entry);
+
+	ImGui::SetTooltip(Tr("entry %d, used by %d part%s%s%s%s"), entry, parts, parts == 1 ? "" : "s",
+		colours.observed[entry] ? "" : ", not seen yet so the palette colour is shown",
+		colours.changed[entry] ? ", changed" : "",
+		EffectOwner::Claims(player == 0 ? 1 : 0, entry)
+			? "\nthe other character uses this entry too, so effects that could "
+				"belong to either are left alone" : "");
+}
+
+void PaletteWindow::DrawEffectFill(int player, const EffectColours& colours)
+{
+	const EntrySelection& selection = m_effectSelection[player];
+
+	if (selection.Count() == 0)
+	{
+		ImGui::TextDisabled(Tr("pick one to change it"));
+		return;
+	}
+
+	uint8_t painted[LivePalette::kColours][3] = {};
+
+	if (EntryPicker::DrawFill({ colours.rgba, colours.changed }, selection, m_fillGradient, painted))
+	{
+		for (int position = 0; position < selection.Count(); ++position)
+			EffectPaint::SetEntry(player, selection.At(position), painted[position]);
+	}
+
+	bool anyEdited = false;
+
+	for (int position = 0; position < selection.Count(); ++position)
+		anyEdited = anyEdited || EffectPaint::IsEdited(player, selection.At(position));
+
+	if (!anyEdited || !ImGui::Button(TrLabel("Back to the game's colour")))
+		return;
+
+	for (int position = 0; position < selection.Count(); ++position)
+		EffectPaint::ClearEntry(player, selection.At(position));
+}
+
 void PaletteWindow::DrawEffects(int player)
 {
 	const int chara = m_chara[player];
@@ -762,110 +771,23 @@ void PaletteWindow::DrawEffects(int player)
 	if (ImGui::Button(TrLabel("Reset effects")))
 		EffectPaint::Clear(player);
 
+	EntryPicker::DrawHint();
+
+	EffectColours colours = {};
+
+	ReadEffectColours(player, entries, count, colours);
+
 	ImGui::BeginChild("effects", Ui::Scaled(0.0f, 150.0f), ImGuiChildFlags_Borders);
 
-	for (int n = 0; n < count; ++n)
-	{
-		const int entry = entries[n];
-
-		uint8_t rgb[3] = {};
-		bool observed = EffectPaint::GetObserved(player, entry, rgb);
-
-		if (!observed)
-			observed = EffectPaint::GetAnyObserved(entry, rgb);
-
-		if (!observed)
-			memcpy(rgb, m_composed[player] + entry * 4, 3);
-
-		uint8_t edit[3] = {};
-		const bool edited = EffectPaint::GetRemoteEntry(player, entry, edit)
-			|| EffectPaint::GetEdit(player, entry, edit);
-
-		if (edited)
-			memcpy(rgb, edit, 3);
-
-		ImGui::PushID(entry);
-
-		const bool selected = entry == m_effectEntry[player];
-
-		if (selected || edited)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Border, selected ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f)
-				: ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
-		}
-
-		if (ImGui::ColorButton("##effect",
-			ImVec4(rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f, 1.0f),
-			ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
-			Ui::Scaled(kSwatch, kSwatch)))
-		{
-			m_effectEntry[player] = entry;
-		}
-
-		if (selected || edited)
-		{
-			ImGui::PopStyleVar();
-			ImGui::PopStyleColor();
-		}
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip(Tr("entry %d, used by %d part%s%s%s%s"), entry,
-				PartColourTable::GetPartCount(chara, entry),
-				PartColourTable::GetPartCount(chara, entry) == 1 ? "" : "s",
-				observed ? "" : ", not seen yet so the palette colour is shown",
-				edited ? ", changed" : "",
-				EffectOwner::Claims(player == 0 ? 1 : 0, entry)
-					? "\nthe other character uses this entry too, so effects that could "
-						"belong to either are left alone" : "");
-		}
-
-		if (((n + 1) % kPerRow) != 0 && n + 1 < count)
-			ImGui::SameLine();
-
-		ImGui::PopID();
-	}
+	const EntryPicker::GridResult grid = EntryPicker::DrawGrid(entries, count,
+		{ colours.rgba, colours.changed }, m_effectSelection[player]);
 
 	ImGui::EndChild();
 
-	const int entry = m_effectEntry[player];
+	if (grid.hovered != EntryPicker::kNoEntry)
+		DrawEffectTooltip(player, grid.hovered, colours);
 
-	if (entry < 0)
-	{
-		ImGui::TextDisabled(Tr("pick one to change it"));
-		return;
-	}
-
-	uint8_t rgb[3] = {};
-
-	if (!EffectPaint::GetRemoteEntry(player, entry, rgb)
-		&& !EffectPaint::GetEdit(player, entry, rgb)
-		&& !EffectPaint::GetObserved(player, entry, rgb))
-	{
-		memcpy(rgb, m_composed[player] + entry * 4, 3);
-	}
-
-	ImGui::Text(Tr("entry %d%s"), entry, EffectPaint::IsEdited(player, entry) ? "  (changed)" : "");
-
-	float picked[3] = { rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f };
-
-	Ui::SetItemWidth(170.0f);
-
-	if (ImGui::ColorPicker3("##effectpick", picked, ImGuiColorEditFlags_NoSidePreview |
-		ImGuiColorEditFlags_NoSmallPreview))
-	{
-		const uint8_t chosen[3] = {
-			static_cast<uint8_t>(picked[0] * 255.0f + 0.5f),
-			static_cast<uint8_t>(picked[1] * 255.0f + 0.5f),
-			static_cast<uint8_t>(picked[2] * 255.0f + 0.5f),
-		};
-
-		EffectPaint::SetEntry(player, entry, chosen);
-	}
-
-	if (EffectPaint::IsEdited(player, entry) && ImGui::Button(TrLabel("Back to the game's colour")))
-		EffectPaint::ClearEntry(player, entry);
+	DrawEffectFill(player, colours);
 }
 
 void PaletteWindow::LoadCreator()
@@ -1103,54 +1025,7 @@ void PaletteWindow::DrawColourSlot(int player)
 		return;
 	}
 
-	const char* const file = m_files[player][m_chosen[player]].c_str();
-	const int bound = ColourSlots::ColourOf(chara, file);
-
-	char current[160] = {};
-
-	if (bound == ColourSlots::kNoColour)
-		ExtendedLabel(chara, file, current, sizeof(current));
-	else
-		ColourSlots::Label(chara, bound, current, sizeof(current));
-
-	Ui::SetItemWidth(170.0f);
-
-	if (ImGui::BeginCombo("##slot", current))
-	{
-		char label[160] = {};
-		ExtendedLabel(chara, file, label, sizeof(label));
-
-		const bool extended = bound == ColourSlots::kNoColour;
-
-		if (ImGui::Selectable(label, extended))
-			ColourSlots::Release(chara, file);
-
-		ComboNav::KeepSelectedInView(extended);
-
-		for (int colour = 0; colour < ColourSlots::kGameColours; ++colour)
-		{
-			const bool selected = colour == bound;
-
-			ColourSlots::Label(chara, colour, label, sizeof(label));
-			ImGui::PushID(colour);
-
-			if (ImGui::Selectable(label, selected))
-				ColourSlots::Bind(chara, colour, file);
-
-			ComboNav::KeepSelectedInView(selected);
-			ImGui::PopID();
-		}
-
-		ImGui::EndCombo();
-	}
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip(Tr("Picking this colour at character select puts this palette on.\n"
-			"A palette with no colour is an extended slot: keep pressing right past the game's last "
-			"colour to reach it.\nPlayers without the mod see the game's colour - the first one for an "
-			"extended slot.\nChanging palette during a match still wins until the next match."));
-	}
+	ColourSlotCombo::Draw(chara, m_files[player][m_chosen[player]].c_str());
 }
 
 void PaletteWindow::RefreshFiles(int player)
@@ -1441,14 +1316,14 @@ void PaletteWindow::Adopt(int player, int chara)
 	m_chara[player] = chara;
 	m_generation[player] = PaletteChoice::GetGeneration(player);
 	m_applied[player] = false;
-	m_selected[player] = 1;
-	m_effectEntry[player] = -1;
+	m_selection[player].Pick(kFirstEntry);
+	m_effectSelection[player].Clear();
 	m_historyCount[player] = 0;
 	m_pulled[player] = false;
 	m_status[player][0] = 0;
 	m_chosen[player] = -1;
 	m_hasCompanion[player] = false;
-	m_companionSelected[player] = 1;
+	m_summonSelection[player].Pick(kFirstEntry);
 	m_summon[player] = SummonEdit();
 
 	ForgetPartTints(player);
@@ -1480,7 +1355,7 @@ void PaletteWindow::PullBaseline(int player, bool force)
 
 	uint8_t drawn[LivePalette::kBytes] = {};
 
-	if (!PalettePaint::ReadGameColours(player, drawn))
+	if (!PalettePaint::ReadWornColours(player, drawn))
 		return;
 
 	LivePalette::SetBaseline(m_colours[player], drawn);
@@ -1525,84 +1400,52 @@ void PaletteWindow::DrawSummonGrid(int player, const unsigned char* entries, int
 {
 	const SummonEdit& summon = m_summon[player];
 
-	for (int n = 0; n < count; ++n)
-	{
-		const int i = entries[n];
+	const EntryPicker::GridResult grid = EntryPicker::DrawGrid(entries, count,
+		{ m_companion[player], summon.edited }, m_summonSelection[player]);
 
-		ImGui::PushID(i);
+	if (grid.clicked)
+		StartFlash(player, true);
 
-		const uint8_t* const rgb = m_companion[player] + i * 4;
-		const ImVec4 colour(rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f, 1.0f);
-
-		const bool selected = i == m_companionSelected[player];
-		const bool changed = summon.edited[i];
-
-		if (selected || changed)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Border, selected ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f)
-				: ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.0f);
-		}
-
-		if (ImGui::ColorButton("##summonswatch", colour,
-			ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop,
-			Ui::Scaled(kSwatch, kSwatch)))
-		{
-			m_companionSelected[player] = i;
-			StartFlash(player, true);
-		}
-
-		if (selected || changed)
-		{
-			ImGui::PopStyleVar();
-			ImGui::PopStyleColor();
-		}
-
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(Tr("entry %d%s"), i, changed ? " (changed)" : "");
-
-		if (((n + 1) % kPerRow) != 0 && n + 1 < count)
-			ImGui::SameLine();
-
-		ImGui::PopID();
-	}
+	if (grid.hovered != EntryPicker::kNoEntry)
+		EntryPicker::DrawEntryTooltip(grid.hovered, summon.edited[grid.hovered]);
 }
 
 void PaletteWindow::DrawSummonPicker(int player)
 {
-	const int selected = m_companionSelected[player];
+	const EntrySelection& selection = m_summonSelection[player];
 	SummonEdit& summon = m_summon[player];
 
-	ImGui::Text(Tr("entry %d%s"), selected, summon.edited[selected] ? "  (changed)" : "");
+	uint8_t painted[LivePalette::kColours][3] = {};
 
-	const uint8_t* const shown = m_companion[player] + selected * 4;
-
-	float picked[3] = { shown[0] / 255.0f, shown[1] / 255.0f, shown[2] / 255.0f };
-
-	Ui::SetItemWidth(170.0f);
-
-	if (ImGui::ColorPicker3("##summonentry", picked, ImGuiColorEditFlags_NoSidePreview |
-		ImGuiColorEditFlags_NoSmallPreview))
+	if (EntryPicker::DrawFill({ m_companion[player], summon.edited }, selection, m_fillGradient, painted))
 	{
-		if (ImGui::IsItemActivated() || !ImGui::IsItemActive())
-			Record(player);
+		NoteEdit(player);
 
-		for (int c = 0; c < 3; ++c)
-			summon.entry[selected][c] = static_cast<uint8_t>(picked[c] * 255.0f + 0.5f);
+		for (int position = 0; position < selection.Count(); ++position)
+		{
+			const int entry = selection.At(position);
 
-		summon.edited[selected] = true;
+			memcpy(summon.entry[entry], painted[position], 3);
+			summon.edited[entry] = true;
+		}
+
 		Apply(player);
 	}
 
-	if (!summon.edited[selected])
+	bool anyEdited = false;
+
+	for (int position = 0; position < selection.Count(); ++position)
+		anyEdited = anyEdited || summon.edited[selection.At(position)];
+
+	if (!anyEdited || !ImGui::Button(TrLabel("Back to the game's colour")))
 		return;
 
-	if (ImGui::Button(TrLabel("Back to the game's colour")))
-	{
-		Record(player);
-		summon.edited[selected] = false;
-		Apply(player);
-	}
+	Record(player);
+
+	for (int position = 0; position < selection.Count(); ++position)
+		summon.edited[selection.At(position)] = false;
+
+	Apply(player);
 }
 
 void PaletteWindow::DrawSummon(int player)
@@ -1624,6 +1467,8 @@ void PaletteWindow::DrawSummon(int player)
 		if (!IsSummonJunk(player, i))
 			entries[count++] = static_cast<unsigned char>(i);
 	}
+
+	EntryPicker::DrawHint();
 
 	ImGui::BeginChild("summon", Ui::Scaled(0.0f, 200.0f), ImGuiChildFlags_Borders);
 
@@ -1703,6 +1548,21 @@ void PaletteWindow::Apply(int player)
 	m_applied[player] = true;
 }
 
+void PaletteWindow::NoteEdit(int player)
+{
+	if (m_editing[player])
+		return;
+
+	Record(player);
+	m_editing[player] = true;
+}
+
+void PaletteWindow::SettleEdit(int player)
+{
+	if (!ImGui::IsAnyItemActive())
+		m_editing[player] = false;
+}
+
 void PaletteWindow::StartFlash(int player, bool summon)
 {
 	if (!g_modVals.paletteFlashEntry || !PaletteControl::CanEdit(player))
@@ -1738,9 +1598,9 @@ void PaletteWindow::RunFlash()
 
 	--m_flashFrames;
 
-	const int flashed = m_flashSummon ? m_companionSelected[player] : m_selected[player];
-	const int keep = m_flashSummon ? -1 : flashed;
-	const int keepTheirs = m_flashSummon ? flashed : -1;
+	const EntrySelection& flashed = m_flashSummon ? m_summonSelection[player] : m_selection[player];
+	const EntrySelection* const keep = m_flashSummon ? nullptr : &flashed;
+	const EntrySelection* const keepTheirs = m_flashSummon ? &flashed : nullptr;
 	const bool on = (m_flashFrames / 8) % 2 == 0;
 
 	const uint8_t lit[3] = {
@@ -1767,5 +1627,5 @@ void PaletteWindow::RunFlash()
 
 	const uint8_t dark[3] = { 40, 40, 40 };
 
-	EffectPaint::PreviewObserved(player, dark, flashed, lit);
+	EffectPaint::PreviewObserved(player, dark, flashed.Members(), lit);
 }
