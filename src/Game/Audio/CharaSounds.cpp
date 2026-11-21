@@ -1,6 +1,7 @@
 #include "Game/Audio/CharaSounds.h"
 
 #include "Core/FileIndex.h"
+#include "Core/FileSystem.h"
 #include "Core/SoundOutput.h"
 #include "Core/Formats/ZipArchive.h"
 #include "Core/logger.h"
@@ -9,6 +10,7 @@
 #include "Game/Files/DataArchive.h"
 #include "Game/Files/ModFiles.h"
 #include "Game/Audio/SeList.h"
+#include "Game/Audio/SoundExportName.h"
 #include "Game/Audio/SoundOwners.h"
 #include "Game/Audio/SoundPacks.h"
 
@@ -596,6 +598,38 @@ bool CharaSounds::Play(int index, char* status, int statusSize)
 	}
 
 	status[0] = '\0';
+	return true;
+}
+
+bool CharaSounds::Save(int index, const std::string& target, char* status, int statusSize)
+{
+	const Entry* const entry = At(index);
+
+	if (entry == nullptr || target.empty())
+		return false;
+
+	const bool fromPack = entry->state == State_Pack;
+	const std::string path = SoundExportName::For(target, fromPack ? entry->yours : entry->file);
+	std::vector<uint8_t> bytes;
+
+	const bool read = fromPack
+		? ReadWholeFile(entry->yours, bytes)
+		: DataArchive::Read(entry->folder.c_str(), entry->file.c_str(), bytes);
+
+	if (!read)
+	{
+		sprintf_s(status, statusSize, "%s could not be read", entry->file.c_str());
+		return false;
+	}
+
+	if (!WriteWholeFile(path, bytes))
+	{
+		sprintf_s(status, statusSize, "%s could not be written", LastSegment(path).c_str());
+		return false;
+	}
+
+	LOG("CharaSounds: %s saved to %s", entry->file.c_str(), path.c_str());
+	sprintf_s(status, statusSize, "%s saved as %s", entry->file.c_str(), LastSegment(path).c_str());
 	return true;
 }
 

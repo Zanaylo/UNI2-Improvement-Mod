@@ -36,6 +36,7 @@ namespace CharaSounds
 	const Entry* Get(int index);
 
 	bool Play(int index, char* status, int statusSize);
+	bool Save(int index, const std::string& target, char* status, int statusSize);
 
 	bool Replace(int index, const std::string& source, char* status, int statusSize);
 	bool UseGame(int index, char* status, int statusSize);

@@ -501,6 +501,15 @@
     <ClCompile Include="src\Game\Audio\LibraryRemap.cpp">
       <Filter>Game\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="src\Game\Audio\BgmIdentity.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\BgmLoaded.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\SoundExportName.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
     <ClCompile Include="src\Core\HexText.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -1252,6 +1261,12 @@
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Audio\SoundVolumeBackground.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\SoundHolderGuard.cpp">
+      <Filter>Game\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Audio\SoundHolderCheck.cpp">
       <Filter>Game\Audio</Filter>
     </ClCompile>
     <ClCompile Include="src\Game\Audio\VolumeQueue.cpp">
@@ -2636,6 +2651,15 @@
     <ClInclude Include="src\Game\Audio\LibraryRemap.h">
       <Filter>Game\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmIdentity.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\BgmLoaded.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\SoundExportName.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\HexText.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -3303,6 +3327,12 @@
       <Filter>Network</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Audio\SoundVolumeBackground.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\SoundHolderGuard.h">
+      <Filter>Game\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Game\Audio\SoundHolderCheck.h">
       <Filter>Game\Audio</Filter>
     </ClInclude>
     <ClInclude Include="src\Game\Audio\VolumeQueue.h">

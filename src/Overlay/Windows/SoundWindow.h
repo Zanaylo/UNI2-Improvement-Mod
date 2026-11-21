@@ -39,6 +39,7 @@ private:
 	AsyncFileDialog m_import;
 	AsyncFileDialog m_export;
 	AsyncFileDialog m_replace;
+	AsyncFileDialog m_save;
 	AsyncFileDialog m_uni;
 
 	std::vector<int> m_visible;
@@ -46,6 +47,7 @@ private:
 	std::string m_exporting;
 	std::string m_removing;
 	int m_replacing = -1;
+	int m_saving = -1;
 	int m_wanted = -1;
 	int m_chara = 0;
 	int m_visibleFor = -1;

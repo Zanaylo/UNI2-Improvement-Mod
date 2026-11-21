@@ -50,6 +50,7 @@ LONG64 g_seenGameTicks = 0;
 LONG64 g_seenDeferTicks = 0;
 
 char g_status[192] = "not installed";
+void** g_bufferVtable = nullptr;
 
 bool TryPush(const VolumeQueue::Change& change)
 {
@@ -185,7 +186,7 @@ IDirectSoundBuffer* CreateProbeBuffer(IDirectSound8* sound)
 	return buffer;
 }
 
-void** BufferVtable()
+void** FindBufferVtable()
 {
 	const HMODULE module = GetModuleHandleA("dsound.dll");
 	const DirectSoundCreate8_t create = module == nullptr
@@ -238,7 +239,8 @@ bool SoundVolumeBackground::Install()
 	if (!StartWorker())
 		return Refuse("no background thread, volumes are set the game's way");
 
-	void** const vtable = BufferVtable();
+	void** const vtable = FindBufferVtable();
+	g_bufferVtable = vtable;
 
 	if (vtable == nullptr)
 		return Refuse("no sound device to find the volume call on, volumes are set the game's way");
@@ -285,4 +287,9 @@ void SoundVolumeBackground::OnFrame()
 const char* SoundVolumeBackground::StatusText()
 {
 	return g_status;
+}
+
+uint32_t SoundVolumeBackground::BufferVtable()
+{
+	return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(g_bufferVtable));
 }

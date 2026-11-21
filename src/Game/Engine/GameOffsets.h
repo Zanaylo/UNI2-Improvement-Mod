@@ -899,6 +899,9 @@ namespace GameOffsets
 
 	constexpr uintptr_t kFnMenuBgmChoose = 0x2d5040;
 	constexpr uintptr_t kFnBgmSeek = 0xb2430;
+	constexpr uintptr_t kFnStopSoundHolder = 0x394630;
+	constexpr uintptr_t kSoundHolderPlayer = 0x8;
+	constexpr uintptr_t kSoundPlayerBuffer = 0x4;
 
 	constexpr uintptr_t kFnSePlay = 0xd9d70;
 	constexpr uintptr_t kFnBattlePlayerSeLoad = 0x1239f0;

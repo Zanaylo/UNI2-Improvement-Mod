@@ -4,6 +4,7 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Audio/BgmLibrary.h"
+#include "Game/Audio/BgmLoaded.h"
 #include "Game/Audio/BgmTable.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Hooks/GameHook.h"
@@ -92,15 +93,7 @@ bool Wanted(int slot, int id, int& out)
 
 bool CurrentWanted(int& out, int& slotOut, int& idOut)
 {
-	uint32_t loaded = 0;
-
-	if (!TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kBgmCurrentId)),
-		loaded))
-	{
-		return false;
-	}
-
-	const int slot = static_cast<int>(loaded);
+	const int slot = BgmLoaded::Slot();
 	const int id = slot == g_currentSlot ? g_currentId : slot;
 
 	slotOut = slot;

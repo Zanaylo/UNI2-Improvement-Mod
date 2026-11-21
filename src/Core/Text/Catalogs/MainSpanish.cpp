@@ -128,6 +128,8 @@ const LanguageCatalog::Entry kEntries[] = {
 	{ "BBTAG draws these behind Astral Heats and on its menus, not in fights.\nSome make good stages, some look wrong from the fighting camera.", u8"BBTAG usa estos detrás de los Astral Heats y en sus menús, no en las peleas.\nAlgunos quedan bien como escenario, otros se ven raros con la cámara de pelea." },
 	{ "Back buffer multisampling %s", u8"Multisampling del back buffer %s" },
 	{ "Back to original", u8"Volver al original" },
+	{ "Save...", u8"Guardar..." },
+	{ "Writes the sound that plays now to a file of your own, exactly as the game keeps it.", u8"Guarda el sonido que suena ahora en un archivo tuyo, tal como lo guarda el juego." },
 	{ "Back to the game's colour", u8"Volver al color del juego" },
 	{ "Back to the game's screens", u8"Volver a las pantallas del juego" },
 	{ "Back to the stock colour.", u8"Vuelve al color original." },

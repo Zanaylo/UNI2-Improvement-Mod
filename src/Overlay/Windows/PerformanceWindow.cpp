@@ -454,21 +454,22 @@ bool ShouldRefresh(DWORD& lastTick)
 	return true;
 }
 
-void CollectRefreshRates(std::vector<UINT>& out)
+struct ModeListKey
+{
+	UINT adapter;
+	UINT width;
+	UINT height;
+	D3DFORMAT format;
+
+	bool operator==(const ModeListKey& other) const
+	{
+		return adapter == other.adapter && width == other.width && height == other.height && format == other.format;
+	}
+};
+
+void CollectRefreshRates(IDirect3D9* d3d9, UINT adapter, std::vector<UINT>& out)
 {
 	out.clear();
-
-	IDirect3DDevice9* const device = DeviceHooks::GetDevice();
-	if (device == nullptr)
-		return;
-
-	IDirect3D9* d3d9 = nullptr;
-	if (FAILED(device->GetDirect3D(&d3d9)) || d3d9 == nullptr)
-		return;
-
-	D3DDEVICE_CREATION_PARAMETERS creation = {};
-	const UINT adapter = SUCCEEDED(device->GetCreationParameters(&creation))
-		? creation.AdapterOrdinal : D3DADAPTER_DEFAULT;
 
 	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
 	const UINT modeCount = d3d9->GetAdapterModeCount(adapter, present.BackBufferFormat);
@@ -489,8 +490,40 @@ void CollectRefreshRates(std::vector<UINT>& out)
 		if (!seen && mode.RefreshRate != 0)
 			out.push_back(mode.RefreshRate);
 	}
+}
 
+const std::vector<UINT>& RefreshRates()
+{
+	static std::vector<UINT> rates;
+	static ModeListKey listed = {};
+	static bool filled = false;
+
+	IDirect3DDevice9* const device = DeviceHooks::GetDevice();
+
+	if (device == nullptr)
+		return rates;
+
+	D3DDEVICE_CREATION_PARAMETERS creation = {};
+	const UINT adapter = SUCCEEDED(device->GetCreationParameters(&creation))
+		? creation.AdapterOrdinal : D3DADAPTER_DEFAULT;
+
+	const D3DPRESENT_PARAMETERS& present = DeviceHooks::GetPresentParameters();
+	const ModeListKey wanted = { adapter, present.BackBufferWidth, present.BackBufferHeight, present.BackBufferFormat };
+
+	if (filled && listed == wanted)
+		return rates;
+
+	IDirect3D9* d3d9 = nullptr;
+
+	if (FAILED(device->GetDirect3D(&d3d9)) || d3d9 == nullptr)
+		return rates;
+
+	CollectRefreshRates(d3d9, adapter, rates);
 	d3d9->Release();
+
+	listed = wanted;
+	filled = true;
+	return rates;
 }
 
 }
@@ -667,11 +700,7 @@ bool PerformanceWindow::DrawDisplayGroup()
 	Help("The game always asks for 60 Hz and one back buffer, without checking your monitor. Turn "
 		"this off to keep exactly what the game asks for.");
 
-	static std::vector<UINT> rates;
-	static DWORD ratesTick = 0;
-
-	if (ShouldRefresh(ratesTick))
-		CollectRefreshRates(rates);
+	const std::vector<UINT>& rates = RefreshRates();
 
 	char preview[64] = {};
 	if (g_modVals.fullscreenRefreshHz == 0)

@@ -162,3 +162,4 @@
 { GameOffsets::kFnColourPickerList, "kFnColourPickerList", "53 56 57 8B 3D ?? ?? ?? ?? 33 F6 8B D9" },
 { GameOffsets::kFnColourWindowDraw, "kFnColourWindowDraw", "55 8B EC 6A FF 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 83 EC 44 A1 ?? ?? ?? ?? 33 C5 89 45 F0 53 56 57 50 8D 45 F4 64 A3 00 00 00 00 8B D9 ?? ?? ?? ?? 00 00 85 C0" },
 { GameOffsets::kFnMenuText, "kFnMenuText", "55 8B EC 83 E4 F8 83 EC 0C 53 56 8B 75 14" },
+{ GameOffsets::kFnStopSoundHolder, "kFnStopSoundHolder", "56 57 8B F9 8B 37 85 F6 74 ?? 8B 4E 08 85 C9 74 ?? 33 C0 89 46 28" },

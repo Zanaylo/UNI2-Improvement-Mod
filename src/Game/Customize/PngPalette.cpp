@@ -16,6 +16,11 @@ constexpr uint8_t kMaxDepth = 6;
 constexpr int kMinSheetDivisor = 4;
 constexpr int64_t kAspectTolerancePercent = 1;
 constexpr uint64_t kMinAgreementPercent = 90;
+constexpr int kMinCellSide = 3;
+constexpr int kMaxCellSide = 64;
+constexpr int kCellSquareSlack = 2;
+constexpr int kCellSquareShare = 4;
+constexpr int kNoDepth = -1;
 
 uint32_t ReadBigEndian32(const uint8_t* bytes)
 {
@@ -343,6 +348,103 @@ std::vector<uint8_t> InteriorDepth(const std::vector<uint8_t>& indices, int widt
 	return depth;
 }
 
+struct Runs
+{
+	std::vector<uint16_t> rowStart;
+	std::vector<uint16_t> rowEnd;
+	std::vector<uint16_t> columnLength;
+};
+
+Runs MeasureRuns(const std::vector<uint8_t>& indices, int width, int height)
+{
+	Runs runs;
+	runs.rowStart.resize(indices.size());
+	runs.rowEnd.resize(indices.size());
+	runs.columnLength.resize(indices.size());
+
+	for (int y = 0; y < height; ++y)
+	{
+		const size_t row = static_cast<size_t>(y) * width;
+		int start = 0;
+
+		for (int x = 1; x <= width; ++x)
+		{
+			if (x < width && indices[row + x] == indices[row + start])
+				continue;
+
+			for (int run = start; run < x; ++run)
+			{
+				runs.rowStart[row + run] = static_cast<uint16_t>(start);
+				runs.rowEnd[row + run] = static_cast<uint16_t>(x - 1);
+			}
+
+			start = x;
+		}
+	}
+
+	for (int x = 0; x < width; ++x)
+	{
+		int start = 0;
+
+		for (int y = 1; y <= height; ++y)
+		{
+			if (y < height && indices[static_cast<size_t>(y) * width + x] == indices[static_cast<size_t>(start) * width + x])
+				continue;
+
+			for (int run = start; run < y; ++run)
+				runs.columnLength[static_cast<size_t>(run) * width + x] = static_cast<uint16_t>(y - start);
+
+			start = y;
+		}
+	}
+
+	return runs;
+}
+
+bool IsCellSized(int across, int down)
+{
+	if (across < kMinCellSide || across > kMaxCellSide || down < kMinCellSide || down > kMaxCellSide)
+		return false;
+
+	const int gap = across > down ? across - down : down - across;
+
+	return gap <= std::max(kCellSquareSlack, across / kCellSquareShare);
+}
+
+bool SitsBesideItsNeighbour(const std::vector<uint8_t>& indices, int width, size_t row, int start, int end, int index)
+{
+	const bool nextOnTheRight = end + 1 < width && indices[row + end + 1] == index + 1;
+	const bool previousOnTheLeft = start > 0 && indices[row + start - 1] == index - 1;
+
+	return nextOnTheRight || previousOnTheLeft;
+}
+
+std::vector<uint8_t> SwatchCells(const std::vector<uint8_t>& indices, int width, int height)
+{
+	const Runs runs = MeasureRuns(indices, width, height);
+	std::vector<uint8_t> cells(indices.size());
+
+	for (int y = 0; y < height; ++y)
+	{
+		const size_t row = static_cast<size_t>(y) * width;
+
+		for (int x = 0; x < width; ++x)
+		{
+			const size_t pixel = row + x;
+			const int index = indices[pixel];
+			const int start = runs.rowStart[pixel];
+			const int end = runs.rowEnd[pixel];
+
+			if (index == 0 || !IsCellSized(end - start + 1, runs.columnLength[pixel]))
+				continue;
+
+			cells[pixel] = SitsBesideItsNeighbour(indices, width, row, start, end, index) ? 1 : 0;
+		}
+	}
+
+	return cells;
+}
+
 struct DecodedImage
 {
 	int width = 0;
@@ -454,9 +556,12 @@ bool ReadFromSheet(const DecodedImage& image, const DecodedSheet& decodedSheet, 
 	}
 
 	const uint32_t background = MostFrequent(backdrop);
+	const std::vector<uint8_t> cells = SwatchCells(indices, sheetWidth, sheetHeight);
 
-	int best[kEntries];
-	std::fill(best, best + kEntries, -1);
+	int bestAnywhere[kEntries];
+	int bestInCell[kEntries];
+	std::fill(bestAnywhere, bestAnywhere + kEntries, kNoDepth);
+	std::fill(bestInCell, bestInCell + kEntries, kNoDepth);
 
 	for (size_t pixel = 0; pixel < pixels; ++pixel)
 	{
@@ -464,8 +569,23 @@ bool ReadFromSheet(const DecodedImage& image, const DecodedSheet& decodedSheet, 
 			continue;
 
 		const size_t at = sheetAt(pixel);
-		best[indices[at]] = std::max<int>(best[indices[at]], depth[at]);
+		const uint8_t index = indices[at];
+
+		bestAnywhere[index] = std::max<int>(bestAnywhere[index], depth[at]);
+
+		if (cells[at] != 0)
+			bestInCell[index] = std::max<int>(bestInCell[index], depth[at]);
 	}
+
+	const auto sampled = [&](size_t at)
+	{
+		const uint8_t index = indices[at];
+
+		if (bestInCell[index] != kNoDepth)
+			return cells[at] != 0 && depth[at] == bestInCell[index];
+
+		return depth[at] == bestAnywhere[index];
+	};
 
 	std::vector<uint32_t> keys;
 
@@ -475,7 +595,7 @@ bool ReadFromSheet(const DecodedImage& image, const DecodedSheet& decodedSheet, 
 		const uint8_t index = indices[at];
 		const uint32_t colour = ColourAt(bgra, pixel);
 
-		if (index == 0 || colour == background || depth[at] != best[index])
+		if (index == 0 || colour == background || !sampled(at))
 			continue;
 
 		keys.push_back((static_cast<uint32_t>(index) << 24) | colour);

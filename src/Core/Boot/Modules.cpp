@@ -11,6 +11,7 @@
 #include "Core/FramePhases.h"
 #include "Core/Input/WindowsPointer.h"
 #include "Core/StallSampler.h"
+#include "Game/Audio/SoundHolderGuard.h"
 #include "Game/Audio/SoundVolumeBackground.h"
 #include "Core/logger.h"
 #include "D3D9/Device/SceneScale.h"
@@ -189,6 +190,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: frame phases", [] { FramePhases::Prepare(); } },
 	{ "game hooks: windows pointer", [] { WindowsPointer::Install(); } },
 	{ "game hooks: sound volume", [] { SoundVolumeBackground::Install(); } },
+	{ "game hooks: sound holder guard", [] { SoundHolderGuard::Install(); } },
 	{ "game hooks: chara tracker", [] { CharaTracker::Install(); } },
 	{ "game hooks: frame stepper", [] { FrameStepper::Initialize(); }, FeatureCatalog::Id_Training },
 	{ "game hooks: player control", [] { PlayerControl::Initialize(); }, FeatureCatalog::Id_Training },

@@ -6,6 +6,7 @@
 #include "Core/utils.h"
 #include "Game/Audio/BgmCatalog.h"
 #include "Game/Audio/BgmLibrary.h"
+#include "Game/Audio/BgmLoaded.h"
 #include "Game/Audio/LibraryRemap.h"
 #include "Game/Audio/BgmTableFile.h"
 #include "Game/Audio/BgmNames.h"
@@ -49,7 +50,6 @@ GameHook<MenuBgm_t> g_menuBgmHook("MenuBgmChoose");
 constexpr int kIdleStartGrace = 4;
 constexpr int kIdleStartPeriod = 30;
 constexpr uint64_t kSelfStartGraceMs = 250;
-constexpr int kHeldPauseFrames = 8;
 
 bool g_hooked = false;
 bool g_reported = false;
@@ -65,9 +65,6 @@ int g_shufflePick = -1;
 int g_takenOver = -1;
 bool g_inChooser = false;
 bool g_inBattle = false;
-uint32_t g_startedStream = 0;
-int g_heldPauseFrames = 0;
-bool g_carryStart = false;
 
 uint64_t g_positionBase = 0;
 float g_positionSeconds = 0.0f;
@@ -162,7 +159,7 @@ bool LoadedFile(char* out, int size)
 {
 	BgmTable::Entry entry = {};
 
-	if (!BgmTable::Read(static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)), entry))
+	if (!BgmTable::Read(BgmLoaded::Slot(), entry))
 		return false;
 
 	if (!entry.present || entry.file[0] == '\0')
@@ -262,7 +259,7 @@ bool RestorePosition()
 
 bool SameTrackLoaded(int slot)
 {
-	const int loaded = static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId));
+	const int loaded = BgmLoaded::Slot();
 
 	if (loaded == slot)
 		return true;
@@ -304,7 +301,14 @@ bool AlreadyRunning()
 	return StillLoaded(g_playing);
 }
 
-bool StartTrack(int id, void* edx)
+int GameIdForPick(int id)
+{
+	const int asked = static_cast<int>(g_lastRequested);
+
+	return asked >= 0 ? asked : id;
+}
+
+bool StartTrack(int id, int gameId, void* edx)
 {
 	int slot = id;
 
@@ -317,6 +321,7 @@ bool StartTrack(int id, void* edx)
 	}
 
 	BgmVolume::ApplyToSlot(slot, id);
+	BgmLoaded::ShowSlot();
 
 	const bool result = g_bgmPlayHook.Original()(slot, edx);
 
@@ -326,9 +331,10 @@ bool StartTrack(int id, void* edx)
 		BgmVolume::SetCurrent(slot, id);
 	}
 
-	g_startedStream = 0;
+	if (BgmLoaded::GameId() == slot)
+		BgmLoaded::Present(gameId, slot);
+
 	g_parkedPause = false;
-	g_carryStart = false;
 	WriteGlobal(GameOffsets::kBgmState, State_Stopped);
 
 	return result;
@@ -399,89 +405,6 @@ void ForgetDrawAfterBattle()
 	g_shufflePick = -1;
 }
 
-bool GameHoldsAnotherSlot(int asked)
-{
-	return static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)) != asked;
-}
-
-void CarryOnThroughRound(int asked, int chosen, uint32_t state)
-{
-	if (!GameHoldsAnotherSlot(asked) || state != State_Stopped || !GameState::IsInMatch())
-		return;
-
-	const uint32_t stream = ReadGlobal(GameOffsets::kBgmPlayer);
-
-	if (stream == 0 || stream != g_startedStream)
-		return;
-
-	ParkPaused("the round change");
-
-	LOG("BgmControl: the game asked for its track %d again mid-match, so %d carries on instead of "
-		"starting over", asked, chosen);
-}
-
-bool SwappedTrackInMatch()
-{
-	if (!GameState::IsInMatch() || g_playing < 0 || !GameHoldsAnotherSlot(g_lastRequested))
-		return false;
-
-	if (ReadGlobal(GameOffsets::kBgmState) != State_Playing)
-		return false;
-
-	const uint32_t stream = ReadGlobal(GameOffsets::kBgmPlayer);
-
-	return stream != 0 && stream == g_startedStream;
-}
-
-void RunHeldPause(const char* why)
-{
-	g_heldPauseFrames = 0;
-
-	if (ReadGlobal(GameOffsets::kBgmPlayer) == 0)
-	{
-		WriteGlobal(GameOffsets::kBgmState, State_Stopped);
-		LOG("BgmControl: the held pause found its stream gone, the state is cleared");
-		return;
-	}
-
-	g_bgmPauseHook.Original()();
-
-	LOG("BgmControl: the held pause went through, %s", why);
-}
-
-void ReleaseHeldPause(const char* why)
-{
-	if (g_heldPauseFrames == 0)
-		return;
-
-	RunHeldPause(why);
-}
-
-void ExpireHeldPause()
-{
-	if (g_heldPauseFrames == 0)
-		return;
-
-	if (--g_heldPauseFrames > 0 && ReadGlobal(GameOffsets::kBgmPlayer) != 0)
-		return;
-
-	RunHeldPause("nothing asked for the track again");
-}
-
-bool AbsorbHeldPause(int asked)
-{
-	if (g_heldPauseFrames == 0)
-		return false;
-
-	g_heldPauseFrames = 0;
-	g_carryStart = true;
-
-	LOG("BgmControl: the game asked for its track %d again mid-match, so %d plays on through the "
-		"round change without a pause", asked, g_playing);
-
-	return true;
-}
-
 void __cdecl HookedBgmStart();
 
 void SelfStart()
@@ -517,7 +440,7 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 
 	if (g_pinned >= 0 && !BgmCatalog::ShuffleEnabled())
 	{
-		AbsorbHeldPause(id);
+		BgmLoaded::Present(id, BgmLoaded::Slot());
 		Explain("your pick, held over the %s the game asked for", SlotName(id));
 		LOG("BgmControl: game asked for %d, held back by your pick", id);
 		return true;
@@ -573,27 +496,23 @@ bool __fastcall HookedBgmPlay(int id, void* edx)
 	g_lastPlayed = chosen;
 
 	const bool loaded = StillLoaded(chosen);
+	const int loadedSlot = BgmLoaded::Slot();
 
 	BgmTable::Entry current = {};
-	BgmTable::Read(static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)), current);
+	BgmTable::Read(loadedSlot, current);
 
 	const uint32_t state = ReadGlobal(GameOffsets::kBgmState);
 
 	LOG("BgmControl: game asked for %d (chara %d vs %d), playing %d, already loaded %d, slot %d "
-		"holding '%s', state %u", id, left, right, chosen, loaded ? 1 : 0,
-		static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)), current.file, state);
+		"holding '%s', state %u", id, left, right, chosen, loaded ? 1 : 0, loadedSlot, current.file, state);
 
 	if (loaded)
 	{
-		if (!AbsorbHeldPause(id))
-			CarryOnThroughRound(id, chosen, state);
-
+		BgmLoaded::Present(id, loadedSlot);
 		return true;
 	}
 
-	ReleaseHeldPause("a different track was asked for");
-
-	if (!StartTrack(chosen, edx))
+	if (!StartTrack(chosen, id, edx))
 		return false;
 
 	if (state == State_Playing)
@@ -682,25 +601,8 @@ bool SkipIdleStart(int slot)
 	return g_idleStarts % kIdleStartPeriod != 0;
 }
 
-bool CarriedStart()
-{
-	if (!g_carryStart)
-		return false;
-
-	g_carryStart = false;
-
-	return ReadGlobal(GameOffsets::kBgmState) == State_Playing && StillLoaded(g_playing);
-}
-
 void __cdecl HookedBgmStart()
 {
-	if (CarriedStart())
-	{
-		LOG("BgmControl: start ignored, %d kept playing through the round change", g_playing);
-		BgmVolume::ApplyNow();
-		return;
-	}
-
 	if (GameStartIsRedundant())
 	{
 		g_selfStartedAt = 0;
@@ -713,20 +615,19 @@ void __cdecl HookedBgmStart()
 	if (AlreadyRunning())
 	{
 		LOG("BgmControl: start ignored, %d is already running at %.1fs on slot %d", g_playing,
-			static_cast<double>(PlayedSeconds()),
-			static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)));
+			static_cast<double>(PlayedSeconds()), BgmLoaded::Slot());
 
 		BgmVolume::ApplyNow();
 		return;
 	}
 
-	if (SkipIdleStart(static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId))))
+	if (SkipIdleStart(BgmLoaded::GameId()))
 		return;
 
 	const bool restored = RestorePosition();
 
 	LOG("BgmControl: start, state %u, playing %d, slot %d, loaded %u, stream %08X - %s", state,
-		g_playing, static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)),
+		g_playing, BgmLoaded::Slot(),
 		ReadGlobal(GameOffsets::kBgmLoadedFlag), ReadGlobal(GameOffsets::kBgmPlayer),
 		restored ? "picking up where it left off"
 		: state == State_Paused ? "resuming" : "from the top");
@@ -736,7 +637,6 @@ void __cdecl HookedBgmStart()
 	else if (!restored)
 		MarkPlayingFrom(g_positionSeconds);
 
-	g_startedStream = ReadGlobal(GameOffsets::kBgmPlayer);
 	(g_bgmStartHook.IsLive() ? g_bgmStartHook.Original() : g_bgmStartUnhooked)();
 }
 
@@ -748,27 +648,8 @@ bool MayHoldPaused()
 	return !GameState::IsInMatch();
 }
 
-bool HoldRoundPause()
-{
-	if (g_heldPauseFrames > 0)
-		return true;
-
-	if (!SwappedTrackInMatch())
-		return false;
-
-	g_heldPauseFrames = kHeldPauseFrames;
-
-	LOG("BgmControl: pause held, %d is the mod's track mid-match and the game is about to "
-		"ask for its %d again", g_playing, static_cast<int>(g_lastRequested));
-
-	return true;
-}
-
 void __cdecl HookedBgmPause()
 {
-	if (HoldRoundPause())
-		return;
-
 	const uint32_t before = ReadGlobal(GameOffsets::kBgmState);
 
 	g_bgmPauseHook.Original()();
@@ -872,9 +753,8 @@ void BgmControl::WriteCrashReport()
 	LOG_RAW("  last requested: %d", GetLastRequested());
 	LOG_RAW("  last played:    %d", GetLastPlayed());
 	LOG_RAW("  now playing:    %d, pinned %d", g_playing, g_pinned);
-	LOG_RAW("  state:          %d, stream %08X, game id %d", ReadGlobal(GameOffsets::kBgmState),
-		ReadGlobal(GameOffsets::kBgmPlayer),
-		static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId)));
+	LOG_RAW("  state:          %d, stream %08X, game id %d, slot %d", ReadGlobal(GameOffsets::kBgmState),
+		ReadGlobal(GameOffsets::kBgmPlayer), BgmLoaded::GameId(), BgmLoaded::Slot());
 	LOG_RAW("  window slot:    %d, bound %d", BgmLibrary::WindowSlot(), BgmLibrary::BoundId());
 	LOG_RAW("  characters:     %d vs %d", GetCharacter(0), GetCharacter(1));
 	LOG_RAW("  rules enabled:  %d, count %d", BgmRules::IsEnabled() ? 1 : 0, BgmRules::Count());
@@ -896,7 +776,7 @@ int BgmControl::Current()
 	if (ReadGlobal(GameOffsets::kBgmPlayer) == 0)
 		return -1;
 
-	const int loaded = static_cast<int>(ReadGlobal(GameOffsets::kBgmCurrentId));
+	const int loaded = BgmLoaded::Slot();
 
 	if (g_playing < 0)
 		return loaded;
@@ -960,7 +840,7 @@ void BgmControl::Release()
 	const int right = GameState::GetLoadedCharacter(1);
 	const int resolved = BgmRules::Resolve(wanted, left, right);
 
-	if (StartTrack(resolved >= 0 ? resolved : wanted, nullptr))
+	if (StartTrack(resolved >= 0 ? resolved : wanted, wanted, nullptr))
 		HookedBgmStart();
 }
 
@@ -982,7 +862,7 @@ void BgmControl::Reshuffle()
 
 	g_lastPlayed = picked;
 
-	if (StartTrack(picked, nullptr))
+	if (StartTrack(picked, wanted, nullptr))
 		HookedBgmStart();
 }
 
@@ -998,7 +878,6 @@ int BgmControl::PinnedId()
 
 void BgmControl::OnFrame()
 {
-	ExpireHeldPause();
 	ClearOrphanPause();
 	ForgetDrawAfterBattle();
 
@@ -1045,7 +924,7 @@ bool BgmControl::Play(int id)
 	g_pinned = id;
 	g_pinnedScene = SceneWatch::Current();
 
-	const bool loaded = StartTrack(id, nullptr);
+	const bool loaded = StartTrack(id, GameIdForPick(id), nullptr);
 
 	if (loaded)
 		HookedBgmStart();

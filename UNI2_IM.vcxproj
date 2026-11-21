@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -219,6 +219,9 @@
     <ClCompile Include="src\Game\Audio\OggWriter.cpp" />
     <ClCompile Include="src\Game\Audio\MusicRefresh.cpp" />
     <ClCompile Include="src\Game\Audio\LibraryRemap.cpp" />
+    <ClCompile Include="src\Game\Audio\BgmIdentity.cpp" />
+    <ClCompile Include="src\Game\Audio\BgmLoaded.cpp" />
+    <ClCompile Include="src\Game\Audio\SoundExportName.cpp" />
     <ClCompile Include="src\Core\HexText.cpp" />
     <ClCompile Include="src\Core\LegacyFolder.cpp" />
     <ClCompile Include="src\Core\FileIndex.cpp" />
@@ -470,6 +473,8 @@
     <ClCompile Include="src\Hooks\CompareTrampoline.cpp" />
     <ClCompile Include="src\Network\OnlineContext.cpp" />
     <ClCompile Include="src\Game\Audio\SoundVolumeBackground.cpp" />
+    <ClCompile Include="src\Game\Audio\SoundHolderGuard.cpp" />
+    <ClCompile Include="src\Game\Audio\SoundHolderCheck.cpp" />
     <ClCompile Include="src\Game\Audio\VolumeQueue.cpp" />
     <ClCompile Include="src\Core\StallSampler.cpp" />
     <ClCompile Include="src\Core\FramePhases.cpp" />
@@ -899,6 +904,9 @@
     <ClInclude Include="src\Game\Audio\OggWriter.h" />
     <ClInclude Include="src\Game\Audio\MusicRefresh.h" />
     <ClInclude Include="src\Game\Audio\LibraryRemap.h" />
+    <ClInclude Include="src\Game\Audio\BgmIdentity.h" />
+    <ClInclude Include="src\Game\Audio\BgmLoaded.h" />
+    <ClInclude Include="src\Game\Audio\SoundExportName.h" />
     <ClInclude Include="src\Core\HexText.h" />
     <ClInclude Include="src\Core\LegacyFolder.h" />
     <ClInclude Include="src\Core\FileIndex.h" />
@@ -1122,6 +1130,8 @@
     <ClInclude Include="src\Hooks\CompareTrampoline.h" />
     <ClInclude Include="src\Network\OnlineContext.h" />
     <ClInclude Include="src\Game\Audio\SoundVolumeBackground.h" />
+    <ClInclude Include="src\Game\Audio\SoundHolderGuard.h" />
+    <ClInclude Include="src\Game\Audio\SoundHolderCheck.h" />
     <ClInclude Include="src\Game\Audio\VolumeQueue.h" />
     <ClInclude Include="src\Core\StallSampler.h" />
     <ClInclude Include="src\Core\FramePhases.h" />

@@ -23,6 +23,7 @@ constexpr const char* kGame = "UNI2";
 constexpr const char* kZipFilter = "Sound pack (*.zip)\0*.zip\0All files\0*.*\0";
 constexpr const char* kAudioFilter =
 	"Sound (*.ogg;*.wav;*.mp3)\0*.ogg;*.wav;*.mp3\0All files\0*.*\0";
+constexpr const char* kSavedSoundFilter = "Sound (*.ogg;*.wav)\0*.ogg;*.wav\0All files\0*.*\0";
 constexpr const char* kNewPackPopup = "Make a pack";
 constexpr const char* kRemovePackPopup = "Remove the pack";
 
@@ -257,6 +258,17 @@ void SoundWindow::DrawRow(int index)
 
 	ImGui::SameLine();
 
+	if (ImGui::Button(TrLabel("Save...")) && !m_save.IsRunning())
+	{
+		m_saving = index;
+		m_save.BeginSave("Save this sound", kSavedSoundFilter, entry->file.c_str());
+	}
+
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip(Tr("Writes the sound that plays now to a file of your own, exactly as the game keeps it."));
+
+	ImGui::SameLine();
+
 	if (ImGui::Button(TrLabel("New...")) && !m_replace.IsRunning())
 		AskForPack(index);
 
@@ -316,7 +328,7 @@ void SoundWindow::DrawList()
 	ImGui::TableSetupColumn("Sound", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
 	ImGui::TableSetupColumn("Line", ImGuiTableColumnFlags_WidthStretch);
 	ImGui::TableSetupColumn("Playing", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
-	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(230.0f));
+	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(290.0f));
 	ImGui::TableHeadersRow();
 
 	ImGuiListClipper clipper;
@@ -677,6 +689,14 @@ void SoundWindow::PumpDialogs()
 	{
 		SoundPacks::Export(m_exporting, picked, m_status, sizeof(m_status));
 		m_exporting.clear();
+	}
+
+	if (m_save.TakeResult(picked) && m_saving >= 0)
+	{
+		if (!picked.empty())
+			CharaSounds::Save(m_saving, picked, m_status, sizeof(m_status));
+
+		m_saving = -1;
 	}
 
 	if (m_replace.TakeResult(picked) && m_replacing >= 0)
