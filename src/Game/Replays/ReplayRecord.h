@@ -15,6 +15,7 @@ namespace ReplayRecord
 	constexpr size_t kOffTime = 0x112;
 	constexpr size_t kOffPayloadSize = 0x124;
 	constexpr size_t kOffLocked = 0x128;
+	constexpr size_t kOffWinner = 0x130;
 	constexpr size_t kOffPlayer = 0x140;
 	constexpr size_t kPlayerStride = 0xa0;
 	constexpr size_t kPlayerChara = 0x08;
@@ -27,6 +28,7 @@ namespace ReplayRecord
 	constexpr size_t kHeaderBytes = 0x300;
 
 	constexpr int kPlayers = 2;
+	constexpr int32_t kNoWinner = -1;
 
 	struct Player
 	{
@@ -40,6 +42,7 @@ namespace ReplayRecord
 		SYSTEMTIME time;
 		uint64_t author;
 		Player player[kPlayers];
+		int32_t winner = kNoWinner;
 	};
 
 	constexpr size_t PlayerBlock(int player)

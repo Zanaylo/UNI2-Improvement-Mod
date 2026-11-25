@@ -16,7 +16,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Zanaylo"
-            VALUE "FileDescription", UNI2_IM_NAME
+            VALUE "FileDescription", UNI2_IM_NAME UNI2_IM_BUILD_TAG
             VALUE "FileVersion", UNI2_IM_VERSION
             VALUE "InternalName", "dinput8"
             VALUE "OriginalFilename", "dinput8.dll"
@@ -30,10 +30,9 @@ BEGIN
     END
 END
 
+#ifdef UNI2_IM_FULL_EMBEDS
 #include "basepals.rc"
-
 #include "packs.rc"
-
 #include "stageicons.rc"
-
 #include "shaderexamples.rc"
+#endif

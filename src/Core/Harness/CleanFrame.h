@@ -9,6 +9,7 @@ namespace CleanFrame
 
 	void SetFightersHidden(bool hidden);
 	bool FightersHidden();
+	bool IsActive();
 
 	void OnSetTexture(unsigned stage, bool paletteShaped);
 

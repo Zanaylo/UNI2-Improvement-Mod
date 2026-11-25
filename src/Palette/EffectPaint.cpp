@@ -7,6 +7,7 @@
 #include "Palette/EffectOwner.h"
 #include "Palette/PaletteControl.h"
 #include "Palette/PalettePaint.h"
+#include "Overlay/Framework/WindowManager.h"
 #include "Game/Engine/CodeSignatures.h"
 
 #include <intrin.h>
@@ -26,6 +27,10 @@ typedef void(__fastcall* SetParam)(void* self, void* edx, const char* name, cons
 
 GameHook<SetParam> g_tintHook("effect tint");
 bool g_installed = false;
+bool g_hookActive = false;
+bool g_overlayOpen = false;
+bool g_anyPreviewing = false;
+bool g_anyDoppel = false;
 
 int g_tintCalls = 0;
 int g_badIndex = 0;
@@ -54,14 +59,6 @@ int g_seenCount = 0;
 uintptr_t g_tintRequest = 0;
 
 uintptr_t g_tintPalette = 0;
-
-void TakeTintPalette()
-{
-	uint32_t palette = 0;
-	const void* const field = reinterpret_cast<const void*>(g_tintRequest + GameOffsets::kTintRequestPalette);
-
-	g_tintPalette = g_tintRequest != 0 && TryReadMemory(&palette, field, sizeof(palette)) ? palette : 0;
-}
 
 void NoteCall(int entry, uint8_t r, uint8_t g, uint8_t b, int route, int answer, bool substituted)
 {
@@ -124,9 +121,13 @@ struct Player
 
 	int observedCount;
 	int substitutions;
+	int editedCount;
+	int remoteCount;
+	int selectCount;
 
 	bool wear = true;
 	unsigned revision = 0;
+	unsigned overlayRevision = 0;
 };
 
 Player g_players[EffectPaint::kPlayers] = {};
@@ -142,24 +143,6 @@ bool IsTintName(const char* name)
 {
 	return name != nullptr && name[0] == 'g' && name[1] == '_' && name[2] == 'f' && name[3] == 'P'
 		&& strcmp(name, "g_fPtLastColor") == 0;
-}
-
-int ReadEntry(const float* values)
-{
-	const uintptr_t frame = reinterpret_cast<uintptr_t>(values) + kValuesToFrame;
-
-	uint32_t piece = 0;
-	if (!TryReadMemory(&piece, reinterpret_cast<const void*>(frame - kPieceSlot), sizeof(piece))
-		|| piece == 0)
-	{
-		return -1;
-	}
-
-	uint8_t index = 0;
-	if (!TryReadMemory(&index, reinterpret_cast<const void*>(piece + kIndexOffset), sizeof(index)))
-		return -1;
-
-	return index;
 }
 
 uint8_t Byte(float value)
@@ -264,11 +247,6 @@ void Replace(const Tint& tint, const uint8_t* rgb)
 	g_tintHook.Original()(tint.self, tint.edx, tint.name, swapped, tint.count);
 }
 
-bool IsOurCall(const char* name, const float* values, int count, uintptr_t caller)
-{
-	return IsTintName(name) && values != nullptr && count >= 3 && caller == g_tintCaller;
-}
-
 void NoteDrawn(int entry, uint8_t r, uint8_t g, uint8_t b)
 {
 	AnySeen& seen = g_anySeen[entry];
@@ -333,21 +311,65 @@ void PaintDoppel(const Tint& tint, int player, int entry, uint8_t r, uint8_t g, 
 	Replace(tint, rgb);
 }
 
+bool LooksLikeAddress(uintptr_t value)
+{
+	return value >= 0x10000;
+}
+
+bool ReadTintContext(uintptr_t request, const float* values, uintptr_t& outPalette, int& outEntry)
+{
+	outPalette = 0;
+	outEntry = -1;
+
+	bool ok = false;
+
+	__try
+	{
+		if (LooksLikeAddress(request))
+			outPalette = *reinterpret_cast<const uint32_t*>(request + GameOffsets::kTintRequestPalette);
+
+		const uintptr_t frame = reinterpret_cast<uintptr_t>(values) + kValuesToFrame;
+		const uint32_t piece = *reinterpret_cast<const uint32_t*>(frame - kPieceSlot);
+
+		if (LooksLikeAddress(piece))
+		{
+			outEntry = *reinterpret_cast<const uint8_t*>(piece + kIndexOffset);
+			ok = true;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		ok = false;
+	}
+
+	return ok;
+}
+
 void __fastcall Detour(void* self, void* edx, const char* name, const float* values, int count)
 {
-	const Tint tint = { self, edx, name, values, count,
-		count > 3 && values != nullptr ? values[3] : 0.0f };
+	if (reinterpret_cast<uintptr_t>(_ReturnAddress()) != g_tintCaller || count < 3 ||
+		values == nullptr || !IsTintName(name))
+	{
+		g_tintHook.Original()(self, edx, name, values, count);
+		return;
+	}
 
-	if (!IsOurCall(name, values, count, reinterpret_cast<uintptr_t>(_ReturnAddress())))
+	const Tint tint = { self, edx, name, values, count, count > 3 ? values[3] : 0.0f };
+
+	uintptr_t palette = 0;
+	int entry = -1;
+	ReadTintContext(g_tintRequest, values, palette, entry);
+	g_tintPalette = palette;
+
+	if (g_modVals.paletteEffectsFromPalette && !PalettePaint::IsAtPreview() && !g_forcedOn &&
+		!g_anyPreviewing && !g_anyDoppel && !g_overlayOpen &&
+		EffectOwner::PlayerForPalette(palette) >= 0)
 	{
 		PassThrough(tint);
 		return;
 	}
 
 	++g_tintCalls;
-	TakeTintPalette();
-
-	const int entry = ReadEntry(values);
 
 	if (entry <= 0 || entry >= EffectPaint::kColours)
 	{
@@ -447,6 +469,7 @@ bool EffectPaint::Install()
 	g_tintCaller = RvaToAddress(GameOffsets::kEffectTintCallSite);
 
 	g_installed = true;
+	g_hookActive = true;
 
 	return g_tintCaller != 0;
 }
@@ -454,6 +477,48 @@ bool EffectPaint::Install()
 bool EffectPaint::IsInstalled()
 {
 	return g_installed;
+}
+
+void EffectPaint::OnFrame()
+{
+	if (!g_installed)
+		return;
+
+	g_overlayOpen = WindowManager::GetInstance().IsOverlayActive();
+	g_anyPreviewing = g_players[0].previewing || g_players[1].previewing;
+	g_anyDoppel = PalettePaint::HasCompanion(0) || PalettePaint::HasCompanion(1);
+
+	const bool atPreview = PalettePaint::IsAtPreview();
+	const bool anySelect = g_players[0].selectCount > 0 || g_players[1].selectCount > 0;
+	const bool anyOverlay = g_players[0].editedCount > 0 || g_players[1].editedCount > 0 ||
+		g_players[0].remoteCount > 0 || g_players[1].remoteCount > 0;
+
+	const bool wantHook = g_forcedOn || g_overlayOpen || g_anyPreviewing || g_anyDoppel ||
+		(atPreview ? anySelect : anyOverlay);
+
+	if (wantHook == g_hookActive)
+		return;
+
+	g_hookActive = wantHook;
+	g_tintHook.SetEnabled(wantHook);
+}
+
+bool EffectPaint::IsHookActive()
+{
+	return g_hookActive;
+}
+
+bool EffectPaint::HasOverlay(int player)
+{
+	if (player < 0 || player >= kPlayers)
+		return false;
+
+	return g_players[player].editedCount > 0 || g_players[player].remoteCount > 0;
+}
+
+unsigned EffectPaint::GetOverlayRevision(int player)
+{
+	return player >= 0 && player < kPlayers ? g_players[player].overlayRevision : 0;
 }
 
 bool EffectPaint::GetObserved(int player, int entry, uint8_t* outRgb)
@@ -477,10 +542,18 @@ void EffectPaint::SetEntry(int player, int entry, const uint8_t* rgb)
 	if (!Valid(player, entry) || rgb == nullptr)
 		return;
 
-	memcpy(g_players[player].entries[entry].edit, rgb, 3);
-	g_players[player].entries[entry].edited = true;
+	Entry& at = g_players[player].entries[entry];
+
+	if (!at.edited)
+	{
+		at.edited = true;
+		++g_players[player].editedCount;
+	}
+
+	memcpy(at.edit, rgb, 3);
 
 	++g_players[player].revision;
+	++g_players[player].overlayRevision;
 	NoteChange();
 }
 
@@ -489,8 +562,14 @@ void EffectPaint::ClearEntry(int player, int entry)
 	if (!Valid(player, entry))
 		return;
 
-	g_players[player].entries[entry].edited = false;
+	if (g_players[player].entries[entry].edited)
+	{
+		g_players[player].entries[entry].edited = false;
+		--g_players[player].editedCount;
+	}
+
 	++g_players[player].revision;
+	++g_players[player].overlayRevision;
 	NoteChange();
 }
 
@@ -502,7 +581,9 @@ void EffectPaint::Clear(int player)
 	for (Entry& entry : g_players[player].entries)
 		entry.edited = false;
 
+	g_players[player].editedCount = 0;
 	++g_players[player].revision;
+	++g_players[player].overlayRevision;
 	NoteChange();
 }
 
@@ -525,20 +606,27 @@ void EffectPaint::GetBlock(int player, uint8_t* block)
 
 void EffectPaint::SetBlock(int player, const uint8_t* block)
 {
-	if (player < 0 || player >= kPlayers || block == nullptr)
+	if (player < 0 || player >= kPlayers)
 		return;
+
+	int count = 0;
 
 	for (int entry = 1; entry < kColours; ++entry)
 	{
-		const bool set = block[entry * 4 + 3] == 255;
+		const bool set = block != nullptr && block[entry * 4 + 3] == 255;
 
 		g_players[player].entries[entry].edited = set;
 
 		if (set)
+		{
 			memcpy(g_players[player].entries[entry].edit, block + entry * 4, 3);
+			++count;
+		}
 	}
 
+	g_players[player].editedCount = count;
 	++g_players[player].revision;
+	++g_players[player].overlayRevision;
 	NoteChange();
 }
 
@@ -547,15 +635,21 @@ void EffectPaint::StageSelect(int side, const uint8_t* block)
 	if (side < 0 || side >= kPlayers || block == nullptr)
 		return;
 
+	int count = 0;
+
 	for (int entry = 1; entry < kColours; ++entry)
 	{
 		Entry& at = g_players[side].entries[entry];
 		at.selected = block[entry * 4 + 3] == 255;
 
 		if (at.selected)
+		{
 			memcpy(at.select, block + entry * 4, 3);
+			++count;
+		}
 	}
 
+	g_players[side].selectCount = count;
 	NoteChange();
 }
 
@@ -567,6 +661,7 @@ void EffectPaint::ClearSelect(int side)
 	for (Entry& entry : g_players[side].entries)
 		entry.selected = false;
 
+	g_players[side].selectCount = 0;
 	NoteChange();
 }
 
@@ -575,6 +670,8 @@ void EffectPaint::SetRemote(int player, const uint8_t* block)
 	if (player < 0 || player >= kPlayers)
 		return;
 
+	int count = 0;
+
 	for (int entry = 1; entry < kColours; ++entry)
 	{
 		const bool set = block != nullptr && block[entry * 4 + 3] == 255;
@@ -582,9 +679,14 @@ void EffectPaint::SetRemote(int player, const uint8_t* block)
 		g_players[player].entries[entry].hasRemote = set;
 
 		if (set)
+		{
 			memcpy(g_players[player].entries[entry].remote, block + entry * 4, 3);
+			++count;
+		}
 	}
 
+	g_players[player].remoteCount = count;
+	++g_players[player].overlayRevision;
 	NoteChange();
 }
 
@@ -596,21 +698,14 @@ void EffectPaint::ClearRemote(int player)
 	for (Entry& entry : g_players[player].entries)
 		entry.hasRemote = false;
 
+	g_players[player].remoteCount = 0;
+	++g_players[player].overlayRevision;
 	NoteChange();
 }
 
 bool EffectPaint::HasRemote(int player)
 {
-	if (player < 0 || player >= kPlayers)
-		return false;
-
-	for (const Entry& entry : g_players[player].entries)
-	{
-		if (entry.hasRemote)
-			return true;
-	}
-
-	return false;
+	return player >= 0 && player < kPlayers && g_players[player].remoteCount > 0;
 }
 
 bool EffectPaint::GetRemoteEntry(int player, int entry, uint8_t* outRgb)
@@ -659,15 +754,7 @@ bool EffectPaint::GetEdit(int player, int entry, uint8_t* outRgb)
 
 int EffectPaint::GetEditedCount(int player)
 {
-	if (player < 0 || player >= kPlayers)
-		return 0;
-
-	int count = 0;
-
-	for (const Entry& entry : g_players[player].entries)
-		count += entry.edited ? 1 : 0;
-
-	return count;
+	return player >= 0 && player < kPlayers ? g_players[player].editedCount : 0;
 }
 
 void EffectPaint::PreviewObserved(int player, const uint8_t* rgb, const bool* lit, const uint8_t* litRgb)

@@ -70,6 +70,11 @@ bool TintBuffer::Apply(uint8_t* live, const uint8_t* palette, const uint8_t* ove
 	return true;
 }
 
+bool TintBuffer::Matches(const uint8_t* live) const
+{
+	return live != nullptr && live == m_live && memcmp(live, m_written, kBytes) == 0;
+}
+
 void TintBuffer::Restore()
 {
 	if (m_live != nullptr && memcmp(m_live, m_written, kBytes) == 0)

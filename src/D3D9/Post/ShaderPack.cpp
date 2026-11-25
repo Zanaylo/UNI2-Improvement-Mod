@@ -451,7 +451,7 @@ void InstallBundled()
 
 	g_installed = true;
 
-	if (AlreadyInstalled())
+	if (BundledShaders::Count() == 0 || AlreadyInstalled())
 		return;
 
 	WriteReadme();

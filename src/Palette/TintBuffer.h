@@ -9,6 +9,7 @@ public:
 	static constexpr int kBytes = kColours * 4;
 
 	bool Apply(uint8_t* live, const uint8_t* palette, const uint8_t* overlay);
+	bool Matches(const uint8_t* live) const;
 	void Restore();
 
 private:

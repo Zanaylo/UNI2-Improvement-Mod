@@ -9,6 +9,7 @@ namespace DrawQueue
 		User_Probe = 1 << 0,
 		User_HudOpacity = 1 << 1,
 		User_InputHistory = 1 << 2,
+		User_Addons = 1 << 3,
 	};
 
 	class IObserver

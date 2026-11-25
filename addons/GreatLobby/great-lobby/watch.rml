@@ -1,0 +1,36 @@
+<rml>
+<head>
+	<title>Great Lobby - assistindo</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="returning" data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+	<div id="watch-card">
+		<div class="pg-head">
+			<span data-if="watch_set_done">MESA {{watching}} · SÉRIE DECIDIDA · {{ft}}</span>
+			<span data-if="!watch_set_done &amp;&amp; watch_stage == 1">MESA {{watching}} · FIM DO JOGO · {{ft}}</span>
+			<span data-if="!watch_set_done &amp;&amp; watch_stage != 1">MESA {{watching}} · ENTRANDO NA PARTIDA · {{ft}}</span>
+		</div>
+		<div class="pg-vs">
+			<div class="pg-side">
+				<img class="pg-face" data-attr-src="watch_a.face"/>
+				<div class="pg-name">{{watch_a.name}}</div>
+				<div class="pg-char">{{watch_a.character}}</div>
+			</div>
+			<div class="pg-score">{{watch_a.score}}<span class="pg-dash">–</span>{{watch_b.score}}</div>
+			<div class="pg-side">
+				<img class="pg-face" data-attr-src="watch_b.face"/>
+				<div class="pg-name">{{watch_b.name}}</div>
+				<div class="pg-char">{{watch_b.character}}</div>
+			</div>
+		</div>
+		<div class="st-load" data-if="!watch_set_done">
+			<div class="spinner"><div class="d d0"></div><div class="d d1"></div><div class="d d2"></div><div class="d d3"></div><div class="d d4"></div><div class="d d5"></div><div class="d d6"></div><div class="d d7"></div></div>
+			<div class="st-text" data-if="watch_stage == 1">Os jogadores estão na tela de revanche…</div>
+			<div class="st-text" data-if="watch_stage != 1">Carregando a partida no momento atual…</div>
+		</div>
+		<div class="pg-status" data-if="watch_set_done">Fim da série · voltando ao lobby</div>
+		<div class="pg-status" data-if="!watch_set_done &amp;&amp; watch_stage == 1">{{watch_a.name}}: {{watch_choice_a == '' ? 'escolhendo…' : watch_choice_a}} · {{watch_b.name}}: {{watch_choice_b == '' ? 'escolhendo…' : watch_choice_b}}</div>
+		<div class="pg-note"><span class="key k-lb">↓</span> + <span class="key k-start">{{g_start}}</span> ou Esc saem · <span class="key k-lb">→</span> + <span class="key k-start">{{g_start}}</span> abre o chat</div>
+	</div>
+</body>
+</rml>

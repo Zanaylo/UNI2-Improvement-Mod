@@ -1,0 +1,32 @@
+<rml>
+<head>
+	<title>Great Lobby - jogador</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="modal" data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+	<div class="dialog" id="member">
+		<div class="title">Desafiar jogador</div>
+		<div class="who-card">
+			<img data-attr-src="member_face"/>
+			<div>
+				<div class="nm">{{member_name}}</div>
+				<div class="ch">{{member_character}}</div>
+				<div class="txt" data-if="member_busy">Está numa mesa agora.</div>
+				<div class="minfo" data-if="member_place != ''">{{member_place}}</div>
+				<div class="minfo">Ping até você: <span data-class-bad="member_ping_high">{{member_ping}}</span></div>
+				<div class="minfo" data-if="member_games &gt; 0">{{member_games}} partida(s) hoje <span class="mrec">{{member_record}}</span></div>
+			</div>
+		</div>
+		<div class="warn" data-if="member_ping_high">Ping alto entre vocês: a partida pode ficar travada.</div>
+		<div class="modrow" data-if="member_mod">
+			<div class="btn small" data-event-click="mute()"><span data-if="!member_muted">Silenciar</span><span data-if="member_muted">Tirar silêncio</span></div>
+			<div class="btn small" data-event-click="give_host()">Passar host</div>
+			<div class="btn small red" data-event-click="kick()">Expulsar</div>
+		</div>
+		<div class="actions">
+			<div class="btn" data-event-click="close_member()">Cancelar<span class="key k-b">{{g_b}}</span></div>
+			<div class="btn pri" autofocus="" data-event-click="challenge()">Desafiar<span class="key k-a">{{g_a}}</span></div>
+		</div>
+	</div>
+</body>
+</rml>

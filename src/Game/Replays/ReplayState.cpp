@@ -46,15 +46,8 @@ ReplayState::Signal g_signals[] =
 
 constexpr int kSignalCount = static_cast<int>(sizeof(g_signals) / sizeof(g_signals[0]));
 
-constexpr int kNoisyChangesPerSecond = 8;
-
-int g_changesThisSecond[kSignalCount] = {};
-bool g_noisy[kSignalCount] = {};
-DWORD g_windowStart = 0;
-
 bool g_playing = false;
 bool g_everFound = false;
-bool g_sampled = false;
 char g_status[160] = "not read yet";
 
 constexpr uint32_t kModeUnreadable = 0xffffffff;
@@ -77,65 +70,10 @@ bool ReadSignal(const ReplayState::Signal& signal, uint32_t& outValue)
 	return TryReadDword(address, outValue);
 }
 
-void SampleSignals()
-{
-	const DWORD now = GetTickCount();
-
-	if (now - g_windowStart >= 1000)
-	{
-		g_windowStart = now;
-		for (int i = 0; i < kSignalCount; ++i)
-			g_changesThisSecond[i] = 0;
-	}
-
-	for (int i = 0; i < kSignalCount; ++i)
-	{
-		ReplayState::Signal& signal = g_signals[i];
-
-		uint32_t value = 0;
-		const bool read = ReadSignal(signal, value);
-
-		if (g_sampled && read == signal.read && (!read || value == signal.value))
-			continue;
-
-		if (g_noisy[i])
-		{
-			signal.value = value;
-			signal.read = read;
-			continue;
-		}
-
-		if (++g_changesThisSecond[i] > kNoisyChangesPerSecond)
-		{
-			g_noisy[i] = true;
-			signal.value = value;
-			signal.read = read;
-
-			LOG("ReplayState: %-20s changes several times a second, not a flag - dropped from the log",
-				signal.name);
-			continue;
-		}
-
-		if (!read)
-			LOG("ReplayState: %-20s rva 0x%06x unreadable", signal.name, (unsigned)signal.rva);
-		else if (!g_sampled || !signal.read)
-			LOG("ReplayState: %-20s rva 0x%06x = 0x%08x", signal.name, (unsigned)signal.rva, value);
-		else
-			LOG("ReplayState: %-20s 0x%08x -> 0x%08x", signal.name, signal.value, value);
-
-		signal.value = value;
-		signal.read = read;
-	}
-
-	g_sampled = true;
-}
-
 }
 
 void ReplayState::Update()
 {
-	SampleSignals();
-
 	uint32_t mode = 0;
 	const bool read = TryReadDword(reinterpret_cast<const void*>(RvaToAddress(GameOffsets::kBattleMode)), mode);
 
@@ -188,6 +126,10 @@ bool ReplayState::GetSignal(int index, Signal& outSignal)
 	if (index < 0 || index >= kSignalCount)
 		return false;
 
-	outSignal = g_signals[index];
+	Signal& signal = g_signals[index];
+	uint32_t value = 0;
+	signal.read = ReadSignal(signal, value);
+	signal.value = value;
+	outSignal = signal;
 	return true;
 }

@@ -30,6 +30,7 @@ namespace Json
 		const Value* At(size_t index) const;
 
 		size_t Count() const { return m_items.size(); }
+		const std::vector<std::pair<std::string, Value>>& Members() const { return m_members; }
 
 		std::string AsString(const char* fallback = "") const;
 		double AsNumber(double fallback = 0.0) const;

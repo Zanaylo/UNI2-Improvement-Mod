@@ -29,7 +29,7 @@ std::string ReportPath(const char* dumpPath)
 
 void WriteHeader(FILE* file, const char* kind, const char* fault)
 {
-	fprintf(file, "%s %s stopped the game (%s)\r\n", UNI2_IM_NAME, UNI2_IM_VERSION, kind);
+	fprintf(file, "%s %s%s stopped the game (%s)\r\n", UNI2_IM_NAME, UNI2_IM_VERSION, UNI2_IM_BUILD_TAG, kind);
 	fprintf(file, "Game build stamp 0x%08x, the mod supports %s\r\n", GetGameBuildStamp(), UNI2_IM_SUPPORTED_GAME_VERSION);
 	fprintf(file, "%s\r\n\r\n", fault);
 

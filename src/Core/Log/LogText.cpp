@@ -1,14 +1,14 @@
 #include "Core/Log/LogText.h"
 
-#include <cctype>
 #include <cstring>
 
 namespace {
 
 constexpr const char* kGeneral = "General";
 constexpr const char* kCrashName = "CRASH";
-constexpr const char* kScope = "::";
+constexpr size_t kCrashLength = 5;
 constexpr const char* kErrorWord = "error";
+constexpr size_t kErrorLength = 5;
 constexpr int kMostSpaces = 1;
 
 const char* const kWarnPhrases[] = { "could not", "cannot", "can't", "failed", "failure", "unable to" };
@@ -17,93 +17,52 @@ const char* const kHarmlessBeforeError[] = { "no ", "0 " };
 const char* const kLevelNames[] = { "Debug", "Info", "Warning", "Error" };
 const char* const kFileTags[] = { "[debug] ", "", "[warn] ", "[error] " };
 
-bool IsNameLetter(char letter)
+bool IsAlpha(char c)
 {
-	return isalnum(static_cast<unsigned char>(letter)) != 0 || letter == '_' || letter == '-' || letter == '.';
+	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
-std::string Lowered(const char* line)
+bool IsDigit(char c)
 {
-	std::string lowered(line);
-
-	for (char& letter : lowered)
-		letter = static_cast<char>(tolower(static_cast<unsigned char>(letter)));
-
-	return lowered;
+	return c >= '0' && c <= '9';
 }
 
-bool IsWordAt(const std::string& text, size_t at, size_t length)
+bool IsNameLetter(char c)
 {
-	const bool startsWord = at == 0 || !IsNameLetter(text[at - 1]);
-	const size_t end = at + length;
-	const bool endsWord = end >= text.size() || !isalpha(static_cast<unsigned char>(text[end]));
-
-	return startsWord && endsWord;
+	return IsAlpha(c) || IsDigit(c) || c == '_' || c == '-' || c == '.';
 }
 
-bool FollowsHarmless(const std::string& text, size_t at)
+char LowerAscii(char c)
 {
-	for (const char* harmless : kHarmlessBeforeError)
-	{
-		const size_t length = strlen(harmless);
-
-		if (at >= length && text.compare(at - length, length, harmless) == 0)
-			return true;
-	}
-
-	return false;
+	return c >= 'A' && c <= 'Z' ? static_cast<char>(c + ('a' - 'A')) : c;
 }
 
-bool MentionsError(const std::string& lowered)
+bool FindCategorySpan(const char* line, size_t& outLength)
 {
-	const size_t length = strlen(kErrorWord);
-
-	for (size_t at = lowered.find(kErrorWord); at != std::string::npos; at = lowered.find(kErrorWord, at + 1))
-	{
-		if (IsWordAt(lowered, at, length) && !FollowsHarmless(lowered, at))
-			return true;
-	}
-
-	return false;
-}
-
-bool MentionsFailure(const std::string& lowered)
-{
-	for (const char* phrase : kWarnPhrases)
-	{
-		if (lowered.find(phrase) != std::string::npos)
-			return true;
-	}
-
-	return false;
-}
-
-std::string Owner(const std::string& name)
-{
-	const size_t scope = name.find(kScope);
-
-	return scope == std::string::npos ? name : name.substr(0, scope);
-}
-
-}
-
-std::string LogText::Category(const char* line)
-{
-	if (line == nullptr || !isalpha(static_cast<unsigned char>(line[0])))
-		return kGeneral;
+	if (line == nullptr || !IsAlpha(line[0]))
+		return false;
 
 	int spaces = 0;
+	size_t scope = 0;
+	bool hasScope = false;
 
-	for (size_t at = 0; at <= kLongestCategory && line[at] != '\0'; ++at)
+	for (size_t at = 0; at <= LogText::kLongestCategory && line[at] != '\0'; ++at)
 	{
 		const char letter = line[at];
-		const bool ends = letter == ':' && (line[at + 1] == ' ' || line[at + 1] == '\0');
 
-		if (ends)
-			return Owner(std::string(line, at));
+		if (letter == ':' && (line[at + 1] == ' ' || line[at + 1] == '\0'))
+		{
+			outLength = hasScope ? scope : at;
+			return true;
+		}
 
 		if (letter == ':' && line[at + 1] == ':')
 		{
+			if (!hasScope)
+			{
+				scope = at;
+				hasScope = true;
+			}
 			++at;
 			continue;
 		}
@@ -112,10 +71,88 @@ std::string LogText::Category(const char* line)
 			continue;
 
 		if (!IsNameLetter(letter))
-			return kGeneral;
+			return false;
 	}
 
-	return kGeneral;
+	return false;
+}
+
+bool MatchLower(const char* text, const char* needle)
+{
+	for (size_t i = 0; needle[i] != '\0'; ++i)
+	{
+		if (text[i] == '\0' || LowerAscii(text[i]) != needle[i])
+			return false;
+	}
+
+	return true;
+}
+
+bool ContainsLower(const char* text, const char* needle)
+{
+	const char first = needle[0];
+
+	for (const char* p = text; *p != '\0'; ++p)
+	{
+		if (LowerAscii(*p) == first && MatchLower(p + 1, needle + 1))
+			return true;
+	}
+
+	return false;
+}
+
+bool FollowsHarmless(const char* line, size_t at)
+{
+	for (const char* harmless : kHarmlessBeforeError)
+	{
+		const size_t length = strlen(harmless);
+
+		if (at >= length && MatchLower(line + at - length, harmless))
+			return true;
+	}
+
+	return false;
+}
+
+bool MentionsError(const char* line)
+{
+	for (size_t at = 0; line[at] != '\0'; ++at)
+	{
+		if (LowerAscii(line[at]) != 'e' || !MatchLower(line + at + 1, kErrorWord + 1))
+			continue;
+
+		const bool startsWord = at == 0 || !IsNameLetter(line[at - 1]);
+		const char after = line[at + kErrorLength];
+		const bool endsWord = after == '\0' || !IsAlpha(after);
+
+		if (startsWord && endsWord && !FollowsHarmless(line, at))
+			return true;
+	}
+
+	return false;
+}
+
+bool MentionsFailure(const char* line)
+{
+	for (const char* phrase : kWarnPhrases)
+	{
+		if (ContainsLower(line, phrase))
+			return true;
+	}
+
+	return false;
+}
+
+}
+
+std::string LogText::Category(const char* line)
+{
+	size_t length = 0;
+
+	if (!FindCategorySpan(line, length))
+		return kGeneral;
+
+	return std::string(line, length);
 }
 
 LogLevel LogText::Guess(const char* line)
@@ -123,12 +160,15 @@ LogLevel LogText::Guess(const char* line)
 	if (line == nullptr)
 		return LogLevel::Info;
 
-	if (Category(line) == kCrashName)
+	size_t categoryLength = 0;
+
+	if (FindCategorySpan(line, categoryLength) && categoryLength == kCrashLength &&
+		memcmp(line, kCrashName, kCrashLength) == 0)
+	{
 		return LogLevel::Error;
+	}
 
-	const std::string lowered = Lowered(line);
-
-	if (MentionsFailure(lowered) || MentionsError(lowered))
+	if (MentionsFailure(line) || MentionsError(line))
 		return LogLevel::Warn;
 
 	return LogLevel::Info;

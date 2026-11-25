@@ -1,0 +1,106 @@
+<rml>
+<head>
+	<title>Great Lobby - lobbies</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+<div id="app">
+
+	<div id="top">
+		<div class="logo">
+			<div class="mark">GL</div>
+			<div><div class="t1">GREAT LOBBY</div><div class="t2">UNI2 · LOBBIES</div></div>
+		</div>
+		<div class="sep"></div>
+		<div class="room">
+			<div class="title">Procurar lobby</div>
+			<div class="meta">
+				<span class="chip casual">Sempre casual</span>
+				<span class="chip">Até <span class="v">6</span> mesas por lobby</span>
+				<span class="chip">Você <span class="v">{{my_place}}</span></span>
+			</div>
+		</div>
+		<div class="grow"></div>
+		<div class="btn gear" data-event-click="open_settings()">⚙</div>
+		<div class="btn" data-event-click="refresh()">Atualizar</div>
+		<div class="btn pri" data-event-click="open_create()">+ Criar lobby</div>
+		<div class="btn" data-event-click="close()">Voltar<span class="key k-b">{{g_b}}</span></div>
+	</div>
+
+	<div id="browser-main">
+		<div id="browser-list">
+			<div class="sectitle">
+				<div class="bar"></div><span class="h">Lobbies</span><span class="sub">{{browser_status}}</span>
+			</div>
+
+			<div class="filterbar">
+				<span class="lbl">Região</span>
+				<span class="f" data-for="o : region_options" data-class-on="o.key == region_filter" data-event-click="set_region(o.key)">{{o.label}}</span>
+				<span class="gap"></span>
+				<span class="lbl">Ping</span>
+				<span class="f" data-for="o : ping_options" data-class-on="o.key == ping_filter" data-event-click="set_ping(o.key)">{{o.label}}</span>
+				<span class="gap"></span>
+				<span class="f" data-class-on="free_only" data-event-click="toggle_free()">Só com vaga</span>
+			</div>
+
+			<div class="listhead">
+				<span style="flex: 1 1 0;">Lobby</span>
+				<span class="c-place">Local</span>
+				<span class="c-tables">Mesas</span>
+				<span class="c-people">Pessoas</span>
+				<span class="c-ft">Série</span>
+				<span class="c-ping">Ping</span>
+			</div>
+
+			<div id="rows">
+				<div class="row" data-for="l : lobbies" data-class-full="l.full" data-event-click="join(l.id)">
+					<div class="c-name">
+						<div class="nm">{{l.name}}<span class="badge lock" data-if="l.locked">SENHA</span></div>
+						<div class="sub">host {{l.host}}</div>
+					</div>
+					<div class="c-place">{{l.place}}</div>
+					<div class="c-tables">
+						{{l.tables}}
+						<div class="dots"><div class="dot"></div><div class="dot" data-if="l.tables &gt; 1"></div><div class="dot" data-if="l.tables &gt; 2"></div><div class="dot" data-if="l.tables &gt; 3"></div><div class="dot" data-if="l.tables &gt; 4"></div><div class="dot" data-if="l.tables &gt; 5"></div></div>
+					</div>
+					<div class="c-people">{{l.members}}<span style="color: #6b6874;">/{{l.capacity}}</span></div>
+					<div class="c-ft">{{l.ft}}</div>
+					<div class="c-ping" data-class-good="l.ping_class == 'good'" data-class-fair="l.ping_class == 'fair'"
+						data-class-bad="l.ping_class == 'bad'" data-class-unknown="l.ping_class == 'unknown'">{{l.ping}}</div>
+				</div>
+				<div class="emptylist" data-if="lobbies.size == 0">Nenhum lobby com esses filtros. Troque a região ou o ping, ou crie o seu.</div>
+			</div>
+		</div>
+
+		<div id="browser-side">
+			<div class="sidecard">
+				<div class="profile">
+					<img class="face" data-attr-src="me.face"/>
+					<div>
+						<div class="big">{{me.name}}</div>
+						<div class="txt">{{me.character}} · {{my_place}}</div>
+					</div>
+				</div>
+				<div class="btn" data-event-click="open_picker()">Trocar personagem</div>
+			</div>
+			<div class="sidecard">
+				<div class="big">Criar um lobby</div>
+				<div class="txt">Você vira o host: escolhe de 1 a 6 mesas, quantas pessoas cabem e a série. As lutas são sempre casuais.</div>
+				<div class="btn pri" data-event-click="open_create()">+ Criar lobby</div>
+			</div>
+			<div class="sidecard">
+				<div class="txt"><span class="key k-a" style="margin: 0 6dp 0 0;">{{g_a}}</span>entrar no lobby<br/><span class="key k-lb" style="margin: 0 6dp 0 0;">{{g_lb}}</span><span class="key k-rb" style="margin: 0 6dp 0 0;">{{g_rb}}</span>trocar região<br/><span class="key k-b" style="margin: 0 6dp 0 0;">{{g_b}}</span>voltar ao menu Network</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="bottom">
+		<div class="me"><div class="lbl">PING</div><div class="who" style="font-size: 18dp;">estimado pela rede da Steam até o host</div></div>
+		<div class="grow"></div>
+		<div class="hints"><span class="key k-a">{{g_a}}</span>Entrar<span class="key k-b">{{g_b}}</span>Voltar<span class="key k-lb">{{g_lb}}</span><span class="key k-rb" style="margin-left: 0;">{{g_rb}}</span>Região</div>
+	</div>
+
+	<div class="toast" data-if="toast != ''">{{toast}}</div>
+</div>
+</body>
+</rml>

@@ -141,13 +141,13 @@ void RememberShape(const D3DSURFACE_DESC& desc)
 		static_cast<unsigned>(desc.Format));
 }
 
-constexpr int kRejectedSlots = 256;
+constexpr int kRejectedSlots = 1024;
 IDirect3DTexture9* g_rejected[kRejectedSlots] = {};
 
 IDirect3DTexture9*& RejectedSlot(IDirect3DTexture9* texture)
 {
-	const uintptr_t value = reinterpret_cast<uintptr_t>(texture);
-	return g_rejected[(value >> 4) & (kRejectedSlots - 1)];
+	const uint32_t value = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(texture));
+	return g_rejected[((value * 2654435761u) >> 22) & (kRejectedSlots - 1)];
 }
 
 void ForgetRejected()
@@ -179,6 +179,51 @@ bool IsPaletteShaped(IDirect3DTexture9* texture, bool& outVolatile)
 
 	rejected = texture;
 	return false;
+}
+
+bool ProbeAdopted(uintptr_t pointer, bool& outVolatile)
+{
+	outVolatile = false;
+
+	if (pointer < 0x10000 || (pointer & 3) != 0)
+		return false;
+
+	IDirect3DTexture9* const flat = reinterpret_cast<IDirect3DTexture9*>(pointer);
+
+	if (RejectedSlot(flat) == flat)
+		return false;
+
+	bool matched = false;
+
+	__try
+	{
+		const uintptr_t vtable = *reinterpret_cast<const uintptr_t*>(pointer);
+
+		if (vtable >= 0x10000 && (vtable & 3) == 0 && flat->GetType() == D3DRTYPE_TEXTURE)
+		{
+			D3DSURFACE_DESC desc = {};
+
+			if (SUCCEEDED(flat->GetLevelDesc(0, &desc)))
+			{
+				if (desc.Width == PaletteTexture::kWidth && desc.Height == PaletteTexture::kRows &&
+					desc.Format == D3DFMT_A8R8G8B8)
+				{
+					outVolatile = desc.Pool == D3DPOOL_DEFAULT;
+					matched = true;
+				}
+				else
+				{
+					RejectedSlot(flat) = flat;
+				}
+			}
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		matched = false;
+	}
+
+	return matched;
 }
 
 IDirect3DTexture9* Live(int index)
@@ -309,10 +354,16 @@ bool PaletteTexture::OnSetTexture(IDirect3DDevice9*, unsigned, IDirect3DBaseText
 	if (texture == nullptr)
 		return false;
 
-	if (texture->GetType() != D3DRTYPE_TEXTURE)
+	IDirect3DTexture9* const flat = static_cast<IDirect3DTexture9*>(texture);
+
+	if (RejectedSlot(flat) == flat)
 		return false;
 
-	IDirect3DTexture9* const flat = static_cast<IDirect3DTexture9*>(texture);
+	if (texture->GetType() != D3DRTYPE_TEXTURE)
+	{
+		RejectedSlot(flat) = flat;
+		return false;
+	}
 
 	bool volatilePool = false;
 	if (!IsPaletteShaped(flat, volatilePool))
@@ -320,6 +371,25 @@ bool PaletteTexture::OnSetTexture(IDirect3DDevice9*, unsigned, IDirect3DBaseText
 
 	Remember(flat, volatilePool);
 	return true;
+}
+
+int PaletteTexture::Adopt(uintptr_t pointer)
+{
+	const int known = FindByPointer(pointer);
+
+	if (known >= 0)
+	{
+		g_lastBound[known] = g_frameSerial;
+		return known;
+	}
+
+	bool volatilePool = false;
+
+	if (!ProbeAdopted(pointer, volatilePool))
+		return -1;
+
+	Remember(reinterpret_cast<IDirect3DTexture9*>(pointer), volatilePool);
+	return FindByPointer(pointer);
 }
 
 namespace {
@@ -478,8 +548,6 @@ void PaletteTexture::OnFrame()
 
 	++g_frameSerial;
 
-	ForgetRejected();
-
 	const bool inMatch = GameState::IsInMatch();
 
 	for (int i = 0; i < g_frameCount; ++i)
@@ -521,6 +589,7 @@ void PaletteTexture::ForgetMatchTextures()
 		RemoveAt(i, "match over");
 	}
 
+	ForgetRejected();
 	ResetMatchEvidence();
 }
 

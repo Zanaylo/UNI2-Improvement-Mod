@@ -12,6 +12,7 @@ namespace {
 
 constexpr const wchar_t* kEntryDll = L"" UNI2_IM_ENTRY_DLL;
 constexpr const wchar_t* kUpdaterExe = L"" UNI2_IM_UPDATER_EXE;
+constexpr const wchar_t* kModLoaderExe = L"" UNI2_IM_MODLOADER_EXE;
 constexpr const wchar_t* kGameExe = L"" UNI2_IM_GAME_EXE;
 
 constexpr DWORD kParentWaitMs = 30000;
@@ -156,7 +157,7 @@ bool Install::Apply(const Handoff& handoff)
 		return false;
 	}
 
-	const std::wstring files[] = { kEntryDll, kUpdaterExe };
+	const std::wstring files[] = { kEntryDll, kUpdaterExe, kModLoaderExe };
 	std::vector<std::wstring> touched;
 
 	for (const std::wstring& name : files)

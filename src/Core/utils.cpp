@@ -223,7 +223,8 @@ bool CreateModDirectories()
 
 	MoveStrays(root);
 
-	return MakeDirectory(root + "\\Assets") && MakeDirectory(root + "\\Palettes") &&
+	return MakeDirectory(root + "\\Assets") && MakeDirectory(root + "\\Assets\\BasePals") &&
+		MakeDirectory(root + "\\Addons") && MakeDirectory(root + "\\Palettes") &&
 		MakeDirectory(root + "\\Downloads") && MakeDirectory(root + "\\Scripts") &&
 		MakeDirectory(root + "\\Screens") && MakeDirectory(root + "\\Shaders");
 }

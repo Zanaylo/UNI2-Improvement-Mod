@@ -64,6 +64,7 @@ struct HookRecord
 	DWORD createdTick;
 	bool reported;
 	bool parked;
+	bool enabledOnce;
 	volatile LONG calls;
 };
 
@@ -290,6 +291,7 @@ HookRecord* ReserveRecord(void* requested, void* resolved, void* handler, const 
 	record.createdTick = GetTickCount();
 	record.reported = false;
 	record.parked = false;
+	record.enabledOnce = false;
 	record.calls = 0;
 	record.trampoline = nullptr;
 	record.detour = GatedStub(g_recordCount, record);
@@ -529,6 +531,9 @@ bool HookManager::CreateAndEnableHook(void* target, void* detour, void** origina
 		return false;
 	}
 
+	if (HookRecord* const record = FindRecordByRequested(target))
+		record->enabledOnce = true;
+
 	return true;
 }
 
@@ -584,7 +589,7 @@ bool HookManager::SetHookEnabled(void* target, bool enabled)
 	if (gated)
 		OpenGate(*record, enabled);
 
-	if (gated && !enabled)
+	if (gated && (!enabled || record->enabledOnce))
 		return true;
 
 	const MH_STATUS status = enabled ? MH_EnableHook(resolved) : MH_DisableHook(resolved);
@@ -593,6 +598,9 @@ bool HookManager::SetHookEnabled(void* target, bool enabled)
 		LOG("MH_%sHook failed on 0x%p: %d", enabled ? "Enable" : "Disable", target, status);
 		return false;
 	}
+
+	if (record != nullptr && enabled)
+		record->enabledOnce = true;
 
 	return true;
 }
@@ -855,6 +863,12 @@ bool HookManager::EnableAllHooks()
 	{
 		LOG("Enabling all hooks failed: %d", status);
 		return false;
+	}
+
+	for (int i = 0; i < g_recordCount; ++i)
+	{
+		if (!g_records[i].parked || IsGated(g_records[i]))
+			g_records[i].enabledOnce = true;
 	}
 
 	return true;

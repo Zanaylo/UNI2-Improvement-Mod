@@ -483,11 +483,11 @@ void NetplayWindow::DrawNetcodeStatus()
 void NetplayWindow::DrawNetworkLogTab()
 {
 	ImGui::TextUnformatted(Tr("Network log"));
-	UiText::Help("Saves connection info to a file. Send it when you report a connection problem.");
+	UiText::Help("Adds connection info to the session log. Send it when you report a connection problem.");
 
 	bool logging = NetLog::IsEnabled();
 
-	if (ImGui::Checkbox(TrLabel("Write the network log"), &logging))
+	if (ImGui::Checkbox(TrLabel("Write network events to the log"), &logging))
 	{
 		NetLog::SetEnabled(logging);
 		g_modVals.netLog = logging;
@@ -515,7 +515,7 @@ void NetplayWindow::DrawNetworkLogTab()
 	UiText::Muted("%s", GgpoLogCapture::StatusText());
 
 	if (NetLog::IsOverBudget())
-		UiText::Warn("The file reached 8 MB, so GGPO's lines have stopped. The mod's lines carry on.");
+		UiText::Warn("The session log reached 8 MB, so GGPO's lines have stopped. Other lines carry on.");
 
 	ImGui::Separator();
 	ImGui::TextUnformatted(Tr("How the mod stays out of the connection"));

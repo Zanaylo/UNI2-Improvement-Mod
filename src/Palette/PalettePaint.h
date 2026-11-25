@@ -48,6 +48,7 @@ namespace PalettePaint
 
 	bool IsAtPreview();
 
+	bool HasAnyWork();
 	bool IsPainting(int player);
 
 	bool ReadGameColours(int player, uint8_t* rgba);

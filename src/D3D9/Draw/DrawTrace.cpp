@@ -600,6 +600,11 @@ void DrawTrace::Arm()
 		g_state = State::Pending;
 }
 
+bool DrawTrace::IsActive()
+{
+	return g_state != State::Idle;
+}
+
 void DrawTrace::OnPresentBegin(const RECT* sourceRect, const RECT* destRect)
 {
 	if (g_state != State::Capturing)

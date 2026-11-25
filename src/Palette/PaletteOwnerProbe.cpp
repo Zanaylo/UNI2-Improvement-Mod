@@ -32,12 +32,6 @@ int g_count = 0;
 
 volatile long g_enabled = 0;
 
-bool ReadPointer(uintptr_t address, uintptr_t& out)
-{
-	return address != 0
-		&& TryReadMemory(&out, reinterpret_cast<const void*>(address), sizeof(out));
-}
-
 bool ReadInt(uintptr_t address, int& out)
 {
 	return address != 0
@@ -103,44 +97,78 @@ void Record(uintptr_t owner, uintptr_t texture, uintptr_t override, int row, int
 		static_cast<unsigned>(override), row, chara, depth);
 }
 
+bool LooksLikePointer(uintptr_t value)
+{
+	return value >= 0x10000 && (value & 3) == 0;
+}
+
+struct DrawFields
+{
+	uintptr_t override;
+	uintptr_t owner;
+	uintptr_t texture;
+	int row;
+};
+
+bool ReadDrawFields(void* self, DrawFields& out)
+{
+	if (self == nullptr)
+		return false;
+
+	const uintptr_t draw = reinterpret_cast<uintptr_t>(self);
+
+	if (!LooksLikePointer(draw))
+		return false;
+
+	bool ok = false;
+
+	__try
+	{
+		const uintptr_t override = *reinterpret_cast<const uintptr_t*>(draw + kDrawOverride);
+		const uintptr_t owner = *reinterpret_cast<const uintptr_t*>(draw + kDrawOwner);
+		const int pair = *reinterpret_cast<const int*>(draw + kDrawPair);
+		const int odd = *reinterpret_cast<const int*>(draw + kDrawOdd);
+
+		uintptr_t holder = override;
+
+		if (holder == 0 && LooksLikePointer(owner))
+			holder = *reinterpret_cast<const uintptr_t*>(owner + kOwnerPalette);
+
+		uintptr_t texture = 0;
+
+		if (LooksLikePointer(holder))
+			texture = *reinterpret_cast<const uintptr_t*>(holder);
+
+		out.override = override;
+		out.owner = owner;
+		out.texture = texture;
+		out.row = pair * 2 + (odd != 0 ? 1 : 0);
+		ok = true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		ok = false;
+	}
+
+	return ok;
+}
+
 void __fastcall Detour(void* self, void* unused)
 {
-	if (self != nullptr)
+	DrawFields fields = {};
+
+	if (ReadDrawFields(self, fields))
 	{
-		const uintptr_t draw = reinterpret_cast<uintptr_t>(self);
+		PaletteSeat::OnDraw(fields.owner, fields.texture, fields.row);
 
-		uintptr_t override = 0;
-		uintptr_t owner = 0;
-		int pair = 0;
-		int odd = 0;
+		PalettePaint::OnDraw();
 
-		if (ReadPointer(draw + kDrawOverride, override)
-			&& ReadPointer(draw + kDrawOwner, owner)
-			&& ReadInt(draw + kDrawPair, pair)
-			&& ReadInt(draw + kDrawOdd, odd))
+		if (g_enabled != 0)
 		{
-			uintptr_t holder = override;
+			int depth = 0;
+			const int chara = CharaFromStack(depth);
 
-			if (holder == 0 && owner != 0)
-				ReadPointer(owner + kOwnerPalette, holder);
-
-			uintptr_t texture = 0;
-			if (holder != 0)
-				ReadPointer(holder, texture);
-
-			const int row = pair * 2 + (odd != 0 ? 1 : 0);
-
-			PaletteSeat::OnDraw(owner, texture, row);
-
-			PalettePaint::OnDraw();
-
-			if (g_enabled != 0)
-			{
-				int depth = 0;
-				const int chara = CharaFromStack(depth);
-
-				Record(owner, texture, override, row, chara, depth);
-			}
+			Record(fields.owner, fields.texture, fields.override, fields.row, chara, depth);
 		}
 	}
 

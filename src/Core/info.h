@@ -6,6 +6,14 @@
 #define UNI2_IM_VERSION_PATCH 1
 
 #define UNI2_IM_VERSION "0.8.1"
+#define UNI2_IM_MINIMAL_TAG ""
+#ifdef UNI2_IM_FULL_EMBEDS
+#define UNI2_IM_HAS_EMBEDS 1
+#define UNI2_IM_BUILD_TAG ""
+#else
+#define UNI2_IM_HAS_EMBEDS 0
+#define UNI2_IM_BUILD_TAG ""
+#endif
 #define UNI2_IM_SUPPORTED_GAME_VERSION "Ver.0.10.0"
 #define UNI2_IM_SUPPORTED_GAME_STAMP 0x6ad1f4afu
 #define UNI2_IM_SUPPORTED_GAME_IMAGE_SIZE 0x44e5000u
@@ -17,6 +25,7 @@
 #define UNI2_IM_RELEASES_API "https://api.github.com/repos/Zanaylo/UNI2-Improvement-Mod/releases?per_page=30"
 
 #define UNI2_IM_UPDATER_EXE "UNI2IMUpdater.exe"
+#define UNI2_IM_MODLOADER_EXE "UNI2ModLoader.exe"
 #define UNI2_IM_UPDATER_UPDATE_FLAG "--update"
 #define UNI2_IM_UPDATER_PARENT_FLAG "--parent"
 #define UNI2_IM_ENTRY_DLL "dinput8.dll"

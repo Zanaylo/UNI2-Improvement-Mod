@@ -63,6 +63,12 @@ int g_slowestIndex = 0;
 int64_t g_lastPresent = 0;
 SpikeReport::Limiter g_limiter;
 
+IDirect3DDevice9* g_device = nullptr;
+void** g_deviceVtable = nullptr;
+bool g_apiInstalled = false;
+bool g_deviceAttached = false;
+bool g_hooksEnabled = false;
+
 bool IsGameThread()
 {
 	const ThreadRole::Role role = ThreadRole::Current();
@@ -230,38 +236,104 @@ void Report(SpikeReport::Frame& frame)
 		LOG("%s", stall.c_str());
 }
 
-}
-
-bool SpikeWatch::Install()
+void InstallApiHooks()
 {
+	if (g_apiInstalled)
+		return;
+
+	g_apiInstalled = true;
+
 	if (!g_waitHook.InstallApi("kernel32.dll", "WaitForSingleObject", &HookedWaitForSingleObject) ||
 		!g_waitExHook.InstallApi("kernel32.dll", "WaitForSingleObjectEx", &HookedWaitForSingleObjectEx))
 	{
 		LOG("SpikeWatch: the waits could not be hooked, game thread waits are not timed");
 	}
 
-	if (g_readFileHook.InstallApi("kernel32.dll", "ReadFile", &HookedReadFile))
+	if (!g_readFileHook.InstallApi("kernel32.dll", "ReadFile", &HookedReadFile))
+		LOG("SpikeWatch: ReadFile could not be hooked, file reads are not timed");
+
+	HookManager::EnableAllHooks();
+}
+
+void AttachDeviceHooks()
+{
+	if (g_deviceAttached || g_deviceVtable == nullptr)
+		return;
+
+	g_deviceAttached = true;
+
+	HookSlot(g_deviceVtable, kCreateVertexBufferIndex, g_vertexBufferHook, &HookedCreateVertexBuffer);
+	HookSlot(g_deviceVtable, kCreateIndexBufferIndex, g_indexBufferHook, &HookedCreateIndexBuffer);
+	HookSlot(g_deviceVtable, kCreateVertexShaderIndex, g_vertexShaderHook, &HookedCreateVertexShader);
+	HookSlot(g_deviceVtable, kCreatePixelShaderIndex, g_pixelShaderHook, &HookedCreatePixelShader);
+	AttachTexture(g_device, g_deviceVtable);
+}
+
+void SetHooksEnabled(bool enabled)
+{
+	if (g_hooksEnabled == enabled)
+		return;
+
+	g_hooksEnabled = enabled;
+
+	g_waitHook.SetEnabled(enabled);
+	g_waitExHook.SetEnabled(enabled);
+	g_readFileHook.SetEnabled(enabled);
+	g_vertexBufferHook.SetEnabled(enabled);
+	g_indexBufferHook.SetEnabled(enabled);
+	g_vertexShaderHook.SetEnabled(enabled);
+	g_pixelShaderHook.SetEnabled(enabled);
+	g_lockRectHook.SetEnabled(enabled);
+	g_unlockRectHook.SetEnabled(enabled);
+}
+
+void ResetCounters()
+{
+	for (int cost = 0; cost < SpikeReport::Cost_COUNT; ++cost)
+	{
+		g_counters[cost].ticks.store(0, std::memory_order_relaxed);
+		g_counters[cost].calls.store(0, std::memory_order_relaxed);
+		g_counters[cost].bytes.store(0, std::memory_order_relaxed);
+	}
+
+	g_modTicks = 0;
+	g_slowestTaskTicks = 0;
+	g_slowestGroup = nullptr;
+	g_lastPresent = 0;
+}
+
+}
+
+bool SpikeWatch::IsActive()
+{
+	return g_modVals.spikeReportMs > 0 && IsLoggerOpen();
+}
+
+bool SpikeWatch::Install()
+{
+	if (!IsActive())
 		return true;
 
-	LOG("SpikeWatch: ReadFile could not be hooked, file reads are not timed");
-	return false;
+	InstallApiHooks();
+	g_hooksEnabled = true;
+	return true;
 }
 
 void SpikeWatch::AttachDevice(IDirect3DDevice9* device, void** vtable)
 {
-	if (vtable == nullptr)
+	g_device = device;
+	g_deviceVtable = vtable;
+
+	if (!IsActive())
 		return;
 
-	HookSlot(vtable, kCreateVertexBufferIndex, g_vertexBufferHook, &HookedCreateVertexBuffer);
-	HookSlot(vtable, kCreateIndexBufferIndex, g_indexBufferHook, &HookedCreateIndexBuffer);
-	HookSlot(vtable, kCreateVertexShaderIndex, g_vertexShaderHook, &HookedCreateVertexShader);
-	HookSlot(vtable, kCreatePixelShaderIndex, g_pixelShaderHook, &HookedCreatePixelShader);
-	AttachTexture(device, vtable);
+	AttachDeviceHooks();
+	g_hooksEnabled = true;
 }
 
 void SpikeWatch::Add(SpikeReport::Cost cost, int64_t ticks, uint64_t bytes)
 {
-	if (cost < 0 || cost >= SpikeReport::Cost_COUNT)
+	if (!IsActive() || cost < 0 || cost >= SpikeReport::Cost_COUNT)
 		return;
 
 	Counter& counter = g_counters[cost];
@@ -272,6 +344,9 @@ void SpikeWatch::Add(SpikeReport::Cost cost, int64_t ticks, uint64_t bytes)
 
 void SpikeWatch::NoteTask(const char* group, int index, int64_t ticks)
 {
+	if (!IsActive())
+		return;
+
 	g_modTicks += ticks;
 
 	if (ticks <= g_slowestTaskTicks)
@@ -284,6 +359,27 @@ void SpikeWatch::NoteTask(const char* group, int index, int64_t ticks)
 
 void SpikeWatch::OnPresent()
 {
+	if (!IsActive())
+	{
+		if (g_hooksEnabled)
+		{
+			SetHooksEnabled(false);
+			ResetCounters();
+		}
+
+		StallSampler::OnPresent();
+		FramePhases::OnPresent();
+		return;
+	}
+
+	if (!g_apiInstalled)
+		InstallApiHooks();
+
+	if (!g_deviceAttached && g_deviceVtable != nullptr)
+		AttachDeviceHooks();
+
+	SetHooksEnabled(true);
+
 	const int64_t now = Profiler::Now();
 	const int64_t last = g_lastPresent;
 	g_lastPresent = now;

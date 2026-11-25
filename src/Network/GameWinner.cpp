@@ -2,34 +2,51 @@
 
 namespace {
 
-constexpr int kFirstSide = 0;
+constexpr int kDraw = -1;
 constexpr int kSecondSide = 1;
 
-bool IsPosingAsWinner(const GameWinner::Side& side)
+bool IsWrittenResult(int recorded)
 {
-	return side.pattern == GameWinner::kWinPattern;
+	return recorded >= kDraw && recorded <= kSecondSide;
 }
 
 }
 
-int GameWinner::Update(const Side& first, const Side& second)
+void GameWinner::Arm()
 {
-	if (m_decided)
+	m_armed = true;
+	ForgetCandidate();
+}
+
+void GameWinner::Disarm()
+{
+	m_armed = false;
+	ForgetCandidate();
+}
+
+int GameWinner::Update(int recorded)
+{
+	if (!m_armed)
+		return kNoWinner;
+
+	if (!IsWrittenResult(recorded))
 	{
-		m_decided = !(first.vitals.IsFull() && second.vitals.IsFull());
+		ForgetCandidate();
 		return kNoWinner;
 	}
 
-	const bool firstWon = IsPosingAsWinner(first);
+	m_heldFrames = recorded == m_candidate ? m_heldFrames + 1 : 1;
+	m_candidate = recorded;
 
-	if (firstWon == IsPosingAsWinner(second))
+	if (m_heldFrames < kSettleFrames)
 		return kNoWinner;
 
-	m_decided = true;
-	return firstWon ? kFirstSide : kSecondSide;
+	Disarm();
+	return recorded == kDraw ? kNoWinner : recorded;
 }
 
-void GameWinner::Reset()
+void GameWinner::ForgetCandidate()
 {
-	m_decided = false;
+	m_candidate = kUnwritten;
+	m_heldFrames = 0;
 }

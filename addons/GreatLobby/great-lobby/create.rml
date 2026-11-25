@@ -1,0 +1,125 @@
+<rml>
+<head>
+	<title>Great Lobby - criar</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+<div id="app">
+
+	<div id="top">
+		<div class="logo">
+			<div class="mark">GL</div>
+			<div><div class="t1">GREAT LOBBY</div><div class="t2">UNI2 · CRIAR</div></div>
+		</div>
+		<div class="sep"></div>
+		<div class="room">
+			<div class="title">Criar lobby</div>
+			<div class="meta">
+				<span class="chip casual">Sempre casual</span>
+				<span class="chip">Host <span class="v">{{me.name}}</span></span>
+				<span class="chip">Local <span class="v">{{my_place}}</span></span>
+			</div>
+		</div>
+		<div class="grow"></div>
+		<div class="btn" data-event-click="to_browser()">Voltar<span class="key k-b">{{g_b}}</span></div>
+	</div>
+
+	<div id="create-main">
+		<div id="create-form">
+			<div class="field">
+				<div class="lbl">Nome do lobby</div>
+				<div style="display: flex; align-items: center;">
+					<div class="btn small kbbtn" data-event-click="open_kb('name')">⌨ Teclado<span class="key k-y">{{g_y}}</span></div>
+					<input class="text" style="flex: 1 1 0; width: auto;" type="text" maxlength="48" data-value="create_name"/>
+				</div>
+				<div class="hint">Pelo teclado do PC ou pelo teclado na tela (Y no controle).</div>
+			</div>
+
+			<div class="field">
+				<div class="lbl">Senha (opcional)</div>
+				<div style="display: flex; align-items: center;">
+					<div class="btn small kbbtn" data-event-click="open_kb('password')">⌨ Teclado</div>
+					<input class="text" style="flex: 1 1 0; width: auto;" type="password" maxlength="32" data-value="create_password"/>
+				</div>
+				<div class="hint">Com senha, o lobby aparece com cadeado e pede a senha para entrar.</div>
+			</div>
+
+			<div class="field">
+				<div class="lbl">Tipo de sala</div>
+				<div class="opts">
+					<div class="opt" autofocus="" data-class-on="create_mode == 'queue'" data-event-click="set_mode('queue')">Sala com fila</div>
+					<div class="opt" data-class-on="create_mode == 'challenge'" data-event-click="set_mode('challenge')">Desafio</div>
+				</div>
+				<div class="hint" data-if="create_mode == 'queue'">Padrão. Quem entra na fila é colocado nas mesas livres, dois de cada vez, na ordem de chegada.</div>
+				<div class="hint" data-if="create_mode == 'challenge'">Cada um escolhe quem desafiar na lista de membros; quem aceita vai para a próxima mesa livre.</div>
+			</div>
+
+			<div class="field" data-if="create_mode == 'queue'">
+				<div class="lbl">Rotação da fila</div>
+				<div class="opts">
+					<div class="opt" data-class-on="create_rotation == 'queue'" data-event-click="set_rotation('queue')">Os dois saem</div>
+					<div class="opt" data-class-on="create_rotation == 'ws'" data-event-click="set_rotation('ws')">Quem ganha fica</div>
+				</div>
+				<div class="hint" data-if="create_rotation == 'ws'">Quem vence a série continua na mesa contra o próximo da fila; quem perde volta para o fim da fila.</div>
+			</div>
+
+			<div class="field">
+				<div class="lbl">Mesas · lutas ao mesmo tempo</div>
+				<div class="opts">
+					<div class="opt" data-for="n : table_options" data-class-on="n == create_tables" data-event-click="set_tables(n)">{{n}}</div>
+				</div>
+			</div>
+
+			<div class="field">
+				<div class="lbl">Pessoas no lobby</div>
+				<div class="opts">
+					<div class="opt" data-for="n : capacity_options" data-class-on="n == create_capacity" data-event-click="set_capacity(n)">{{n}}</div>
+				</div>
+			</div>
+
+			<div class="field">
+				<div class="lbl">Série</div>
+				<div class="opts">
+					<div class="opt" data-for="o : ft_options" data-class-on="o.key == create_ft" data-event-click="set_ft(o.key)">{{o.label}}</div>
+				</div>
+			</div>
+
+			<div class="field">
+				<div class="lbl">Quem vê o lobby</div>
+				<div class="opts">
+					<div class="opt" data-class-on="create_visibility == 'public'" data-event-click="set_visibility('public')">Todo mundo</div>
+					<div class="opt" data-class-on="create_visibility == 'friends'" data-event-click="set_visibility('friends')">Só amigos</div>
+				</div>
+			</div>
+
+			<div class="btn pri" style="margin: 6dp 0 0 0; padding: 14dp 30dp; font-size: 20dp;" data-event-click="create()">Criar lobby<span class="key k-a">{{g_a}}</span></div>
+			<div class="status-line" data-if="create_status != ''">{{create_status}}</div>
+		</div>
+
+		<div id="create-preview">
+			<div class="sidecard">
+				<div class="lbl" style="font-family: Barlow Condensed; font-weight: 700; font-size: 13dp; letter-spacing: 2dp; color: #6b6874;">PRÉVIA</div>
+				<div class="big">{{create_name}}</div>
+				<div class="txt"><span data-if="create_mode == 'queue'">Sala com fila</span><span data-if="create_mode != 'queue'">Desafio</span> · {{create_tables}} mesa(s) · até {{create_capacity}} pessoas · {{create_ft}} · {{my_place}}</div>
+				<div class="mini-tables">
+					<div class="mini">Mesa 1</div>
+					<div class="mini" data-if="create_tables &gt; 1">Mesa 2</div>
+					<div class="mini" data-if="create_tables &gt; 2">Mesa 3</div>
+					<div class="mini" data-if="create_tables &gt; 3">Mesa 4</div>
+					<div class="mini" data-if="create_tables &gt; 4">Mesa 5</div>
+					<div class="mini" data-if="create_tables &gt; 5">Mesa 6</div>
+				</div>
+			</div>
+			<div class="sidecard">
+				<div class="txt">O lobby fica na Steam com o seu país e o servidor de relay mais perto de você, para os outros verem o local e o ping estimado na lista.</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="bottom">
+		<div class="grow"></div>
+		<div class="hints"><span class="key k-y">{{g_y}}</span>Teclado<span class="key k-a">{{g_a}}</span>Escolher<span class="key k-b">{{g_b}}</span>Voltar</div>
+	</div>
+</div>
+</body>
+</rml>

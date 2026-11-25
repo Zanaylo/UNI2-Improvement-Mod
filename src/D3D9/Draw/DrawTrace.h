@@ -7,6 +7,7 @@ struct tagRECT;
 namespace DrawTrace
 {
 	void Arm();
+	bool IsActive();
 	int LastDrawIndex();
 
 	void OnPresentBegin(const tagRECT* sourceRect, const tagRECT* destRect);

@@ -23,7 +23,8 @@ HRESULT WINAPI HookedCreateTexture(void* device, const void* source, UINT bytes,
 	UINT height, UINT levels, DWORD usage, DWORD format, DWORD pool, DWORD filter,
 	DWORD mipFilter, DWORD colourKey, void* info, void* palette, IDirect3DTexture9** texture)
 {
-	const int64_t timed = Profiler::Now();
+	const bool watching = SpikeWatch::IsActive();
+	const int64_t timed = watching ? Profiler::Now() : 0;
 	UINT wantedLevels = levels;
 	const bool baked = BgMipmaps::FromFile(source, bytes, wantedLevels);
 
@@ -40,7 +41,8 @@ HRESULT WINAPI HookedCreateTexture(void* device, const void* source, UINT bytes,
 			format, pool, filter, mipFilter, colourKey, info, palette, texture);
 	}
 
-	SpikeWatch::Add(SpikeReport::Cost_TextureLoad, Profiler::Now() - timed, bytes);
+	if (watching)
+		SpikeWatch::Add(SpikeReport::Cost_TextureLoad, Profiler::Now() - timed, bytes);
 
 	if (FAILED(result) || texture == nullptr || *texture == nullptr)
 		return result;

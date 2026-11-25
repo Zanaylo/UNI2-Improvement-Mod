@@ -18,4 +18,6 @@ namespace StageCapture
 	void OnPresent(IDirect3DDevice9* device);
 
 	void OnDeviceLost();
+
+	bool IsActive();
 }

@@ -1,0 +1,35 @@
+<rml>
+<head>
+	<title>Great Lobby entry</title>
+	<style>
+		body, div { display: block; }
+		body {
+			position: absolute; right: 40dp; bottom: 110dp; width: 360dp;
+			font-family: Barlow Condensed; color: #ecebf0;
+			pointer-events: none;
+		}
+		.card {
+			padding: 14dp 18dp; border: 1px #3a3742; border-left: 4dp #7e3bd6;
+			decorator: horizontal-gradient(rgba(126,59,214,70) rgba(7,8,15,230));
+		}
+		.t { font-weight: 800; font-size: 26dp; letter-spacing: 1.5dp; }
+		.s { font-weight: 600; font-size: 14dp; color: #b08cf0; letter-spacing: 1.5dp; }
+		.k { margin-top: 8dp; font-weight: 600; font-size: 15dp; color: #9a97a3; }
+		.key {
+			border: 1px rgba(255,255,255,40);
+			display: inline-block; padding: 1dp 7dp; margin: 0 4dp; border-radius: 4dp;
+			background-color: rgba(255,255,255,40); color: #ffffff; font-weight: 700;
+		}
+		.new { display: inline-block; margin-left: 8dp; padding: 1dp 6dp; background-color: #c0263f; color: #ffffff; font-size: 12dp; font-weight: 700; letter-spacing: 1dp; }
+		.k-pill { border-radius: 5dp; background-color: #3f4668; }
+		.k-kb { background-color: rgba(0,0,0,0); border: 1px #9a97a3; }
+	</style>
+</head>
+<body>
+	<div class="card">
+		<div class="t">GREAT LOBBY<span class="new">NOVO</span></div>
+		<div class="s">SALAS GRANDES · VÁRIAS LUTAS AO MESMO TEMPO</div>
+		<div class="k">Abrir: <span class="key k-kb">F9</span> ou segure <span class="key k-pill">↑</span>+<span class="key k-pill">Start</span></div>
+	</div>
+</body>
+</rml>

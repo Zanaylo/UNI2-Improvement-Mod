@@ -245,7 +245,7 @@ void DrawConfigSection()
 
 void DrawConfigGeneralTab()
 {
-	ImGui::Text("%s %s", UNI2_IM_NAME, UNI2_IM_VERSION);
+	ImGui::Text("%s %s%s", UNI2_IM_NAME, UNI2_IM_VERSION, UNI2_IM_BUILD_TAG);
 	ImGui::Text(Tr("%.1f FPS"), ImGui::GetIO().Framerate);
 
 	LanguageCombo::Draw();

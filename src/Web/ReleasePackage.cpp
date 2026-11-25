@@ -13,7 +13,47 @@
 namespace {
 
 constexpr const char* kManifestAsset = "manifest.json";
+constexpr const char* kMinimalSuffix = "-minimal.zip";
 constexpr size_t kSha256HexLength = 64;
+
+bool EndsWithNoCase(const std::string& text, const char* suffix)
+{
+	const size_t length = strlen(suffix);
+
+	return text.size() >= length &&
+		_stricmp(text.c_str() + text.size() - length, suffix) == 0;
+}
+
+const GitHubRelease::Asset* PickStandard(const GitHubRelease::Release& release)
+{
+	const std::string wanted = std::string("UNI2-Improvement-Mod-") + release.version + ".zip";
+
+	if (const GitHubRelease::Asset* const exact = release.FindAsset(wanted.c_str()))
+		return exact;
+
+	for (const GitHubRelease::Asset& asset : release.assets)
+	{
+		if (EndsWithNoCase(asset.name, ".zip") && !EndsWithNoCase(asset.name, kMinimalSuffix))
+			return &asset;
+	}
+
+	return release.FindAssetEndingWith(".zip");
+}
+
+bool ExtractSha(const Json::Value& entry, const std::string& assetName, std::string& outSha,
+	std::string& outError)
+{
+	const std::string sha = entry.MemberString("sha256");
+
+	if (sha.size() != kSha256HexLength)
+	{
+		outError = "the release's manifest.json carries no SHA-256 for " + assetName;
+		return false;
+	}
+
+	outSha = sha;
+	return true;
+}
 
 std::string Combine(const std::string& folder, const char* name)
 {
@@ -58,7 +98,8 @@ void EmptyFolder(const std::string& folder)
 bool IsAllowedEntry(const std::string& name)
 {
 	return _stricmp(name.c_str(), UNI2_IM_ENTRY_DLL) == 0 ||
-		_stricmp(name.c_str(), UNI2_IM_UPDATER_EXE) == 0;
+		_stricmp(name.c_str(), UNI2_IM_UPDATER_EXE) == 0 ||
+		_stricmp(name.c_str(), UNI2_IM_MODLOADER_EXE) == 0;
 }
 
 bool Validate(const std::string& path, std::string& outError)
@@ -98,13 +139,28 @@ bool Validate(const std::string& path, std::string& outError)
 
 }
 
-const GitHubRelease::Asset* ReleasePackage::Pick(const GitHubRelease::Release& release)
+ReleasePackage::Variant ReleasePackage::VariantOfDescription(const std::string& description)
 {
-	const std::string wanted = std::string("UNI2-Improvement-Mod-") + release.version + ".zip";
+	if (_stricmp(description.c_str(), UNI2_IM_NAME UNI2_IM_MINIMAL_TAG) == 0)
+		return Variant::Minimal;
 
-	const GitHubRelease::Asset* const asset = release.FindAsset(wanted.c_str());
+	return Variant::Standard;
+}
 
-	return asset != nullptr ? asset : release.FindAssetEndingWith(".zip");
+const GitHubRelease::Asset* ReleasePackage::Pick(const GitHubRelease::Release& release, Variant variant)
+{
+	if (variant == Variant::Minimal)
+	{
+		const std::string wanted = std::string("UNI2-Improvement-Mod-") + release.version + kMinimalSuffix;
+
+		if (const GitHubRelease::Asset* const exact = release.FindAsset(wanted.c_str()))
+			return exact;
+
+		if (const GitHubRelease::Asset* const minimal = release.FindAssetEndingWith(kMinimalSuffix))
+			return minimal;
+	}
+
+	return PickStandard(release);
 }
 
 bool ReleasePackage::ReadManifestSha256(const std::string& manifest, const std::string& assetName,
@@ -120,22 +176,27 @@ bool ReleasePackage::ReadManifestSha256(const std::string& manifest, const std::
 		return false;
 	}
 
-	if (_stricmp(root.MemberString("assetName").c_str(), assetName.c_str()) != 0)
+	if (_stricmp(root.MemberString("assetName").c_str(), assetName.c_str()) == 0)
+		return ExtractSha(root, assetName, outSha, outError);
+
+	const Json::Value* const variants = root.Find("variants");
+
+	if (variants != nullptr && variants->IsArray())
 	{
-		outError = "the release's manifest.json describes another zip than " + assetName;
-		return false;
+		for (size_t i = 0; i < variants->Count(); ++i)
+		{
+			const Json::Value* const entry = variants->At(i);
+
+			if (entry == nullptr || !entry->IsObject())
+				continue;
+
+			if (_stricmp(entry->MemberString("assetName").c_str(), assetName.c_str()) == 0)
+				return ExtractSha(*entry, assetName, outSha, outError);
+		}
 	}
 
-	const std::string sha = root.MemberString("sha256");
-
-	if (sha.size() != kSha256HexLength)
-	{
-		outError = "the release's manifest.json carries no SHA-256 for " + assetName;
-		return false;
-	}
-
-	outSha = sha;
-	return true;
+	outError = "the release's manifest.json describes another zip than " + assetName;
+	return false;
 }
 
 bool ReleasePackage::Verify(const GitHubRelease::Release& release, const std::string& assetName,

@@ -12,6 +12,7 @@ namespace SceneUpscale
 	void Shutdown();
 
 	bool HoldsDeviceResources();
+	bool IsActive();
 
 	const char* GetStatusText();
 }

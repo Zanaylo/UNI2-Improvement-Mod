@@ -207,6 +207,11 @@ bool CleanFrame::FightersHidden()
 	return g_fightersHidden;
 }
 
+bool CleanFrame::IsActive()
+{
+	return g_on || g_hidingFighters;
+}
+
 void CleanFrame::OnSetTexture(unsigned stage, bool paletteShaped)
 {
 	if (stage >= kStages)

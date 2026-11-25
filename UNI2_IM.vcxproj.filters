@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Addons">
+      <UniqueIdentifier>{c36a9595-a721-0aaa-4604-fe0c56414c28}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Core">
       <UniqueIdentifier>{0bf2fb91-1980-759e-0b3a-05bc77ef3cbc}</UniqueIdentifier>
     </Filter>
@@ -63,6 +66,12 @@
     </Filter>
     <Filter Include="Dependencies\Vorbis">
       <UniqueIdentifier>{be08d7e3-ba1d-1ddf-c946-53300ca46963}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="depends">
+      <UniqueIdentifier>{bf22d773-7fa1-9640-8418-a7386abebd4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="depends\lua">
+      <UniqueIdentifier>{2b3318e9-5a55-4b92-2efe-389217e87f90}</UniqueIdentifier>
     </Filter>
     <Filter Include="Game">
       <UniqueIdentifier>{8adaa572-0431-2527-3db7-4cc82812c2d7}</UniqueIdentifier>
@@ -180,6 +189,129 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Addons\AddonManifest.cpp">
+      <Filter>Addons</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Addons\AddonManager.cpp">
+      <Filter>Addons</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Addons\LuaHost.cpp">
+      <Filter>Addons</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Addons\LuaBindingsCore.cpp">
+      <Filter>Addons</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Addons\LuaBindingsUi.cpp">
+      <Filter>Addons</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Game\Lobby\RoomAutomation.cpp">
+      <Filter>Game\Lobby</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Web\HttpRequest.cpp">
+      <Filter>Web</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Hud\Toast.cpp">
+      <Filter>Overlay\Hud</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Overlay\Hud\ToastQueue.cpp">
+      <Filter>Overlay\Hud</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lapi.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lauxlib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lbaselib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lcode.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lcorolib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lctype.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\ldblib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\ldebug.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\ldo.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\ldump.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lfunc.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lgc.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\linit.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\liolib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\llex.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lmathlib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lmem.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\loadlib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lobject.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lopcodes.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\loslib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lparser.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lstate.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lstring.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lstrlib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\ltable.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\ltablib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\ltm.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lundump.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lutf8lib.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lvm.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
+    <ClCompile Include="depends\lua\lzio.c">
+      <Filter>depends\lua</Filter>
+    </ClCompile>
     <ClCompile Include="src\Game\Customize\AnnouncerScroll.cpp">
       <Filter>Game\Customize</Filter>
     </ClCompile>

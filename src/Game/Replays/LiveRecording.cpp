@@ -106,6 +106,25 @@ int LiveRecording::RoundCount()
 	return static_cast<int>((end - begin) / GameOffsets::kReplayRoundStride);
 }
 
+int LiveRecording::WinnerSide()
+{
+	uint32_t side = 0;
+	const uintptr_t recorder = Recorder();
+
+	if (recorder == 0 || !TryReadDword(reinterpret_cast<const void*>(recorder + GameOffsets::kReplayWinnerSide), side))
+		return ReplayRecord::kNoWinner;
+
+	return static_cast<int>(side);
+}
+
+bool LiveRecording::ClearWinnerSide(int unwritten)
+{
+	const uintptr_t recorder = Recorder();
+
+	return recorder != 0 &&
+		TryWriteDword(reinterpret_cast<void*>(recorder + GameOffsets::kReplayWinnerSide), static_cast<uint32_t>(unwritten));
+}
+
 bool LiveRecording::Capture(std::vector<uint8_t>& outPayload)
 {
 	outPayload.clear();

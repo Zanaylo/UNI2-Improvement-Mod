@@ -15,9 +15,13 @@ namespace SteamInterfaces
 	bool SetLobbyMemberData(uint64_t lobby, const char* key, const char* value);
 
 	int GetNumLobbyMembers(uint64_t lobby);
+	int GetLobbyMemberLimit(uint64_t lobby);
 	uint64_t GetLobbyMemberByIndex(uint64_t lobby, int index);
 	const char* GetLobbyMemberData(uint64_t lobby, uint64_t member, const char* key);
 	const char* GetLobbyData(uint64_t lobby, const char* key);
+	uint64_t GetLobbyOwner(uint64_t lobby);
+	bool GetLaunchCommandLine(char* out, int size);
+	const char* GetLaunchQueryParam(const char* key);
 
 	uint64_t RequestPlayerCount();
 	bool TakePlayerCount(uint64_t call, int& outPlayers, bool& outFailed);

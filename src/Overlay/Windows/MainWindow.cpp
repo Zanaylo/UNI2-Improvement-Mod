@@ -2,6 +2,8 @@
 #include "Overlay/Windows/MainWindow.h"
 #include "Overlay/Windows/MainTabs.h"
 
+#include "Addons/AddonManager.h"
+
 #include "Overlay/Panels/ConfigPanel.h"
 #include "Overlay/Panels/PalettesPanel.h"
 #include "Overlay/Panels/ReplayPanel.h"
@@ -21,7 +23,9 @@
 #include "Game/Audio/BgmNames.h"
 #include "Screens/ScreenDirector.h"
 #include "Screens/ScreenTheme.h"
+#include "Overlay/Widgets/BoldText.h"
 #include "Overlay/Widgets/Cards.h"
+#include "Overlay/Widgets/ModStyle.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Overlay/Framework/WindowManager.h"
 #include "Game/Files/InstallCheck.h"
@@ -38,7 +42,7 @@
 
 namespace {
 
-constexpr float kBaseWidthInFonts = 32.0f;
+constexpr float kBaseWidthInFonts = 34.0f;
 
 IWindow* WindowOf(WindowType type)
 {
@@ -164,13 +168,70 @@ void MainWindow::Draw()
 
 void MainWindow::DrawPlayerCount()
 {
-	if (!PlayerCount::IsKnown())
+	ImDrawList* const draw = ImGui::GetWindowDrawList();
+	const ImVec2 pos = ImGui::GetCursorScreenPos();
+	const float availW = ImGui::GetContentRegionAvail().x;
+	const float badgeSide = Ui::Scaled(26.0f);
+	const float gap = Ui::Scaled(10.0f);
+
+	draw->AddRectFilled(pos, ImVec2(pos.x + badgeSide, pos.y + badgeSide),
+		ImGui::GetColorU32(ModStyle::kAccent), Ui::Scaled(5.0f));
+
+	const ImVec2 markSize = BoldText::Size("U2");
+	BoldText::Draw(draw,
+		ImVec2(pos.x + (badgeSide - markSize.x) * 0.5f, pos.y + (badgeSide - markSize.y) * 0.5f),
+		ImGui::GetColorU32(ModStyle::kAccentText), "U2");
+
+	const char* const title = "UNI2 IMPROVEMENT MOD";
+	const ImVec2 titlePos(pos.x + badgeSide + gap, pos.y + (badgeSide - ImGui::GetFontSize()) * 0.5f);
+	BoldText::Draw(draw, titlePos, ImGui::GetColorU32(ModStyle::kText), title);
+
+	char status[96] = {};
+	const bool onlineKnown = PlayerCount::IsKnown();
+
+	if (onlineKnown)
+		sprintf_s(status, "%d online", PlayerCount::Get());
+	else
+		strncpy_s(status, PlayerCount::GetStatusText(), _TRUNCATE);
+
+	const ImVec2 statusSize = ImGui::CalcTextSize(status);
+	const float padX = Ui::Scaled(9.0f);
+	const float padY = Ui::Scaled(3.0f);
+	const float dotR = Ui::Scaled(3.5f);
+	const float dotGap = onlineKnown ? (dotR * 2.0f + Ui::Scaled(6.0f)) : 0.0f;
+	const float pillW = statusSize.x + dotGap + padX * 2.0f;
+	const float pillH = statusSize.y + padY * 2.0f;
+	const ImVec2 pillMin(pos.x + availW - pillW, pos.y + (badgeSide - pillH) * 0.5f);
+	const ImVec2 pillMax(pillMin.x + pillW, pillMin.y + pillH);
+
+	if (pillMin.x > titlePos.x + BoldText::Size(title).x + Ui::Scaled(12.0f))
 	{
-		UiText::Muted("%s", PlayerCount::GetStatusText());
-		return;
+		const ImVec4 pillBg = onlineKnown
+			? ImVec4(0.063f, 0.725f, 0.506f, 0.14f)
+			: ModStyle::kCard;
+		const ImVec4 pillEdge = onlineKnown
+			? ImVec4(0.063f, 0.725f, 0.506f, 0.45f)
+			: ModStyle::kCardEdge;
+
+		draw->AddRectFilled(pillMin, pillMax, ImGui::GetColorU32(pillBg), pillH * 0.5f);
+		draw->AddRect(pillMin, pillMax, ImGui::GetColorU32(pillEdge), pillH * 0.5f);
+
+		if (onlineKnown)
+		{
+			draw->AddCircleFilled(
+				ImVec2(pillMin.x + padX + dotR, (pillMin.y + pillMax.y) * 0.5f),
+				dotR, ImGui::GetColorU32(ModStyle::kAccentBright));
+		}
+
+		draw->AddText(
+			ImVec2(pillMin.x + padX + dotGap, pillMin.y + padY),
+			ImGui::GetColorU32(onlineKnown ? ModStyle::kAccentBright : ModStyle::kMuted),
+			status);
 	}
 
-	UiText::Good("%d players online", PlayerCount::Get());
+	ImGui::Dummy(ImVec2(availW, badgeSide + Ui::Scaled(4.0f)));
+	ImGui::Separator();
+	ImGui::Spacing();
 }
 
 void MainWindow::DrawSteamFolderWarning()
@@ -285,6 +346,7 @@ void MainWindow::DrawOnlineTab()
 
 void MainWindow::DrawModTab()
 {
+	AddonManager::DrawMainWindowSection();
 	DrawModsSection();
 }
 
@@ -410,6 +472,9 @@ void MainWindow::DrawSubtitlesSection()
 
 void MainWindow::DrawPerformanceSection()
 {
+	if (!Features::Shows(FeatureCatalog::Id_Graphics))
+		return;
+
 	const Cards::Scope card("##performance");
 
 	if (!card)

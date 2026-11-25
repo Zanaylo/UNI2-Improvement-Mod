@@ -19,10 +19,13 @@ struct PingLocation
 using Accessor_t = void*(__cdecl*)();
 using GetSteamId_t = uint64_t(__cdecl*)(void*);
 using SetLobbyMemberData_t = void(__cdecl*)(void*, uint64_t, const char*, const char*);
-using GetNumLobbyMembers_t = int(__cdecl*)(void*, uint64_t);
+using LobbyCount_t = int(__cdecl*)(void*, uint64_t);
 using GetLobbyMemberByIndex_t = uint64_t(__cdecl*)(void*, uint64_t, int);
 using GetLobbyMemberData_t = const char*(__cdecl*)(void*, uint64_t, uint64_t, const char*);
 using GetLobbyData_t = const char*(__cdecl*)(void*, uint64_t, const char*);
+using GetLobbyOwner_t = uint64_t(__cdecl*)(void*, uint64_t);
+using GetLaunchCommandLine_t = int(__cdecl*)(void*, char*, int);
+using GetLaunchQueryParam_t = const char*(__cdecl*)(void*, const char*);
 using GetNumberOfCurrentPlayers_t = uint64_t(__cdecl*)(void*);
 using IsAPICallCompleted_t = bool(__cdecl*)(void*, uint64_t, bool*);
 using GetAPICallResult_t = bool(__cdecl*)(void*, uint64_t, void*, int, int, bool*);
@@ -37,13 +40,18 @@ Accessor_t g_matchmakingAccessor = nullptr;
 Accessor_t g_utilsAccessor = nullptr;
 Accessor_t g_userStatsAccessor = nullptr;
 Accessor_t g_steamUtilsAccessor = nullptr;
+Accessor_t g_appsAccessor = nullptr;
 
 GetSteamId_t g_getSteamId = nullptr;
 SetLobbyMemberData_t g_setLobbyMemberData = nullptr;
-GetNumLobbyMembers_t g_getNumLobbyMembers = nullptr;
+LobbyCount_t g_getNumLobbyMembers = nullptr;
+LobbyCount_t g_getLobbyMemberLimit = nullptr;
 GetLobbyMemberByIndex_t g_getLobbyMemberByIndex = nullptr;
 GetLobbyMemberData_t g_getLobbyMemberData = nullptr;
 GetLobbyData_t g_getLobbyData = nullptr;
+GetLobbyOwner_t g_getLobbyOwner = nullptr;
+GetLaunchCommandLine_t g_getLaunchCommandLine = nullptr;
+GetLaunchQueryParam_t g_getLaunchQueryParam = nullptr;
 GetNumberOfCurrentPlayers_t g_getNumberOfCurrentPlayers = nullptr;
 IsAPICallCompleted_t g_isApiCallCompleted = nullptr;
 GetAPICallResult_t g_getApiCallResult = nullptr;
@@ -77,6 +85,30 @@ void* CallAccessor(Accessor_t accessor)
 	return result;
 }
 
+int CallLobbyCount(LobbyCount_t function, uint64_t lobby)
+{
+	if (!g_ready || function == nullptr || lobby == 0)
+		return 0;
+
+	void* const matchmaking = CallAccessor(g_matchmakingAccessor);
+
+	if (matchmaking == nullptr)
+		return 0;
+
+	int count = 0;
+
+	__try
+	{
+		count = function(matchmaking, lobby);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		count = 0;
+	}
+
+	return count;
+}
+
 }
 
 bool SteamInterfaces::Initialize()
@@ -107,13 +139,17 @@ bool SteamInterfaces::Initialize()
 		Resolve<IsAPICallCompleted_t>("SteamAPI_ISteamUtils_IsAPICallCompleted");
 	g_getApiCallResult = Resolve<GetAPICallResult_t>("SteamAPI_ISteamUtils_GetAPICallResult");
 
-	g_getNumLobbyMembers =
-		Resolve<GetNumLobbyMembers_t>("SteamAPI_ISteamMatchmaking_GetNumLobbyMembers");
+	g_getNumLobbyMembers = Resolve<LobbyCount_t>("SteamAPI_ISteamMatchmaking_GetNumLobbyMembers");
+	g_getLobbyMemberLimit = Resolve<LobbyCount_t>("SteamAPI_ISteamMatchmaking_GetLobbyMemberLimit");
 	g_getLobbyMemberByIndex =
 		Resolve<GetLobbyMemberByIndex_t>("SteamAPI_ISteamMatchmaking_GetLobbyMemberByIndex");
 	g_getLobbyMemberData =
 		Resolve<GetLobbyMemberData_t>("SteamAPI_ISteamMatchmaking_GetLobbyMemberData");
 	g_getLobbyData = Resolve<GetLobbyData_t>("SteamAPI_ISteamMatchmaking_GetLobbyData");
+	g_getLobbyOwner = Resolve<GetLobbyOwner_t>("SteamAPI_ISteamMatchmaking_GetLobbyOwner");
+	g_appsAccessor = Resolve<Accessor_t>("SteamAPI_SteamApps_v008");
+	g_getLaunchCommandLine = Resolve<GetLaunchCommandLine_t>("SteamAPI_ISteamApps_GetLaunchCommandLine");
+	g_getLaunchQueryParam = Resolve<GetLaunchQueryParam_t>("SteamAPI_ISteamApps_GetLaunchQueryParam");
 	g_getLocalPingLocation =
 		Resolve<GetLocalPingLocation_t>("SteamAPI_ISteamNetworkingUtils_GetLocalPingLocation");
 	g_convertPingLocation =
@@ -187,26 +223,12 @@ bool SteamInterfaces::SetLobbyMemberData(uint64_t lobby, const char* key, const 
 
 int SteamInterfaces::GetNumLobbyMembers(uint64_t lobby)
 {
-	if (!g_ready || g_getNumLobbyMembers == nullptr || lobby == 0)
-		return 0;
+	return CallLobbyCount(g_getNumLobbyMembers, lobby);
+}
 
-	void* const matchmaking = CallAccessor(g_matchmakingAccessor);
-
-	if (matchmaking == nullptr)
-		return 0;
-
-	int count = 0;
-
-	__try
-	{
-		count = g_getNumLobbyMembers(matchmaking, lobby);
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		count = 0;
-	}
-
-	return count;
+int SteamInterfaces::GetLobbyMemberLimit(uint64_t lobby)
+{
+	return CallLobbyCount(g_getLobbyMemberLimit, lobby);
 }
 
 uint64_t SteamInterfaces::GetLobbyMemberByIndex(uint64_t lobby, int index)
@@ -272,6 +294,84 @@ const char* SteamInterfaces::GetLobbyData(uint64_t lobby, const char* key)
 	__try
 	{
 		value = g_getLobbyData(matchmaking, lobby, key);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		value = nullptr;
+	}
+
+	return value != nullptr ? value : "";
+}
+
+uint64_t SteamInterfaces::GetLobbyOwner(uint64_t lobby)
+{
+	if (!g_ready || g_getLobbyOwner == nullptr || lobby == 0)
+		return 0;
+
+	void* const matchmaking = CallAccessor(g_matchmakingAccessor);
+
+	if (matchmaking == nullptr)
+		return 0;
+
+	uint64_t owner = 0;
+
+	__try
+	{
+		owner = g_getLobbyOwner(matchmaking, lobby);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		owner = 0;
+	}
+
+	return owner;
+}
+
+bool SteamInterfaces::GetLaunchCommandLine(char* out, int size)
+{
+	if (out == nullptr || size <= 0)
+		return false;
+
+	out[0] = 0;
+
+	if (!g_ready || g_getLaunchCommandLine == nullptr)
+		return false;
+
+	void* const apps = CallAccessor(g_appsAccessor);
+
+	if (apps == nullptr)
+		return false;
+
+	int written = 0;
+
+	__try
+	{
+		written = g_getLaunchCommandLine(apps, out, size);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		written = 0;
+	}
+
+	out[size - 1] = 0;
+	return written > 0 && out[0] != 0;
+}
+
+const char* SteamInterfaces::GetLaunchQueryParam(const char* key)
+{
+	if (!g_ready || g_getLaunchQueryParam == nullptr || key == nullptr)
+		return "";
+
+	void* const apps = CallAccessor(g_appsAccessor);
+
+	if (apps == nullptr)
+		return "";
+
+	const char* value = nullptr;
+
+	__try
+	{
+		value = g_getLaunchQueryParam(apps, key);
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{

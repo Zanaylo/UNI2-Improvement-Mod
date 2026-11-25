@@ -150,6 +150,11 @@ void TargetDump::ArmAfterDraw(int drawIndex)
 	DrawTrace::Arm();
 }
 
+bool TargetDump::IsActive()
+{
+	return g_afterDraw >= 0;
+}
+
 void TargetDump::AfterDraw(IDirect3DDevice9* device)
 {
 	if (g_afterDraw < 0 || device == nullptr || DrawTrace::LastDrawIndex() != g_afterDraw)

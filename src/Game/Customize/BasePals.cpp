@@ -1,10 +1,15 @@
 #include "Game/Customize/BasePals.h"
 
+#include "Addons/AddonManager.h"
+#include "Core/FileSystem.h"
+#include "Core/info.h"
 #include "Core/utils.h"
 
 #include <Windows.h>
 
 #include <cstdio>
+#include <string>
+#include <vector>
 
 namespace {
 
@@ -15,18 +20,19 @@ constexpr int kCurrentRevision = 0;
 
 struct Entry
 {
-	const uint8_t* data;
-	size_t size;
-	bool looked;
+	std::vector<uint8_t> owned;
+	const uint8_t* data = nullptr;
+	size_t size = 0;
+	bool looked = false;
 };
 
 Entry g_entries[kMaxChara][kMaxSets][kMaxRevisions] = {};
 
-bool ResourceName(int chara, int set, int revision, char* out, int size)
+bool FileStem(int chara, int set, int revision, bool upper, char* out, int size)
 {
 	const int written = set == BasePals::kCharacterSet
-		? sprintf_s(out, size, "CHR%03d", chara)
-		: sprintf_s(out, size, "CHR%03d_P%d", chara, set);
+		? sprintf_s(out, size, upper ? "CHR%03d" : "chr%03d", chara)
+		: sprintf_s(out, size, upper ? "CHR%03d_P%d" : "chr%03d_p%d", chara, set);
 
 	if (written <= 0)
 		return false;
@@ -34,14 +40,77 @@ bool ResourceName(int chara, int set, int revision, char* out, int size)
 	if (revision == kCurrentRevision)
 		return true;
 
-	return sprintf_s(out + written, size - written, "_V%d", revision) > 0;
+	return sprintf_s(out + written, size - written, upper ? "_V%d" : "_v%d", revision) > 0;
 }
 
-bool Lookup(int chara, int set, int revision, const uint8_t*& outData, size_t& outSize)
+bool LoadFromFolder(const std::string& folder, const char* fileName, Entry& entry)
+{
+	const std::string path = folder + "\\" + fileName;
+
+	if (!ReadWholeFile(path, entry.owned) || entry.owned.empty())
+		return false;
+
+	entry.data = entry.owned.data();
+	entry.size = entry.owned.size();
+	return true;
+}
+
+bool LoadFromSubfolders(const std::string& root, const char* fileName, Entry& entry)
+{
+	WIN32_FIND_DATAA found = {};
+	const HANDLE search = FindFirstFileA((root + "\\*").c_str(), &found);
+
+	if (search == INVALID_HANDLE_VALUE)
+		return false;
+
+	bool loaded = false;
+
+	do
+	{
+		if (found.cFileName[0] == '.' || (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+			continue;
+
+		const std::string folder = root + "\\" + found.cFileName + "\\BasePals";
+
+		if (LoadFromFolder(folder, fileName, entry))
+		{
+			loaded = true;
+			break;
+		}
+	}
+	while (FindNextFileA(search, &found) != 0);
+
+	FindClose(search);
+	return loaded;
+}
+
+bool LoadFromDisk(int chara, int set, int revision, Entry& entry)
+{
+	char stem[24] = {};
+
+	if (!FileStem(chara, set, revision, false, stem, sizeof(stem)))
+		return false;
+
+	const std::string fileName = std::string(stem) + ".png";
+
+	if (LoadFromFolder(GetModAssetPath("BasePals"), fileName.c_str(), entry))
+		return true;
+
+	for (const std::string& addonFolder : AddonManager::EnabledFolders())
+	{
+		if (LoadFromFolder(addonFolder + "\\BasePals", fileName.c_str(), entry))
+			return true;
+	}
+
+	return LoadFromSubfolders(GetModRootPath("Packs"), fileName.c_str(), entry);
+}
+
+#if UNI2_IM_HAS_EMBEDS
+bool LoadFromResource(int chara, int set, int revision, Entry& entry)
 {
 	char name[24] = {};
 
-	if (!ResourceName(chara, set, revision, name, sizeof(name)))
+	if (!FileStem(chara, set, revision, true, name, sizeof(name)))
 		return false;
 
 	const HMODULE module = GetModModuleHandle();
@@ -65,10 +134,11 @@ bool Lookup(int chara, int set, int revision, const uint8_t*& outData, size_t& o
 	if (data == nullptr)
 		return false;
 
-	outData = static_cast<const uint8_t*>(data);
-	outSize = size;
+	entry.data = static_cast<const uint8_t*>(data);
+	entry.size = size;
 	return true;
 }
+#endif
 
 bool Find(int chara, int set, int revision, const uint8_t*& outData, size_t& outSize)
 {
@@ -81,12 +151,21 @@ bool Find(int chara, int set, int revision, const uint8_t*& outData, size_t& out
 	if (set < 0 || set >= kMaxSets)
 		return false;
 
+	if (revision < 0 || revision >= kMaxRevisions)
+		return false;
+
 	Entry& entry = g_entries[chara][set][revision];
 
 	if (!entry.looked)
 	{
 		entry.looked = true;
-		Lookup(chara, set, revision, entry.data, entry.size);
+
+		if (!LoadFromDisk(chara, set, revision, entry))
+		{
+#if UNI2_IM_HAS_EMBEDS
+			LoadFromResource(chara, set, revision, entry);
+#endif
+		}
 	}
 
 	if (entry.data == nullptr)

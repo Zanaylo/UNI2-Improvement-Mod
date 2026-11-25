@@ -41,6 +41,11 @@ void BgClear::Update()
 			"the game's green", stage);
 }
 
+bool BgClear::IsActive()
+{
+	return InterlockedCompareExchange(&g_ported, 0, 0) != 0;
+}
+
 uint32_t BgClear::Behind(uint32_t colour)
 {
 	if (colour != kStageGreen)

@@ -10,6 +10,7 @@
 #include "Game/Engine/OnlineState.h"
 #include "Game/Engine/PlayerState.h"
 #include "Game/Menus/TrainingMenu.h"
+#include "Game/Replays/ReplayState.h"
 #include "Overlay/Framework/WindowManager.h"
 #include "Training/FrameStepper.h"
 
@@ -287,7 +288,7 @@ void HitboxOverlay::Draw()
 	if (!GameState::IsInMatch() || OnlineState::IsOnline() || !Camera::IsAvailable() || TrainingMenu::IsHeld())
 		return;
 
-	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused() && !g_modVals.drawWhilePaused)
+	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused() && !ReplayState::IsPlaying() && !g_modVals.drawWhilePaused)
 		return;
 
 	Camera::ScreenTransform transform = {};

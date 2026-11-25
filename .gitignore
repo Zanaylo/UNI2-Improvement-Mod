@@ -1,5 +1,6 @@
 bin/
 build/
+obj/
 export/
 .vs/
 *.user
@@ -8,8 +9,13 @@ export/
 *.obj
 *.pdb
 *.ilk
+*.exp
+*.lib
 bindings.json
 __pycache__/
-tools/
+tools/*
+!tools/package.ps1
+!tools/package_addons.ps1
+addons/*/sdk/obj/
 docs/
 build/shots/

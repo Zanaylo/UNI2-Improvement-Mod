@@ -23,15 +23,15 @@
 
 namespace {
 
-constexpr int kMaxSessionLogs = 20;
+constexpr int kMaxSessionLogs = 10;
 
-constexpr size_t kLineBytes = 2048;
-constexpr size_t kPendingReserve = 64 * 1024;
-constexpr size_t kPendingLimit = 8 * 1024 * 1024;
+constexpr size_t kLineBytes = 1024;
+constexpr size_t kPendingReserve = 16 * 1024;
+constexpr size_t kPendingLimit = 2 * 1024 * 1024;
 constexpr size_t kBytesPerMegabyte = 1024 * 1024;
-constexpr size_t kFileLimit = 64 * kBytesPerMegabyte;
-constexpr size_t kHistoryEntries = 4000;
-constexpr DWORD kWriteIntervalMs = 100;
+constexpr size_t kFileLimit = 16 * kBytesPerMegabyte;
+constexpr size_t kHistoryEntries = 2000;
+constexpr DWORD kWriteIntervalMs = 250;
 constexpr std::chrono::milliseconds kFlushWait(200);
 
 constexpr uint32_t kMsPerSecond = 1000;
@@ -47,6 +47,7 @@ std::string g_sessionStamp;
 
 std::string g_pending;
 size_t g_dropped = 0;
+std::atomic<unsigned> g_totalDropped{ 0 };
 HANDLE g_wake = nullptr;
 std::atomic<bool> g_open{ false };
 std::atomic<bool> g_captureAll{ false };
@@ -55,7 +56,7 @@ char g_lastLine[kLineBytes] = {};
 LogLevel g_lastLevel = LogLevel::Info;
 unsigned long g_repeats = 0;
 
-size_t g_fileBytes = 0;
+std::atomic<size_t> g_fileBytes{ 0 };
 bool g_fileFull = false;
 
 LogRing& History()
@@ -69,6 +70,7 @@ void Append(const char* text)
 	if (g_pending.size() >= kPendingLimit)
 	{
 		++g_dropped;
+		g_totalDropped.fetch_add(1, std::memory_order_relaxed);
 		return;
 	}
 
@@ -141,10 +143,10 @@ void WriteOut(const std::string& text)
 	if (text.empty() || g_logFile == nullptr || g_fileFull)
 		return;
 
-	g_fileBytes += text.size();
+	const size_t totalBytes = g_fileBytes.fetch_add(text.size(), std::memory_order_relaxed) + text.size();
 	fwrite(text.data(), 1, text.size(), g_logFile);
 
-	if (g_fileBytes >= kFileLimit)
+	if (totalBytes >= kFileLimit)
 	{
 		g_fileFull = true;
 		fprintf(g_logFile, "%s(the log reached %zu MB, the rest of this session is kept in memory only)\n", kIndent,
@@ -194,7 +196,10 @@ void StartWriter()
 	const HANDLE writer = CreateThread(nullptr, 0, &WriterThread, nullptr, 0, nullptr);
 
 	if (writer != nullptr)
+	{
+		SetThreadPriority(writer, THREAD_PRIORITY_BELOW_NORMAL);
 		CloseHandle(writer);
+	}
 }
 
 uint32_t MsOfDay(const SYSTEMTIME& time)
@@ -262,6 +267,45 @@ void Record(LogLevel level, const char* line)
 	Append("\n");
 }
 
+void OpenLoggerInternal(bool forceOpen)
+{
+	std::lock_guard<std::timed_mutex> lock(g_logMutex);
+	if (g_logFile != nullptr)
+		return;
+
+#if !UNI2_IM_FORCE_LOGGING
+	if (!forceOpen && !LoggingEnabledInIni())
+		return;
+#else
+	(void)forceOpen;
+#endif
+
+	g_sessionStamp = LocalTimeStamp();
+
+	PruneOldFiles("UNI2_IM_*.log", kMaxSessionLogs);
+
+	g_logFile = _fsopen(GetLogFilePath().c_str(), "w", _SH_DENYWR);
+	if (g_logFile == nullptr)
+		return;
+
+	g_fileBytes.store(0, std::memory_order_relaxed);
+	g_totalDropped.store(0, std::memory_order_relaxed);
+	g_fileFull = false;
+
+	SYSTEMTIME time = {};
+	GetLocalTime(&time);
+
+	char header[128] = {};
+	sprintf_s(header, "===== session %s started %04d-%02d-%02d %02d:%02d:%02d =====\n", g_sessionStamp.c_str(),
+		time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond);
+
+	g_pending.reserve(kPendingReserve);
+	Append(header);
+
+	g_open.store(true);
+	StartWriter();
+}
+
 }
 
 const std::string& GetLogSessionStamp()
@@ -282,40 +326,24 @@ const LogRing& GetLogHistory()
 	return History();
 }
 
+size_t GetLogBytesWritten()
+{
+	return g_fileBytes.load(std::memory_order_relaxed);
+}
+
+unsigned GetLogDroppedCount()
+{
+	return g_totalDropped.load(std::memory_order_relaxed);
+}
+
 void OpenLogger()
 {
-	std::lock_guard<std::timed_mutex> lock(g_logMutex);
-	if (g_logFile != nullptr)
-		return;
+	OpenLoggerInternal(false);
+}
 
-#if !UNI2_IM_FORCE_LOGGING
-	if (!LoggingEnabledInIni())
-		return;
-#endif
-
-	g_sessionStamp = LocalTimeStamp();
-
-	PruneOldFiles("UNI2_IM_*.log", kMaxSessionLogs);
-
-	g_logFile = _fsopen(GetLogFilePath().c_str(), "w", _SH_DENYWR);
-	if (g_logFile == nullptr)
-		return;
-
-	g_fileBytes = 0;
-	g_fileFull = false;
-
-	SYSTEMTIME time = {};
-	GetLocalTime(&time);
-
-	char header[128] = {};
-	sprintf_s(header, "===== session %s started %04d-%02d-%02d %02d:%02d:%02d =====\n", g_sessionStamp.c_str(),
-		time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute, time.wSecond);
-
-	g_pending.reserve(kPendingReserve);
-	Append(header);
-
-	g_open.store(true);
-	StartWriter();
+void OpenLoggerNow()
+{
+	OpenLoggerInternal(true);
 }
 
 void CloseLogger()
@@ -383,7 +411,8 @@ void WriteLog(const char* format, ...)
 	if (!g_open.load() && !g_captureAll.load())
 		return;
 
-	char line[kLineBytes] = {};
+	char line[kLineBytes];
+	line[0] = '\0';
 
 	va_list args;
 	va_start(args, format);
@@ -398,7 +427,8 @@ void WriteLogAt(LogLevel level, const char* format, ...)
 	if (!g_open.load() && !g_captureAll.load() && level < LogLevel::Warn)
 		return;
 
-	char line[kLineBytes] = {};
+	char line[kLineBytes];
+	line[0] = '\0';
 
 	va_list args;
 	va_start(args, format);
@@ -408,16 +438,40 @@ void WriteLogAt(LogLevel level, const char* format, ...)
 	Record(level, line);
 }
 
+void WriteLogPrefixed(const char* prefix, const char* format, va_list args)
+{
+	if ((!g_open.load() && !g_captureAll.load()) || format == nullptr)
+		return;
+
+	char line[kLineBytes];
+	int used = 0;
+
+	if (prefix != nullptr)
+		used = _snprintf_s(line, _TRUNCATE, "%s", prefix);
+
+	if (used < 0)
+		used = 0;
+
+	_vsnprintf_s(line + used, sizeof(line) - used, _TRUNCATE, format, args);
+
+	size_t length = strlen(line);
+	while (length > 0 && (line[length - 1] == '\n' || line[length - 1] == '\r'))
+		line[--length] = '\0';
+
+	Record(LogText::Guess(line), line);
+}
+
 void BootTrace(const char* format, ...)
 {
-	char line[kLineBytes] = {};
+	char line[kLineBytes];
+	line[0] = '\0';
 
 	va_list args;
 	va_start(args, format);
 	vsnprintf(line, sizeof(line), format, args);
 	va_end(args);
 
-	char tagged[kLineBytes + 32] = {};
+	char tagged[kLineBytes + 32];
 	sprintf_s(tagged, "[UNI2-IM boot] %s\n", line);
 	OutputDebugStringA(tagged);
 
@@ -429,7 +483,8 @@ void WriteLogRaw(const char* format, ...)
 	if (!g_open.load())
 		return;
 
-	char line[kLineBytes] = {};
+	char line[kLineBytes];
+	line[0] = '\0';
 
 	va_list args;
 	va_start(args, format);

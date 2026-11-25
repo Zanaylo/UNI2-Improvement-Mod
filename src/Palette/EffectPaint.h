@@ -9,6 +9,11 @@ namespace EffectPaint
 
 	bool Install();
 	bool IsInstalled();
+	void OnFrame();
+	bool IsHookActive();
+
+	bool HasOverlay(int player);
+	unsigned GetOverlayRevision(int player);
 
 	bool GetObserved(int player, int entry, uint8_t* outRgb);
 	int GetObservedCount(int player);

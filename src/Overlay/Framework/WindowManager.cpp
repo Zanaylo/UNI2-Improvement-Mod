@@ -1,6 +1,9 @@
 ﻿#include "D3D9/Draw/TextureGraveyard.h"
 #include "Overlay/Framework/WindowManager.h"
 
+#include "Addons/AddonManager.h"
+#include "Overlay/Hud/Toast.h"
+
 #include "Core/Input/KeyboardCapture.h"
 #include "Core/Boot/ProcessTuning.h"
 #include "Network/NetLink.h"
@@ -266,6 +269,7 @@ bool WindowManager::Initialize(HWND window, IDirect3DDevice9* device)
 
 	m_deviceObjectsValid = true;
 	m_container = std::make_unique<WindowContainer>();
+	AddonManager::SetDeviceContext(window, device);
 
 	InstallWindowProc(window);
 	ProcessTuning::SetWindow(window);
@@ -275,8 +279,8 @@ bool WindowManager::Initialize(HWND window, IDirect3DDevice9* device)
 	m_focusCheckedAt = GetTickCount();
 	m_initialized = true;
 
-	NotificationBar::Add("%s %s loaded (press %s to open the main window)", UNI2_IM_NAME,
-		UNI2_IM_VERSION, GetNameFromVirtualKey(g_modVals.toggleOverlayKey));
+	NotificationBar::Add("%s %s%s loaded (press %s to open the main window)", UNI2_IM_NAME,
+		UNI2_IM_VERSION, UNI2_IM_BUILD_TAG, GetNameFromVirtualKey(g_modVals.toggleOverlayKey));
 
 	LOG("WindowManager initialized (ImGui %s), window 0x%p, root 0x%p, foreground 0x%p (%s)",
 		IMGUI_VERSION, (void*)window, (void*)GetAncestor(window, GA_ROOT),
@@ -346,6 +350,12 @@ LRESULT WindowManager::HandleWindowMessage(HWND window, UINT message, WPARAM wPa
 	{
 		outHandled = true;
 		return 0;
+	}
+
+	if (AddonManager::OnWndProc(window, message, wParam, lParam))
+	{
+		outHandled = true;
+		return 1;
 	}
 
 	if (m_overlayActive)
@@ -486,7 +496,7 @@ bool WindowManager::LooksFocused(DWORD now) const
 
 void WindowManager::ReportHotkeyGate(DWORD now)
 {
-	if (m_overlayActive || now - m_gateReportedAt < kGateReportMs)
+	if (!IsLoggerOpen() || m_overlayActive || now - m_gateReportedAt < kGateReportMs)
 		return;
 
 	m_gateReportedAt = now;
@@ -583,7 +593,7 @@ void WindowManager::HandleHotkeys()
 
 	RefreshFocus();
 
-	if (ButtonIsDown(g_modVals.toggleOverlayKey))
+	if (IsLoggerOpen() && ButtonIsDown(g_modVals.toggleOverlayKey))
 		m_togglePolled = true;
 
 	if (IsHotkeyHeld(VK_CONTROL) && IsHotkeyPressed(VK_F1))
@@ -868,15 +878,22 @@ void WindowManager::Render()
 	AnnounceUpdate();
 	AnnouncePatch();
 
-	m_overlayActive = m_container != nullptr && m_container->AnyWindowOpen();
+	m_overlayActive = (m_container != nullptr && m_container->AnyWindowOpen()) || AddonManager::AnyOverlayOpen();
 
 	if (!m_overlayActive)
 		KeyboardCapture::ReleaseAll();
 
+	if (AddonManager::HasD3D9Renderers() && SUCCEEDED(m_device->BeginScene()))
+	{
+		AddonManager::OnD3D9Render();
+		m_device->EndScene();
+	}
+
 	const bool notifying = NotificationBar::HasPending();
 	const bool subtitling = SubtitleHud::IsShowing();
+	const bool toasting = Toast::IsShowing();
 
-	if (!m_overlayActive && !notifying && !subtitling)
+	if (!m_overlayActive && !notifying && !subtitling && !toasting)
 		return;
 
 
@@ -893,8 +910,10 @@ void WindowManager::Render()
 	if (m_container != nullptr)
 		m_container->UpdateAll();
 
+	AddonManager::OnOverlay();
 	NotificationBar::Draw();
 	SubtitleHud::Draw();
+	Toast::Draw();
 
 	ImGui::EndFrame();
 
@@ -916,6 +935,7 @@ void WindowManager::OnDeviceLost()
 	if (!m_initialized)
 		return;
 
+	AddonManager::OnDeviceLost();
 	ImGui_ImplDX9_InvalidateDeviceObjects();
 	m_deviceObjectsValid = false;
 }
@@ -928,6 +948,7 @@ void WindowManager::OnDeviceReset()
 	if (ImGui_ImplDX9_CreateDeviceObjects())
 	{
 		m_deviceObjectsValid = true;
+		AddonManager::OnDeviceReset();
 	}
 	else
 	{

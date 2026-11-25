@@ -1,0 +1,36 @@
+<rml>
+<head>
+	<title>Great Lobby - configurações</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="modal" data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+	<div class="dialog" id="settings">
+		<div class="title">⚙ Configurações</div>
+		<div class="txt">Como os botões aparecem nas telas do Great Lobby.</div>
+
+		<div class="styles">
+			<div class="style-card" autofocus="" data-class-on="glyphs == 'xbox'" data-event-click="set_glyphs('xbox')">
+				<div class="nm">Xbox</div>
+				<div class="row"><span class="key xb-a">A</span><span class="key xb-b">B</span><span class="key xb-x">X</span><span class="key xb-y">Y</span></div>
+			</div>
+			<div class="style-card" data-class-on="glyphs == 'ps'" data-event-click="set_glyphs('ps')">
+				<div class="nm">PlayStation</div>
+				<div class="row"><span class="key ps-a">✕</span><span class="key ps-b">○</span><span class="key ps-x">□</span><span class="key ps-y">△</span></div>
+			</div>
+			<div class="style-card" data-class-on="glyphs == 'flat'" data-event-click="set_glyphs('flat')">
+				<div class="nm">Flat (A B C D)</div>
+				<div class="row"><span class="key flat-k">A</span><span class="key flat-k">B</span><span class="key flat-k">C</span><span class="key flat-k">D</span></div>
+			</div>
+		</div>
+
+		<div class="opts" style="margin-top: 16dp;">
+			<div class="opt" data-class-on="auto_ready" data-event-click="toggle_auto_ready()"><span data-if="auto_ready">✓ </span>Pronto automático</div>
+		</div>
+		<div class="shint">Quando chega a sua vez numa mesa, você fica pronto sozinho depois de 10 s (som e a barra de tarefas piscando avisam).</div>
+
+		<div class="txt" style="margin-top: 16dp;">Abrir o Great Lobby no menu Network: <span class="key k-kb">F9</span> no teclado, ou segure <span class="key k-lb">↑</span> e aperte <span class="key k-start">{{g_start}}</span> no controle / hitbox.</div>
+
+		<div class="actions"><div class="btn" data-event-click="close_settings()">Fechar<span class="key k-b">{{g_b}}</span></div></div>
+	</div>
+</body>
+</rml>

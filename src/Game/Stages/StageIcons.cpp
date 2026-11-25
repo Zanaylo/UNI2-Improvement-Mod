@@ -1,7 +1,9 @@
 #include "Game/Stages/StageIcons.h"
 
+#include "Addons/AddonManager.h"
 #include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
+#include "Core/FileSystem.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 
@@ -12,6 +14,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <map>
+#include <vector>
 
 namespace {
 
@@ -35,6 +38,7 @@ struct Card
 struct Pack
 {
 	uint32_t stamp = 0;
+	std::vector<uint8_t> owned;
 	std::map<std::string, Card> cards;
 };
 
@@ -84,6 +88,21 @@ uint32_t Dword(const uint8_t* at)
 	return value;
 }
 
+bool DiskPack(std::vector<uint8_t>& out)
+{
+	if (ReadWholeFile(GetModAssetPath("StageIcons\\stage-icons.pack"), out) && out.size() >= kHeader)
+		return true;
+
+	for (const std::string& addonFolder : AddonManager::EnabledFolders())
+	{
+		if (ReadWholeFile(addonFolder + "\\StageIcons\\stage-icons.pack", out) && out.size() >= kHeader)
+			return true;
+	}
+
+	out.clear();
+	return false;
+}
+
 bool Resource(const uint8_t*& data, size_t& size)
 {
 	const HMODULE module = GetModModuleHandle();
@@ -105,9 +124,21 @@ Pack Read()
 	const uint8_t* data = nullptr;
 	size_t size = 0;
 
-	if (!Resource(data, size) || memcmp(data, kMagic, sizeof(kMagic)) != 0 || Dword(data + 4) != kVersion)
+	if (DiskPack(pack.owned))
+	{
+		data = pack.owned.data();
+		size = pack.owned.size();
+	}
+	else if (!Resource(data, size))
 	{
 		LOG("StageIcons: the mod carries no stage card pack");
+		return pack;
+	}
+
+	if (memcmp(data, kMagic, sizeof(kMagic)) != 0 || Dword(data + 4) != kVersion)
+	{
+		LOG("StageIcons: the mod carries no stage card pack");
+		pack.owned.clear();
 		return pack;
 	}
 

@@ -1,0 +1,22 @@
+<rml>
+<head>
+	<title>Great Lobby - desafio</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="modal" data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+	<div class="dialog" id="challenge">
+		<div class="title">Você foi desafiado!</div>
+		<div class="who-card">
+			<img data-attr-src="challenge_face"/>
+			<div>
+				<div class="nm">{{challenge_name}}</div>
+				<div class="ch">quer jogar uma série com você</div>
+			</div>
+		</div>
+		<div class="actions">
+			<div class="btn" data-event-click="decline()">Recusar<span class="key k-b">{{g_b}}</span></div>
+			<div class="btn pri" autofocus="" data-event-click="accept()">Aceitar<span class="key k-a">{{g_a}}</span></div>
+		</div>
+	</div>
+</body>
+</rml>

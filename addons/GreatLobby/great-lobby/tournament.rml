@@ -1,0 +1,44 @@
+<rml>
+<head>
+	<title>Great Lobby - torneio</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="modal" data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+	<div class="dialog" id="tournament">
+		<div class="title">Torneio <span class="tour-tag" data-if="tour_state == 'open'">INSCRIÇÕES ABERTAS</span><span class="tour-tag live" data-if="tour_state == 'live'">AO VIVO</span><span class="tour-tag" data-if="tour_state == 'done'">ENCERRADO</span></div>
+
+		<div data-if="tour_state == ''">
+			<div class="txt" data-if="is_host">Chave eliminatória (até 16 jogadores). Abra as inscrições, espere o pessoal entrar e comece: as partidas vão para as mesas sozinhas.</div>
+			<div class="txt" data-if="!is_host">Nenhum torneio agora. O host pode abrir um.</div>
+		</div>
+
+		<div data-if="tour_state == 'open'">
+			<div class="tour-count">{{tour_count}} inscrito(s)</div>
+			<div class="txt" data-if="!tour_in">Aperte Participar para entrar na chave.</div>
+			<div class="txt" data-if="tour_in">Você está inscrito. Aguarde o host começar.</div>
+		</div>
+
+		<div class="tour-champ" data-if="tour_champion != ''">Campeão: {{tour_champion}}</div>
+
+		<div class="bracket" data-if="tour_rounds.size &gt; 0">
+			<div class="tour-round" data-for="r : tour_rounds">
+				<div class="tour-round-name">{{r.name}}</div>
+				<div class="tour-match" data-for="m : r.matches" data-class-mine="m.mine" data-class-bye="m.bye">
+					<div class="tour-player" data-class-won="m.winner == 1" data-class-lost="m.winner == 2">{{m.a}}</div>
+					<div class="tour-player" data-class-won="m.winner == 2" data-class-lost="m.winner == 1">{{m.b}}</div>
+					<div class="tour-table" data-if="m.table &gt; 0 &amp;&amp; m.winner == 0">Mesa {{m.table}}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="actions">
+			<div class="btn" autofocus="" data-event-click="close_tour()">Fechar<span class="key k-b">{{g_b}}</span></div>
+			<div class="btn pri" data-if="tour_state == 'open' &amp;&amp; !tour_in" data-event-click="tour_join()">Participar</div>
+			<div class="btn red" data-if="tour_state == 'open' &amp;&amp; tour_in" data-event-click="tour_join()">Sair da chave</div>
+			<div class="btn gold" data-if="is_host &amp;&amp; (tour_state == '' || tour_state == 'done')" data-event-click="tour_signup()">♛ Abrir inscrições</div>
+			<div class="btn gold" data-if="is_host &amp;&amp; tour_state == 'open'" data-event-click="tour_start()">♛ Começar torneio</div>
+			<div class="btn red" data-if="is_host &amp;&amp; (tour_state == 'open' || tour_state == 'live')" data-event-click="tour_cancel()">♛ Encerrar</div>
+		</div>
+	</div>
+</body>
+</rml>

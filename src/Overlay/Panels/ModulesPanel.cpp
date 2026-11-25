@@ -56,7 +56,12 @@ void ModulesPanel::Draw()
 	UiText::Muted("A module that is off loads nothing and leaves the menus. A hidden training option is also turned off.");
 
 	for (int id = 0; id < FeatureCatalog::Id_COUNT; ++id)
-		DrawModule(static_cast<FeatureCatalog::Id>(id));
+	{
+		const auto feature = static_cast<FeatureCatalog::Id>(id);
+
+		if (Features::IsAvailable(feature))
+			DrawModule(feature);
+	}
 
 	if (Features::NeedsRestart())
 		UiText::Warn("Restart the game to apply.");

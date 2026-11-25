@@ -19,7 +19,7 @@
 namespace {
 
 constexpr DWORD kPullEveryMs = 250;
-constexpr size_t kKeptEntries = 4000;
+constexpr size_t kKeptEntries = 2000;
 constexpr int kAllCategories = -1;
 constexpr float kCategoryWidth = 170.0f;
 constexpr float kSearchWidth = 220.0f;

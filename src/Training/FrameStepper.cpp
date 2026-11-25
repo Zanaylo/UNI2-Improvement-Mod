@@ -90,10 +90,13 @@ void SampleObservers()
 void RunGameUpdate(void* outputByte, void* unused)
 {
 	Profiler::Scope scope(Profiler::Section_TickGame);
-	const int64_t began = Profiler::Now();
+	const bool watching = SpikeWatch::IsActive();
+	const int64_t began = watching ? Profiler::Now() : 0;
 
 	g_frameUpdateHook.Original()(outputByte, unused);
-	SpikeWatch::Add(SpikeReport::Cost_GameUpdate, Profiler::Now() - began);
+
+	if (watching)
+		SpikeWatch::Add(SpikeReport::Cost_GameUpdate, Profiler::Now() - began);
 }
 
 void __fastcall HookedFrameUpdate(void* outputByte, void* unused)

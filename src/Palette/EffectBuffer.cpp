@@ -24,6 +24,17 @@ constexpr uint8_t kMarked = 255;
 TintBuffer g_buffers[kPlayers];
 bool g_reported[kPlayers] = {};
 
+struct Applied
+{
+	uint8_t* live;
+	const uint8_t* palette;
+	unsigned paletteRev;
+	unsigned overlayRev;
+	bool active;
+};
+
+Applied g_applied[kPlayers] = {};
+
 bool IsInsideTheGame(uintptr_t address)
 {
 	static const uintptr_t start = reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
@@ -75,16 +86,40 @@ void EffectBuffer::OnFrame()
 		if (!usable || !PaletteControl::CanWear(player))
 		{
 			g_buffers[player].Restore();
+			g_applied[player] = {};
+			continue;
+		}
+
+		const uint8_t* const palette = PalettePaint::GetWearing(player);
+		const bool hasOverlay = EffectPaint::HasOverlay(player);
+		uint8_t* const live = BufferOf(player);
+
+		if (live == nullptr || (palette == nullptr && !hasOverlay))
+		{
+			g_buffers[player].Restore();
+			g_applied[player] = {};
+			continue;
+		}
+
+		const unsigned paletteRev = PalettePaint::GetRevision(player);
+		const unsigned overlayRev = EffectPaint::GetOverlayRevision(player);
+		Applied& last = g_applied[player];
+
+		if (last.active && last.live == live && last.palette == palette &&
+			last.paletteRev == paletteRev && last.overlayRev == overlayRev &&
+			g_buffers[player].Matches(live))
+		{
 			continue;
 		}
 
 		uint8_t overlay[TintBuffer::kBytes];
 
-		ReadOverlay(player, overlay);
+		if (hasOverlay)
+			ReadOverlay(player, overlay);
 
-		uint8_t* const live = BufferOf(player);
-
-		if (g_buffers[player].Apply(live, PalettePaint::GetWearing(player), overlay))
+		if (g_buffers[player].Apply(live, palette, hasOverlay ? overlay : nullptr))
 			Report(player, live);
+
+		last = { live, palette, paletteRev, overlayRev, true };
 	}
 }

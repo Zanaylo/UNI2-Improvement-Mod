@@ -1,0 +1,169 @@
+<rml>
+<head>
+	<title>UNI2 Mod Loader</title>
+	<link type="text/rcss" href="loader.rcss"/>
+</head>
+<body>
+<div id="app">
+	<div id="accent-strip"/>
+
+	<header id="topbar">
+		<div class="brand">
+			<div class="brand-icon-wrap">
+				<img class="brand-icon" src="mika.png"/>
+			</div>
+			<div>
+				<div class="brand-title">UNI2 MOD LOADER</div>
+				<div class="brand-sub" id="brand-version">IMPROVEMENT MOD</div>
+			</div>
+		</div>
+
+		<div class="topbar-sep"/>
+
+		<div id="proxy-status" class="status-pill">CHECKING...</div>
+		<div id="btn-install-proxy" class="btn warn small ml-8 hidden">INSTALL dinput8.dll</div>
+
+		<div class="grow"/>
+
+		<div class="lang-switch">
+			<div id="lang-en" class="lang-btn">EN</div>
+			<div id="lang-pt" class="lang-btn">PT</div>
+			<div id="lang-es" class="lang-btn">ES</div>
+		</div>
+
+		<div class="top-actions">
+			<div id="btn-play-steam" class="btn primary">PLAY UNI2 (STEAM)</div>
+			<div id="btn-play-direct" class="btn ml-8">RUN EXE</div>
+		</div>
+	</header>
+
+	<div id="pathbar">
+		<span id="label-game-folder" class="path-label">GAME FOLDER</span>
+		<span id="game-dir-text" class="path-value">Detecting...</span>
+		<div class="grow"/>
+		<div id="btn-browse-game" class="btn small">BROWSE...</div>
+		<div id="btn-reload-ui" class="btn small ml-8">RELOAD UI (F5)</div>
+	</div>
+
+	<div id="workspace">
+		<aside id="sidebar">
+			<div id="nav-section-label" class="nav-section">MANAGEMENT</div>
+			<div id="nav-addons" class="nav-item active">
+				<span id="nav-addons-label">ADD-ONS</span>
+				<span id="count-addons" class="nav-count">0</span>
+			</div>
+			<div id="nav-packs" class="nav-item">
+				<span id="nav-packs-label">FILE MODS</span>
+				<span id="count-packs" class="nav-count">0</span>
+			</div>
+			<div id="nav-modules" class="nav-item">
+				<span id="nav-modules-label">CORE BASE</span>
+				<span id="count-modules" class="nav-count">0</span>
+			</div>
+			<div id="nav-log" class="nav-item">
+				<span id="nav-log-label">ACTIVITY LOG</span>
+				<span id="count-log" class="nav-count">0</span>
+			</div>
+
+			<div class="drop-hint">
+				<div id="drop-title" class="drop-hint-title">DRAG &amp; DROP READY</div>
+				<div id="drop-text" class="drop-hint-text">Drop any add-on .zip, bundle, or file mod directly onto this window.</div>
+			</div>
+		</aside>
+
+		<main id="content">
+			<section id="view-addons" class="view">
+				<div class="sectitle">
+					<div class="sectitle-bar"/>
+					<div id="addons-title" class="sectitle-h">INSTALLED ADD-ONS</div>
+					<div id="addons-sub" class="sectitle-sub">Lua scripts, native plugins, modules &amp; asset packs in UNI2-IM\Addons</div>
+				</div>
+
+				<div class="toolbar">
+					<div id="btn-addon-zip" class="btn accent small">INSTALL ZIP / BUNDLE</div>
+					<div id="btn-addon-folder" class="btn small">INSTALL FOLDER</div>
+					<div id="btn-addon-open" class="btn small">OPEN FOLDER</div>
+					<div id="btn-addon-update" class="btn small">UPDATE LINKED</div>
+					<div id="btn-addon-refresh" class="btn small">REFRESH</div>
+				</div>
+
+				<div class="split">
+					<div id="addons-list" class="list-pane"/>
+					<div id="addon-detail" class="detail-pane"/>
+				</div>
+
+				<div id="url-bar">
+					<input id="url-input" class="url-input" type="text" value=""/>
+					<div id="btn-save-link" class="btn small ml-8">SAVE GITHUB</div>
+					<div id="btn-install-url" class="btn accent small ml-8">DOWNLOAD &amp; INSTALL</div>
+				</div>
+			</section>
+
+			<section id="view-packs" class="view hidden">
+				<div class="sectitle">
+					<div class="sectitle-bar"/>
+					<div id="packs-title" class="sectitle-h">FILE MODS (/MODS &amp; PACKS)</div>
+					<div id="packs-sub" class="sectitle-sub">Folders or .zip archives in &lt;game&gt;\mods\ or UNI2-IM\Packs\</div>
+				</div>
+
+				<div class="toolbar">
+					<div id="btn-pack-zip" class="btn accent small">INSTALL MOD ZIP</div>
+					<div id="btn-pack-folder" class="btn small">INSTALL MOD FOLDER</div>
+					<div id="btn-pack-open" class="btn small">OPEN /MODS FOLDER</div>
+					<div id="btn-pack-refresh" class="btn small">REFRESH</div>
+				</div>
+
+				<div id="packs-list" class="scroll-area"/>
+			</section>
+
+			<section id="view-modules" class="view hidden">
+				<div class="sectitle">
+					<div class="sectitle-bar"/>
+					<div id="modules-title" class="sectitle-h">IMPROVEMENT MOD BASE</div>
+					<div id="modules-sub" class="sectitle-sub">Toggle core &amp; optional built-in modules directly</div>
+				</div>
+
+				<div class="scroll-area">
+					<div class="sectitle">
+						<div class="sectitle-bar"/>
+						<div id="modules-core-title" class="sectitle-h">CORE MODULES (CLEAN BASE)</div>
+					</div>
+					<div id="core-modules-grid" class="mod-grid"/>
+
+					<div class="sectitle">
+						<div class="sectitle-bar"/>
+						<div id="modules-opt-title" class="sectitle-h">OPTIONAL BUILT-IN MODULES</div>
+						<div id="modules-opt-sub" class="sectitle-sub">Also activated automatically by their standalone add-ons</div>
+					</div>
+					<div id="opt-modules-grid" class="mod-grid"/>
+
+					<div class="mod-foot">
+						<div id="btn-reset-base" class="btn small">RESET TO CLEAN BASE</div>
+						<div id="btn-open-basepals" class="btn small">OPEN BASEPALS FOLDER</div>
+						<div id="toggle-auto-update" class="check-row">
+							<div id="switch-auto-update" class="switch"><div class="switch-knob"/></div>
+							<span id="auto-update-label">Auto-check linked GitHub add-ons on startup</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section id="view-log" class="view hidden">
+				<div class="sectitle">
+					<div class="sectitle-bar"/>
+					<div id="log-title" class="sectitle-h">ACTIVITY LOG</div>
+					<div id="log-sub" class="sectitle-sub">Downloads, installs, and loader diagnostics</div>
+				</div>
+				<div id="log-list" class="log-box"/>
+			</section>
+		</main>
+	</div>
+
+	<footer id="footer">
+		<div id="foot-dot" class="foot-dot"/>
+		<div id="foot-status" class="foot-text">Ready.</div>
+		<div id="foot-ver" class="foot-ver">RmlUi 6.0 / Overlay-Safe GDI</div>
+	</footer>
+</div>
+</body>
+</rml>

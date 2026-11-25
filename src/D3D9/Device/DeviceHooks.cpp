@@ -93,6 +93,9 @@ IDirect3DDevice9* g_device = nullptr;
 D3DPRESENT_PARAMETERS g_presentParameters = {};
 bool g_installed = false;
 volatile LONG g_watching = 0;
+bool g_setTextureActive = true;
+bool g_drawsActive = true;
+bool g_clearActive = true;
 
 const char* HeldDefaultResources()
 {
@@ -291,7 +294,7 @@ HRESULT STDMETHODCALLTYPE HookedClear(IDirect3DDevice9* device, DWORD count, con
 	DWORD flags, D3DCOLOR color, float z, DWORD stencil)
 {
 	const bool recolouring = StageColor::IsEnabled();
-	const bool stillLearning = g_clearSeenCount < kMaxClearSignatures &&
+	const bool stillLearning = IsLoggerOpen() && g_clearSeenCount < kMaxClearSignatures &&
 		g_clearLearnFrames < kClearLearnFrames;
 
 	if (device == g_device && (flags & D3DCLEAR_TARGET) != 0)
@@ -561,6 +564,41 @@ HRESULT PresentOnStandby(IDirect3DDevice9* device, const RECT* sourceRect, const
 	return result;
 }
 
+void SyncDrawHooks()
+{
+	const bool needSetTexture = g_modVals.showLegacyPalettes || CleanFrame::IsActive() ||
+		StageCapture::IsActive() || SceneUpscale::IsActive() || PaletteDrawProbe::IsCapturing();
+
+	if (needSetTexture != g_setTextureActive)
+	{
+		g_setTextureActive = needSetTexture;
+		g_setTextureHook.SetEnabled(needSetTexture);
+	}
+
+	const bool needDraws = ScaledTargets::IsActive() || CharaSmoothing::IsActive() || CleanFrame::IsActive() ||
+		DrawTrace::IsActive() || TargetDump::IsActive() || BgVertexProbe::IsActive() ||
+		PaletteDrawProbe::IsCapturing();
+
+	if (needDraws != g_drawsActive)
+	{
+		g_drawsActive = needDraws;
+		g_drawPrimitiveHook.SetEnabled(needDraws);
+		g_drawIndexedPrimitiveHook.SetEnabled(needDraws);
+		g_drawPrimitiveUPHook.SetEnabled(needDraws);
+		g_drawIndexedPrimitiveUPHook.SetEnabled(needDraws);
+	}
+
+	const bool needClear = StageColor::IsEnabled() || BgClear::IsActive() || ScaledTargets::IsActive() ||
+		DrawTrace::IsActive() || (IsLoggerOpen() && g_clearSeenCount < kMaxClearSignatures &&
+		g_clearLearnFrames < kClearLearnFrames);
+
+	if (needClear != g_clearActive)
+	{
+		g_clearActive = needClear;
+		g_clearHook.SetEnabled(needClear);
+	}
+}
+
 HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* sourceRect,
 	const RECT* destRect, HWND destWindowOverride, const RGNDATA* dirtyRegion)
 {
@@ -666,9 +704,12 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 	{
 		Profiler::Scope scope(Profiler::Section_PresentDevice);
-		const int64_t presentStart = Profiler::Now();
+		const bool watching = SpikeWatch::IsActive();
+		const int64_t presentStart = watching ? Profiler::Now() : 0;
 		result = g_presentHook.Original()(device, sourceRect, destRect, destWindowOverride, dirtyRegion);
-		SpikeWatch::Add(SpikeReport::Cost_PresentWait, Profiler::Now() - presentStart);
+
+		if (watching)
+			SpikeWatch::Add(SpikeReport::Cost_PresentWait, Profiler::Now() - presentStart);
 	}
 
 	if (device == g_device)
@@ -682,6 +723,7 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 		Profiler::EndPresentFrame();
 		SpikeWatch::OnPresent();
+		SyncDrawHooks();
 	}
 
 	return result;
@@ -793,7 +835,10 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 	}
 
 	if (!Standby::IsOn())
+	{
 		AttachRendering(device);
+		SyncDrawHooks();
+	}
 
 	LogSwapChain(device, "at install");
 	g_installed = true;

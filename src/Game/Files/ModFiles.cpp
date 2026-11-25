@@ -1,6 +1,7 @@
 #include "Game/Files/ModFiles.h"
 
 #include "Core/Config/Features.h"
+#include "Core/info.h"
 #include "Core/FileIndex.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
@@ -67,7 +68,7 @@ constexpr DWORD kLoadQuietMs = 500;
 constexpr const char* kProbeFolder = "Ask";
 constexpr DWORD kSettleMs = 500;
 
-HANDLE g_watch[2] = { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE };
+HANDLE g_watch[3] = { INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE };
 DWORD g_stirredAt = 0;
 bool g_stirred = false;
 bool g_packsStirred = false;
@@ -230,6 +231,9 @@ void NoteMiss(const char* path, const std::string& key)
 
 bool Lookup(const char* path, std::string& out)
 {
+	if (InterlockedCompareExchange(&g_indexed, 0, 0) == 0)
+		return false;
+
 	const std::string key = Normalise(path);
 
 	if (key.empty())
@@ -290,6 +294,7 @@ bool Lookup(const char* path, std::string& out)
 
 bool Redirect(const char* path, std::string& out)
 {
+#if UNI2_IM_HAS_EMBEDS
 	const GamePatches::Answer answer = GamePatches::Resolve(path, out);
 
 	if (answer == GamePatches::Answer_Found)
@@ -297,6 +302,7 @@ bool Redirect(const char* path, std::string& out)
 
 	if (answer == GamePatches::Answer_Missing)
 		return false;
+#endif
 
 	return Lookup(path, out);
 }
@@ -504,6 +510,14 @@ bool Rebuild()
 
 	DataSearchPath::HoldOverrides(count > 0);
 
+#if !UNI2_IM_HAS_EMBEDS
+	const bool wantHooks = count > 0;
+	g_createFileAHook.SetEnabled(wantHooks);
+	g_getFileAttributesAHook.SetEnabled(wantHooks);
+	g_createFileWHook.SetEnabled(wantHooks);
+	g_getFileAttributesWHook.SetEnabled(wantHooks);
+#endif
+
 	return changed;
 }
 
@@ -535,7 +549,7 @@ bool Stirred()
 {
 	bool stirred = false;
 
-	for (int i = 0; i < 2; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 		if (g_watch[i] == INVALID_HANDLE_VALUE ||
 			WaitForSingleObject(g_watch[i], 0) != WAIT_OBJECT_0)
@@ -544,7 +558,7 @@ bool Stirred()
 		}
 
 		FindNextChangeNotification(g_watch[i]);
-		g_packsStirred = g_packsStirred || i == 1;
+		g_packsStirred = g_packsStirred || i >= 1;
 		stirred = true;
 	}
 
@@ -586,6 +600,13 @@ bool ModFiles::Initialize()
 	WatchFolder(0, g_root);
 	WatchFolder(1, ModPacks::Root());
 
+	std::string gameMods = GetModDirectory();
+	while (!gameMods.empty() && (gameMods.back() == '\\' || gameMods.back() == '/'))
+		gameMods.pop_back();
+	gameMods += "\\mods";
+	if (GetFileAttributesA(gameMods.c_str()) != INVALID_FILE_ATTRIBUTES)
+		WatchFolder(2, gameMods);
+
 	UserMusic::Scan();
 	SoundPacks::Scan();
 	Rebuild();
@@ -616,6 +637,16 @@ bool ModFiles::Initialize()
 	}
 
 	HookManager::EnableAllHooks();
+
+#if !UNI2_IM_HAS_EMBEDS
+	if (InterlockedCompareExchange(&g_indexed, 0, 0) == 0)
+	{
+		g_createFileAHook.SetEnabled(false);
+		g_getFileAttributesAHook.SetEnabled(false);
+		g_createFileWHook.SetEnabled(false);
+		g_getFileAttributesWHook.SetEnabled(false);
+	}
+#endif
 
 	LOG("ModFiles: %s, from %s", g_status, g_root.c_str());
 	return true;

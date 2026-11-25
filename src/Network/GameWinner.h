@@ -1,22 +1,20 @@
 #pragma once
 
-#include "Network/RoundEvents.h"
-
 class GameWinner
 {
 public:
 	static constexpr int kNoWinner = -1;
-	static constexpr int kWinPattern = 52;
+	static constexpr int kUnwritten = -2;
+	static constexpr int kSettleFrames = 30;
 
-	struct Side
-	{
-		int pattern;
-		RoundEvents::Vitals vitals;
-	};
-
-	int Update(const Side& first, const Side& second);
-	void Reset();
+	void Arm();
+	void Disarm();
+	int Update(int recorded);
 
 private:
-	bool m_decided = false;
+	void ForgetCandidate();
+
+	bool m_armed = false;
+	int m_candidate = kUnwritten;
+	int m_heldFrames = 0;
 };

@@ -89,6 +89,11 @@ void BgVertexProbe::Arm()
 		InterlockedExchange(&g_armed, 1);
 }
 
+bool BgVertexProbe::IsActive()
+{
+	return InterlockedCompareExchange(&g_armed, 0, 0) != 0;
+}
+
 void BgVertexProbe::OnDraw(IDirect3DDevice9* device)
 {
 	if (InterlockedCompareExchange(&g_armed, 0, 0) == 0 || device == nullptr)

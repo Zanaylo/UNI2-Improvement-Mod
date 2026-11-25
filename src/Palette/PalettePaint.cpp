@@ -66,6 +66,7 @@ unsigned g_pass = 0;
 unsigned g_paintedPass = ~0u;
 bool g_allowed = false;
 bool g_atPreview = false;
+bool g_hasWork = false;
 
 unsigned g_changes = 0;
 unsigned g_shownChanges = 0;
@@ -93,7 +94,7 @@ int ResolveAt(uintptr_t named, int offset)
 	if (!TryReadMemory(&inner, reinterpret_cast<const void*>(named + offset), sizeof(inner)))
 		return -1;
 
-	return PaletteTexture::FindByPointer(inner);
+	return PaletteTexture::Adopt(inner);
 }
 
 int ResolveNamed(uintptr_t named)
@@ -101,7 +102,7 @@ int ResolveNamed(uintptr_t named)
 	if (named == 0)
 		return -1;
 
-	const int direct = PaletteTexture::FindByPointer(named);
+	const int direct = PaletteTexture::Adopt(named);
 
 	if (direct >= 0)
 		return direct;
@@ -109,7 +110,42 @@ int ResolveNamed(uintptr_t named)
 	return ResolveAt(named, GameOffsets::kPaletteWrapperTexture);
 }
 
-int ResolveOwners(uintptr_t owner, int* out, int max)
+int ResolveNativeOverride(int player)
+{
+	if (g_atPreview)
+		return -1;
+
+	void* const chara = MemoryMap::GetCharaSlot(player);
+	uint32_t table = 0;
+
+	if (chara == nullptr || !MemoryMap::ReadStructDword(chara, GameOffsets::kPlayerDataPaletteTable, table) ||
+		table == 0)
+	{
+		return -1;
+	}
+
+	uint32_t holder = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(table + GameOffsets::kPaletteTableOverride), holder) ||
+		holder == 0)
+	{
+		return -1;
+	}
+
+	const int direct = ResolveNamed(holder);
+
+	if (direct >= 0)
+		return direct;
+
+	uint32_t wrapper = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(holder), wrapper) || wrapper == 0)
+		return -1;
+
+	return ResolveNamed(wrapper);
+}
+
+int ResolveOwners(int player, uintptr_t owner, int* out, int max)
 {
 	uintptr_t candidates[PaletteSeat::kCandidates] = {};
 	const int count = PaletteSeat::GetCandidates(owner, candidates, PaletteSeat::kCandidates);
@@ -130,6 +166,14 @@ int ResolveOwners(uintptr_t owner, int* out, int max)
 
 		if (!seen)
 			out[found++] = index;
+	}
+
+	if (found == 0 && max > 0)
+	{
+		const int nativeIndex = ResolveNativeOverride(player);
+
+		if (nativeIndex >= 0)
+			out[found++] = nativeIndex;
 	}
 
 	return found;
@@ -479,6 +523,7 @@ void PalettePaint::StageRemote(int player, const uint8_t* colours)
 
 	memcpy(entry.remote, colours, kBytes);
 	entry.hasRemote = true;
+	++entry.revision;
 	NoteChange();
 
 	Follow(entry, player);
@@ -492,6 +537,7 @@ void PalettePaint::ClearRemote(int player)
 	Player& entry = g_players[player];
 
 	entry.hasRemote = false;
+	++entry.revision;
 	NoteChange();
 
 	if (!entry.staged && !entry.previewing)
@@ -588,22 +634,28 @@ void PalettePaint::OnFrame()
 		EffectPaint::Forget();
 	}
 
-	g_atPreview = IsPreviewScene(SceneWatch::Current());
+	const uint32_t scene = SceneWatch::Current();
+	g_atPreview = IsPreviewScene(scene);
 	g_allowed = g_atPreview || inMatch || g_modVals.paletteOutOfMatch;
 
 	if (!g_allowed)
 	{
+		g_hasWork = false;
+
 		for (int player = 0; player < kPlayers; ++player)
 			Release(g_players[player]);
 
 		return;
 	}
 
+	const bool checkUploads = scene == GameOffsets::kSceneNetwork && (g_pass & 3u) == 0;
+	bool anyWork = false;
+
 	for (int player = 0; player < kPlayers; ++player)
 	{
 		Player& entry = g_players[player];
 
-		if (g_atPreview)
+		if (checkUploads)
 			NoticeUploads(entry);
 
 		Follow(entry, player);
@@ -617,7 +669,7 @@ void PalettePaint::OnFrame()
 			entry.rows = rows;
 
 		int found[PaletteSeat::kCandidates] = {};
-		const int count = ResolveOwners(entry.owner, found, PaletteSeat::kCandidates);
+		const int count = ResolveOwners(player, entry.owner, found, PaletteSeat::kCandidates);
 
 		for (int slot = 0; slot < count; ++slot)
 			PaletteTexture::NoteInUse(found[slot]);
@@ -650,7 +702,12 @@ void PalettePaint::OnFrame()
 		entry.index = index;
 		entry.texture = resolved;
 		entry.painting = index >= 0 && AnyPainted(entry);
+
+		if ((entry.count > 0 && SourceFor(entry) != nullptr) || AnyPainted(entry))
+			anyWork = true;
 	}
+
+	g_hasWork = anyWork;
 }
 
 bool PalettePaint::ReadGameColours(int player, uint8_t* rgba)
@@ -680,7 +737,7 @@ bool PalettePaint::ReadWornColours(int player, uint8_t* rgba)
 
 void PalettePaint::OnDraw()
 {
-	if (!g_allowed)
+	if (!g_allowed || !g_hasWork)
 		return;
 
 	if (g_paintedPass == g_pass)
@@ -723,6 +780,11 @@ void PalettePaint::OnDraw()
 bool PalettePaint::IsAtPreview()
 {
 	return g_atPreview;
+}
+
+bool PalettePaint::HasAnyWork()
+{
+	return g_hasWork;
 }
 
 bool PalettePaint::IsPainting(int player)

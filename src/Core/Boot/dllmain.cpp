@@ -1,4 +1,5 @@
-﻿#include "Core/Boot/Compat.h"
+﻿#include "Addons/AddonManager.h"
+#include "Core/Boot/Compat.h"
 #include "Core/Boot/Modules.h"
 #include "Core/Config/IniStore.h"
 #include "Game/Engine/CodeSignatures.h"
@@ -139,6 +140,7 @@ void Stage_Settings()
 	Settings::ApplySettings();
 	Language::Initialize();
 	Hotkeys::Load();
+	AddonManager::PrepareBeforeFreeze();
 	Features::Freeze();
 
 	if (!Features::IsLoaded(FeatureCatalog::Id_Graphics))
@@ -295,8 +297,8 @@ DWORD WINAPI InitThread(LPVOID)
 	OpenLogger();
 	InstallCrashHandler();
 
-	BootTrace("%s %s starting, loaded as %s from %s, built %s %s", UNI2_IM_NAME, UNI2_IM_VERSION,
-		D3D9Proxy::LoadedAs(), GetModDirectory().c_str(), __DATE__, __TIME__);
+	BootTrace("%s %s%s starting, loaded as %s from %s, built %s %s", UNI2_IM_NAME, UNI2_IM_VERSION,
+		UNI2_IM_BUILD_TAG, D3D9Proxy::LoadedAs(), GetModDirectory().c_str(), __DATE__, __TIME__);
 	ConfigBoot::LogSummary();
 
 	if (!folders)
@@ -350,6 +352,7 @@ DWORD WINAPI InitThread(LPVOID)
 	Modules::RunGuarded("netplay", Stage_Netplay);
 	Modules::RunGuarded("input hooks", Stage_InputHooks);
 	Modules::RunGuarded("movie window", [] { MovieWindow::Install(); });
+	Modules::RunGuarded("addons", [] { AddonManager::Initialize(); });
 	Modules::RunGuarded("test harness", [] { Harness::Start(); });
 
 	FinishInitialization("Initialization finished");
@@ -381,8 +384,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 		SetModModuleHandle(hModule);
 		DisableThreadLibraryCalls(hModule);
 
-		BootTrace("%s %s attached to process %lu", UNI2_IM_NAME, UNI2_IM_VERSION,
-			GetCurrentProcessId());
+		BootTrace("%s %s%s attached to process %lu", UNI2_IM_NAME, UNI2_IM_VERSION,
+			UNI2_IM_BUILD_TAG, GetCurrentProcessId());
 
 		char mutexName[64] = {};
 		sprintf_s(mutexName, "UNI2_IM_instance_%lu", GetCurrentProcessId());
@@ -437,6 +440,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 			break;
 		}
 
+		AddonManager::Shutdown();
 		SoundOutput::Stop();
 		NetplayTick::Shutdown();
 		WindowManager::GetInstance().Shutdown();

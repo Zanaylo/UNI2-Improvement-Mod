@@ -26,6 +26,7 @@ constexpr size_t kInitialCapacity = 2048 * kVerticesPerQuad;
 IDirect3DDevice9* g_device = nullptr;
 IDirect3DStateBlock9* g_stateBlock = nullptr;
 IDirect3DTexture9* g_white = nullptr;
+bool g_gpuActive = false;
 bool g_openedScene = false;
 int g_blend = QuadRenderer::Blend_Normal;
 int g_opacity = ColourAlpha::kOpaque;
@@ -54,12 +55,97 @@ bool EnsureWhiteTexture(IDirect3DDevice9* device)
 	return true;
 }
 
+void ApplyBlendState(IDirect3DDevice9* device, int blend)
+{
+	if (blend == QuadRenderer::Blend_Additive)
+	{
+		device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+		device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+		return;
+	}
+
+	if (blend == QuadRenderer::Blend_Subtractive)
+	{
+		device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_REVSUBTRACT);
+		device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+		return;
+	}
+
+	device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
+	device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+}
+
+bool EnsureGpuActive()
+{
+	if (g_gpuActive)
+		return true;
+
+	if (g_device == nullptr || !EnsureWhiteTexture(g_device))
+		return false;
+
+	if (g_stateBlock == nullptr)
+	{
+		if (FAILED(g_device->CreateStateBlock(D3DSBT_ALL, &g_stateBlock)))
+			return false;
+	}
+	else if (FAILED(g_stateBlock->Capture()))
+	{
+		return false;
+	}
+
+	g_openedScene = SUCCEEDED(g_device->BeginScene());
+	if (!g_openedScene)
+		return false;
+
+	g_device->SetVertexShader(nullptr);
+	g_device->SetPixelShader(nullptr);
+	g_device->SetFVF(kFvf);
+
+	g_device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	g_device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+	g_device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+	g_device->SetRenderState(D3DRS_ZENABLE, FALSE);
+	g_device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+	g_device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	g_device->SetRenderState(D3DRS_LIGHTING, FALSE);
+	g_device->SetRenderState(D3DRS_FOGENABLE, FALSE);
+	g_device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
+	g_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+	g_device->SetRenderState(D3DRS_COLORWRITEENABLE, 0x0f);
+	g_device->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
+	ApplyBlendState(g_device, g_blend);
+
+	g_device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+	g_device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+	g_device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+	g_device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
+	g_device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+	g_device->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+	g_device->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
+	g_device->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
+
+	g_device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+	g_device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+	g_device->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+	g_device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+	g_device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+
+	g_gpuActive = true;
+	return true;
+}
+
 void Flush()
 {
 	if (g_device == nullptr || g_batch.empty())
 		return;
 
-	g_device->SetTexture(0, g_batchTexture);
+	if (!EnsureGpuActive())
+	{
+		g_batch.clear();
+		return;
+	}
+
+	g_device->SetTexture(0, g_batchTexture != nullptr ? g_batchTexture : g_white);
 	g_device->DrawPrimitiveUP(D3DPT_TRIANGLELIST, static_cast<UINT>(g_batch.size() / 3),
 		g_batch.data(), sizeof(Vertex));
 
@@ -79,9 +165,6 @@ void PushQuadCorners(IDirect3DTexture9* texture, float x, float y, float width, 
 {
 	if (g_device == nullptr || width <= 0.0f || height <= 0.0f)
 		return;
-
-	if (texture == nullptr)
-		texture = g_white;
 
 	if (texture != g_batchTexture)
 	{
@@ -126,9 +209,6 @@ void PushQuadRotated(IDirect3DTexture9* texture, float x, float y, float width, 
 {
 	if (g_device == nullptr || width <= 0.0f || height <= 0.0f)
 		return;
-
-	if (texture == nullptr)
-		texture = g_white;
 
 	if (texture != g_batchTexture)
 	{
@@ -175,66 +255,16 @@ bool QuadRenderer::Begin(IDirect3DDevice9* device)
 	if (device == nullptr || g_device != nullptr)
 		return false;
 
-	if (!EnsureWhiteTexture(device))
-		return false;
-
-	if (g_stateBlock == nullptr)
-	{
-		if (FAILED(device->CreateStateBlock(D3DSBT_ALL, &g_stateBlock)))
-			return false;
-	}
-	else if (FAILED(g_stateBlock->Capture()))
-	{
-		return false;
-	}
-
-	g_openedScene = SUCCEEDED(device->BeginScene());
-	if (!g_openedScene)
-		return false;
-
 	g_device = device;
+	g_gpuActive = false;
 
 	if (g_batch.capacity() < kInitialCapacity)
 		g_batch.reserve(kInitialCapacity);
 
 	g_batch.clear();
-	g_batchTexture = g_white;
+	g_batchTexture = nullptr;
 	g_blend = Blend_Normal;
 	g_opacity = ColourAlpha::kOpaque;
-
-	device->SetVertexShader(nullptr);
-	device->SetPixelShader(nullptr);
-	device->SetFVF(kFvf);
-
-	device->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-	device->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-	device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-	device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-	device->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
-	device->SetRenderState(D3DRS_ZENABLE, FALSE);
-	device->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
-	device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-	device->SetRenderState(D3DRS_LIGHTING, FALSE);
-	device->SetRenderState(D3DRS_FOGENABLE, FALSE);
-	device->SetRenderState(D3DRS_STENCILENABLE, FALSE);
-	device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
-	device->SetRenderState(D3DRS_COLORWRITEENABLE, 0x0f);
-	device->SetRenderState(D3DRS_SEPARATEALPHABLENDENABLE, FALSE);
-
-	device->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
-	device->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-	device->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
-	device->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-	device->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
-	device->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
-	device->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_DISABLE);
-	device->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE);
-
-	device->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-	device->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-	device->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
-	device->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-	device->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
 
 	return true;
 }
@@ -257,43 +287,33 @@ void QuadRenderer::SetBlend(int blend)
 	Flush();
 	g_blend = blend;
 
-	if (blend == Blend_Additive)
-	{
-		g_device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-		g_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
-		return;
-	}
-
-	if (blend == Blend_Subtractive)
-	{
-		g_device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_REVSUBTRACT);
-		g_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
-		return;
-	}
-
-	g_device->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-	g_device->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+	if (g_gpuActive)
+		ApplyBlendState(g_device, blend);
 }
 
 void QuadRenderer::End()
 {
-	SetBlend(Blend_Normal);
-
 	if (g_device == nullptr)
 		return;
 
 	Flush();
+	g_blend = Blend_Normal;
 
-	g_device->SetTexture(0, nullptr);
-
-	if (g_openedScene)
+	if (g_gpuActive)
 	{
-		g_device->EndScene();
-		g_openedScene = false;
-	}
+		g_device->SetTexture(0, nullptr);
 
-	if (g_stateBlock != nullptr)
-		g_stateBlock->Apply();
+		if (g_openedScene)
+		{
+			g_device->EndScene();
+			g_openedScene = false;
+		}
+
+		if (g_stateBlock != nullptr)
+			g_stateBlock->Apply();
+
+		g_gpuActive = false;
+	}
 
 	g_device = nullptr;
 }

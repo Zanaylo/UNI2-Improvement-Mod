@@ -24,6 +24,7 @@ const Route kRoutes[] = {
 	{ "Input", "Config\\Keybinds.ini" },
 	{ "Modules", "Config\\Modules.ini" },
 	{ "Mods", "Config\\Modules.ini" },
+	{ "Addons", "Config\\Addons.ini" },
 	{ "Training", "Config\\Training.ini" },
 	{ "FrameMeter", "Config\\Training.ini" },
 	{ "HudOpacity", "Config\\Training.ini" },

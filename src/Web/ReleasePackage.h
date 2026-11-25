@@ -6,7 +6,16 @@
 
 namespace ReleasePackage
 {
-	const GitHubRelease::Asset* Pick(const GitHubRelease::Release& release);
+	enum class Variant
+	{
+		Standard,
+		Minimal,
+	};
+
+	Variant VariantOfDescription(const std::string& description);
+
+	const GitHubRelease::Asset* Pick(const GitHubRelease::Release& release,
+		Variant variant = Variant::Standard);
 
 	bool ReadManifestSha256(const std::string& manifest, const std::string& assetName,
 		std::string& outSha, std::string& outError);

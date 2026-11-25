@@ -2,6 +2,7 @@
 
 #include "Core/Config/Settings.h"
 #include "Core/Config/interfaces.h"
+#include "Core/info.h"
 
 namespace {
 
@@ -48,18 +49,37 @@ void Features::Freeze()
 	g_frozen = true;
 }
 
+void Features::EnableTransient(FeatureCatalog::Id id)
+{
+	bool* const flag = Flag(id);
+
+	if (flag != nullptr)
+		*flag = true;
+}
+
+bool Features::IsAvailable(FeatureCatalog::Id id)
+{
+	return id >= 0 && id < FeatureCatalog::Id_COUNT;
+}
+
 bool Features::IsOn(FeatureCatalog::Id id)
 {
+	if (!IsAvailable(id))
+		return false;
+
 	const bool* const flag = Flag(id);
 	return flag != nullptr && *flag;
 }
 
 bool Features::IsLoaded(FeatureCatalog::Id id)
 {
+	if (!IsAvailable(id))
+		return false;
+
 	if (!g_frozen)
 		return IsOn(id);
 
-	return id >= 0 && id < FeatureCatalog::Id_COUNT && g_loaded[id];
+	return g_loaded[id];
 }
 
 bool Features::Shows(FeatureCatalog::Id id)

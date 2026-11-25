@@ -304,6 +304,11 @@ bool SceneUpscale::HoldsDeviceResources()
 	return g_state.IsHeld() || g_target.IsHeld() || g_upscaled.IsHeld() || g_snapshotUpscaled.IsHeld();
 }
 
+bool SceneUpscale::IsActive()
+{
+	return !g_failed && EffectiveKind() != UpscaleFilter::Kind_Off;
+}
+
 void SceneUpscale::Shutdown()
 {
 	OnDeviceLost();

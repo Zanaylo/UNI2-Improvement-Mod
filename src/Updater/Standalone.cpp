@@ -36,7 +36,18 @@ struct Installed
 	bool present = false;
 	bool ours = false;
 	std::string version;
+	ReleasePackage::Variant variant = ReleasePackage::Variant::Standard;
 };
+
+std::wstring VariantTag(ReleasePackage::Variant variant)
+{
+	return variant == ReleasePackage::Variant::Minimal ? L"" UNI2_IM_MINIMAL_TAG : L"";
+}
+
+const char* VariantLogTag(ReleasePackage::Variant variant)
+{
+	return variant == ReleasePackage::Variant::Minimal ? UNI2_IM_MINIMAL_TAG : "";
+}
 
 bool IsGameFolder(const std::wstring& folder)
 {
@@ -201,6 +212,8 @@ Installed ReadInstalled(const std::wstring& root)
 
 	out.ours = true;
 	out.version = text;
+	out.variant = ReleasePackage::VariantOfDescription(
+		UpdaterPaths::Utf8(VersionString(block, L"FileDescription")));
 	return out;
 }
 
@@ -219,7 +232,7 @@ Handoff HandoffFor(const std::wstring& root)
 	return handoff;
 }
 
-bool FetchLatest(GitHubRelease::Release& release)
+bool FetchLatest(GitHubRelease::Release& release, ReleasePackage::Variant variant)
 {
 	UpdaterUi::Task task;
 	task.SetStep(L"Asking GitHub for the latest release");
@@ -249,7 +262,7 @@ bool FetchLatest(GitHubRelease::Release& release)
 		return false;
 	}
 
-	if (ReleasePackage::Pick(release) != nullptr)
+	if (ReleasePackage::Pick(release, variant) != nullptr)
 		return true;
 
 	UpdaterUi::Tell(Tone::Error, L"The latest release has nothing to install", L"Release " +
@@ -261,14 +274,15 @@ bool FetchLatest(GitHubRelease::Release& release)
 void TellUpToDate(const Installed& installed, const std::wstring& root)
 {
 	UpdaterUi::Tell(Tone::Info, L"The UNI2 Improvement Mod is up to date", L"Version " +
-		Wide(installed.version) + L" is installed in\n" + root + L"\n\nThat is the latest "
-		L"release, so there is nothing to download.");
+		Wide(installed.version) + VariantTag(installed.variant) + L" is installed in\n" + root +
+		L"\n\nThat is the latest release, so there is nothing to download.");
 }
 
 bool Confirm(const Installed& installed, const GitHubRelease::Release& release,
 	const std::wstring& root)
 {
 	const std::wstring version = Wide(release.version);
+	const std::wstring tag = VariantTag(installed.variant);
 
 	UpdaterUi::Choice choice;
 	choice.details = Wide(release.notes);
@@ -277,8 +291,8 @@ bool Confirm(const Installed& installed, const GitHubRelease::Release& release,
 	if (installed.ours)
 	{
 		choice.instruction = L"An update is available";
-		choice.content = L"You have version " + Wide(installed.version) + L". Version " +
-			version + L" is out.";
+		choice.content = L"You have version " + Wide(installed.version) + tag + L". Version " +
+			version + tag + L" is out.";
 		choice.confirm = L"Update to " + version;
 		return UpdaterUi::Ask(choice);
 	}
@@ -330,9 +344,11 @@ bool Fetch(const GitHubRelease::Release& release, const GitHubRelease::Asset& pa
 	return false;
 }
 
-bool Download(const GitHubRelease::Release& release, const Handoff& handoff)
+bool Download(const GitHubRelease::Release& release, ReleasePackage::Variant variant,
+	const Handoff& handoff)
 {
-	const GitHubRelease::Asset& package = *ReleasePackage::Pick(release);
+	const GitHubRelease::Asset& package = *ReleasePackage::Pick(release, variant);
+	UpdaterLog::Write("selected release package %s", package.name.c_str());
 	const std::wstring downloads = Combine(UpdaterPaths::Parent(handoff.stagedRoot),
 		L"download");
 
@@ -460,13 +476,14 @@ int Flow()
 
 	const Installed installed = ReadInstalled(root);
 
-	UpdaterLog::Write("updater %s opened by hand in %s, the mod there is %s", UNI2_IM_VERSION,
+	UpdaterLog::Write("updater %s opened by hand in %s, the mod there is %s%s", UNI2_IM_VERSION,
 		UpdaterPaths::Utf8(root).c_str(), installed.ours ? installed.version.c_str() :
-		installed.present ? "an unknown dinput8.dll" : "not installed");
+		installed.present ? "an unknown dinput8.dll" : "not installed",
+		installed.ours ? VariantLogTag(installed.variant) : "");
 
 	GitHubRelease::Release release;
 
-	if (!FetchLatest(release))
+	if (!FetchLatest(release, installed.variant))
 		return 1;
 
 	if (installed.ours && GitHubRelease::Compare(release.version, installed.version) <= 0)
@@ -480,7 +497,7 @@ int Flow()
 
 	handoff.tag = Wide(release.tag);
 
-	if (!Download(release, handoff))
+	if (!Download(release, installed.variant, handoff))
 		return 1;
 
 	if (!GameIsClosed(root))
@@ -527,13 +544,14 @@ int FlowForGame(DWORD parentPid)
 
 	const Installed installed = ReadInstalled(root);
 
-	UpdaterLog::Write("updater %s opened by the game in %s, the mod there is %s", UNI2_IM_VERSION,
+	UpdaterLog::Write("updater %s opened by the game in %s, the mod there is %s%s", UNI2_IM_VERSION,
 		UpdaterPaths::Utf8(root).c_str(), installed.ours ? installed.version.c_str() :
-		"not a version this updater knows");
+		"not a version this updater knows",
+		installed.ours ? VariantLogTag(installed.variant) : "");
 
 	GitHubRelease::Release release;
 
-	if (!FetchLatest(release))
+	if (!FetchLatest(release, installed.variant))
 		return OfferGameAfterFailure(handoff);
 
 	if (installed.ours && GitHubRelease::Compare(release.version, installed.version) <= 0)
@@ -546,7 +564,7 @@ int FlowForGame(DWORD parentPid)
 
 	handoff.tag = Wide(release.tag);
 
-	if (!Download(release, handoff) || !InstallStaged(handoff))
+	if (!Download(release, installed.variant, handoff) || !InstallStaged(handoff))
 		return OfferGameAfterFailure(handoff);
 
 	Install::Relaunch(handoff);

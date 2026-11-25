@@ -1,5 +1,8 @@
 #include "Core/Boot/Modules.h"
 
+#include "Addons/AddonManager.h"
+#include "Game/Lobby/RoomAutomation.h"
+
 #include "Core/Config/Features.h"
 #include "Core/Config/interfaces.h"
 #include "Core/Harness/CleanFrame.h"
@@ -194,7 +197,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: chara tracker", [] { CharaTracker::Install(); } },
 	{ "game hooks: frame stepper", [] { FrameStepper::Initialize(); }, FeatureCatalog::Id_Training },
 	{ "game hooks: player control", [] { PlayerControl::Initialize(); }, FeatureCatalog::Id_Training },
-	{ "game hooks: palette memory", [] { PaletteMemory::Install(); }, FeatureCatalog::Id_Palettes },
+	{ "game hooks: palette memory", [] { if (g_modVals.showLegacyPalettes) PaletteMemory::Install(); }, FeatureCatalog::Id_Palettes },
 	{ "game hooks: palette owner probe", [] { PaletteOwnerProbe::Install(); }, FeatureCatalog::Id_Palettes },
 	{ "game hooks: effect paint", [] { EffectPaint::Install(); }, FeatureCatalog::Id_Palettes },
 	{ "game hooks: palette draw probe", [] { if (g_modVals.showLegacyPalettes) PaletteDrawProbe::Install(); }, FeatureCatalog::Id_Palettes },
@@ -230,6 +233,7 @@ const NamedStep kGameHooks[] = {
 	{ "game hooks: save state pool", [] { SaveStatePatch::Install(); }, FeatureCatalog::Id_NetcodePatches },
 	{ "game hooks: time sync", [] { TimeSyncPatch::Install(); }, FeatureCatalog::Id_NetcodePatches },
 	{ "game hooks: round trip smoothing", [] { RoundTripSmoothing::Install(); }, FeatureCatalog::Id_NetcodePatches },
+	{ "game hooks: room automation", [] { RoomAutomation::Install(); } },
 };
 
 const Task kPresentBegin[] = {
@@ -248,22 +252,23 @@ const Task kFrame[] = {
 	[] { RoundTripSmoothing::OnFrame(); },
 	[] { RoundLog::OnFrame(); },
 	[] { GameResults::OnFrame(); },
+	[] { AddonManager::OnFrame(); },
 	[] { RichPresence::OnFrame(); },
 	[] { BackgroundUpload::OnFrame(); },
-	[] { GamePatches::Update(); },
+	[] { if (Loaded(FeatureCatalog::Id_GamePatches)) GamePatches::Update(); },
 	[] { DataSearchPath::Assert(); },
 	[] { ModFiles::OnFrame(); },
-	[] { PatchPacks::OnFrame(); },
+	[] { if (Loaded(FeatureCatalog::Id_GamePatches)) PatchPacks::OnFrame(); },
 	[] { UpdateInstall::OnFrame(); },
 	[] { BalanceRules::OnFrame(); },
 	[] { GameRestart::OnFrame(); },
 	[] { if (Loaded(FeatureCatalog::Id_Training)) FrameStepper::Update(); },
 	[] { TrainingVisibility::Enforce(); },
-	[] { OstImport::Update(); },
+	[] { if (Loaded(FeatureCatalog::Id_Music)) OstImport::Update(); },
 	[] { if (Loaded(FeatureCatalog::Id_Stages)) StageImport::Update(); },
-	[] { BgGrade::Update(); },
-	[] { BgClear::Update(); },
-	[](IDirect3DDevice9* device) { BgMipmaps::Assert(device); },
+	[] { if (Loaded(FeatureCatalog::Id_Stages)) BgGrade::Update(); },
+	[] { if (Loaded(FeatureCatalog::Id_Stages)) BgClear::Update(); },
+	[](IDirect3DDevice9* device) { if (Loaded(FeatureCatalog::Id_Stages)) BgMipmaps::Assert(device); },
 	[] { if (Loaded(FeatureCatalog::Id_Stages)) StagePlacement::Update(); },
 	[] { if (Loaded(FeatureCatalog::Id_Stages)) StageKick::Update(); },
 	[] { BattleCockpit::Update(); },
@@ -273,11 +278,11 @@ const Task kFrame[] = {
 	[] { if (Loaded(FeatureCatalog::Id_CharacterArt)) { AnnouncerImport::Update(); } },
 	[] { if (Loaded(FeatureCatalog::Id_CharacterArt)) { PortraitCompose::Update(); } },
 	[] { if (Loaded(FeatureCatalog::Id_CharacterArt)) { PortraitDownload::Update(); } },
-	[] { SoundpackTransfer::Update(); },
-	[] { if (UserMusic::ConsumeChanged()) MusicRefresh::Reindex(); },
+	[] { if (Loaded(FeatureCatalog::Id_VoicesAndSound)) SoundpackTransfer::Update(); },
+	[] { if (Loaded(FeatureCatalog::Id_Music) && UserMusic::ConsumeChanged()) MusicRefresh::Reindex(); },
 	[] { if (Loaded(FeatureCatalog::Id_VoicesAndSound)) { CharaSounds::Update(); } },
-	[] { SubtitleWatch::Update(); },
-	[] { BgmControl::OnFrame(); },
+	[] { if (Loaded(FeatureCatalog::Id_Subtitles)) SubtitleWatch::Update(); },
+	[] { if (Loaded(FeatureCatalog::Id_Music)) BgmControl::OnFrame(); },
 	[] { TrainingSave::OnFrame(); },
 	[] { TrainingMenuItems::OnFrame(); },
 	[] { if (Loaded(FeatureCatalog::Id_Graphics)) { DisplaySettingsItems::OnFrame(); } },
@@ -326,6 +331,7 @@ const Task kPalette[] = {
 	[] { ColourPreview::OnFrame(); },
 	[] { EffectOwner::OnFrame(); },
 	[] { EffectBuffer::OnFrame(); },
+	[] { EffectPaint::OnFrame(); },
 	[] { PaletteChoice::OnFrame(); },
 	[] { PaletteTexture::OnFrame(); },
 	&LegacyPalettes,
@@ -337,16 +343,16 @@ const Task kShare[] = {
 };
 
 const Task kTail[] = {
-	[] { SceneScale::OnFrame(); },
+	[] { if (Loaded(FeatureCatalog::Id_Graphics)) SceneScale::OnFrame(); },
 	[] { Camera::PollDiagnosticRequest(); },
-	[] { SceneUpscale::OnPresent(); },
-	[] { StageDetail::OnPresent(); },
+	[] { if (Loaded(FeatureCatalog::Id_Graphics)) SceneUpscale::OnPresent(); },
+	[] { if (Loaded(FeatureCatalog::Id_Graphics)) StageDetail::OnPresent(); },
 	[] { InputProbe::OnFrame(); },
 	[] { StageColor::OnFrame(); },
 	[] { if (Loaded(FeatureCatalog::Id_Training)) QuickTraining::OnFrame(); },
 	[] { if (Loaded(FeatureCatalog::Id_Stages)) ExtraStages::OnFrame(); },
 	[] { if (Loaded(FeatureCatalog::Id_Stages)) OnlineStage::OnFrame(); },
-	[] { PotatoMode::OnFrame(); },
+	[] { if (Loaded(FeatureCatalog::Id_Graphics)) PotatoMode::OnFrame(); },
 	[](IDirect3DDevice9* device) { FrameGrab::OnPresent(device); },
 };
 
@@ -403,6 +409,15 @@ void Accumulate(Modules::Group group, int index, int64_t spent)
 void RunTasks(Modules::Group group, IDirect3DDevice9* device)
 {
 	const GroupTable& table = kGroups[group];
+	const bool timed = Profiler::IsEnabled() || SpikeWatch::IsActive();
+
+	if (!timed)
+	{
+		for (int i = 0; i < table.count; ++i)
+			table.tasks[i].Run(device);
+
+		return;
+	}
 
 	for (int i = 0; i < table.count; ++i)
 	{

@@ -7,6 +7,7 @@ renderer. Built on the architecture of
 [BBCF-Improvement-Mod](https://github.com/libreofficecalc/BBCF-Improvement-Mod).
 
 **[Download](https://github.com/Zanaylo/UNI2-Improvement-Mod/releases)** ·
+**[Modding & Add-ons Guide (PT-BR)](MODDING_GUIDE.md)** ·
 **[Wiki](https://github.com/Zanaylo/UNI2-Improvement-Mod/wiki)** ·
 [Português](https://github.com/Zanaylo/UNI2-Improvement-Mod/wiki/Portugues) ·
 [日本語](https://github.com/Zanaylo/UNI2-Improvement-Mod/wiki/Japanese)
@@ -15,13 +16,15 @@ renderer. Built on the architecture of
 
 1. Download the zip from the [releases page](https://github.com/Zanaylo/UNI2-Improvement-Mod/releases).
 2. In Steam: right click the game → **Manage** → **Browse local files**.
-3. Extract the zip there, next to `uni2.exe`. You get `dinput8.dll` and `UNI2IMUpdater.exe`.
-4. Start the game and press **F1**.
+3. Extract the zip there, next to `uni2.exe`. You get `dinput8.dll`, `UNI2ModLoader.exe` and `UNI2IMUpdater.exe`.
+4. Open `UNI2ModLoader.exe` to manage add-ons, file mods and base modules, or start the game directly and press **F1**.
+
+`UNI2ModLoader.exe` (RmlUi 6.0 + Direct3D 9Ex) manages Lua and native add-ons (`UNI2-IM\Addons\`), file mods (`<game>\mods\` and `UNI2-IM\Packs\`, supporting both folders and direct `.zip` archives), GitHub / Google Drive bundle installs, and launches the game cleanly through Steam with no DLL injection. See [MODDING_GUIDE.md](MODDING_GUIDE.md) for a full tutorial on creating mods and add-ons.
 
 `UNI2IMUpdater.exe` installs later versions. Open it yourself to install the mod or update it
 from GitHub; it tells you when you already have the latest.
 
-To uninstall, delete both files. Nothing else is touched.
+To uninstall, delete those files. Nothing else is touched.
 
 **Linux and Steam Deck.** Same two files plus one launch option. Right click the game →
 **Properties** → **Launch options**, and paste this exactly:
@@ -105,7 +108,7 @@ The mod sends nothing about you anywhere. This is everything it does over the ne
 - [Hantei-kun](https://github.com/Zanaylo/Hantei-kun) - HA6 / CG / PAL format ground truth
 - [undernightinbirth wiki](https://github.com/Fatih120/undernightinbirth) - modding documentation
 - [Under Night In-Birth Wiki](https://inbirth.wiki.gg) - character art for the portrait pack
-- [Dear ImGui](https://github.com/ocornut/imgui), [MinHook](https://github.com/TsudaKageyu/minhook)
+- [Dear ImGui](https://github.com/ocornut/imgui), [MinHook](https://github.com/TsudaKageyu/minhook), [Lua 5.4](https://www.lua.org)
 - **Hikari** - Thanks a lot for all the help with palettes and stages
 - **Under Night In-Birth Wiki** - Thank you to everyone who keeps the wiki and its art gallery alive; the portrait pack would not exist without it
 

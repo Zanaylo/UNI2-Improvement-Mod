@@ -36,6 +36,7 @@ bool ReplayRecord::FromPayload(const std::vector<uint8_t>& payload, const Facts&
 	WriteAt(record, kOffAuthorId, facts.author);
 	WriteAt(record, kOffTime, facts.time);
 	WriteAt(record, kOffTailTime, facts.time);
+	WriteAt(record, kOffWinner, facts.winner);
 
 	for (int player = 0; player < kPlayers; ++player)
 		WritePlayer(record, player, facts.player[player]);

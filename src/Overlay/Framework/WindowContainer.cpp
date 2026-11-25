@@ -40,7 +40,7 @@ WindowContainer::WindowContainer()
 	}
 
 	m_windows[WindowType_Main] = std::make_unique<MainWindow>(
-		UNI2_IM_NAME " " UNI2_IM_VERSION, true);
+		UNI2_IM_NAME " " UNI2_IM_VERSION UNI2_IM_BUILD_TAG, true);
 
 	m_windows[WindowType_HitboxOverlay] = std::make_unique<HitboxOverlay>(
 		"##hitboxoverlay", false,

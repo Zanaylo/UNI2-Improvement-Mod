@@ -1,0 +1,183 @@
+<rml>
+<head>
+	<title>Great Lobby</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+<div id="app">
+
+	<!-- top bar -->
+	<div id="top">
+		<div class="logo">
+			<div class="mark">GL</div>
+			<div><div class="t1">GREAT LOBBY</div><div class="t2">UNI2 · LOBBY</div></div>
+		</div>
+		<div class="sep"></div>
+		<div class="room">
+			<div class="title">{{room_name}}</div>
+			<div class="meta">
+				<span class="chip casual">Casual</span>
+				<span class="chip" data-if="demo">Demonstração</span>
+				<span class="chip">Modo <span class="v" data-if="mode == 'queue'">Fila</span><span class="v" data-if="mode != 'queue'">Desafio</span></span>
+				<span class="chip" data-if="mode == 'queue' &amp;&amp; rotation == 'ws'">Quem ganha fica</span>
+				<span class="chip">Série <span class="v">{{ft}}</span></span>
+				<span class="chip">Mesas <span class="v">{{tables.size}}</span></span>
+				<span class="chip">Local <span class="v">{{place}}</span></span>
+			</div>
+		</div>
+		<div class="host"><span class="crown">♛</span><div><div class="lbl">HOST</div><div class="who">{{host}}</div></div></div>
+		<div class="grow"></div>
+		<div class="btn gold" data-if="is_host">♛ Você é o host</div>
+		<div class="btn" data-event-click="invite()">Convidar</div>
+		<div class="btn" data-event-click="open_history()">Histórico</div>
+		<div class="btn" data-class-tourlive="tour_state == 'live' || tour_state == 'open'" data-event-click="open_tour()">Torneio<span class="dot" data-if="tour_state == 'live' || tour_state == 'open'"></span></div>
+		<div class="btn gear" data-event-click="open_settings()">⚙</div>
+		<div class="btn" data-event-click="leave()">Sair do lobby<span class="key k-b">{{g_b}}</span></div>
+		<div class="cap">
+			<div class="n">{{members}}<span class="of">/{{capacity}}</span></div>
+			<div class="lbl">NA SALA</div>
+			<div class="capbar"><div class="fill"></div></div>
+		</div>
+	</div>
+
+	<!-- main -->
+	<div id="main">
+		<div id="left">
+			<div class="sectitle">
+				<div class="bar"></div><span class="h">Mesas</span><span class="sub">{{summary}}</span>
+			</div>
+
+			<div id="tables">
+				<div class="card" data-for="t : tables" data-class-watching="t.watching">
+					<div class="hd">
+						Mesa {{t.number}}
+						<span class="pill" data-class-live="t.state == 'live'" data-class-sel="t.state == 'sel'"
+							data-class-rem="t.state == 'rem'" data-class-free="t.state == 'free'">{{t.state_label}}</span>
+						<span class="tag">{{t.tag}}</span>
+						<span class="tag streak" data-if="t.streak &gt; 1">{{t.streak}} seguidas</span>
+						<span class="tag tour" data-if="t.note != ''">{{t.note}}</span>
+					</div>
+
+					<div class="vs" data-if="t.state != 'free'">
+						<div class="pl">
+							<img class="face" data-attr-src="t.a.face"/>
+							<div class="name">{{t.a.name}}</div>
+							<div class="char">{{t.a.character}}</div>
+							<div class="rounds"><div class="round" data-class-won="t.a.rounds > 0"></div><div class="round" data-class-won="t.a.rounds > 1"></div></div>
+						</div>
+						<div class="mid">
+							<div class="score">{{t.a.score}}<span class="dash"> – </span>{{t.b.score}}</div>
+							<div class="detail">{{t.detail}}</div>
+							<div class="detail auto" data-if="t.mine &amp;&amp; auto_ready_in &gt; 0">Pronto automático em {{auto_ready_in}} s</div>
+						</div>
+						<div class="pl r">
+							<img class="face" data-attr-src="t.b.face"/>
+							<div class="name">{{t.b.name}}</div>
+							<div class="char">{{t.b.character}}</div>
+							<div class="rounds"><div class="round" data-class-won="t.b.rounds > 0"></div><div class="round" data-class-won="t.b.rounds > 1"></div></div>
+						</div>
+					</div>
+					<div class="foot" data-if="t.state != 'free'">
+						<span class="eye" data-if="demo"><span class="v">{{t.viewers}}</span>/24 assistindo · <span class="ping">{{t.ping}} ms</span></span>
+						<span class="eye" data-if="!demo">ping entre os dois · <span class="ping">{{t.ping}} ms</span></span>
+						<div class="btn small pri" data-if="t.watching &amp;&amp; demo">Assistindo</div>
+						<div class="btn small red" data-if="t.watching &amp;&amp; !demo" data-event-click="stop_watch()">Parar de assistir</div>
+						<div class="btn small" data-if="!t.watching &amp;&amp; !t.mine &amp;&amp; (demo || t.state == 'live')" data-event-click="watch(t.number)">Assistir</div>
+						<div class="btn small pri" data-if="t.mine &amp;&amp; t.state == 'sel' &amp;&amp; !demo" data-event-click="ready(t.number)">Pronto<span class="key k-start">{{g_start}}</span></div>
+						<div class="btn small red" data-if="t.mine" data-event-click="release(t.number)">Sair da mesa</div>
+						<div class="btn small gold" data-if="is_host &amp;&amp; !demo &amp;&amp; !t.mine" data-event-click="release(t.number)">♛ Liberar</div>
+					</div>
+
+					<div class="empty" data-if="t.state == 'free'">
+						<div class="who">Mesa livre</div>
+						<div>{{t.detail}}</div>
+					</div>
+				</div>
+			</div>
+
+			<div id="queue">
+				<div class="sectitle">
+					<div class="bar"></div><span class="h small">Fila</span><span class="sub">{{queue_summary}}</span>
+					<div class="grow"></div>
+					<div class="btn small pri" data-if="mode == 'queue' &amp;&amp; !in_queue" data-event-click="toggle_queue()">Entrar na fila<span class="key k-x">{{g_x}}</span></div>
+					<div class="btn small red" data-if="mode == 'queue' &amp;&amp; in_queue" data-event-click="toggle_queue()">Sair da fila<span class="key k-x">{{g_x}}</span></div>
+				</div>
+				<div class="qrow">
+					<div class="match" data-for="q : queue" data-class-mine="q.mine" data-class-next="q.next">
+						<span class="no">{{q.position}}</span><span class="nm">{{q.a}}</span><span class="v">VS</span><span class="nm">{{q.b}}</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="right">
+			<div class="panel" id="members-panel">
+				<div class="phd">
+					<div style="width: 6dp; height: 18dp; background-color: #c0263f; margin-right: 10dp;"></div>
+					<span class="sectitle"><span class="h small">Membros</span><span class="sub" data-if="mode != 'queue'">{{members}} online · A no nome = desafiar</span><span class="sub" data-if="mode == 'queue'">{{members}} online</span></span>
+					<span class="hint">LB / RB filtra</span>
+				</div>
+				<div class="filters">
+					<span class="f" data-for="f : filters" data-class-on="f.key == filter" data-event-click="set_filter(f.key)">{{f.label}}<span class="c">{{f.count}}</span></span>
+				</div>
+				<div id="members">
+					<div data-for="g : groups">
+						<div data-if="g.members.size > 0 &amp;&amp; (g.key == 'host' || filter == 'all' || filter == g.key)">
+							<div class="grp">{{g.title}} · {{g.members.size}}</div>
+							<div class="m" data-for="m : g.members" data-class-me="m.me" data-event-click="member(m.id)">
+								<img class="a" data-attr-src="m.face"/>
+								<div class="n"><span class="crown" data-if="m.host">♛ </span>{{m.name}}<span class="c">{{m.character}}</span></div>
+								<span class="st" data-class-fight="m.status == 'fight'" data-class-watch="m.status == 'watch'"
+									data-class-queue="m.status == 'queue'" data-class-idle="m.status == 'idle'" data-class-afk="m.status == 'afk'">{{m.status_label}}</span>
+								<span class="p">{{m.ping}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="panel" id="chat-panel">
+				<div class="phd">
+					<div style="width: 6dp; height: 18dp; background-color: #c0263f; margin-right: 10dp;"></div>
+					<span class="sectitle"><span class="h small">Chat</span><span class="sub">lobby inteiro</span></span>
+				</div>
+				<div class="pinned" data-if="pinned != ''"><span class="pin-lbl">FIXADO</span>{{pinned}}</div>
+				<div class="chat">
+					<div class="msg" data-for="line : chat" data-class-sys="line.kind == 'sys'">
+						<span class="arrow" data-if="line.kind == 'sys'">▸</span>
+						<span class="au" data-if="line.kind != 'sys'" data-style-color="line.colour">{{line.author}}</span>{{line.text}}
+					</div>
+				</div>
+				<div class="quick">
+					<span class="qp" data-for="q : quick_phrases" data-event-click="quick(q.label)">{{q.label}}</span>
+				</div>
+				<div class="chatline">
+					<div class="btn small kbbtn" data-event-click="open_kb('chat')">⌨<span class="key k-y">{{g_y}}</span></div>
+					<input class="text chatinput" type="text" maxlength="200" data-value="chat_draft"/>
+					<div class="btn small pri" data-event-click="send_chat()">Enviar</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- bottom bar -->
+	<div id="bottom">
+		<div class="me"><div class="lbl">VOCÊ</div><div class="who">{{me.name}}</div></div>
+		<div class="pick" style="tab-index: none; border: 0; background-color: transparent; width: auto; margin: 0 0 0 16dp; padding: 0 0 0 16dp; border-left: 1px #3a3742; display: flex; align-items: center; text-align: left;">
+			<img class="face" style="width: 48dp; height: 48dp; margin-right: 10dp;" data-attr-src="me.face"/>
+			<div class="c" style="font-family: Barlow Condensed; font-weight: 700; font-size: 17dp;">{{me.character}}<div style="color: #9a97a3; font-weight: 600; font-size: 12dp; letter-spacing: 1.2dp;">{{my_colour}} · PERSONAGEM PRINCIPAL</div></div>
+		</div>
+		<div class="status"><div class="big">{{my_status}}</div><div class="s">{{my_status_detail}}</div></div>
+		<div class="grow"></div>
+		<div class="btn" autofocus="" data-event-click="open_picker()">Trocar personagem</div>
+		<div class="btn pri" data-event-click="quick_match()">Partida rápida</div>
+		<div class="btn" data-if="mode != 'queue'" data-event-click="set_filter('idle')">Desafiar jogador</div>
+		<div class="btn pri" data-if="mode == 'queue' &amp;&amp; !in_queue" data-event-click="toggle_queue()">Entrar na fila<span class="key k-x">{{g_x}}</span></div>
+		<div class="btn red" data-if="mode == 'queue' &amp;&amp; in_queue" data-event-click="toggle_queue()">Sair da fila<span class="key k-x">{{g_x}}</span></div>
+		<div class="hints"><span class="key k-start">{{g_start}}</span>Pronto<span class="key k-y">{{g_y}}</span>Chat<span class="key k-a">{{g_a}}</span>Selecionar<span class="key k-b">{{g_b}}</span>Voltar<span class="key k-lb">{{g_lb}}</span><span class="key k-rb" style="margin-left: 0;">{{g_rb}}</span>Filtro</div>
+	</div>
+
+	<div class="toast" data-if="toast != ''">{{toast}}</div>
+</div>
+</body>
+</rml>

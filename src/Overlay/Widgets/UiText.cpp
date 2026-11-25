@@ -10,8 +10,8 @@
 
 namespace {
 
-const ImVec4 kWarnColour = ImVec4(0.95f, 0.55f, 0.45f, 1.0f);
-const ImVec4 kGoodColour = ImVec4(0.45f, 0.80f, 0.50f, 1.0f);
+const ImVec4 kWarnColour = ImVec4(0.98f, 0.44f, 0.52f, 1.0f);
+const ImVec4 kGoodColour = ImVec4(0.204f, 0.827f, 0.600f, 1.0f);
 const char* const kLoneString = "%s";
 
 void Wrapped(const ImVec4& colour, const char* format, va_list arguments)

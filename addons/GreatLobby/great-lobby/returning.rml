@@ -1,0 +1,17 @@
+<rml>
+<head>
+	<title>Great Lobby - voltando</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="returning" data-model="gl">
+	<div id="return-card">
+		<div class="st-head">GREAT LOBBY</div>
+		<div class="rt-title">Voltando ao lobby…</div>
+		<div class="st-load">
+			<div class="spinner"><div class="d d0"></div><div class="d d1"></div><div class="d d2"></div><div class="d d3"></div><div class="d d4"></div><div class="d d5"></div><div class="d d6"></div><div class="d d7"></div></div>
+			<div class="st-text">O jogo está reabrindo o modo Network, aguarde.</div>
+		</div>
+		<div class="st-bar"><div class="rt-fill"></div></div>
+	</div>
+</body>
+</rml>

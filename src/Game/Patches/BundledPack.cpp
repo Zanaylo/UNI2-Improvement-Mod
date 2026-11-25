@@ -1,5 +1,7 @@
 #include "Game/Patches/BundledPack.h"
 
+#include "Addons/AddonManager.h"
+#include "Core/FileSystem.h"
 #include "Core/utils.h"
 
 #include <Windows.h>
@@ -14,16 +16,67 @@ constexpr const char* kType = "PATCHPACK";
 struct Found
 {
 	std::string id;
-	const uint8_t* data;
-	size_t size;
+	std::vector<uint8_t> owned;
+	const uint8_t* data = nullptr;
+	size_t size = 0;
 };
 
 std::vector<Found> g_packs;
 bool g_scanned = false;
 
+bool AlreadyHave(const std::string& id)
+{
+	for (const Found& pack : g_packs)
+	{
+		if (_stricmp(pack.id.c_str(), id.c_str()) == 0)
+			return true;
+	}
+
+	return false;
+}
+
+void ScanFolder(const std::string& folder)
+{
+	WIN32_FIND_DATAA found = {};
+	const HANDLE search = FindFirstFileA((folder + "\\*.pack").c_str(), &found);
+
+	if (search == INVALID_HANDLE_VALUE)
+		return;
+
+	do
+	{
+		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+			continue;
+
+		const std::string id = found.cFileName;
+
+		if (AlreadyHave(id))
+			continue;
+
+		std::vector<uint8_t> bytes;
+
+		if (!ReadWholeFile(folder + "\\" + id, bytes) || bytes.empty())
+			continue;
+
+		Found entry;
+		entry.id = id;
+		entry.size = bytes.size();
+		entry.owned = std::move(bytes);
+		g_packs.push_back(std::move(entry));
+	}
+	while (FindNextFileA(search, &found) != 0);
+
+	FindClose(search);
+}
+
 BOOL CALLBACK OnResource(HMODULE module, LPCSTR, LPSTR name, LONG_PTR)
 {
 	if (IS_INTRESOURCE(name))
+		return TRUE;
+
+	const std::string id = ResourceFileName(name);
+
+	if (AlreadyHave(id))
 		return TRUE;
 
 	const HRSRC found = FindResourceA(module, name, kType);
@@ -43,11 +96,11 @@ BOOL CALLBACK OnResource(HMODULE module, LPCSTR, LPSTR name, LONG_PTR)
 		return TRUE;
 
 	Found entry;
-	entry.id = ResourceFileName(name);
+	entry.id = id;
 	entry.data = static_cast<const uint8_t*>(data);
 	entry.size = size;
 
-	g_packs.push_back(entry);
+	g_packs.push_back(std::move(entry));
 	return TRUE;
 }
 
@@ -58,12 +111,15 @@ void Scan()
 
 	g_scanned = true;
 
+	ScanFolder(GetModAssetPath("Patches"));
+
+	for (const std::string& addonFolder : AddonManager::EnabledFolders())
+		ScanFolder(addonFolder + "\\Patches");
+
 	const HMODULE module = GetModModuleHandle();
 
-	if (module == nullptr)
-		return;
-
-	EnumResourceNamesA(module, kType, &OnResource, 0);
+	if (module != nullptr)
+		EnumResourceNamesA(module, kType, &OnResource, 0);
 }
 
 }
@@ -83,9 +139,10 @@ bool BundledPack::Get(int index, const uint8_t*& outData, size_t& outSize)
 	if (index < 0 || index >= Count())
 		return false;
 
-	outData = g_packs[index].data;
-	outSize = g_packs[index].size;
-	return true;
+	const Found& entry = g_packs[index];
+	outData = entry.owned.empty() ? entry.data : entry.owned.data();
+	outSize = entry.size;
+	return outData != nullptr && outSize > 0;
 }
 
 int BundledPack::Find(const char* id)

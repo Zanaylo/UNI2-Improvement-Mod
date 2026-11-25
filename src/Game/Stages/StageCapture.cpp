@@ -112,3 +112,8 @@ void StageCapture::OnDeviceLost()
 {
 	ReleaseFeed();
 }
+
+bool StageCapture::IsActive()
+{
+	return g_card != nullptr;
+}

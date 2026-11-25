@@ -46,7 +46,12 @@
     <TargetName>dinput8</TargetName>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\$(Configuration)\</IntDir>
-    <IncludePath>$(ProjectDir)src;$(ProjectDir)depends\imgui;$(ProjectDir)depends\imgui\backends;$(ProjectDir)depends\minhook\include;$(ProjectDir)depends\minimp3;$(ProjectDir)depends\vorbis\include;$(ProjectDir)depends\vorbis\vorbis;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)src;$(ProjectDir)depends\imgui;$(ProjectDir)depends\imgui\backends;$(ProjectDir)depends\minhook\include;$(ProjectDir)depends\minimp3;$(ProjectDir)depends\vorbis\include;$(ProjectDir)depends\vorbis\vorbis;$(ProjectDir)depends\lua;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MinimalBuild)'=='true'">
+    <OutDir>$(SolutionDir)bin\$(Configuration)Minimal\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)Minimal\</IntDir>
   </PropertyGroup>
 
   <PropertyGroup Label="Debugging">
@@ -111,7 +116,57 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
+  <ItemDefinitionGroup Condition="'$(FullEmbeds)'=='true'">
+    <ClCompile>
+      <PreprocessorDefinitions>UNI2_IM_FULL_EMBEDS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>UNI2_IM_FULL_EMBEDS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+
   <ItemGroup>
+    <ClCompile Include="src\Addons\AddonManifest.cpp" />
+    <ClCompile Include="src\Addons\AddonManager.cpp" />
+    <ClCompile Include="src\Addons\LuaHost.cpp" />
+    <ClCompile Include="src\Addons\LuaBindingsCore.cpp" />
+    <ClCompile Include="src\Addons\LuaBindingsUi.cpp" />
+    <ClCompile Include="src\Game\Lobby\RoomAutomation.cpp" />
+    <ClCompile Include="src\Web\HttpRequest.cpp" />
+    <ClCompile Include="src\Overlay\Hud\Toast.cpp" />
+    <ClCompile Include="src\Overlay\Hud\ToastQueue.cpp" />
+    <ClCompile Include="depends\lua\lapi.c" />
+    <ClCompile Include="depends\lua\lauxlib.c" />
+    <ClCompile Include="depends\lua\lbaselib.c" />
+    <ClCompile Include="depends\lua\lcode.c" />
+    <ClCompile Include="depends\lua\lcorolib.c" />
+    <ClCompile Include="depends\lua\lctype.c" />
+    <ClCompile Include="depends\lua\ldblib.c" />
+    <ClCompile Include="depends\lua\ldebug.c" />
+    <ClCompile Include="depends\lua\ldo.c" />
+    <ClCompile Include="depends\lua\ldump.c" />
+    <ClCompile Include="depends\lua\lfunc.c" />
+    <ClCompile Include="depends\lua\lgc.c" />
+    <ClCompile Include="depends\lua\linit.c" />
+    <ClCompile Include="depends\lua\liolib.c" />
+    <ClCompile Include="depends\lua\llex.c" />
+    <ClCompile Include="depends\lua\lmathlib.c" />
+    <ClCompile Include="depends\lua\lmem.c" />
+    <ClCompile Include="depends\lua\loadlib.c" />
+    <ClCompile Include="depends\lua\lobject.c" />
+    <ClCompile Include="depends\lua\lopcodes.c" />
+    <ClCompile Include="depends\lua\loslib.c" />
+    <ClCompile Include="depends\lua\lparser.c" />
+    <ClCompile Include="depends\lua\lstate.c" />
+    <ClCompile Include="depends\lua\lstring.c" />
+    <ClCompile Include="depends\lua\lstrlib.c" />
+    <ClCompile Include="depends\lua\ltable.c" />
+    <ClCompile Include="depends\lua\ltablib.c" />
+    <ClCompile Include="depends\lua\ltm.c" />
+    <ClCompile Include="depends\lua\lundump.c" />
+    <ClCompile Include="depends\lua\lutf8lib.c" />
+    <ClCompile Include="depends\lua\lvm.c" />
+    <ClCompile Include="depends\lua\lzio.c" />
     <ClCompile Include="src\Game\Customize\AnnouncerScroll.cpp" />
     <ClCompile Include="src\Overlay\Windows\MiscWindow.cpp" />
     <ClCompile Include="src\Core\Text\Language.cpp" />

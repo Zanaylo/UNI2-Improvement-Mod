@@ -1,0 +1,79 @@
+<rml>
+<head>
+	<title>Great Lobby - personagem</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="select" data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+<div id="select">
+
+	<div id="select-top">
+		<div class="logo">
+			<div class="mark">GL</div>
+			<div><div class="t1">GREAT LOBBY</div><div class="t2">SELEÇÃO DE PERSONAGEM</div></div>
+		</div>
+		<div class="grow"></div>
+		<div class="steps">
+			<span class="step" data-class-on="picker_step == 'char'">1 · Personagem</span>
+			<span class="step" data-class-on="picker_step == 'colour'">2 · Cor</span>
+		</div>
+	</div>
+
+	<div id="select-main">
+		<!-- portrait -->
+		<div id="select-hero">
+			<img class="hero" data-attr-src="picker_face"/>
+			<div class="hero-name">{{picker_char_name}}</div>
+			<div class="hero-colour">Cor {{picker_colour}}<span data-if="my_custom != ''"> · {{my_custom}}</span></div>
+			<div class="hero-swatches">
+				<div data-for="c : colours" data-if="c.selected">
+					<div class="sw big" data-style-background-color="c.s1"></div>
+					<div class="sw big" data-style-background-color="c.s2"></div>
+					<div class="sw big" data-style-background-color="c.s3"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- step 1: characters -->
+		<div id="select-grid" data-if="picker_step == 'char'">
+			<div class="sel-title">Escolha o personagem</div>
+			<div class="chars">
+				<div class="cell" data-for="c : characters" data-attr-id="c.dom_id" data-class-on="c.selected" data-event-click="pick(c.id)">
+					<img data-attr-src="c.face"/>
+					<div class="nm">{{c.name}}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- step 2: colours -->
+		<div id="select-colours" data-if="picker_step == 'colour'">
+			<div class="sel-title">Escolha a cor de {{picker_char_name}}</div>
+			<div class="chips">
+				<div class="chip-c" data-for="c : colours" data-attr-id="c.dom_id" data-class-on="c.selected" data-event-click="pick_colour(c.index)">
+					<div class="sws">
+						<div class="sw" data-style-background-color="c.s1"></div>
+						<div class="sw" data-style-background-color="c.s2"></div>
+						<div class="sw" data-style-background-color="c.s3"></div>
+					</div>
+					<div class="lb">{{c.label}}</div>
+				</div>
+			</div>
+			<div class="sel-note">As amostras são as mesmas que o jogo mostra no menu de cores.</div>
+			<div class="sel-title custom-title">Cores custom (do jogo e paletas do IM)</div>
+			<div class="chips customs" data-if="customs.size &gt; 0">
+				<div class="chip-c custom" data-for="p : customs" data-attr-id="p.dom_id" data-class-on="p.selected" data-event-click="pick_custom(p.file)">
+					<div class="lb">{{p.label}}</div>
+				</div>
+			</div>
+			<div class="sel-note" data-if="customs.size &gt; 0">A cor custom vai por cima da cor escolhida acima e é enviada para o oponente e para quem assiste. As do jogo são as do menu de personalização de cores.</div>
+			<div class="sel-note" data-if="customs.size == 0">Nenhuma paleta custom para {{picker_char_name}}. Crie no editor de paletas do IM (F1) ou coloque arquivos em UNI2-IM/Palettes/{{picker_char_name}}.</div>
+		</div>
+	</div>
+
+	<div id="select-bottom">
+		<div class="grow"></div>
+		<div class="hints" data-if="picker_step == 'char'"><span class="key k-a">{{g_a}}</span>Escolher<span class="key k-b">{{g_b}}</span>Cancelar</div>
+		<div class="hints" data-if="picker_step == 'colour'"><span class="key k-a">{{g_a}}</span>Confirmar<span class="key k-lb">{{g_lb}}</span><span class="key k-rb" style="margin-left: 0;">{{g_rb}}</span>Trocar cor<span class="key k-b">{{g_b}}</span>Voltar ao personagem</div>
+	</div>
+</div>
+</body>
+</rml>

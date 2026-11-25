@@ -290,6 +290,7 @@ namespace GameOffsets
 	constexpr uintptr_t kPlayerDataPaletteTableAlt = 0x768;
 	constexpr uintptr_t kPaletteTableFirst = 0x58;
 	constexpr uintptr_t kPaletteTableCurrent = 0x4;
+	constexpr uintptr_t kPaletteTableOverride = 0x40;
 	constexpr uintptr_t kTintRequestPalette = 0x2c;
 	constexpr uintptr_t kTintPaletteBeforeTable = 0x400;
 	constexpr int kPaletteWrapperTexture = 0xc;
@@ -636,6 +637,7 @@ namespace GameOffsets
 	constexpr uintptr_t kReplayRoundsBegin = 0xe8;
 	constexpr uintptr_t kReplayRoundsEnd = 0xec;
 	constexpr size_t kReplayRoundStride = 0xc2c;
+	constexpr uintptr_t kReplayWinnerSide = 0x2c;
 
 	constexpr uintptr_t kSceneId = 0x5a4a84;
 	constexpr uintptr_t kSceneRequest = 0x776b64;
@@ -1109,6 +1111,54 @@ namespace GameOffsets
 
 	constexpr uintptr_t kSessionManager = 0x848f08;
 	constexpr uintptr_t kSessionManagerLobbyId = 0x849031;
+	constexpr uintptr_t kFnOnGameLobbyJoinRequested = 0xe5a70;
+	constexpr uintptr_t kNetworkFlowError = 0x1eaff38;
+
+	constexpr uintptr_t kMenuPad = 0x5a4358;
+	constexpr uintptr_t kNetworkPad = 0x7762e8;
+	constexpr int kNoPad = -1;
+	constexpr int kNetworkStartupPad = 0;
+
+	constexpr uintptr_t kFnOpenNetworkMenu = 0x2dae70;
+	constexpr uintptr_t kNetworkMenu = 0x1eb85c0;
+	constexpr uintptr_t kNetworkMenuState = 0x00;
+	constexpr uintptr_t kNetworkMenuPending = 0x08;
+	constexpr uintptr_t kNetworkMenuList = 0x10;
+	constexpr uintptr_t kNetworkMenuPick = 0x14;
+	constexpr uintptr_t kNetworkMenuProfileCard = 0x4c;
+	constexpr uintptr_t kProfileCardState = 0x00;
+	constexpr uintptr_t kProfileCardDismiss = 0x08;
+	constexpr uint32_t kProfileCardDone = 4;
+	constexpr int kNetworkPickCreateRoom = 5;
+
+	constexpr uintptr_t kFnPlayerMatchResult = 0x3bf900;
+	constexpr uintptr_t kPlayerMatchRoot = 0x2f6f54c;
+	constexpr uintptr_t kPlayerMatchState = 0x00;
+	constexpr uintptr_t kPlayerMatchDialogStep = 0x2c;
+	constexpr uintptr_t kPlayerMatchCreateMenu = 0x3c;
+	constexpr uintptr_t kPlayerMatchCreateAnswer = 0x40;
+	constexpr uintptr_t kPlayerMatchRoomType = 0x708;
+	constexpr uintptr_t kPlayerMatchSettings = 0x728;
+	constexpr uint32_t kPlayerMatchCreateScreen = 4;
+	constexpr uint32_t kPlayerMatchDialogOpen = 1;
+	constexpr uint32_t kCreateMenuChoosing = 0;
+	constexpr int kCreateMenuUnanswered = -1;
+	constexpr int kCreateMenuCreateRoom = 0;
+
+	constexpr uintptr_t kMenuPages = 0x04;
+	constexpr size_t kMenuPageStride = 0x0c;
+	constexpr size_t kMenuRowStride = 0xfc;
+	constexpr uintptr_t kMenuRowValue = 0x4c;
+	constexpr int kRoomCapacityRow = 3;
+	constexpr int kRoomCapacityTwoPeople = 0;
+	constexpr int kRoomRematchRow = 11;
+	constexpr int kRoomRoundsRow = 12;
+	constexpr int kRoomRoundTimeRow = 13;
+	constexpr int kRoomType1RematchRow = 7;
+	constexpr int kRoomType1RoundsRow = 8;
+	constexpr int kRoomType1RoundTimeRow = 9;
+	constexpr int kRoomRoundsTwo = 1;
+	constexpr int kRoomRoundTimeDefault99 = 2;
 
 	constexpr uintptr_t kRoomTaskState = 0xcbcf90;
 	constexpr uintptr_t kRoomMemberChoice = 0xcbcfb8;
@@ -1116,6 +1166,14 @@ namespace GameOffsets
 	constexpr uintptr_t kRoomLocalMember = 0xcbcfd4;
 	constexpr uintptr_t kRoomOrderCount = 0x1eaffb8;
 	constexpr uintptr_t kRoomOrder = 0x1eaffbc;
+	constexpr uintptr_t kRoomOrderSecond = 0x1eaffbe;
+	constexpr int kRoomMembers = 9;
+	constexpr uintptr_t kRoomMemberStride = 0xb8;
+	constexpr uintptr_t kRoomMemberRematchWins = 0xcbdeb0;
+	constexpr uintptr_t kRoomMemberRematchLosses = 0xcbdeb4;
+	constexpr uintptr_t kRoomRematchLimit = 0x1d59894;
+	constexpr uintptr_t kRematchMostWins = 0x1eb0028;
+	constexpr uintptr_t kFnRematchTally = 0x2c3200;
 	constexpr uintptr_t kBattleStartSessionStep = 0x43fce10;
 	constexpr uintptr_t kBattleStartHandshake = 0x3805598;
 	constexpr uintptr_t kNetworkSubScene = 0x1eb0060;

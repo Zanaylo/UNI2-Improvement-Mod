@@ -5,6 +5,7 @@
 #include "Game/Customize/StockPalettes.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/MemoryMap.h"
+#include "Palette/EffectPaint.h"
 #include "Palette/PaletteMemory.h"
 #include "Palette/PalettePaint.h"
 #include "Palette/PaletteSeat.h"
@@ -356,6 +357,9 @@ void EffectOwner::OnFrame()
 	}
 
 	g_mirror = g_chara[0] >= 0 && g_chara[0] == g_chara[1];
+
+	if (!atPreview && !EffectPaint::IsHookActive())
+		return;
 
 	const int frame = PaletteSeat::GetFrame();
 	const unsigned generation = static_cast<unsigned>(PaletteTexture::GetGeneration());

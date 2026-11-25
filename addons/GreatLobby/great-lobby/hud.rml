@@ -1,0 +1,12 @@
+<rml>
+<head>
+	<title>Great Lobby - espectadores</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="hud" data-model="gl">
+	<div id="watch-badge">
+		<div class="wb-icon"><div class="wb-head"></div><div class="wb-body"></div></div>
+		<div class="wb-count">{{hud_watchers}}</div>
+	</div>
+</body>
+</rml>

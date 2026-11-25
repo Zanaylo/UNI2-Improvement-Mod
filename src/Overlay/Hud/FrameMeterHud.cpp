@@ -8,6 +8,7 @@
 #include "D3D9/Draw/QuadRenderer.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Engine/OnlineState.h"
+#include "Game/Replays/ReplayState.h"
 #include "Overlay/Framework/WindowManager.h"
 #include "Training/FrameStepper.h"
 #include "Game/Engine/PlayerState.h"
@@ -743,7 +744,7 @@ void FrameMeterHud::Render(IDirect3DDevice9* device)
 	if (!GameState::AllowsTrainingTools())
 		return;
 
-	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused() && !g_modVals.drawWhilePaused)
+	if (!GameState::IsBattleTicking() && !FrameStepper::IsPaused() && !ReplayState::IsPlaying() && !g_modVals.drawWhilePaused)
 		return;
 
 	GameFont::Ensure(device);

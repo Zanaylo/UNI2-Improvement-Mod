@@ -81,6 +81,11 @@ void CharaSmoothing::BeforeDraw(IDirect3DDevice9* device)
 	Upload(device, texel);
 }
 
+bool CharaSmoothing::IsActive()
+{
+	return InterlockedCompareExchange(&g_live, 0, 0) != 0;
+}
+
 const char* CharaSmoothing::StatusText()
 {
 	return g_status;

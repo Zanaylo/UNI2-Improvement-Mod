@@ -22,7 +22,7 @@
 namespace {
 
 constexpr int kSides = 2;
-constexpr int kMaxListeners = 4;
+constexpr int kMaxListeners = 8;
 constexpr int kBattleOn = 1;
 constexpr int kBattleTracked = 2;
 
@@ -34,6 +34,7 @@ GameResults::Listener* g_listeners[kMaxListeners] = {};
 int g_listenerCount = 0;
 
 int g_battleState = 0;
+bool g_gameStarted = false;
 
 struct Seat
 {
@@ -42,11 +43,6 @@ struct Seat
 };
 
 Seat g_seat = { SideReadout::kFirstPlayer, 0 };
-
-GameWinner::Side ReadSide(int player)
-{
-	return { SideReadout::ReadPattern(player), SideReadout::ReadVitals(player) };
-}
 
 bool IsPlayerSide(int side)
 {
@@ -75,15 +71,33 @@ void LogBattleChange(bool inMatch, bool running, bool playing)
 		running ? "running" : "not running");
 }
 
+void ArmOnGameStart(bool started)
+{
+	if (started == g_gameStarted)
+		return;
+
+	g_gameStarted = started;
+
+	if (!started)
+		return;
+
+	const bool cleared = LiveRecording::ClearWinnerSide(GameWinner::kUnwritten);
+	g_winner.Arm();
+	NetLog::Write("game: started, the recorder's winner field %s", cleared ? "cleared" : "could NOT be cleared");
+
+	for (int index = 0; index < g_listenerCount; ++index)
+		g_listeners[index]->OnGameStarted();
+}
+
 int DecideWinner(bool playing, int local, uint64_t opponent, int frame)
 {
 	if (!playing)
 	{
-		g_winner.Reset();
+		g_winner.Disarm();
 		return GameWinner::kNoWinner;
 	}
 
-	const int winner = g_winner.Update(ReadSide(SideReadout::kFirstPlayer), ReadSide(SideReadout::kSecondPlayer));
+	const int winner = g_winner.Update(LiveRecording::WinnerSide());
 
 	if (winner == GameWinner::kNoWinner)
 		return winner;
@@ -91,8 +105,8 @@ int DecideWinner(bool playing, int local, uint64_t opponent, int frame)
 	const bool won = winner == local;
 	OpponentLog::RecordGame(opponent, won);
 
-	NetLog::Write("game: side %d won, you are side %d (%s) at netplay frame %d", winner, local,
-		won ? "win" : "loss", frame);
+	NetLog::Write("game: the game recorded side %d as the winner, you are side %d (%s) at netplay frame %d", winner,
+		local, won ? "win" : "loss", frame);
 
 	return winner;
 }
@@ -103,6 +117,7 @@ ReplayRecord::Facts FactsOf(const GameResults::Report& report)
 
 	facts.version = static_cast<uint16_t>(ReplayFiles::CurrentVersion());
 	facts.author = report.steamId[report.localSide];
+	facts.winner = report.winner;
 	GetLocalTime(&facts.time);
 
 	for (int side = 0; side < kSides; ++side)
@@ -111,10 +126,11 @@ ReplayRecord::Facts FactsOf(const GameResults::Report& report)
 	return facts;
 }
 
-void Capture(const Seat& seat)
+void Capture(const Seat& seat, int winner)
 {
 	g_pending = GameResults::Report();
 	g_pending.localSide = seat.side;
+	g_pending.winner = winner;
 	g_pending.steamId[seat.side] = SteamInterfaces::GetLocalSteamId();
 	g_pending.steamId[1 - seat.side] = seat.opponent;
 
@@ -177,7 +193,7 @@ void GameResults::OnFrame()
 
 	if (OnlineState::IsSpectating())
 	{
-		g_winner.Reset();
+		g_winner.Disarm();
 		g_ending.Reset();
 		return;
 	}
@@ -192,6 +208,7 @@ void GameResults::OnFrame()
 		g_seat = { local, opponent };
 
 	LogBattleChange(inMatch, running, playing);
+	ArmOnGameStart(playing && running);
 
 	const GameEnding::Frame frame = {
 		playing,
@@ -205,7 +222,7 @@ void GameResults::OnFrame()
 	const GameEnding::Step step = g_ending.Update(frame);
 
 	if (step.captureNow)
-		Capture(g_seat);
+		Capture(g_seat, step.winner);
 
 	if (step.ended != GameEnding::Cause::None)
 		Publish(step);

@@ -27,6 +27,7 @@ namespace GameResults
 	public:
 		virtual ~Listener() = default;
 
+		virtual void OnGameStarted() {}
 		virtual void OnGameEnded(const Report& report) = 0;
 	};
 

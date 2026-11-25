@@ -1,0 +1,37 @@
+<rml>
+<head>
+	<title>Great Lobby - teclado</title>
+	<link type="text/rcss" href="lobby.rcss"/>
+</head>
+<body class="modal" data-model="gl" data-class-ps="glyphs == 'ps'" data-class-flat="glyphs == 'flat'">
+	<div class="dialog" id="keyboard">
+		<div class="kb-head">
+			<div class="title">{{kb_title}}</div>
+			<div class="kb-count">até {{kb_max}} letras</div>
+		</div>
+		<div class="kb-text">{{kb_text}}<span class="caret">|</span></div>
+
+		<div class="kb-rows">
+			<div class="kb-row" data-for="r : kb_rows">
+				<div class="kc" data-for="k : r.keys" data-event-click="kb_key(k.value)">{{k.label}}</div>
+			</div>
+			<div class="kb-row">
+				<div class="kc wide" data-class-on="kb_shift" data-event-click="kb_shift()">⇧ Maiúscula<span class="key k-rb">{{g_rb}}</span></div>
+				<div class="kc space" data-event-click="kb_space()">Espaço<span class="key k-y">{{g_y}}</span></div>
+				<div class="kc wide" data-event-click="kb_back()">⌫ Apagar<span class="key k-x">{{g_x}}</span></div>
+				<div class="kc wide ok" data-event-click="kb_ok()">OK<span class="key k-start">{{g_start}}</span></div>
+			</div>
+		</div>
+
+		<div class="kb-foot">
+			<span class="key k-a">{{g_a}}</span>tecla
+			<span class="key k-x">{{g_x}}</span>apagar
+			<span class="key k-y">{{g_y}}</span>espaço
+			<span class="key k-rb">{{g_rb}}</span>maiúscula
+			<span class="key k-start">{{g_start}}</span>confirmar
+			<span class="key k-b">{{g_b}}</span>cancelar
+			<span class="kbnote">· o teclado do PC também digita aqui</span>
+		</div>
+	</div>
+</body>
+</rml>

@@ -8,11 +8,14 @@
 
 #include "Core/Log/LogLevel.h"
 
+#include <cstdarg>
+#include <cstddef>
 #include <string>
 
 class LogRing;
 
 void OpenLogger();
+void OpenLoggerNow();
 void CloseLogger();
 void FlushLogger();
 
@@ -21,6 +24,7 @@ bool IsLoggingForced();
 void SetLogging(bool enabled);
 void WriteLog(const char* format, ...);
 void WriteLogAt(LogLevel level, const char* format, ...);
+void WriteLogPrefixed(const char* prefix, const char* format, va_list args);
 void SetLogCaptureAll(bool capture);
 
 void WriteLogRaw(const char* format, ...);
@@ -32,6 +36,8 @@ void LogSection(const char* name);
 const std::string& GetLogSessionStamp();
 std::string GetLogFilePath();
 const LogRing& GetLogHistory();
+size_t GetLogBytesWritten();
+unsigned GetLogDroppedCount();
 
 #define LOG(...) WriteLog(__VA_ARGS__)
 #define LOG_DEBUG(...) WriteLogAt(LogLevel::Debug, __VA_ARGS__)

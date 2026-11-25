@@ -180,26 +180,142 @@ Entry Take(const std::string& folder, const std::string& id)
 	return pack;
 }
 
-std::vector<Entry> Collect(const std::string& root)
+std::string GameModsRoot()
 {
-	std::vector<Entry> packs;
+	std::string dir = GetModDirectory();
 
+	while (!dir.empty() && (dir.back() == '\\' || dir.back() == '/'))
+		dir.pop_back();
+
+	return dir + "\\mods";
+}
+
+std::string ZipStampOf(const std::string& zipPath)
+{
+	WIN32_FILE_ATTRIBUTE_DATA data = {};
+
+	if (!GetFileAttributesExA(zipPath.c_str(), GetFileExInfoStandard, &data))
+		return std::string();
+
+	char buf[96] = {};
+	sprintf_s(buf, "%08lx:%08lx:%08lx:%08lx",
+		data.ftLastWriteTime.dwHighDateTime,
+		data.ftLastWriteTime.dwLowDateTime,
+		data.nFileSizeHigh,
+		data.nFileSizeLow);
+	return buf;
+}
+
+std::string ResolveZipFolder(const std::string& zipPath, const std::string& id)
+{
+	const std::string stamp = ZipStampOf(zipPath);
+
+	if (stamp.empty())
+		return std::string();
+
+	const std::string cacheRoot = GetModRootPath("Generated\\ZipMods");
+	CreateDirectoryTree(cacheRoot);
+
+	const std::string cacheDir = cacheRoot + "\\" + id;
+	const std::string stampPath = cacheDir + "\\.zipstamp";
+	const std::string contentDir = cacheDir + "\\files";
+
+	std::vector<uint8_t> existing;
+
+	if (ReadWholeFile(stampPath, existing) &&
+		std::string(existing.begin(), existing.end()) == stamp &&
+		IsFolder(contentDir))
+	{
+		return contentDir;
+	}
+
+	std::vector<std::string> names;
+
+	if (!ZipArchive::List(zipPath, names) || names.empty())
+		return std::string();
+
+	RemoveDirectoryTree(cacheDir);
+	CreateDirectoryTree(contentDir);
+
+	const std::string shared = SharedFolder(names);
+	const std::string extractTo = shared.empty() ? contentDir : (cacheDir + "\\stage");
+
+	if (!shared.empty())
+		CreateDirectoryTree(extractTo);
+
+	int files = 0;
+	char note[192] = {};
+
+	if (!ZipArchive::Extract(zipPath, extractTo, files, note, sizeof(note)))
+	{
+		LOG_WARN("ModPacks: could not unpack %s: %s", zipPath.c_str(), note);
+		RemoveDirectoryTree(cacheDir);
+		return std::string();
+	}
+
+	if (!shared.empty())
+	{
+		int copied = 0;
+		CopyDirectoryTree(extractTo + "\\" + shared, contentDir, copied);
+		RemoveDirectoryTree(extractTo);
+	}
+
+	const std::vector<uint8_t> stampBytes(stamp.begin(), stamp.end());
+	WriteWholeFile(stampPath, stampBytes);
+	LOG("ModPacks: cached zipped mod %s (%d file(s))", id.c_str(), files);
+	return contentDir;
+}
+
+void CollectFromFolder(const std::string& root, std::vector<Entry>& packs)
+{
 	WIN32_FIND_DATAA found = {};
 	const HANDLE search = FindFirstFileA((root + "\\*").c_str(), &found);
 
 	if (search == INVALID_HANDLE_VALUE)
-		return packs;
+		return;
 
 	do
 	{
-		if (found.cFileName[0] == '.' || (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+		if (found.cFileName[0] == '.')
 			continue;
 
-		packs.push_back(Take(root + "\\" + found.cFileName, found.cFileName));
+		const bool isDir = (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+		const std::string full = root + "\\" + found.cFileName;
+
+		if (isDir)
+		{
+			const std::string id = found.cFileName;
+			const bool duplicate = std::any_of(packs.begin(), packs.end(),
+				[&id](const Entry& e) { return TextList::SameNoCase(e.info.id, id); });
+
+			if (!duplicate)
+				packs.push_back(Take(full, id));
+		}
+		else if (EndsWithNoCase(found.cFileName, ".zip"))
+		{
+			const std::string id = StemOf(found.cFileName);
+			const bool duplicate = std::any_of(packs.begin(), packs.end(),
+				[&id](const Entry& e) { return TextList::SameNoCase(e.info.id, id); });
+
+			if (duplicate)
+				continue;
+
+			const std::string unpacked = ResolveZipFolder(full, id);
+
+			if (!unpacked.empty())
+				packs.push_back(Take(unpacked, id));
+		}
 	}
 	while (FindNextFileA(search, &found) != 0);
 
 	FindClose(search);
+}
+
+std::vector<Entry> Collect(const std::string& root)
+{
+	std::vector<Entry> packs;
+	CollectFromFolder(root, packs);
+	CollectFromFolder(GameModsRoot(), packs);
 	return packs;
 }
 
