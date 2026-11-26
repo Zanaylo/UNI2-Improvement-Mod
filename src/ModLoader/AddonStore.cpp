@@ -623,41 +623,6 @@ private:
 	DWORD m_lastTick = 0;
 };
 
-void WriteBundleAddonsSourceMeta(const std::vector<std::string>& installedFolders,
-	const std::vector<AddonCatalog::CatalogItem>& catalog, const AddonCatalog::BundleInfo& bundle)
-{
-	for (const std::string& folder : installedFolders)
-	{
-		std::vector<uint8_t> bytes;
-		if (!ReadWholeFile(folder + "\\" + kManifestName, bytes))
-			continue;
-
-		const AddonManifest manifest = AddonManifest::Parse(std::string(bytes.begin(), bytes.end()), LeafOf(folder));
-		SourceMeta meta;
-		meta.url = kOfficialRepoUrl;
-		meta.tag = bundle.tag;
-		meta.version = !bundle.modVersion.empty() ? bundle.modVersion : manifest.version;
-		meta.source = "release";
-		meta.id = manifest.id;
-
-		for (const AddonCatalog::CatalogItem& cat : catalog)
-		{
-			if (TextList::SameNoCase(cat.id, manifest.id) && TextList::SameNoCase(cat.source, "release"))
-			{
-				if (!cat.version.empty())
-					meta.version = cat.version;
-				if (!cat.sha256.empty())
-					meta.sha256 = cat.sha256;
-				if (!cat.repo.empty())
-					meta.url = cat.repo;
-				break;
-			}
-		}
-
-		WriteSourceMeta(folder, meta);
-	}
-}
-
 void QueuePendingInstall(PendingInstall&& pending)
 {
 	std::lock_guard<std::mutex> lock(g_pendingLock);
@@ -1967,14 +1932,14 @@ void AddonStore::BeginBootstrapOfficialBundle(const std::string& gameDir)
 
 	std::thread([gameDir]()
 	{
-		SetStatus("Checking official add-ons bundle on GitHub Release...");
+		SetStatus("Checking IM Assets package on GitHub Release...");
 
 		GitHubRelease::Release hostRelease;
 		std::string error;
 
 		if (!GitHubRelease::FetchLatest(hostRelease, error))
 		{
-			LoaderLog::Add("Could not check official add-ons bundle: " + error);
+			LoaderLog::Add("Could not check IM Assets package: " + error);
 			SetStatus(std::string());
 			g_refreshNeeded.store(true);
 			g_busy.store(false);
@@ -1983,7 +1948,7 @@ void AddonStore::BeginBootstrapOfficialBundle(const std::string& gameDir)
 
 		std::string manifestJson;
 		std::vector<AddonCatalog::CatalogItem> catalog;
-		AddonCatalog::BundleInfo bundle;
+		AddonCatalog::BundleInfo assetsPkg;
 
 		if (const GitHubRelease::Asset* const manifestAsset = hostRelease.FindAsset(kCatalogAssetName))
 		{
@@ -1991,32 +1956,32 @@ void AddonStore::BeginBootstrapOfficialBundle(const std::string& gameDir)
 				Http::GetText(manifestAsset->url, manifestJson, error))
 			{
 				AddonCatalog::ParseCatalogManifestJson(manifestJson, &hostRelease, catalog);
-				AddonCatalog::ParseCatalogBundleInfo(manifestJson, &hostRelease, bundle);
+				AddonCatalog::ParseCatalogBundleInfo(manifestJson, &hostRelease, assetsPkg);
 			}
 		}
 
-		if (!bundle.resolved)
+		if (!assetsPkg.resolved)
 		{
 			for (const GitHubRelease::Asset& asset : hostRelease.assets)
 			{
-				if (asset.name.find("Addons-Bundle") != std::string::npos &&
+				if (asset.name.find("IM-Assets") != std::string::npos &&
 					asset.name.size() > 4 &&
 					_stricmp(asset.name.c_str() + asset.name.size() - 4, ".zip") == 0 &&
 					AddonCatalog::IsTrustedGitHubUrl(asset.url))
 				{
-					bundle.name = asset.name;
-					bundle.tag = hostRelease.tag;
-					bundle.modVersion = AddonCatalog::NormalizeVersion(hostRelease.version.empty() ? hostRelease.tag : hostRelease.version);
-					bundle.downloadUrl = asset.url;
-					bundle.resolved = true;
+					assetsPkg.name = asset.name;
+					assetsPkg.tag = hostRelease.tag;
+					assetsPkg.modVersion = AddonCatalog::NormalizeVersion(hostRelease.version.empty() ? hostRelease.tag : hostRelease.version);
+					assetsPkg.downloadUrl = asset.url;
+					assetsPkg.resolved = true;
 					break;
 				}
 			}
 		}
 
-		if (!bundle.resolved || bundle.downloadUrl.empty())
+		if (!assetsPkg.resolved || assetsPkg.downloadUrl.empty())
 		{
-			LoaderLog::Add("Official add-ons bundle is not published on the latest GitHub Release (" +
+			LoaderLog::Add("IM Assets package is not published on the latest GitHub Release (" +
 				hostRelease.tag + ") yet.");
 			SetStatus(std::string());
 			g_refreshNeeded.store(true);
@@ -2026,16 +1991,16 @@ void AddonStore::BeginBootstrapOfficialBundle(const std::string& gameDir)
 
 		char tempDir[MAX_PATH] = {};
 		GetTempPathA(MAX_PATH, tempDir);
-		const std::string tempZip = std::string(tempDir) + "uni2_official_bundle_" +
+		const std::string tempZip = std::string(tempDir) + "uni2_im_assets_" +
 			std::to_string(GetTickCount()) + ".zip";
 
-		StatusProgress progress("Downloading official add-ons bundle...");
-		SetStatus("Downloading official add-ons bundle...");
+		StatusProgress progress("Downloading IM Assets...");
+		SetStatus("Downloading IM Assets...");
 
-		if (!Http::Download(bundle.downloadUrl, tempZip, &progress, error))
+		if (!Http::Download(assetsPkg.downloadUrl, tempZip, &progress, error))
 		{
 			DeleteFileA(tempZip.c_str());
-			LoaderLog::Add("Failed downloading official add-ons bundle: " + error);
+			LoaderLog::Add("Failed downloading IM Assets: " + error);
 			SetStatus(std::string());
 			g_refreshNeeded.store(true);
 			g_busy.store(false);
@@ -2044,10 +2009,10 @@ void AddonStore::BeginBootstrapOfficialBundle(const std::string& gameDir)
 
 		std::vector<std::string> warnings;
 		std::string actualSha;
-		if (!VerifySha256IfPresent(tempZip, bundle.sha256, actualSha, warnings, error))
+		if (!VerifySha256IfPresent(tempZip, assetsPkg.sha256, actualSha, warnings, error))
 		{
 			DeleteFileA(tempZip.c_str());
-			LoaderLog::Add("Official add-ons bundle integrity check failed: " + error);
+			LoaderLog::Add("IM Assets integrity check failed: " + error);
 			SetStatus(std::string());
 			g_refreshNeeded.store(true);
 			g_busy.store(false);
@@ -2055,41 +2020,68 @@ void AddonStore::BeginBootstrapOfficialBundle(const std::string& gameDir)
 		}
 
 		std::vector<std::string> names;
-		if (!InspectZipSecurity(tempZip, true, names, warnings, error))
+		if (!InspectZipSecurity(tempZip, false, names, warnings, error))
 		{
 			DeleteFileA(tempZip.c_str());
-			LoaderLog::Add("Official add-ons bundle check failed: " + error);
+			LoaderLog::Add("IM Assets archive check failed: " + error);
 			SetStatus(std::string());
 			g_refreshNeeded.store(true);
 			g_busy.store(false);
 			return;
 		}
 
-		const std::string root = AddonStore::Root(gameDir);
-		CreateDirectoryA(LoaderConfig::ModRoot(gameDir).c_str(), nullptr);
-		CreateDirectoryA(root.c_str(), nullptr);
+		const std::string stage = std::string(tempDir) + "uni2_im_assets_stage_" + std::to_string(GetTickCount());
+		CreateDirectoryA(stage.c_str(), nullptr);
 
-		SetStatus("Extracting official add-ons bundle...");
-		std::vector<std::string> installedFolders;
-		std::vector<std::string> installedNames;
-		const bool extracted = ExtractZipAndInstall(root, tempZip, "OfficialAddons", std::string(),
-			installedFolders, installedNames, error);
+		SetStatus("Extracting IM Assets into UNI2-IM\\Assets...");
+		int files = 0;
+		char note[192] = {};
+		const bool extracted = ZipArchive::Extract(tempZip, stage, files, note, sizeof(note));
 		DeleteFileA(tempZip.c_str());
 
 		if (!extracted)
 		{
-			LoaderLog::Add("Failed installing official add-ons bundle: " + error);
+			DeleteTree(stage);
+			LoaderLog::Add("Failed extracting IM Assets: " + std::string(note));
 			SetStatus(std::string());
 			g_refreshNeeded.store(true);
 			g_busy.store(false);
 			return;
 		}
 
-		WriteBundleAddonsSourceMeta(installedFolders, catalog, bundle);
+		const std::string shared = SharedZipRoot(names);
+		const std::string inspectRoot = shared.empty() ? stage : (stage + "\\" + shared);
+
+		if (!CheckNoReparsePoints(inspectRoot, error))
+		{
+			DeleteTree(stage);
+			LoaderLog::Add("IM Assets check failed: " + error);
+			SetStatus(std::string());
+			g_refreshNeeded.store(true);
+			g_busy.store(false);
+			return;
+		}
+
+		const std::string assetsDir = LoaderConfig::ModRoot(gameDir) + "\\Assets";
+		EnsureDirectories(assetsDir);
+
+		int copied = 0;
+		const bool copiedOk = CopyDirectoryTree(inspectRoot, assetsDir, copied);
+		DeleteTree(stage);
+
+		if (!copiedOk)
+		{
+			LoaderLog::Add("Failed copying IM Assets into " + assetsDir + ".");
+			SetStatus(std::string());
+			g_refreshNeeded.store(true);
+			g_busy.store(false);
+			return;
+		}
+
 		LoaderConfig::SaveBundleBootstrapped(gameDir, true);
 
-		const std::string verLabel = !bundle.modVersion.empty() ? ("v" + bundle.modVersion) : bundle.tag;
-		LoaderLog::Add(FormatInstalledSummary("official bundle (" + verLabel + ")", installedNames));
+		const std::string verLabel = !assetsPkg.modVersion.empty() ? ("v" + assetsPkg.modVersion) : assetsPkg.tag;
+		LoaderLog::Add("Installed IM Assets (" + verLabel + ") into UNI2-IM\\Assets (" + std::to_string(copied) + " files).");
 
 		AppendDefaultExternalEntries(catalog);
 		ResolveExternalCatalogItems(gameDir, catalog);

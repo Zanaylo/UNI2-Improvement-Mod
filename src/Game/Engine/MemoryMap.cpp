@@ -223,30 +223,35 @@ MemoryMap::EntityKind MemoryMap::ClassifyEntity(void* candidate)
 	if (address < 0x10000 || (address & 3) != 0)
 		return EntityKind::Unknown;
 
-	uintptr_t vtable = 0;
-	if (!SafeRead(address, vtable))
-		return EntityKind::Unknown;
+	const uintptr_t playerVTable = RvaToAddress(GameOffsets::kPlayerDataVTable);
+	const uintptr_t effectVTable = RvaToAddress(GameOffsets::kEffectVTable);
+	EntityKind kind = EntityKind::Unknown;
 
-	if (vtable == RvaToAddress(GameOffsets::kPlayerDataVTable))
+	__try
 	{
-		uint32_t tail = 0;
-		if (!SafeRead(address + GameOffsets::kPlayerDataSize - sizeof(uint32_t), tail))
-			return EntityKind::Unknown;
+		const uintptr_t vtable = *reinterpret_cast<const uintptr_t*>(address);
 
-		return EntityKind::Player;
+		if (vtable == playerVTable)
+		{
+			volatile uint32_t tail = *reinterpret_cast<const uint32_t*>(
+				address + GameOffsets::kPlayerDataSize - sizeof(uint32_t));
+			(void)tail;
+			kind = EntityKind::Player;
+		}
+		else if (vtable == effectVTable)
+		{
+			volatile uint32_t owner = *reinterpret_cast<const uint32_t*>(
+				address + GameOffsets::kCharaOwner);
+			(void)owner;
+			kind = EntityKind::Effect;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		kind = EntityKind::Unknown;
 	}
 
-	if (vtable == RvaToAddress(GameOffsets::kEffectVTable))
-	{
-
-		uint32_t owner = 0;
-		if (!SafeRead(address + GameOffsets::kCharaOwner, owner))
-			return EntityKind::Unknown;
-
-		return EntityKind::Effect;
-	}
-
-	return EntityKind::Unknown;
+	return kind;
 }
 
 bool MemoryMap::IsEffectData(void* candidate)

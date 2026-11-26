@@ -42,7 +42,6 @@
 		<span id="game-dir-text" class="path-value">Detecting...</span>
 		<div class="grow"/>
 		<div id="btn-browse-game" class="btn small">BROWSE...</div>
-		<div id="btn-reload-ui" class="btn small ml-8">RELOAD UI (F5)</div>
 	</div>
 
 	<div id="workspace">
@@ -52,12 +51,8 @@
 				<span id="nav-addons-label">ADD-ONS</span>
 				<span id="count-addons" class="nav-count">0</span>
 			</div>
-			<div id="nav-store" class="nav-item">
-				<span id="nav-store-label">COLLECTION</span>
-				<span id="count-store" class="nav-count">0</span>
-			</div>
 			<div id="nav-packs" class="nav-item">
-				<span id="nav-packs-label">FILE MODS</span>
+				<span id="nav-packs-label">MODS (/MODS)</span>
 				<span id="count-packs" class="nav-count">0</span>
 			</div>
 			<div id="nav-modules" class="nav-item">
@@ -79,16 +74,16 @@
 			<section id="view-addons" class="view">
 				<div class="sectitle">
 					<div class="sectitle-bar"/>
-					<div id="addons-title" class="sectitle-h">INSTALLED ADD-ONS</div>
-					<div id="addons-sub" class="sectitle-sub">Lua scripts, native plugins, modules &amp; asset packs in UNI2-IM\Addons</div>
+					<div id="addons-title" class="sectitle-h">ADD-ONS</div>
+					<div id="addons-sub" class="sectitle-sub">Installed &amp; available add-ons in UNI2-IM\Addons</div>
 				</div>
 
 				<div class="toolbar">
-					<div id="btn-addon-zip" class="btn accent small">INSTALL ZIP / BUNDLE</div>
+					<div id="btn-addon-zip" class="btn accent small">INSTALL .ZIP</div>
 					<div id="btn-addon-folder" class="btn small">INSTALL FOLDER</div>
+					<div id="btn-addon-update" class="btn small">UPDATE ADD-ONS</div>
 					<div id="btn-addon-open" class="btn small">OPEN FOLDER</div>
-					<div id="btn-addon-update" class="btn small">UPDATE LINKED</div>
-					<div id="btn-addon-refresh" class="btn small">REFRESH</div>
+					<div id="btn-addon-refresh" class="btn small ml-auto">RELOAD</div>
 				</div>
 
 				<div class="split">
@@ -101,43 +96,22 @@
 						<input id="url-input" class="url-input" type="text" value=""/>
 						<div id="url-placeholder" class="url-placeholder">Ex: https://github.com/Zanaylo/UNI2-Rank-Wars-Addon</div>
 					</div>
-					<div id="btn-save-link" class="btn small ml-8">SAVE GITHUB</div>
 					<div id="btn-install-url" class="btn accent small ml-8">DOWNLOAD &amp; INSTALL</div>
-				</div>
-			</section>
-
-			<section id="view-store" class="view hidden">
-				<div class="sectitle">
-					<div class="sectitle-bar"/>
-					<div id="store-title" class="sectitle-h">ADD-ON COLLECTION</div>
-					<div id="store-sub" class="sectitle-sub">Official release catalog &amp; community GitHub releases</div>
-				</div>
-
-				<div class="toolbar">
-					<div id="btn-store-refresh" class="btn accent small">REFRESH CATALOG</div>
-					<div id="btn-store-bundle" class="btn small">INSTALL OFFICIAL PACK</div>
-					<div id="btn-store-update-all" class="btn small">UPDATE ALL</div>
-					<div id="store-status-text" class="sectitle-sub"/>
-				</div>
-
-				<div class="split">
-					<div id="store-list" class="list-pane"/>
-					<div id="store-detail" class="detail-pane"/>
 				</div>
 			</section>
 
 			<section id="view-packs" class="view hidden">
 				<div class="sectitle">
 					<div class="sectitle-bar"/>
-					<div id="packs-title" class="sectitle-h">FILE MODS (/MODS &amp; PACKS)</div>
+					<div id="packs-title" class="sectitle-h">MODS (/MODS)</div>
 					<div id="packs-sub" class="sectitle-sub">Folders or .zip archives in &lt;game&gt;\mods\ or UNI2-IM\Packs\</div>
 				</div>
 
 				<div class="toolbar">
-					<div id="btn-pack-zip" class="btn accent small">INSTALL MOD ZIP</div>
-					<div id="btn-pack-folder" class="btn small">INSTALL MOD FOLDER</div>
-					<div id="btn-pack-open" class="btn small">OPEN /MODS FOLDER</div>
-					<div id="btn-pack-refresh" class="btn small">REFRESH</div>
+					<div id="btn-pack-zip" class="btn accent small">INSTALL .ZIP</div>
+					<div id="btn-pack-folder" class="btn small">INSTALL FOLDER</div>
+					<div id="btn-pack-open" class="btn small">OPEN /MODS</div>
+					<div id="btn-pack-refresh" class="btn small ml-auto">RELOAD</div>
 				</div>
 
 				<div id="packs-list" class="scroll-area"/>
@@ -165,8 +139,9 @@
 					<div id="opt-modules-grid" class="mod-grid"/>
 
 					<div class="mod-foot">
+						<div id="btn-download-assets" class="btn accent small">DOWNLOAD IM ASSETS</div>
 						<div id="btn-reset-base" class="btn small">RESET TO CLEAN BASE</div>
-						<div id="btn-open-basepals" class="btn small">OPEN BASEPALS FOLDER</div>
+						<div id="btn-open-basepals" class="btn small">OPEN ASSETS FOLDER</div>
 						<div class="mod-toggles">
 							<div id="toggle-game-addon-check" class="check-row">
 								<div id="switch-game-addon-check" class="switch on"><div class="switch-knob"/></div>

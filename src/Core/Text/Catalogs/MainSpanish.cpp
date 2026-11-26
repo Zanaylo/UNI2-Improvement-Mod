@@ -1088,6 +1088,13 @@ const LanguageCatalog::Entry kEntries[] = {
 	{ "Open Addons folder", u8"Abrir carpeta Addons" },
 	{ "Reload Lua add-ons", u8"Recargar add-ons Lua" },
 	{ "Installed in UNI2-IM\\Addons. Lua add-ons toggle right away; native DLL add-ons apply after restart.", u8"Instalados en UNI2-IM\\Addons. Los add-ons Lua se activan/desactivan al instante; los DLL nativos se aplican al reiniciar." },
+	{ "EX order", u8"Orden de EX" },
+	{ "Oldest first", u8"Más antiguos primero" },
+	{ "Newest first", u8"Más nuevos primero" },
+	{ "By name", u8"Por nombre" },
+	{ "Custom list", u8"Por la lista" },
+	{ "Order of extended (EX) palettes on character select.\nDrag any palette card onto another to arrange them in a custom list.", u8"Orden de las palettes extra (EX) en la selección de personaje.\nArrastra cualquier tarjeta de palette sobre otra para ordenarlas por la lista." },
+	{ "Drag to reorder EX slots", u8"Arrastra para reordenar los slots EX" },
 };
 
 }

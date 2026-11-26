@@ -24,8 +24,9 @@ GameHook<GetPP_t> g_getPPHook("GetPP");
 GameHook<PlayerDataDtor_t> g_playerDataDtorHook("PLAYER_DATA::~PLAYER_DATA");
 
 bool g_installed = false;
-volatile uint64_t g_callCount = 0;
+uint64_t g_callCount = 0;
 volatile uint32_t g_lastCallTick = 0;
+bool g_tickSamplePending = true;
 
 constexpr int kMaxStackFrames = 24;
 volatile long g_captureRequested = 0;
@@ -175,10 +176,7 @@ void Record(void* object, void* charaData, uint32_t now)
 
 int __cdecl HookedGetPP(int index)
 {
-	++g_callCount;
-
-	const uint32_t now = GetTickCount();
-	g_lastCallTick = now;
+	const uint64_t calls = ++g_callCount;
 
 	if (g_captureRequested != 0 && InterlockedCompareExchange(&g_captureRequested, 0, 1) == 1)
 	{
@@ -199,10 +197,18 @@ int __cdecl HookedGetPP(int index)
 		}
 	}
 
-	void* object = nullptr;
-	void* character = nullptr;
-	if (ReadCurrentEntity(object, character))
-		Record(object, character, now);
+	if (g_tickSamplePending || g_entryCount < 2 || (calls & 63) == 0)
+	{
+		g_tickSamplePending = false;
+
+		const uint32_t now = GetTickCount();
+		g_lastCallTick = now;
+
+		void* object = nullptr;
+		void* character = nullptr;
+		if (ReadCurrentEntity(object, character))
+			Record(object, character, now);
+	}
 
 	return g_getPPHook.Original()(index);
 }
@@ -236,6 +242,11 @@ bool CharaTracker::Install()
 bool CharaTracker::IsInstalled()
 {
 	return g_installed;
+}
+
+void CharaTracker::OnBattleTick()
+{
+	g_tickSamplePending = true;
 }
 
 uint64_t CharaTracker::GetCallCount()
@@ -314,5 +325,6 @@ void CharaTracker::Clear()
 	g_callCount = 0;
 	g_lastCallTick = 0;
 	g_lastSlot = 0;
+	g_tickSamplePending = true;
 	memset(g_entries, 0, sizeof(g_entries));
 }

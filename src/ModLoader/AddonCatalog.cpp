@@ -531,9 +531,14 @@ bool AddonCatalog::ParseCatalogBundleInfo(const std::string& json, const GitHubR
 	if (!Json::Parse(json, root) || !root.IsObject())
 		return false;
 
-	out.name = Trim(root.MemberString("bundleName"));
+	out.name = Trim(root.MemberString("assetsName"));
+	if (out.name.empty())
+		out.name = Trim(root.MemberString("bundleName"));
+
 	out.modVersion = NormalizeVersion(root.MemberString("modVersion"));
-	out.sha256 = Trim(root.MemberString("bundleSha256"));
+	out.sha256 = Trim(root.MemberString("assetsSha256"));
+	if (out.sha256.empty())
+		out.sha256 = Trim(root.MemberString("bundleSha256"));
 
 	if (!out.sha256.empty() && !IsValidSha256Hex(out.sha256))
 		out.sha256.clear();
@@ -553,7 +558,8 @@ bool AddonCatalog::ParseCatalogBundleInfo(const std::string& json, const GitHubR
 		{
 			for (const GitHubRelease::Asset& candidate : hostRelease->assets)
 			{
-				if (candidate.name.find("Addons-Bundle") != std::string::npos &&
+				if ((candidate.name.find("IM-Assets") != std::string::npos ||
+					candidate.name.find("Addons-Bundle") != std::string::npos) &&
 					EndsWithNoCase(candidate.name, ".zip"))
 				{
 					asset = &candidate;

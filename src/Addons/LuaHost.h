@@ -35,6 +35,9 @@ namespace LuaHost
 		std::vector<int> hudCallbacks;
 		std::vector<int> gameStartedCallbacks;
 		std::vector<int> gameEndedCallbacks;
+		std::vector<int> sceneChangedCallbacks;
+		std::vector<int> networkMenuOpenedCallbacks;
+		std::vector<int> playerMatchResultCallbacks;
 		std::vector<int> shutdownCallbacks;
 		std::vector<AddonWindow> windows;
 	};
@@ -47,6 +50,8 @@ namespace LuaHost
 	void OnOverlay();
 	void OnGameStarted();
 	void OnGameEnded(const GameResults::Report& report);
+	void OnNetworkMenuOpened(int mode);
+	void OnPlayerMatchResult(uintptr_t root, int result);
 	void UnloadAll();
 	void Shutdown();
 

@@ -220,12 +220,21 @@ void LoaderConfig::SaveCheckAddonUpdatesInGame(const std::string& gameDir, bool 
 
 bool LoaderConfig::ReadBundleBootstrapped(const std::string& gameDir)
 {
-	return GetPrivateProfileIntA("Loader", "OfficialBundleInstalled", 0, LoaderIni(gameDir).c_str()) != 0;
+	return GetPrivateProfileIntA("Loader", "OfficialAssetsInstalled", 0, LoaderIni(gameDir).c_str()) != 0;
 }
 
 void LoaderConfig::SaveBundleBootstrapped(const std::string& gameDir, bool done)
 {
 	const std::string ini = LoaderIni(gameDir);
 	EnsureParentFolder(ini);
-	WritePrivateProfileStringA("Loader", "OfficialBundleInstalled", done ? "1" : "0", ini.c_str());
+	WritePrivateProfileStringA("Loader", "OfficialAssetsInstalled", done ? "1" : "0", ini.c_str());
+}
+
+bool LoaderConfig::HasImAssets(const std::string& gameDir)
+{
+	if (!IsValidGameDir(gameDir))
+		return false;
+
+	const std::string assets = ModRoot(gameDir) + "\\Assets";
+	return Exists(assets + "\\BasePals") && Exists(assets + "\\Patches") && Exists(assets + "\\StageIcons");
 }

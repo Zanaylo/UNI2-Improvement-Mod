@@ -733,7 +733,12 @@ namespace GameOffsets
 
 	constexpr uintptr_t kFnMessageLoop = 0x4e5cc0;
 	constexpr uintptr_t kFnGameThread = 0x4e34e0;
+	constexpr uintptr_t kSiteGameThreadSleepReturn = 0x4e353f;
 	constexpr uintptr_t kFnRunFrame = 0x4ddad0;
+	constexpr uintptr_t kReplaySkipFrame = 0x657952;
+	constexpr uintptr_t kReplayPaused = 0x1e8a084;
+	constexpr uintptr_t kReplayFastForwardBlock = 0x1e8a146;
+	constexpr uintptr_t kReplayFastForward = 0x1e8a147;
 	constexpr uintptr_t kFnWindowProc = 0x4e4df0;
 	constexpr uintptr_t kFnPresent = 0xafd20;
 	constexpr uintptr_t kFnDeviceReset = 0xb1210;
@@ -1112,6 +1117,10 @@ namespace GameOffsets
 	constexpr uintptr_t kSessionManager = 0x848f08;
 	constexpr uintptr_t kSessionManagerLobbyId = 0x849031;
 	constexpr uintptr_t kFnOnGameLobbyJoinRequested = 0xe5a70;
+	constexpr uintptr_t kNetworkInitError = 0x5a6278;
+	constexpr uintptr_t kNetworkStepState = 0x1eafed8;
+	constexpr uintptr_t kNetworkStepErrorKind = 0x1eafedc;
+	constexpr int kNetworkStepError = 10;
 	constexpr uintptr_t kNetworkFlowError = 0x1eaff38;
 
 	constexpr uintptr_t kMenuPad = 0x5a4358;

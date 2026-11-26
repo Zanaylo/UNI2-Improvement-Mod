@@ -5,7 +5,10 @@
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Engine/GameOffsets.h"
+#include "Game/Replays/ReplayState.h"
 #include "Hooks/GameHook.h"
+
+#include <intrin.h>
 
 #include <algorithm>
 
@@ -27,6 +30,12 @@ volatile LONG g_enabled = 0;
 
 DWORD g_pumpThreadId = 0;
 DWORD g_pumpThreadChecked = 0;
+
+uintptr_t g_gameThreadSleepReturn = 0;
+uintptr_t g_replaySkipFrameAddress = 0;
+uintptr_t g_replayPausedAddress = 0;
+uintptr_t g_replayFastForwardBlockAddress = 0;
+uintptr_t g_replayFastForwardAddress = 0;
 
 LARGE_INTEGER g_frequency = {};
 
@@ -119,18 +128,60 @@ void RecordWait(double microseconds, DWORD result)
 	LeaveCriticalSection(&g_lock);
 }
 
+bool ReadReplayFastForwardFlags()
+{
+	if (g_replayFastForwardAddress == 0 || g_replayFastForwardBlockAddress == 0 ||
+		g_replayPausedAddress == 0)
+	{
+		return false;
+	}
+
+	bool active = false;
+
+	__try
+	{
+		const uint8_t held = *reinterpret_cast<const uint8_t*>(g_replayFastForwardAddress);
+		const uint8_t blocked = *reinterpret_cast<const uint8_t*>(g_replayFastForwardBlockAddress);
+		const uint32_t paused = *reinterpret_cast<const uint32_t*>(g_replayPausedAddress);
+		const uint8_t skipped = g_replaySkipFrameAddress != 0
+			? *reinterpret_cast<const uint8_t*>(g_replaySkipFrameAddress) : 0;
+
+		active = skipped != 0 || (held != 0 && blocked == 0 && paused == 0);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		active = false;
+	}
+
+	return active;
+}
+
+bool IsReplayFastForwarding()
+{
+	return ReplayState::IsPlaying() && ReadReplayFastForwardFlags();
+}
+
 void WINAPI HookedSleep(DWORD milliseconds)
 {
-	if (InterlockedCompareExchange(&g_enabled, 0, 0) == 0 || milliseconds > kMaxSubstitutedMs)
+	const bool pumpEnabled = InterlockedCompareExchange(&g_enabled, 0, 0) != 0;
+	const bool replayFastForward = IsReplayFastForwarding();
+
+	if ((!pumpEnabled && !replayFastForward) || milliseconds > kMaxSubstitutedMs)
 	{
 		++g_passedThrough;
 		g_sleepHook.Original()(milliseconds);
 		return;
 	}
 
+	if (replayFastForward && g_gameThreadSleepReturn != 0 &&
+		reinterpret_cast<uintptr_t>(_ReturnAddress()) == g_gameThreadSleepReturn)
+	{
+		return;
+	}
+
 	if (GetCurrentThreadId() != ResolvePumpThread())
 	{
-		if (milliseconds == 0 || !SleepPrecisely(milliseconds))
+		if (!pumpEnabled || milliseconds == 0 || !SleepPrecisely(milliseconds))
 		{
 			++g_passedThrough;
 			g_sleepHook.Original()(milliseconds);
@@ -140,10 +191,10 @@ void WINAPI HookedSleep(DWORD milliseconds)
 	}
 
 	DWORD mask = QS_SENDMESSAGE;
-	if (g_modVals.pumpWaitAllInput)
+	if (pumpEnabled && g_modVals.pumpWaitAllInput)
 		mask = QS_ALLINPUT;
 
-	const DWORD flags = g_modVals.pumpWaitAllInput ? MWMO_INPUTAVAILABLE : 0u;
+	const DWORD flags = (pumpEnabled && g_modVals.pumpWaitAllInput) ? MWMO_INPUTAVAILABLE : 0u;
 
 	LARGE_INTEGER before = {};
 	QueryPerformanceCounter(&before);
@@ -182,6 +233,12 @@ bool PumpWait::Install()
 
 	QueryPerformanceFrequency(&g_frequency);
 
+	g_gameThreadSleepReturn = RvaToAddress(GameOffsets::kSiteGameThreadSleepReturn);
+	g_replaySkipFrameAddress = RvaToAddress(GameOffsets::kReplaySkipFrame);
+	g_replayPausedAddress = RvaToAddress(GameOffsets::kReplayPaused);
+	g_replayFastForwardBlockAddress = RvaToAddress(GameOffsets::kReplayFastForwardBlock);
+	g_replayFastForwardAddress = RvaToAddress(GameOffsets::kReplayFastForward);
+
 	if (!g_sleepHook.InstallApi("kernel32.dll", "Sleep", &HookedSleep))
 	{
 		LOG("[PumpWait] could not hook Sleep");
@@ -194,11 +251,10 @@ bool PumpWait::Install()
 
 void PumpWait::Apply()
 {
-	const bool wanted = g_modVals.pumpWait && !Compat::SafeMode();
-
-	if (!g_installed && wanted)
+	if (!g_installed && !Compat::SafeMode())
 		Install();
 
+	const bool wanted = g_modVals.pumpWait && !Compat::SafeMode();
 	InterlockedExchange(&g_enabled, wanted ? 1 : 0);
 }
 

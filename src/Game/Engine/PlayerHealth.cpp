@@ -7,11 +7,6 @@
 
 namespace {
 
-const uint8_t* Field(void* playerData, uintptr_t offset)
-{
-	return static_cast<const uint8_t*>(playerData) + offset;
-}
-
 constexpr int kValidatedRecordSlots = 4;
 
 struct ValidatedRecord
@@ -40,16 +35,31 @@ void RememberValidatedRecord(uint32_t record)
 	g_nextValidatedSlot = (g_nextValidatedSlot + 1) % kValidatedRecordSlots;
 }
 
-bool ReadMax(void* playerData, int& out)
+bool ReadHealthFields(void* playerData, int32_t& outCurrent, int32_t& outTrailing, uint32_t& outRecord)
 {
-	uint32_t record = 0;
-
-	if (!TryReadMemory(&record, Field(playerData, GameOffsets::kPlayerDataHpRecord),
-		sizeof(record)))
-	{
+	const uintptr_t base = reinterpret_cast<uintptr_t>(playerData);
+	if (base < 0x10000)
 		return false;
+
+	bool ok = false;
+
+	__try
+	{
+		outCurrent = *reinterpret_cast<const int32_t*>(base + GameOffsets::kPlayerDataHp);
+		outTrailing = *reinterpret_cast<const int32_t*>(base + GameOffsets::kPlayerDataHpTrailing);
+		outRecord = *reinterpret_cast<const uint32_t*>(base + GameOffsets::kPlayerDataHpRecord);
+		ok = true;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		ok = false;
 	}
 
+	return ok;
+}
+
+bool ReadMaxFromRecord(uint32_t record, int& out)
+{
 	if (record == 0)
 		return false;
 
@@ -64,20 +74,16 @@ bool ReadMax(void* playerData, int& out)
 		RememberValidatedRecord(record);
 	}
 
+	int32_t values[GameOffsets::kHpRecordSegments] = {};
 	const uint8_t* const segments =
 		reinterpret_cast<const uint8_t*>(record) + GameOffsets::kHpRecordFirstSegment;
 
+	if (!TryReadMemory(values, segments, sizeof(values)))
+		return false;
+
 	int total = 0;
-
 	for (int segment = 0; segment < GameOffsets::kHpRecordSegments; ++segment)
-	{
-		int32_t value = 0;
-
-		if (!TryReadMemory(&value, segments + segment * sizeof(value), sizeof(value)))
-			return false;
-
-		total += value;
-	}
+		total += values[segment];
 
 	if (total <= 0)
 		return false;
@@ -95,18 +101,13 @@ bool PlayerHealth::Read(void* playerData, Health& out)
 
 	int32_t current = 0;
 	int32_t trailing = 0;
+	uint32_t record = 0;
 	int max = 0;
 
-	if (!TryReadMemory(&current, Field(playerData, GameOffsets::kPlayerDataHp), sizeof(current)))
+	if (!ReadHealthFields(playerData, current, trailing, record))
 		return false;
 
-	if (!TryReadMemory(&trailing, Field(playerData, GameOffsets::kPlayerDataHpTrailing),
-		sizeof(trailing)))
-	{
-		return false;
-	}
-
-	if (!ReadMax(playerData, max))
+	if (!ReadMaxFromRecord(record, max))
 		return false;
 
 	if (current < 0)

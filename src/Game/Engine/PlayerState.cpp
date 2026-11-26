@@ -54,49 +54,73 @@ uint32_t ReadTimedRecord(void* playerData, uintptr_t valueOffset, uintptr_t time
 	return value;
 }
 
-bool ResolveFrameRecord(void* playerData, uint32_t& outRecord)
+struct ContextSnapshot
 {
-	outRecord = 0;
+	bool hasContext;
+	uint32_t statusWord;
+	uint32_t statusA;
+	uint32_t statusB;
+	uint32_t statusC;
+	uint32_t mvStatus;
+	bool hasRecord;
+	uint8_t cancelFlagsA;
+	uint8_t cancelFlagsB;
+	uint8_t cancelFree;
+	uint8_t stance;
+	uint8_t invulnKind;
+};
 
-	uint32_t frameObject = 0;
-	if (!ReadAt(playerData, GameOffsets::kCharaFrameObject, frameObject) || frameObject == 0)
-		return false;
+void ReadContextAndRecord(uint32_t context, ContextSnapshot& out)
+{
+	memset(&out, 0, sizeof(out));
+	out.cancelFree = 1;
+	out.stance = GameOffsets::kStatusStand;
 
-	uint32_t record = 0;
-	if (!TryReadDword(reinterpret_cast<const void*>(frameObject + GameOffsets::kFrameObjectRecord),
-		record) || record == 0)
+	if (context < 0x10000 || (context & 3) != 0)
+		return;
+
+	__try
 	{
-		return false;
-	}
+		const uint8_t* const ctx = reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(context));
 
-	outRecord = record;
-	return true;
+		memcpy(&out.statusWord, ctx + GameOffsets::kContextStatusWord, sizeof(out.statusWord));
+		memcpy(&out.statusA, ctx + GameOffsets::kContextStatusA, sizeof(out.statusA));
+		memcpy(&out.statusB, ctx + GameOffsets::kContextStatusB, sizeof(out.statusB));
+		memcpy(&out.statusC, ctx + GameOffsets::kContextStatusC, sizeof(out.statusC));
+		memcpy(&out.mvStatus, ctx + GameOffsets::kContextMvStatus, sizeof(out.mvStatus));
+		out.hasContext = true;
+
+		const uint32_t record = *reinterpret_cast<const uint32_t*>(ctx + GameOffsets::kFrameObjectRecord);
+		if (record >= 0x10000 && (record & 3) == 0)
+		{
+			const uint8_t* const rec = reinterpret_cast<const uint8_t*>(static_cast<uintptr_t>(record));
+			out.cancelFlagsA = *(rec + GameOffsets::kCancelFlagsA);
+			out.cancelFlagsB = *(rec + GameOffsets::kCancelFlagsB);
+			out.cancelFree = *(rec + GameOffsets::kFrameObjectCancelFree);
+			out.stance = *(rec + GameOffsets::kFrameRecordStance);
+			out.invulnKind = *(rec + GameOffsets::kFrameRecordInvulnKind);
+			out.hasRecord = true;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+	}
 }
 
-void ReadCancelFlags(void* playerData, uint32_t record, PlayerState::State& out)
+void ApplyCancelFlags(void* playerData, const ContextSnapshot& ctx, PlayerState::State& out)
 {
 	out.hasCancelFlags = false;
 	out.cancelFlagsA = 0;
 	out.cancelFlagsB = 0;
 
-	if (record == 0)
+	if (!ctx.hasRecord)
 		return;
-
-	uint8_t a = 0;
-	uint8_t b = 0;
-	if (!TryReadMemory(&a, reinterpret_cast<const void*>(record + GameOffsets::kCancelFlagsA),
-			sizeof(a)) ||
-		!TryReadMemory(&b, reinterpret_cast<const void*>(record + GameOffsets::kCancelFlagsB),
-			sizeof(b)))
-	{
-		return;
-	}
 
 	out.hasCancelFlags = true;
-	out.cancelFlagsA = a;
-	out.cancelFlagsB = b;
-	out.cancelNormal = a;
-	out.cancelSpecial = b;
+	out.cancelFlagsA = ctx.cancelFlagsA;
+	out.cancelFlagsB = ctx.cancelFlagsB;
+	out.cancelNormal = ctx.cancelFlagsA;
+	out.cancelSpecial = ctx.cancelFlagsB;
 
 	int32_t boostTime = 0;
 	if (!ReadAt(playerData, GameOffsets::kPlayerDataCancelBoostTime, boostTime) || boostTime <= 0)
@@ -115,7 +139,7 @@ void ReadCancelFlags(void* playerData, uint32_t record, PlayerState::State& out)
 		out.cancelSpecial = special;
 }
 
-void ReadCancelFree(void* playerData, uint32_t frameRecord, PlayerState::State& out)
+void ApplyCancelFree(void* playerData, const ContextSnapshot& ctx, PlayerState::State& out)
 {
 	out.cancelFree = true;
 
@@ -133,15 +157,8 @@ void ReadCancelFree(void* playerData, uint32_t frameRecord, PlayerState::State& 
 		return;
 	}
 
-	if (frameRecord == 0)
-		return;
-
-	uint8_t value = 0;
-	if (TryReadMemory(&value, reinterpret_cast<const void*>(
-		frameRecord + GameOffsets::kFrameObjectCancelFree), sizeof(value)))
-	{
-		out.cancelFree = value != 0;
-	}
+	if (ctx.hasRecord)
+		out.cancelFree = ctx.cancelFree != 0;
 }
 
 void ReadBoxPicture(void* playerData, PlayerState::State& out)
@@ -177,21 +194,6 @@ void ReadBoxPicture(void* playerData, PlayerState::State& out)
 		if (boxes[i].index >= 0 && boxes[i].index < 32)
 			out.normalBoxMask |= 1u << boxes[i].index;
 	}
-}
-
-void ReadFrameRecord(uint32_t record, PlayerState::State& out)
-{
-	out.stance = GameOffsets::kStatusStand;
-	out.invulnKind = 0;
-
-	if (record == 0)
-		return;
-
-	TryReadMemory(&out.stance,
-		reinterpret_cast<const void*>(record + GameOffsets::kFrameRecordStance), sizeof(out.stance));
-	TryReadMemory(&out.invulnKind,
-		reinterpret_cast<const void*>(record + GameOffsets::kFrameRecordInvulnKind),
-		sizeof(out.invulnKind));
 }
 
 bool HasActiveProjectile(void* playerData, uint32_t ownedObjects)
@@ -273,11 +275,14 @@ bool PlayerState::Read(void* playerData, State& out)
 
 	out.actionKind = out.moveCodeEx[0];
 
-	uint32_t frameRecord = 0;
-	ResolveFrameRecord(playerData, frameRecord);
+	uint32_t context = 0;
+	ReadAt(playerData, GameOffsets::kCharaFrameObject, context);
 
-	ReadCancelFlags(playerData, frameRecord, out);
-	ReadCancelFree(playerData, frameRecord, out);
+	ContextSnapshot ctxSnapshot = {};
+	ReadContextAndRecord(context, ctxSnapshot);
+
+	ApplyCancelFlags(playerData, ctxSnapshot, out);
+	ApplyCancelFree(playerData, ctxSnapshot, out);
 
 	if (!ReadAt(playerData, GameOffsets::kPlayerDataCommand, out.command))
 		out.command = 0;
@@ -335,17 +340,14 @@ bool PlayerState::Read(void* playerData, State& out)
 	ReadAt(playerData, GameOffsets::kPlayerDataShield, out.shield);
 	ReadAt(playerData, GameOffsets::kPlayerDataVGuardTime, out.vguardTime);
 
-	uint32_t context = 0;
-	if (ReadAt(playerData, GameOffsets::kCharaFrameObject, context) && context != 0)
+	if (ctxSnapshot.hasContext)
 	{
-		void* ctx = reinterpret_cast<void*>(static_cast<uintptr_t>(context));
-
-		out.hasContext =
-			ReadAt(ctx, GameOffsets::kContextStatusWord, out.statusWord) &&
-			ReadAt(ctx, GameOffsets::kContextStatusA, out.statusA) &&
-			ReadAt(ctx, GameOffsets::kContextStatusB, out.statusB) &&
-			ReadAt(ctx, GameOffsets::kContextStatusC, out.statusC) &&
-			ReadAt(ctx, GameOffsets::kContextMvStatus, out.mvStatus);
+		out.hasContext = true;
+		out.statusWord = ctxSnapshot.statusWord;
+		out.statusA = ctxSnapshot.statusA;
+		out.statusB = ctxSnapshot.statusB;
+		out.statusC = ctxSnapshot.statusC;
+		out.mvStatus = ctxSnapshot.mvStatus;
 	}
 
 	uint32_t reaction = 0;
@@ -364,7 +366,8 @@ bool PlayerState::Read(void* playerData, State& out)
 		out.atemiBox >= 0 && out.atemiBox < GameOffsets::kEtcBoxCount &&
 		(out.normalBoxMask & (1u << (GameOffsets::kEtcBoxFirst + out.atemiBox))) != 0;
 
-	ReadFrameRecord(frameRecord, out);
+	out.stance = ctxSnapshot.stance;
+	out.invulnKind = ctxSnapshot.invulnKind;
 
 	if (!ReadAt(playerData, GameOffsets::kCharaCounterState, out.counterState))
 		out.counterState = 0;

@@ -2,6 +2,8 @@
 LOADER_RML RMLASSET "loader.rml"
 LOADER_RCSS RMLASSET "loader.rcss"
 MIKA_PNG RMLASSET "mika.png"
+ARROW_UP_PNG RMLASSET "arrow_up.png"
+ARROW_DOWN_PNG RMLASSET "arrow_down.png"
 FONTS_BARLOW_REGULAR_TTF RMLASSET "fonts/Barlow-Regular.ttf"
 FONTS_BARLOW_MEDIUM_TTF RMLASSET "fonts/Barlow-Medium.ttf"
 FONTS_BARLOW_SEMIBOLD_TTF RMLASSET "fonts/Barlow-SemiBold.ttf"

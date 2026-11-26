@@ -4,8 +4,10 @@
 #include "Core/utils.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/GameState.h"
+#include "Game/Replays/ReplayState.h"
 #include "Hooks/GameHook.h"
 #include "Hooks/HookManager.h"
+#include "Overlay/Framework/WindowManager.h"
 #include "Training/Meter/FrameMeter.h"
 #include "Training/FrameStepper.h"
 #include "Game/Engine/CodeSignatures.h"
@@ -228,6 +230,19 @@ ForcedSlot g_forced[DummyRecorder::kForcedSlots] = {};
 
 void UpdateForcedSlots()
 {
+	bool any = false;
+	for (int i = 0; i < DummyRecorder::kForcedSlots; ++i)
+	{
+		if (g_forced[i].rva != 0)
+		{
+			any = true;
+			break;
+		}
+	}
+
+	if (!any)
+		return;
+
 	const bool allowed = GameState::AllowsTrainingTools();
 
 	for (int i = 0; i < DummyRecorder::kForcedSlots; ++i)
@@ -256,6 +271,14 @@ void UpdateForcedSlots()
 
 void UpdateReversalAfterRestart()
 {
+	const FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
+
+	if (g_reversalHold == 0 && !g_reversalWaiting &&
+		(!config.reversalAfterRestart || ReplayState::IsPlaying() || !GameState::AllowsTrainingTools()))
+	{
+		return;
+	}
+
 	const uintptr_t address = RvaToAddress(GameOffsets::kDummyActionMode);
 	g_actionMode = ReadDword(GameOffsets::kDummyActionMode);
 
@@ -288,8 +311,6 @@ void UpdateReversalAfterRestart()
 		TryWriteDword(reinterpret_cast<void*>(address), g_reversalModeBefore);
 		return;
 	}
-
-	const FrameMeter::AutoPauseConfig config = FrameMeter::GetAutoPause();
 
 	if (g_reversalWaiting)
 	{
@@ -334,6 +355,12 @@ void DummyRecorder::Update()
 {
 	UpdateForcedSlots();
 	UpdateReversalAfterRestart();
+
+	if (!g_hasPending && (ReplayState::IsPlaying() ||
+		(!WindowManager::GetInstance().IsOverlayActive() && !GameState::IsTrainingBattle())))
+	{
+		return;
+	}
 
 	g_state = ReadDword(GameOffsets::kDummyState);
 	g_fieldB = ReadDword(GameOffsets::kDummyStateB);

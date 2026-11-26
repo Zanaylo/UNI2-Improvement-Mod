@@ -18,6 +18,8 @@
 namespace {
 
 constexpr const char* kSection = "PaletteSlots";
+constexpr const char* kOrderKey = "ExtendedOrder";
+constexpr char kOrderSeparator = '|';
 constexpr size_t kSectionBytes = 32 * 1024;
 constexpr DWORD kSectionTruncatedMargin = 2;
 
@@ -25,9 +27,12 @@ struct Shelf
 {
 	bool loaded;
 	std::string files[ColourSlots::kGameColours];
+	std::vector<std::string> customOrder;
 };
 
 Shelf g_shelves[ColourSlots::kCharacters] = {};
+bool g_orderLoaded = false;
+ColourSlots::ExtendedOrder g_extendedOrder = ColourSlots::ExtendedOrder::OldestFirst;
 
 bool IsCharacter(int chara)
 {
@@ -47,6 +52,81 @@ bool IsFile(const char* file)
 void KeyFor(int chara, int colour, char* key, size_t size)
 {
 	sprintf_s(key, size, "%s.%d", PaletteManager::GetCharaName(chara), colour);
+}
+
+void OrderKeyFor(int chara, char* key, size_t size)
+{
+	sprintf_s(key, size, "%s.Order", PaletteManager::GetCharaName(chara));
+}
+
+const char* OrderToString(ColourSlots::ExtendedOrder order)
+{
+	switch (order)
+	{
+	case ColourSlots::ExtendedOrder::NewestFirst:
+		return "newest";
+	case ColourSlots::ExtendedOrder::ByName:
+		return "name";
+	case ColourSlots::ExtendedOrder::Custom:
+		return "custom";
+	default:
+		return "oldest";
+	}
+}
+
+ColourSlots::ExtendedOrder ParseOrder(const std::string& value)
+{
+	if (_stricmp(value.c_str(), "newest") == 0)
+		return ColourSlots::ExtendedOrder::NewestFirst;
+
+	if (_stricmp(value.c_str(), "name") == 0)
+		return ColourSlots::ExtendedOrder::ByName;
+
+	if (_stricmp(value.c_str(), "custom") == 0)
+		return ColourSlots::ExtendedOrder::Custom;
+
+	return ColourSlots::ExtendedOrder::OldestFirst;
+}
+
+std::vector<std::string> SplitOrder(const std::string& raw)
+{
+	std::vector<std::string> out;
+	size_t start = 0;
+
+	while (start <= raw.size())
+	{
+		const size_t sep = raw.find(kOrderSeparator, start);
+		const std::string item = sep == std::string::npos
+			? raw.substr(start) : raw.substr(start, sep - start);
+
+		if (!item.empty())
+			out.push_back(item);
+
+		if (sep == std::string::npos)
+			break;
+
+		start = sep + 1;
+	}
+
+	return out;
+}
+
+std::string JoinOrder(const std::vector<std::string>& files)
+{
+	std::string out;
+
+	for (size_t i = 0; i < files.size(); ++i)
+	{
+		if (files[i].empty())
+			continue;
+
+		if (!out.empty())
+			out.push_back(kOrderSeparator);
+
+		out += files[i];
+	}
+
+	return out;
 }
 
 using Entries = std::unordered_map<std::string, std::string>;
@@ -114,6 +194,12 @@ void LoadShelves()
 {
 	const Entries entries = ParseSection(ReadSection(Settings::GetIniPath()));
 
+	const Entries::const_iterator orderFound = entries.find(Lowered(kOrderKey));
+	g_extendedOrder = orderFound == entries.end()
+		? ColourSlots::ExtendedOrder::OldestFirst
+		: ParseOrder(orderFound->second);
+	g_orderLoaded = true;
+
 	for (int chara = 0; chara < ColourSlots::kCharacters; ++chara)
 	{
 		Shelf& shelf = g_shelves[chara];
@@ -126,6 +212,13 @@ void LoadShelves()
 			const Entries::const_iterator found = entries.find(Lowered(key));
 			shelf.files[colour] = found == entries.end() ? std::string() : found->second;
 		}
+
+		char orderKey[64] = {};
+		OrderKeyFor(chara, orderKey, sizeof(orderKey));
+		const Entries::const_iterator customFound = entries.find(Lowered(orderKey));
+		shelf.customOrder = customFound == entries.end()
+			? std::vector<std::string>()
+			: SplitOrder(customFound->second);
 
 		shelf.loaded = true;
 	}
@@ -156,16 +249,64 @@ bool IsBound(int chara, const char* file)
 	return ColourSlots::ColourOf(chara, file) != ColourSlots::kNoColour;
 }
 
-int CreationOrder(int chara, int* order)
+int RankInCustom(const Shelf& shelf, const char* file)
+{
+	if (!IsFile(file))
+		return -1;
+
+	for (size_t i = 0; i < shelf.customOrder.size(); ++i)
+	{
+		if (_stricmp(shelf.customOrder[i].c_str(), file) == 0)
+			return static_cast<int>(i);
+	}
+
+	return -1;
+}
+
+int OrderFiles(int chara, int* order)
 {
 	const int count = (std::min)(PaletteLibrary::GetCount(chara), static_cast<int>(PaletteLibrary::kMaxFiles));
 
 	for (int i = 0; i < count; ++i)
 		order[i] = i;
 
-	std::stable_sort(order, order + count, [chara](int a, int b)
+	const Shelf& shelf = ShelfFor(chara);
+	const ColourSlots::ExtendedOrder mode = g_extendedOrder;
+
+	std::stable_sort(order, order + count, [chara, &shelf, mode](int a, int b)
 	{
-		return PaletteLibrary::GetCreated(chara, a) < PaletteLibrary::GetCreated(chara, b);
+		const char* const nameA = PaletteLibrary::GetName(chara, a);
+		const char* const nameB = PaletteLibrary::GetName(chara, b);
+
+		if (mode == ColourSlots::ExtendedOrder::Custom)
+		{
+			const int rankA = RankInCustom(shelf, nameA);
+			const int rankB = RankInCustom(shelf, nameB);
+
+			if (rankA != rankB)
+			{
+				if (rankA < 0)
+					return false;
+				if (rankB < 0)
+					return true;
+				return rankA < rankB;
+			}
+		}
+
+		if (mode == ColourSlots::ExtendedOrder::ByName)
+			return _stricmp(nameA, nameB) < 0;
+
+		const uint64_t timeA = PaletteLibrary::GetCreated(chara, a);
+		const uint64_t timeB = PaletteLibrary::GetCreated(chara, b);
+
+		if (timeA != timeB)
+		{
+			return mode == ColourSlots::ExtendedOrder::NewestFirst
+				? timeA > timeB
+				: timeA < timeB;
+		}
+
+		return _stricmp(nameA, nameB) < 0;
 	});
 
 	return count;
@@ -178,7 +319,7 @@ int WalkExtended(int chara, Visit visit)
 		return ColourSlots::kNoExtended;
 
 	int order[PaletteLibrary::kMaxFiles] = {};
-	const int count = CreationOrder(chara, order);
+	const int count = OrderFiles(chara, order);
 	int slot = ColourSlots::kNoExtended;
 
 	for (int i = 0; i < count; ++i)
@@ -293,8 +434,50 @@ int ColourSlots::ExtendedOf(int chara, const char* file)
 	return found;
 }
 
+ColourSlots::ExtendedOrder ColourSlots::GetExtendedOrder()
+{
+	if (!g_orderLoaded)
+		LoadShelves();
+
+	return g_extendedOrder;
+}
+
+void ColourSlots::SetExtendedOrder(ExtendedOrder order)
+{
+	if (!g_orderLoaded)
+		LoadShelves();
+
+	g_extendedOrder = order;
+	Settings::SaveString(kSection, kOrderKey, OrderToString(order));
+}
+
+int ColourSlots::CustomOrderRank(int chara, const char* file)
+{
+	if (!IsCharacter(chara) || !IsFile(file))
+		return -1;
+
+	return RankInCustom(ShelfFor(chara), file);
+}
+
+void ColourSlots::SetCustomOrder(int chara, const std::vector<std::string>& files)
+{
+	if (!IsCharacter(chara))
+		return;
+
+	Shelf& shelf = ShelfFor(chara);
+	shelf.customOrder = files;
+
+	char key[64] = {};
+	OrderKeyFor(chara, key, sizeof(key));
+
+	const std::string joined = JoinOrder(files);
+	Settings::SaveString(kSection, key, joined.empty() ? nullptr : joined.c_str());
+}
+
 void ColourSlots::Reload()
 {
+	g_orderLoaded = false;
+
 	for (Shelf& shelf : g_shelves)
 		shelf.loaded = false;
 }

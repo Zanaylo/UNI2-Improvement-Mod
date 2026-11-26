@@ -173,6 +173,12 @@ int LuaOn(lua_State* L)
 		owner->gameStartedCallbacks.push_back(ref);
 	else if (strcmp(event, "game_ended") == 0)
 		owner->gameEndedCallbacks.push_back(ref);
+	else if (strcmp(event, "scene_changed") == 0)
+		owner->sceneChangedCallbacks.push_back(ref);
+	else if (strcmp(event, "network_menu_opened") == 0)
+		owner->networkMenuOpenedCallbacks.push_back(ref);
+	else if (strcmp(event, "player_match_result") == 0)
+		owner->playerMatchResultCallbacks.push_back(ref);
 	else if (strcmp(event, "shutdown") == 0)
 		owner->shutdownCallbacks.push_back(ref);
 	else
@@ -365,6 +371,22 @@ int LuaMemWriteI32(lua_State* L)
 	return 1;
 }
 
+int LuaMemWriteU16(lua_State* L)
+{
+	const uintptr_t address = static_cast<uintptr_t>(luaL_checkinteger(L, 1));
+	const uint16_t value = static_cast<uint16_t>(luaL_checkinteger(L, 2));
+	lua_pushboolean(L, address != 0 && TryWriteMemory(reinterpret_cast<void*>(address), &value, sizeof(value)) ? 1 : 0);
+	return 1;
+}
+
+int LuaMemWriteU8(lua_State* L)
+{
+	const uintptr_t address = static_cast<uintptr_t>(luaL_checkinteger(L, 1));
+	const uint8_t value = static_cast<uint8_t>(luaL_checkinteger(L, 2));
+	lua_pushboolean(L, address != 0 && TryWriteMemory(reinterpret_cast<void*>(address), &value, sizeof(value)) ? 1 : 0);
+	return 1;
+}
+
 int LuaMemReadRvaI32(lua_State* L)
 {
 	const uintptr_t address = RvaToAddress(static_cast<uintptr_t>(luaL_checkinteger(L, 1)));
@@ -448,6 +470,13 @@ int LuaGameCharacterName(lua_State* L)
 int LuaGameClaimPad(lua_State* L)
 {
 	lua_pushinteger(L, RoomAutomation::ClaimNetworkPad());
+	return 1;
+}
+
+int LuaGameRequestScene(lua_State* L)
+{
+	const uint32_t scene = static_cast<uint32_t>(luaL_checkinteger(L, 1));
+	lua_pushboolean(L, RoomAutomation::RequestScene(scene) ? 1 : 0);
 	return 1;
 }
 
@@ -976,6 +1005,8 @@ void RegisterSubtable(lua_State* L, int parentIndex, const char* name, const lua
 void RegisterOffsets(lua_State* L, int parentIndex)
 {
 	lua_newtable(L);
+	lua_pushinteger(L, GameOffsets::kSceneId); lua_setfield(L, -2, "SCENE_ID");
+	lua_pushinteger(L, GameOffsets::kSceneRequest); lua_setfield(L, -2, "SCENE_REQUEST");
 	lua_pushinteger(L, GameOffsets::kSceneBattle); lua_setfield(L, -2, "SCENE_BATTLE");
 	lua_pushinteger(L, GameOffsets::kSceneMainMenu); lua_setfield(L, -2, "SCENE_MAIN_MENU");
 	lua_pushinteger(L, GameOffsets::kSceneNetwork); lua_setfield(L, -2, "SCENE_NETWORK");
@@ -983,9 +1014,51 @@ void RegisterOffsets(lua_State* L, int parentIndex)
 	lua_pushinteger(L, GameOffsets::kSceneReplayList); lua_setfield(L, -2, "SCENE_REPLAY_LIST");
 	lua_pushinteger(L, GameOffsets::kNetworkMenu); lua_setfield(L, -2, "NETWORK_MENU");
 	lua_pushinteger(L, GameOffsets::kNetworkMenuState); lua_setfield(L, -2, "NETWORK_MENU_STATE");
+	lua_pushinteger(L, GameOffsets::kNetworkMenuPending); lua_setfield(L, -2, "NETWORK_MENU_PENDING");
 	lua_pushinteger(L, GameOffsets::kNetworkMenuList); lua_setfield(L, -2, "NETWORK_MENU_LIST");
+	lua_pushinteger(L, GameOffsets::kNetworkMenuPick); lua_setfield(L, -2, "NETWORK_MENU_PICK");
+	lua_pushinteger(L, GameOffsets::kNetworkMenuProfileCard); lua_setfield(L, -2, "NETWORK_MENU_PROFILE_CARD");
+	lua_pushinteger(L, GameOffsets::kNetworkPickCreateRoom); lua_setfield(L, -2, "NETWORK_PICK_CREATE_ROOM");
+	lua_pushinteger(L, GameOffsets::kProfileCardState); lua_setfield(L, -2, "PROFILE_CARD_STATE");
+	lua_pushinteger(L, GameOffsets::kProfileCardDismiss); lua_setfield(L, -2, "PROFILE_CARD_DISMISS");
+	lua_pushinteger(L, GameOffsets::kProfileCardDone); lua_setfield(L, -2, "PROFILE_CARD_DONE");
+	lua_pushinteger(L, GameOffsets::kNetworkInitError); lua_setfield(L, -2, "NETWORK_INIT_ERROR");
+	lua_pushinteger(L, GameOffsets::kNetworkStepState); lua_setfield(L, -2, "NETWORK_STEP_STATE");
+	lua_pushinteger(L, GameOffsets::kNetworkStepErrorKind); lua_setfield(L, -2, "NETWORK_STEP_ERROR");
+	lua_pushinteger(L, GameOffsets::kNetworkStepError); lua_setfield(L, -2, "NETWORK_STEP_ERROR_VALUE");
 	lua_pushinteger(L, GameOffsets::kNetworkFlowError); lua_setfield(L, -2, "NETWORK_FLOW_ERROR");
 	lua_pushinteger(L, GameOffsets::kRoomTaskState); lua_setfield(L, -2, "ROOM_TASK_STATE");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchRoot); lua_setfield(L, -2, "PLAYER_MATCH_ROOT");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchState); lua_setfield(L, -2, "PLAYER_MATCH_STATE");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchDialogStep); lua_setfield(L, -2, "PLAYER_MATCH_DIALOG_STEP");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchCreateMenu); lua_setfield(L, -2, "PLAYER_MATCH_CREATE_MENU");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchCreateAnswer); lua_setfield(L, -2, "PLAYER_MATCH_CREATE_ANSWER");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchRoomType); lua_setfield(L, -2, "PLAYER_MATCH_ROOM_TYPE");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchSettings); lua_setfield(L, -2, "PLAYER_MATCH_SETTINGS");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchAltSettings); lua_setfield(L, -2, "PLAYER_MATCH_ALT_SETTINGS");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchUseAltSettings); lua_setfield(L, -2, "PLAYER_MATCH_USE_ALT_SETTINGS");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchCreateScreen); lua_setfield(L, -2, "PLAYER_MATCH_CREATE_SCREEN");
+	lua_pushinteger(L, GameOffsets::kPlayerMatchDialogOpen); lua_setfield(L, -2, "PLAYER_MATCH_DIALOG_OPEN");
+	lua_pushinteger(L, GameOffsets::kCreateMenuChoosing); lua_setfield(L, -2, "CREATE_MENU_CHOOSING");
+	lua_pushinteger(L, GameOffsets::kCreateMenuUnanswered); lua_setfield(L, -2, "CREATE_MENU_UNANSWERED");
+	lua_pushinteger(L, GameOffsets::kCreateMenuCreateRoom); lua_setfield(L, -2, "CREATE_MENU_CREATE_ROOM");
+	lua_pushinteger(L, GameOffsets::kMenuPages); lua_setfield(L, -2, "MENU_PAGES");
+	lua_pushinteger(L, GameOffsets::kMenuPageStride); lua_setfield(L, -2, "MENU_PAGE_STRIDE");
+	lua_pushinteger(L, GameOffsets::kMenuRowStride); lua_setfield(L, -2, "MENU_ROW_STRIDE");
+	lua_pushinteger(L, GameOffsets::kMenuRowValue); lua_setfield(L, -2, "MENU_ROW_VALUE");
+	lua_pushinteger(L, GameOffsets::kRoomCapacityRow); lua_setfield(L, -2, "ROOM_CAPACITY_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomCapacityTwoPeople); lua_setfield(L, -2, "ROOM_CAPACITY_TWO_PEOPLE");
+	lua_pushinteger(L, GameOffsets::kRoomRematchRow); lua_setfield(L, -2, "ROOM_REMATCH_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomRoundsRow); lua_setfield(L, -2, "ROOM_ROUNDS_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomRoundTimeRow); lua_setfield(L, -2, "ROOM_ROUND_TIME_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomType1RematchRow); lua_setfield(L, -2, "ROOM_TYPE1_REMATCH_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomType1RoundsRow); lua_setfield(L, -2, "ROOM_TYPE1_ROUNDS_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomType1RoundTimeRow); lua_setfield(L, -2, "ROOM_TYPE1_ROUND_TIME_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomAltRematchRow); lua_setfield(L, -2, "ROOM_ALT_REMATCH_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomAltRoundsRow); lua_setfield(L, -2, "ROOM_ALT_ROUNDS_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomAltRoundTimeRow); lua_setfield(L, -2, "ROOM_ALT_ROUND_TIME_ROW");
+	lua_pushinteger(L, GameOffsets::kRoomRoundsTwo); lua_setfield(L, -2, "ROOM_ROUNDS_TWO");
+	lua_pushinteger(L, GameOffsets::kRoomRoundTimeDefault99); lua_setfield(L, -2, "ROOM_ROUND_TIME_DEFAULT_99");
 	lua_setfield(L, parentIndex, "offsets");
 }
 
@@ -1035,6 +1108,8 @@ void LuaHost::RegisterCoreBindings(lua_State* L)
 		{ "read_u16", LuaMemReadU16 },
 		{ "read_u8", LuaMemReadU8 },
 		{ "write_i32", LuaMemWriteI32 },
+		{ "write_u16", LuaMemWriteU16 },
+		{ "write_u8", LuaMemWriteU8 },
 		{ "read_rva_i32", LuaMemReadRvaI32 },
 		{ "write_rva_i32", LuaMemWriteRvaI32 },
 		{ nullptr, nullptr }
@@ -1051,6 +1126,7 @@ void LuaHost::RegisterCoreBindings(lua_State* L)
 		{ "character", LuaGameCharacter },
 		{ "character_name", LuaGameCharacterName },
 		{ "claim_pad", LuaGameClaimPad },
+		{ "request_scene", LuaGameRequestScene },
 		{ "enter_network", LuaGameEnterNetwork },
 		{ "leave_training", LuaGameLeaveTraining },
 		{ "can_join_room", LuaGameCanJoinRoom },

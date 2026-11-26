@@ -147,21 +147,39 @@ bool HasDanglingWrapper(uintptr_t holder)
 	if (!LooksLikePointer(holder))
 		return true;
 
-	uintptr_t wrapper = 0;
+	bool dangling = true;
 
 	__try
 	{
-		wrapper = *reinterpret_cast<const uintptr_t*>(holder);
+		const uintptr_t wrapper = *reinterpret_cast<const uintptr_t*>(holder);
+
+		if (wrapper == 0)
+		{
+			dangling = false;
+		}
+		else if (LooksLikePointer(wrapper))
+		{
+			const uintptr_t texture = *reinterpret_cast<const uintptr_t*>(
+				wrapper + GameOffsets::kPaletteWrapperTexture);
+
+			if (LooksLikePointer(texture))
+			{
+				const uintptr_t vtable = *reinterpret_cast<const uintptr_t*>(texture);
+
+				if (LooksLikePointer(vtable))
+				{
+					IDirect3DBaseTexture9* const base = reinterpret_cast<IDirect3DBaseTexture9*>(texture);
+					dangling = base->GetType() != D3DRTYPE_TEXTURE;
+				}
+			}
+		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
-		return true;
+		dangling = true;
 	}
 
-	if (wrapper == 0)
-		return false;
-
-	return !IsValidPaletteHolder(holder);
+	return dangling;
 }
 
 struct DrawFields

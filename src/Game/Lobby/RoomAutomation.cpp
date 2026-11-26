@@ -1,5 +1,6 @@
 #include "Game/Lobby/RoomAutomation.h"
 
+#include "Addons/LuaHost.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Engine/CodeSignatures.h"
@@ -30,6 +31,7 @@ constexpr int kSceneRequested = 1;
 constexpr unsigned kMainMenuFrames = 30;
 constexpr unsigned kMenuSettleFrames = 30;
 constexpr unsigned kPickRetryFrames = 60;
+constexpr int kMaxPickAttempts = 4;
 constexpr unsigned kCardDismissTimeoutFrames = 90;
 constexpr uint32_t kNetworkMenuRunning = 1;
 constexpr uint32_t kNetworkListIdle = 1;
@@ -47,6 +49,7 @@ DWORD g_stageSince = 0;
 unsigned g_menuFrames = 0;
 unsigned g_cardDismissFrames = 0;
 int g_picks = 0;
+bool g_errorArmed = false;
 
 int ReadRvaInt(uintptr_t rva)
 {
@@ -94,6 +97,27 @@ void NoteStage(CreateStage stage)
 	g_cardDismissFrames = 0;
 	g_picks = 0;
 	LOG("RoomAutomation: %s", RoomAutomation::CreateStageText(stage));
+}
+
+bool HasRawNetworkError()
+{
+	return ReadRvaInt(GameOffsets::kNetworkInitError) < 0 ||
+		ReadRvaInt(GameOffsets::kNetworkFlowError) != 0 ||
+		ReadRvaInt(GameOffsets::kNetworkStepErrorKind) != 0 ||
+		ReadRvaInt(GameOffsets::kNetworkStepState) == GameOffsets::kNetworkStepError;
+}
+
+bool CheckNetworkError()
+{
+	const bool active = HasRawNetworkError();
+
+	if (!active)
+	{
+		g_errorArmed = true;
+		return false;
+	}
+
+	return g_errorArmed;
 }
 
 int RematchLimitFor(int firstTo)
@@ -271,6 +295,13 @@ void StepNetworkMenu()
 	if (!DismissProfileCardIfVisible())
 		return;
 
+	if (g_picks >= kMaxPickAttempts)
+	{
+		LOG_WARN("RoomAutomation: Create Room did not open after %d attempts", g_picks);
+		NoteStage(CreateStage::Failed);
+		return;
+	}
+
 	if (g_picks > 0 && (g_menuFrames % kPickRetryFrames) != 0)
 		return;
 
@@ -281,6 +312,7 @@ void StepNetworkMenu()
 void __stdcall HookedOpenNetworkMenu(int mode)
 {
 	g_menuHook.Original()(mode);
+	LuaHost::OnNetworkMenuOpened(mode);
 
 	const CreateStage stage = g_stage.load();
 
@@ -291,6 +323,7 @@ void __stdcall HookedOpenNetworkMenu(int mode)
 void __fastcall HookedPlayerMatchResult(uint8_t* root, void* unused, int result)
 {
 	g_resultHook.Original()(root, result);
+	LuaHost::OnPlayerMatchResult(reinterpret_cast<uintptr_t>(root), result);
 
 	const CreateStage stage = g_stage.load();
 
@@ -346,15 +379,20 @@ int RoomAutomation::ClaimNetworkPad()
 	return WriteRvaInt(GameOffsets::kNetworkPad, pad) ? pad : GameOffsets::kNoPad;
 }
 
+bool RoomAutomation::RequestScene(uint32_t scene)
+{
+	return ::RequestScene(scene);
+}
+
 bool RoomAutomation::EnterNetwork()
 {
 	ClaimNetworkPad();
-	return RequestScene(GameOffsets::kSceneNetwork);
+	return ::RequestScene(GameOffsets::kSceneNetwork);
 }
 
 bool RoomAutomation::LeaveTraining()
 {
-	return RequestScene(GameOffsets::kSceneMainMenu);
+	return ::RequestScene(GameOffsets::kSceneMainMenu);
 }
 
 bool RoomAutomation::CanJoin()
@@ -382,6 +420,7 @@ void RoomAutomation::StartCreate(int firstTo)
 		return;
 
 	g_firstTo.store(firstTo);
+	g_errorArmed = !HasRawNetworkError();
 	NoteStage(CreateStage::Armed);
 }
 
@@ -395,6 +434,7 @@ void RoomAutomation::StopCreate()
 	if (g_stage.load() == CreateStage::Idle)
 		return;
 
+	g_errorArmed = false;
 	NoteStage(CreateStage::Idle);
 }
 
@@ -402,8 +442,15 @@ RoomAutomation::CreateStage RoomAutomation::StepCreate()
 {
 	const CreateStage stage = g_stage.load();
 
-	if (stage == CreateStage::Idle)
+	if (stage == CreateStage::Idle || stage == CreateStage::Failed)
 		return stage;
+
+	if (stage != CreateStage::Armed && CheckNetworkError())
+	{
+		LOG_WARN("RoomAutomation: network error detected during %s", CreateStageText(stage));
+		NoteStage(CreateStage::Failed);
+		return g_stage.load();
+	}
 
 	const uint32_t scene = SceneWatch::Current();
 
@@ -454,6 +501,8 @@ const char* RoomAutomation::CreateStageText(CreateStage stage)
 		return "Opening Player Match";
 	case CreateStage::CreatingRoom:
 		return "Creating the room";
+	case CreateStage::Failed:
+		return "Network error while creating the room";
 	case CreateStage::Armed:
 		return "Go to the main menu and the room is created for you";
 	default:
@@ -465,5 +514,6 @@ bool RoomAutomation::CreateTimedOut()
 {
 	const CreateStage stage = g_stage.load();
 
-	return stage != CreateStage::Idle && stage != CreateStage::Armed && GetTickCount() - g_stageSince > kGiveUpMs;
+	return stage != CreateStage::Idle && stage != CreateStage::Armed &&
+		stage != CreateStage::Failed && GetTickCount() - g_stageSince > kGiveUpMs;
 }

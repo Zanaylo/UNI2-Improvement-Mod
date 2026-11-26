@@ -11,12 +11,14 @@ namespace RoomAutomation
 		EnteringNetwork,
 		PickingCreateRoom,
 		OpeningPlayerMatch,
-		CreatingRoom
+		CreatingRoom,
+		Failed
 	};
 
 	bool Install();
 
 	int ClaimNetworkPad();
+	bool RequestScene(uint32_t scene);
 	bool EnterNetwork();
 	bool LeaveTraining();
 

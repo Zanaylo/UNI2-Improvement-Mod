@@ -35,4 +35,5 @@ namespace LoaderConfig
 	void SaveCheckAddonUpdatesInGame(const std::string& gameDir, bool on);
 	bool ReadBundleBootstrapped(const std::string& gameDir);
 	void SaveBundleBootstrapped(const std::string& gameDir, bool done);
+	bool HasImAssets(const std::string& gameDir);
 }

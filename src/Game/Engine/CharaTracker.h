@@ -18,6 +18,8 @@ namespace CharaTracker
 	bool Install();
 	bool IsInstalled();
 
+	void OnBattleTick();
+
 	uint64_t GetCallCount();
 
 	bool IsBattleActive();

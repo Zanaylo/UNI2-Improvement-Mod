@@ -16,11 +16,17 @@ std::string TitleOf(const char* file, const PaletteFile::Info& info)
 	return name.substr(0, name.size() - strlen(PaletteFile::kExtension));
 }
 
-void ReadPalette(const std::string& folder, const char* file, PaletteCatalog::Character& out)
+uint64_t TimeOf(const FILETIME& time)
+{
+	return (static_cast<uint64_t>(time.dwHighDateTime) << 32) | time.dwLowDateTime;
+}
+
+void ReadPalette(const std::string& folder, const char* file, uint64_t created, PaletteCatalog::Character& out)
 {
 	PaletteCatalog::Palette palette;
 
 	palette.file = file;
+	palette.created = created;
 	palette.info = {};
 	palette.colours.resize(PaletteFile::kBytes);
 
@@ -42,7 +48,7 @@ void ReadFolder(const PaletteCatalog::Folder& folder, PaletteCatalog::Character&
 	do
 	{
 		if ((found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && !PaletteFile::IsCompanion(found.cFileName))
-			ReadPalette(folder.path, found.cFileName, out);
+			ReadPalette(folder.path, found.cFileName, TimeOf(found.ftCreationTime), out);
 	}
 	while (FindNextFileA(search, &found));
 

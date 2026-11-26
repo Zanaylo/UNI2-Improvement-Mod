@@ -1,6 +1,7 @@
 #include "Addons/LuaHost.h"
 
 #include "Core/logger.h"
+#include "Game/Engine/SceneWatch.h"
 #include "Overlay/Widgets/Cards.h"
 #include "Overlay/Widgets/UiScale.h"
 #include "Overlay/Widgets/UiText.h"
@@ -36,6 +37,8 @@ struct HttpResult
 
 std::vector<std::unique_ptr<LuaHost::Instance>> g_instances;
 std::recursive_mutex g_vmMutex;
+uint32_t g_lastScene = 0;
+bool g_hasLastScene = false;
 
 std::mutex g_httpMutex;
 std::condition_variable g_httpWake;
@@ -100,6 +103,39 @@ void CallNoArgs(LuaHost::Instance& instance, int ref, const char* context)
 	lua_rawgeti(instance.state, LUA_REGISTRYINDEX, ref);
 
 	if (lua_pcall(instance.state, 0, 0, 0) != LUA_OK)
+	{
+		const char* const message = lua_tostring(instance.state, -1);
+		LOG_ERROR("Addon %s (%s): %s", instance.id.c_str(), context, message != nullptr ? message : "error");
+		lua_pop(instance.state, 1);
+	}
+}
+
+void CallOneInt(LuaHost::Instance& instance, int ref, lua_Integer arg, const char* context)
+{
+	if (instance.state == nullptr || ref == LUA_NOREF)
+		return;
+
+	lua_rawgeti(instance.state, LUA_REGISTRYINDEX, ref);
+	lua_pushinteger(instance.state, arg);
+
+	if (lua_pcall(instance.state, 1, 0, 0) != LUA_OK)
+	{
+		const char* const message = lua_tostring(instance.state, -1);
+		LOG_ERROR("Addon %s (%s): %s", instance.id.c_str(), context, message != nullptr ? message : "error");
+		lua_pop(instance.state, 1);
+	}
+}
+
+void CallTwoInts(LuaHost::Instance& instance, int ref, lua_Integer first, lua_Integer second, const char* context)
+{
+	if (instance.state == nullptr || ref == LUA_NOREF)
+		return;
+
+	lua_rawgeti(instance.state, LUA_REGISTRYINDEX, ref);
+	lua_pushinteger(instance.state, first);
+	lua_pushinteger(instance.state, second);
+
+	if (lua_pcall(instance.state, 2, 0, 0) != LUA_OK)
 	{
 		const char* const message = lua_tostring(instance.state, -1);
 		LOG_ERROR("Addon %s (%s): %s", instance.id.c_str(), context, message != nullptr ? message : "error");
@@ -263,8 +299,20 @@ void LuaHost::OnFrame()
 	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
 	DrainHttpResults();
 
+	const uint32_t scene = SceneWatch::Current();
+	const bool sceneChanged = g_hasLastScene && scene != g_lastScene;
+	const uint32_t previousScene = g_lastScene;
+	g_lastScene = scene;
+	g_hasLastScene = true;
+
 	for (std::unique_ptr<Instance>& instance : g_instances)
 	{
+		if (sceneChanged)
+		{
+			for (int ref : instance->sceneChangedCallbacks)
+				CallTwoInts(*instance, ref, static_cast<lua_Integer>(previousScene), static_cast<lua_Integer>(scene), "scene_changed");
+		}
+
 		for (int ref : instance->frameCallbacks)
 			CallNoArgs(*instance, ref, "frame");
 	}
@@ -388,9 +436,32 @@ void LuaHost::OnGameEnded(const GameResults::Report& report)
 	}
 }
 
+void LuaHost::OnNetworkMenuOpened(int mode)
+{
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
+	for (std::unique_ptr<Instance>& instance : g_instances)
+	{
+		for (int ref : instance->networkMenuOpenedCallbacks)
+			CallOneInt(*instance, ref, static_cast<lua_Integer>(mode), "network_menu_opened");
+	}
+}
+
+void LuaHost::OnPlayerMatchResult(uintptr_t root, int result)
+{
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
+	for (std::unique_ptr<Instance>& instance : g_instances)
+	{
+		for (int ref : instance->playerMatchResultCallbacks)
+			CallTwoInts(*instance, ref, static_cast<lua_Integer>(root), static_cast<lua_Integer>(result), "player_match_result");
+	}
+}
+
 void LuaHost::UnloadAll()
 {
 	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+	g_hasLastScene = false;
 
 	{
 		std::lock_guard<std::mutex> lock(g_httpMutex);

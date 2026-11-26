@@ -24,6 +24,9 @@ private:
 
 	void StartScan();
 	void TakeScan();
+	void SortCharacter(PaletteCatalog::Character& character);
+	void SortAllCharacters();
+	void ApplyPendingMove();
 	void FindSelected();
 	void ReadWorn();
 
@@ -55,6 +58,10 @@ private:
 	const PaletteCatalog::Palette* m_selected = nullptr;
 	int m_selectedChara = -1;
 	std::string m_selectedFile;
+
+	int m_pendingMoveChara = -1;
+	std::string m_pendingMoveFrom;
+	std::string m_pendingMoveTo;
 
 	int m_wornChara[kPlayers] = { -1, -1 };
 	const char* m_wornFile[kPlayers] = {};

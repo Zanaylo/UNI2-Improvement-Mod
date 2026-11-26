@@ -14,6 +14,7 @@
 #include "Palette/PaletteMemory.h"
 #include "Palette/PaletteSearch.h"
 
+#include <algorithm>
 #include <cfloat>
 #include <cstdio>
 #include <cstring>
@@ -25,7 +26,8 @@ constexpr float kWindowHeight = 640.0f;
 constexpr float kSmallestWidth = 620.0f;
 constexpr float kSmallestHeight = 360.0f;
 constexpr float kDetailsWidth = 300.0f;
-constexpr float kFilterWidth = 260.0f;
+constexpr float kFilterWidth = 220.0f;
+constexpr float kOrderWidth = 175.0f;
 constexpr float kCardWidth = 104.0f;
 constexpr float kCardPicture = 96.0f;
 constexpr float kCardInset = 4.0f;
@@ -34,10 +36,35 @@ constexpr float kBadgePadding = 3.0f;
 constexpr float kBadgeMargin = 2.0f;
 constexpr float kWornBorder = 2.0f;
 
+constexpr const char* kPaletteDragPayload = "UNI2_PALETTE_CARD";
+
 constexpr ImU32 kPictureBackdrop = IM_COL32(0x18, 0x18, 0x1c, 255);
 constexpr ImU32 kBadgeBackdrop = IM_COL32(0x19, 0x19, 0x19, 0xd2);
 constexpr ImU32 kBadgeText = IM_COL32(0xff, 0xcc, 0x33, 255);
+constexpr ImU32 kExtendedBadgeText = IM_COL32(0x6e, 0xe7, 0xb7, 255);
 constexpr ImU32 kWornOutline = IM_COL32(0x66, 0xdd, 0x88, 255);
+constexpr ImU32 kDropOutline = IM_COL32(0x34, 0xd3, 0x99, 255);
+
+struct DragPalettePayload
+{
+	int chara;
+	char file[256];
+};
+
+const char* OrderLabel(ColourSlots::ExtendedOrder order)
+{
+	switch (order)
+	{
+	case ColourSlots::ExtendedOrder::NewestFirst:
+		return Tr("Newest first");
+	case ColourSlots::ExtendedOrder::ByName:
+		return Tr("By name");
+	case ColourSlots::ExtendedOrder::Custom:
+		return Tr("Custom list");
+	default:
+		return Tr("Oldest first");
+	}
+}
 
 float Half(float value)
 {
@@ -120,7 +147,101 @@ void PaletteLibraryWindow::TakeScan()
 	m_characters = std::move(m_scanned);
 	m_scanned.clear();
 
+	SortAllCharacters();
+}
+
+void PaletteLibraryWindow::SortCharacter(PaletteCatalog::Character& character)
+{
+	const ColourSlots::ExtendedOrder mode = ColourSlots::GetExtendedOrder();
+	const int chara = character.chara;
+
+	std::stable_sort(character.palettes.begin(), character.palettes.end(),
+		[chara, mode](const PaletteCatalog::Palette& a, const PaletteCatalog::Palette& b)
+	{
+		if (mode == ColourSlots::ExtendedOrder::Custom)
+		{
+			const int rankA = ColourSlots::CustomOrderRank(chara, a.file.c_str());
+			const int rankB = ColourSlots::CustomOrderRank(chara, b.file.c_str());
+
+			if (rankA != rankB)
+			{
+				if (rankA < 0)
+					return false;
+				if (rankB < 0)
+					return true;
+				return rankA < rankB;
+			}
+		}
+
+		if (mode == ColourSlots::ExtendedOrder::ByName)
+			return _stricmp(a.file.c_str(), b.file.c_str()) < 0;
+
+		if (a.created != b.created)
+		{
+			return mode == ColourSlots::ExtendedOrder::NewestFirst
+				? a.created > b.created
+				: a.created < b.created;
+		}
+
+		return _stricmp(a.file.c_str(), b.file.c_str()) < 0;
+	});
+}
+
+void PaletteLibraryWindow::SortAllCharacters()
+{
+	for (PaletteCatalog::Character& character : m_characters)
+		SortCharacter(character);
+
 	FindSelected();
+}
+
+void PaletteLibraryWindow::ApplyPendingMove()
+{
+	if (m_pendingMoveChara < 0 || m_pendingMoveFrom.empty() || m_pendingMoveTo.empty())
+		return;
+
+	const int chara = m_pendingMoveChara;
+	const std::string fromFile = std::move(m_pendingMoveFrom);
+	const std::string toFile = std::move(m_pendingMoveTo);
+
+	m_pendingMoveChara = -1;
+	m_pendingMoveFrom.clear();
+	m_pendingMoveTo.clear();
+
+	for (PaletteCatalog::Character& character : m_characters)
+	{
+		if (character.chara != chara)
+			continue;
+
+		int fromIndex = -1;
+		int toIndex = -1;
+
+		for (int i = 0; i < static_cast<int>(character.palettes.size()); ++i)
+		{
+			if (_stricmp(character.palettes[i].file.c_str(), fromFile.c_str()) == 0)
+				fromIndex = i;
+			if (_stricmp(character.palettes[i].file.c_str(), toFile.c_str()) == 0)
+				toIndex = i;
+		}
+
+		if (fromIndex < 0 || toIndex < 0 || fromIndex == toIndex)
+			return;
+
+		PaletteCatalog::Palette moved = std::move(character.palettes[fromIndex]);
+		character.palettes.erase(character.palettes.begin() + fromIndex);
+		character.palettes.insert(character.palettes.begin() + toIndex, std::move(moved));
+
+		std::vector<std::string> customFiles;
+		customFiles.reserve(character.palettes.size());
+
+		for (const PaletteCatalog::Palette& palette : character.palettes)
+			customFiles.push_back(palette.file);
+
+		ColourSlots::SetCustomOrder(chara, customFiles);
+		ColourSlots::SetExtendedOrder(ColourSlots::ExtendedOrder::Custom);
+		SortAllCharacters();
+		return;
+	}
 }
 
 void PaletteLibraryWindow::FindSelected()
@@ -183,6 +304,8 @@ void PaletteLibraryWindow::Draw()
 	DrawCharacters();
 	ImGui::EndChild();
 
+	ApplyPendingMove();
+
 	ImGui::SameLine();
 
 	ImGui::BeginChild("details", ImVec2(detailsWidth, 0.0f), ImGuiChildFlags_Borders);
@@ -194,6 +317,47 @@ void PaletteLibraryWindow::DrawToolbar()
 {
 	Ui::SetItemWidth(kFilterWidth);
 	ImGui::InputTextWithHint("##filter", Tr("Search palettes or characters"), m_filter, sizeof(m_filter));
+
+	ImGui::SameLine();
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextUnformatted(Tr("EX order"));
+
+	ImGui::SameLine();
+	Ui::SetItemWidth(kOrderWidth);
+
+	const ColourSlots::ExtendedOrder currentOrder = ColourSlots::GetExtendedOrder();
+
+	if (ImGui::BeginCombo("##ex-order", OrderLabel(currentOrder)))
+	{
+		constexpr ColourSlots::ExtendedOrder kOrders[] = {
+			ColourSlots::ExtendedOrder::OldestFirst,
+			ColourSlots::ExtendedOrder::NewestFirst,
+			ColourSlots::ExtendedOrder::ByName,
+			ColourSlots::ExtendedOrder::Custom,
+		};
+
+		for (ColourSlots::ExtendedOrder option : kOrders)
+		{
+			const bool selected = option == currentOrder;
+
+			if (ImGui::Selectable(OrderLabel(option), selected))
+			{
+				ColourSlots::SetExtendedOrder(option);
+				SortAllCharacters();
+			}
+
+			if (selected)
+				ImGui::SetItemDefaultFocus();
+		}
+
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("%s", Tr("Order of extended (EX) palettes on character select.\n"
+			"Drag any palette card onto another to arrange them in a custom list."));
+	}
 
 	ImGui::SameLine();
 
@@ -319,16 +483,61 @@ void PaletteLibraryWindow::DrawCard(const PaletteCatalog::Character& character, 
 		m_selected = &palette;
 	}
 
+	bool dropHighlight = false;
+
+	if (ImGui::BeginDragDropSource())
+	{
+		DragPalettePayload payload = {};
+		payload.chara = character.chara;
+		strncpy_s(payload.file, palette.file.c_str(), _TRUNCATE);
+
+		ImGui::SetDragDropPayload(kPaletteDragPayload, &payload, sizeof(payload));
+		ImGui::TextUnformatted(palette.title.c_str());
+		ImGui::EndDragDropSource();
+	}
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		const ImGuiPayload* const peek = ImGui::GetDragDropPayload();
+
+		if (peek != nullptr && peek->IsDataType(kPaletteDragPayload) && peek->DataSize == sizeof(DragPalettePayload))
+		{
+			const auto* const incoming = static_cast<const DragPalettePayload*>(peek->Data);
+
+			if (incoming->chara == character.chara && _stricmp(incoming->file, palette.file.c_str()) != 0)
+			{
+				dropHighlight = true;
+
+				if (ImGui::AcceptDragDropPayload(kPaletteDragPayload) != nullptr)
+				{
+					m_pendingMoveChara = character.chara;
+					m_pendingMoveFrom = incoming->file;
+					m_pendingMoveTo = palette.file;
+				}
+			}
+		}
+
+		ImGui::EndDragDropTarget();
+	}
+
 	const bool hovered = ImGui::IsItemHovered();
 	const bool selected = m_selected == &palette;
 
-	if (hovered)
-		ImGui::SetTooltip("%s", palette.title.c_str());
+	if (hovered && ImGui::GetDragDropPayload() == nullptr)
+	{
+		ImGui::BeginTooltip();
+		ImGui::TextUnformatted(palette.title.c_str());
+		ImGui::TextDisabled("%s", Tr("Drag to reorder EX slots"));
+		ImGui::EndTooltip();
+	}
 
 	ImDrawList* const draw = ImGui::GetWindowDrawList();
 
 	if (selected || hovered)
 		draw->AddRectFilled(corner, end, ImGui::GetColorU32(selected ? ImGuiCol_Header : ImGuiCol_HeaderHovered), kRounding);
+
+	if (dropHighlight)
+		draw->AddRect(corner, end, kDropOutline, kRounding, kWornBorder);
 
 	const float inset = Ui::Scaled(kCardInset);
 	const float side = Ui::Scaled(kCardPicture);
@@ -357,18 +566,30 @@ void PaletteLibraryWindow::DrawBadge(ImDrawList* draw, int chara, const char* fi
 {
 	const int colour = ColourSlots::ColourOf(chara, file);
 
-	if (colour == ColourSlots::kNoColour)
-		return;
+	char text[12] = {};
+	ImU32 textColor = kBadgeText;
 
-	char text[8] = {};
-	ColourBadge(colour, text, sizeof(text));
+	if (colour != ColourSlots::kNoColour)
+	{
+		ColourBadge(colour, text, sizeof(text));
+	}
+	else
+	{
+		const int extended = ColourSlots::ExtendedOf(chara, file);
+
+		if (extended == ColourSlots::kNoExtended)
+			return;
+
+		sprintf_s(text, sizeof(text), "EX%d", extended);
+		textColor = kExtendedBadgeText;
+	}
 
 	const ImVec2 size = ImGui::CalcTextSize(text);
 	const ImVec2 start(corner.x + width - size.x - kBadgePadding * 2.0f - kBadgeMargin, corner.y + kBadgeMargin);
 	const ImVec2 end(start.x + size.x + kBadgePadding * 2.0f, start.y + size.y);
 
 	draw->AddRectFilled(start, end, kBadgeBackdrop, kRounding);
-	draw->AddText(ImVec2(start.x + kBadgePadding, start.y), kBadgeText, text);
+	draw->AddText(ImVec2(start.x + kBadgePadding, start.y), textColor, text);
 }
 
 void PaletteLibraryWindow::DrawDetails()

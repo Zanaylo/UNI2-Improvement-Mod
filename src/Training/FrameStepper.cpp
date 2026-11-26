@@ -6,6 +6,7 @@
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Engine/CharaTracker.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/GameState.h"
 #include "Game/Battle/KeyboardSeat.h"
@@ -104,6 +105,7 @@ void __fastcall HookedFrameUpdate(void* outputByte, void* unused)
 	ThreadRole::Mark(ThreadRole::Role_Game);
 	++g_callCount;
 
+	CharaTracker::OnBattleTick();
 	MemoryMap::InvalidateEffectSlotCache();
 	HitboxData::InvalidateFrameCache();
 

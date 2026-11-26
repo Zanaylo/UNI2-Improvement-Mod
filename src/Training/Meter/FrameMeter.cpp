@@ -12,6 +12,8 @@
 #include "Game/Engine/MemoryMap.h"
 #include "Game/Engine/PlayerHealth.h"
 #include "Game/Engine/PlayerState.h"
+#include "Overlay/Framework/WindowManager.h"
+#include "Overlay/Hud/FrameMeterHud.h"
 #include "Training/FrameStepper.h"
 #include "Training/Meter/MeterTrace.h"
 #include "Training/Meter/SuperFlash.h"
@@ -1500,6 +1502,24 @@ void FinishExchange()
 	LogTrace();
 }
 
+bool HasActiveAutoPause()
+{
+	if (g_autoPause.reversalAfterRestart)
+		return true;
+
+	if (!g_autoPause.player[0] && !g_autoPause.player[1])
+		return false;
+
+	return g_autoPause.onMoveStarts || g_autoPause.onHit ||
+		g_autoPause.onComboHits || g_autoPause.onBlockedHits;
+}
+
+bool NeedsSampling()
+{
+	return FrameMeterHud::IsVisible() || g_diagEnabled || FrameStepper::IsPaused() ||
+		HasActiveAutoPause() || WindowManager::GetInstance().IsOverlayActive();
+}
+
 }
 
 void FrameMeter::Reset()
@@ -1530,7 +1550,7 @@ void FrameMeter::Reset()
 
 void FrameMeter::SampleFromGameThread()
 {
-	if (!GameState::AllowsTrainingTools())
+	if (!GameState::AllowsTrainingTools() || !NeedsSampling())
 	{
 		if (g_length != 0 || g_recording)
 			Reset();

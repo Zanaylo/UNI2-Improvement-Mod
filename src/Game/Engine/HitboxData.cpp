@@ -131,26 +131,40 @@ bool CategorySuppressed(uint32_t existFlags, int category)
 
 bool ReadFrameObjectAt(void* entity, uintptr_t offset, HitboxData::FrameObject& out)
 {
+	if (entity == nullptr)
+		return false;
+
+	const uintptr_t base = reinterpret_cast<uintptr_t>(entity);
+	if (base < 0x10000 || (base & 3) != 0)
+		return false;
+
+	bool ok = false;
 	uint32_t candidate = 0;
-	if (!MemoryMap::ReadStructDword(entity, offset, candidate))
-		return false;
-
-	if (!LooksLikePointer(candidate))
-		return false;
-
 	uint8_t counts[HitboxData::kArrayCount] = {};
-	if (!TryReadMemory(counts, reinterpret_cast<const void*>(candidate + GameOffsets::kFrameObjectCounts),
-		sizeof(counts)))
+	uint32_t arrays[HitboxData::kArrayCount] = {};
+	uint32_t existFlags = 0;
+
+	__try
 	{
-		return false;
+		candidate = *reinterpret_cast<const uint32_t*>(base + offset);
+
+		if (LooksLikePointer(candidate))
+		{
+			memcpy(counts, reinterpret_cast<const void*>(candidate + GameOffsets::kFrameObjectCounts),
+				sizeof(counts));
+			memcpy(arrays, reinterpret_cast<const void*>(candidate + GameOffsets::kFrameObjectArrays),
+				sizeof(arrays));
+			existFlags = *reinterpret_cast<const uint32_t*>(base + GameOffsets::kCharaExistFlags);
+			ok = true;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		ok = false;
 	}
 
-	uint32_t arrays[HitboxData::kArrayCount] = {};
-	if (!TryReadMemory(arrays, reinterpret_cast<const void*>(candidate + GameOffsets::kFrameObjectArrays),
-		sizeof(arrays)))
-	{
+	if (!ok)
 		return false;
-	}
 
 	for (int i = 0; i < HitboxData::kArrayCount; ++i)
 	{
@@ -169,8 +183,7 @@ bool ReadFrameObjectAt(void* entity, uintptr_t offset, HitboxData::FrameObject& 
 		out.counts[i] = counts[i];
 	}
 
-	MemoryMap::ReadStructDword(entity, GameOffsets::kCharaExistFlags, out.existFlags);
-
+	out.existFlags = existFlags;
 	return true;
 }
 
@@ -227,39 +240,55 @@ int HitboxData::ReadBoxes(const FrameObject& frameObject, Box* outBoxes, int max
 
 	int count = 0;
 
-	for (int arrayIndex = kFirstBoxArray; arrayIndex < kArrayCount && count < maxBoxes; ++arrayIndex)
+	__try
 	{
-		const int entryCount = frameObject.counts[arrayIndex];
-		const uint32_t arrayPointer =
-			static_cast<uint32_t>(reinterpret_cast<uintptr_t>(frameObject.arrays[arrayIndex]));
-
-		if (entryCount <= 0 || entryCount > kMaxBoxesPerArray || !LooksLikePointer(arrayPointer))
-			continue;
-
-		uint32_t entries[kMaxBoxesPerArray] = {};
-		if (!TryReadMemory(entries, reinterpret_cast<const void*>(arrayPointer),
-			sizeof(uint32_t) * entryCount))
+		for (int arrayIndex = kFirstBoxArray; arrayIndex < kArrayCount && count < maxBoxes; ++arrayIndex)
 		{
-			continue;
+			const int entryCount = frameObject.counts[arrayIndex];
+			const uint32_t arrayPointer =
+				static_cast<uint32_t>(reinterpret_cast<uintptr_t>(frameObject.arrays[arrayIndex]));
+
+			if (entryCount <= 0 || entryCount > kMaxBoxesPerArray || !LooksLikePointer(arrayPointer))
+				continue;
+
+			const uint32_t* const entries = reinterpret_cast<const uint32_t*>(arrayPointer);
+
+			for (int i = 0; i < entryCount && count < maxBoxes; ++i)
+			{
+				const uint32_t record = entries[i];
+				if (!LooksLikePointer(record))
+					continue;
+
+				const int16_t* const coords = reinterpret_cast<const int16_t*>(record);
+				const int16_t x1 = coords[0];
+				const int16_t y1 = coords[1];
+				const int16_t x2 = coords[2];
+				const int16_t y2 = coords[3];
+
+				if (x1 == x2 || y1 == y2)
+					continue;
+
+				if (abs(x1) > kCoordinateLimit || abs(y1) > kCoordinateLimit ||
+					abs(x2) > kCoordinateLimit || abs(y2) > kCoordinateLimit)
+				{
+					continue;
+				}
+
+				if (CategorySuppressed(frameObject.existFlags, HanteiCategory(arrayIndex, i)))
+					continue;
+
+				Box& box = outBoxes[count++];
+				box.x1 = x1;
+				box.y1 = y1;
+				box.x2 = x2;
+				box.y2 = y2;
+				box.index = i;
+				box.arrayIndex = arrayIndex;
+			}
 		}
-
-		for (int i = 0; i < entryCount && count < maxBoxes; ++i)
-		{
-			if (!LooksLikePointer(entries[i]))
-				continue;
-
-			Box box = {};
-			if (!ReadRecord(entries[i], box))
-				continue;
-
-			box.index = i;
-			box.arrayIndex = arrayIndex;
-
-			if (CategorySuppressed(frameObject.existFlags, HanteiCategory(arrayIndex, i)))
-				continue;
-
-			outBoxes[count++] = box;
-		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
 	}
 
 	return count;

@@ -19,6 +19,7 @@ namespace PaletteCatalog
 	{
 		std::string file;
 		std::string title;
+		uint64_t created = 0;
 		PaletteFile::Info info;
 		std::vector<uint8_t> colours;
 	};

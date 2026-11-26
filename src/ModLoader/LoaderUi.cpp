@@ -33,10 +33,16 @@ constexpr uint32_t kClearColorBgra = 0xFF0B0E0Du;
 enum class Tab
 {
 	Addons = 0,
-	Store = 1,
-	Packs = 2,
-	Modules = 3,
-	Log = 4
+	Packs = 1,
+	Modules = 2,
+	Log = 3
+};
+
+enum class AddonSelectionKind
+{
+	None = 0,
+	Installed = 1,
+	Catalog = 2
 };
 
 class LoaderSystemInterface final : public SystemInterface_Win32
@@ -68,8 +74,9 @@ Rml::ElementDocument* g_doc = nullptr;
 
 std::string g_gameDir;
 Tab g_activeTab = Tab::Addons;
-int g_selectedAddon = -1;
-int g_selectedStore = -1;
+AddonSelectionKind g_selectedKind = AddonSelectionKind::None;
+int g_selectedIndex = -1;
+bool g_catalogAutoRequested = false;
 bool g_updateOnStart = false;
 bool g_gameAddonCheckOnStart = true;
 size_t g_lastLogCount = 0;
@@ -288,10 +295,8 @@ void ApplyStaticTranslations()
 	SetText("btn-play-direct", LoaderLocale::Text("btn_play_direct"));
 	SetText("label-game-folder", LoaderLocale::Text("label_game_folder"));
 	SetText("btn-browse-game", LoaderLocale::Text("btn_browse"));
-	SetText("btn-reload-ui", LoaderLocale::Text("btn_reload_ui"));
 	SetText("nav-section-label", LoaderLocale::Text("nav_section"));
 	SetText("nav-addons-label", LoaderLocale::Text("nav_addons"));
-	SetText("nav-store-label", LoaderLocale::Text("nav_store"));
 	SetText("nav-packs-label", LoaderLocale::Text("nav_packs"));
 	SetText("nav-modules-label", LoaderLocale::Text("nav_modules"));
 	SetText("nav-log-label", LoaderLocale::Text("nav_log"));
@@ -304,15 +309,10 @@ void ApplyStaticTranslations()
 	SetText("btn-addon-open", LoaderLocale::Text("btn_open_folder"));
 	SetText("btn-addon-update", LoaderLocale::Text("btn_update_linked"));
 	SetText("btn-addon-refresh", LoaderLocale::Text("btn_refresh"));
-	SetText("btn-save-link", LoaderLocale::Text("btn_save_github"));
 	SetText("btn-install-url", LoaderLocale::Text("btn_download_install"));
 	SetText("url-placeholder", LoaderLocale::Text("url_placeholder"));
 	SyncUrlPlaceholder();
-	SetText("store-title", LoaderLocale::Text("store_title"));
-	SetText("store-sub", LoaderLocale::Text("store_sub"));
-	SetText("btn-store-refresh", LoaderLocale::Text("btn_store_refresh"));
-	SetText("btn-store-bundle", LoaderLocale::Text("btn_store_bundle"));
-	SetText("btn-store-update-all", LoaderLocale::Text("btn_store_update_all"));
+	SetText("btn-download-assets", LoaderLocale::Text("btn_download_assets"));
 	SetText("packs-title", LoaderLocale::Text("packs_title"));
 	SetText("packs-sub", LoaderLocale::Text("packs_sub"));
 	SetText("btn-pack-zip", LoaderLocale::Text("btn_pack_zip"));
@@ -330,7 +330,7 @@ void ApplyStaticTranslations()
 	SetText("auto-update-label", LoaderLocale::Text("auto_update_label"));
 	SetText("log-title", LoaderLocale::Text("log_title"));
 	SetText("log-sub", LoaderLocale::Text("log_sub"));
-	SetText("foot-ver", LoaderLocale::Text("foot_engine"));
+	SetText("foot-ver", std::string("UNI2-IM  v") + UNI2_IM_VERSION);
 
 	const LoaderLocale::Lang cur = LoaderLocale::Current();
 	SetClass("lang-en", "active", cur == LoaderLocale::Lang::En);
@@ -377,21 +377,14 @@ void SyncHeader()
 void SyncTabs()
 {
 	SetClass("nav-addons", "active", g_activeTab == Tab::Addons);
-	SetClass("nav-store", "active", g_activeTab == Tab::Store);
 	SetClass("nav-packs", "active", g_activeTab == Tab::Packs);
 	SetClass("nav-modules", "active", g_activeTab == Tab::Modules);
 	SetClass("nav-log", "active", g_activeTab == Tab::Log);
 
 	SetClass("view-addons", "hidden", g_activeTab != Tab::Addons);
-	SetClass("view-store", "hidden", g_activeTab != Tab::Store);
 	SetClass("view-packs", "hidden", g_activeTab != Tab::Packs);
 	SetClass("view-modules", "hidden", g_activeTab != Tab::Modules);
 	SetClass("view-log", "hidden", g_activeTab != Tab::Log);
-}
-
-std::string ShortSha(const std::string& sha)
-{
-	return sha.size() > 16 ? (sha.substr(0, 16) + "...") : sha;
 }
 
 std::string ReleasePageForCatalogItem(const AddonCatalog::CatalogItem& item)
@@ -409,7 +402,31 @@ std::string ReleasePageForCatalogItem(const AddonCatalog::CatalogItem& item)
 	return base + "/releases/latest";
 }
 
-void SyncAddonDetail()
+int FindCatalogIndexById(const std::vector<AddonCatalog::CatalogItem>& catalog, const std::string& id)
+{
+	if (id.empty())
+		return -1;
+
+	for (int i = 0; i < static_cast<int>(catalog.size()); ++i)
+	{
+		if (TextList::SameNoCase(catalog[i].id, id))
+			return i;
+	}
+
+	return -1;
+}
+
+std::string OrderArrowHtml(const char* action, int idx, const char* iconFile, bool disabled)
+{
+	std::string cls = "btn icon";
+	if (disabled)
+		cls += " disabled";
+
+	return "<div class=\"" + cls + "\" data-act=\"" + action + "\" data-idx=\"" + std::to_string(idx)
+		+ "\"><img class=\"btn-icon-img\" src=\"" + iconFile + "\"/></div>";
+}
+
+void SyncAddonDetail(const std::vector<AddonCatalog::CatalogItem>& catalog)
 {
 	if (g_doc == nullptr)
 		return;
@@ -420,73 +437,176 @@ void SyncAddonDetail()
 		return;
 
 	const auto& items = AddonStore::Items();
+	const bool valid = LoaderConfig::IsValidGameDir(g_gameDir);
+	const bool busy = AddonStore::IsBusy();
 
-	if (g_selectedAddon < 0 || g_selectedAddon >= static_cast<int>(items.size()))
+	if (g_selectedKind == AddonSelectionKind::Installed &&
+		g_selectedIndex >= 0 && g_selectedIndex < static_cast<int>(items.size()))
 	{
-		detail->SetInnerRML(
-			"<div class=\"empty-state\">"
-			"<div class=\"empty-title\">" + EscapeRml(LoaderLocale::Text("detail_empty_title")) + "</div>"
-			"<div class=\"empty-text\">" + EscapeRml(LoaderLocale::Text("detail_empty_text")) + "</div>"
-			"</div>");
+		const AddonStore::Entry& item = items[g_selectedIndex];
+		const int catIdx = FindCatalogIndexById(catalog, item.manifest.id);
+		const AddonCatalog::CatalogItem* const catItem = catIdx >= 0 ? &catalog[catIdx] : nullptr;
+		const std::string updateVer = AddonStore::AvailableUpdateVersionFor(item.manifest.id);
+		const bool canUpdate = valid && !busy && catItem != nullptr && catItem->resolved && !catItem->downloadUrl.empty();
+
+		std::string rml;
+		if (catItem != nullptr && !catItem->iconCachePath.empty())
+		{
+			rml += "<div class=\"detail-head\">";
+			rml += "<img class=\"detail-icon\" src=\"abs:" + EscapeRml(catItem->iconCachePath) + "\"/>";
+			rml += "<div>";
+			rml += "<div class=\"detail-title\">" + EscapeRml(item.manifest.name) + "</div>";
+			rml += "<div class=\"detail-meta\">v" + EscapeRml(item.manifest.version.empty() ? "?" : item.manifest.version)
+				+ "  \xC2\xB7  " + EscapeRml(LoaderLocale::Text("detail_by")) + " "
+				+ EscapeRml(item.manifest.author.empty() ? LoaderLocale::Text("detail_unknown") : item.manifest.author) + "</div>";
+			rml += "</div></div>";
+		}
+		else
+		{
+			rml += "<div class=\"detail-title\">" + EscapeRml(item.manifest.name) + "</div>";
+			rml += "<div class=\"detail-meta\">v" + EscapeRml(item.manifest.version.empty() ? "?" : item.manifest.version)
+				+ "  \xC2\xB7  " + EscapeRml(LoaderLocale::Text("detail_by")) + " "
+				+ EscapeRml(item.manifest.author.empty() ? LoaderLocale::Text("detail_unknown") : item.manifest.author) + "</div>";
+		}
+
+		rml += "<div>" + BadgeHtml(item.manifest);
+		if (!updateVer.empty())
+			rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + " v" + EscapeRml(updateVer) + "</span>";
+		else
+			rml += "<span class=\"badge installed\">" + EscapeRml(LoaderLocale::Text("badge_installed")) + "</span>";
+		rml += "</div>";
+
+		rml += "<div class=\"detail-divider\"/>";
+		rml += "<div class=\"detail-desc\">" + EscapeRml(item.manifest.description.empty()
+			? LoaderLocale::Text("detail_no_desc") : item.manifest.description) + "</div>";
+		rml += "<div class=\"detail-divider\"/>";
+
+		rml += "<div class=\"detail-kv\"><span class=\"k\">ID</span>" + EscapeRml(item.manifest.id) + "</div>";
+
+		if (!item.sourceKind.empty())
+		{
+			const char* srcKey = TextList::SameNoCase(item.sourceKind, "release") ? "source_release" : "source_github";
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_source")) + "</span>" + EscapeRml(LoaderLocale::Text(srcKey)) + "</div>";
+		}
+
+		if (!item.manifest.entry.empty())
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_lua")) + "</span>" + EscapeRml(item.manifest.entry) + "</div>";
+
+		if (!item.manifest.nativeDll.empty())
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_dll")) + "</span>" + EscapeRml(item.manifest.nativeDll) + "</div>";
+
+		if (!item.manifest.modules.empty())
+		{
+			std::string mods;
+			for (size_t i = 0; i < item.manifest.modules.size(); ++i)
+			{
+				if (i > 0)
+					mods += ", ";
+				mods += item.manifest.modules[i];
+			}
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_modules")) + "</span>" + EscapeRml(mods) + "</div>";
+		}
+
+		if (!item.manifest.assets.empty())
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_assets")) + "</span>" + EscapeRml(item.manifest.assets) + "</div>";
+
+		if (!item.githubUrl.empty())
+			rml += "<div class=\"detail-kv\"><span class=\"k\">GITHUB</span>" + EscapeRml(item.githubUrl) + "</div>";
+
+		rml += "<div class=\"detail-actions\">";
+		if (!updateVer.empty() && catIdx >= 0)
+		{
+			const std::string updCls = std::string("btn small warn") + (canUpdate ? "" : " disabled");
+			rml += "<div class=\"" + updCls + "\" data-act=\"store-install\" data-idx=\"" + std::to_string(catIdx) + "\">"
+				+ EscapeRml(LoaderLocale::Text("btn_update")) + " v" + EscapeRml(updateVer) + "</div>";
+		}
+		rml += "<div class=\"btn small\" data-act=\"addon-open-item\" data-idx=\"" + std::to_string(g_selectedIndex) + "\">" + EscapeRml(LoaderLocale::Text("btn_open_folder")) + "</div>";
+		if (catIdx >= 0)
+			rml += "<div class=\"btn small\" data-act=\"store-open-repo\" data-idx=\"" + std::to_string(catIdx) + "\">" + EscapeRml(LoaderLocale::Text("btn_open_release")) + "</div>";
+		rml += "<div class=\"btn danger small\" data-act=\"addon-remove\" data-idx=\"" + std::to_string(g_selectedIndex) + "\">" + EscapeRml(LoaderLocale::Text("btn_remove")) + "</div>";
+		rml += "</div>";
+
+		detail->SetInnerRML(rml);
 		return;
 	}
 
-	const AddonStore::Entry& item = items[g_selectedAddon];
-	const std::string updateVer = AddonStore::AvailableUpdateVersionFor(item.manifest.id);
-	std::string rml;
-	rml += "<div class=\"detail-title\">" + EscapeRml(item.manifest.name) + "</div>";
-	rml += "<div class=\"detail-meta\">v" + EscapeRml(item.manifest.version.empty() ? "?" : item.manifest.version)
-		+ "  \xC2\xB7  " + EscapeRml(LoaderLocale::Text("detail_by")) + " "
-		+ EscapeRml(item.manifest.author.empty() ? LoaderLocale::Text("detail_unknown") : item.manifest.author) + "</div>";
-	rml += "<div>" + BadgeHtml(item.manifest);
-	if (!updateVer.empty())
-		rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + " v" + EscapeRml(updateVer) + "</span>";
-	rml += "</div>";
-	rml += "<div class=\"detail-divider\"/>";
-	rml += "<div class=\"detail-desc\">" + EscapeRml(item.manifest.description.empty()
-		? LoaderLocale::Text("detail_no_desc") : item.manifest.description) + "</div>";
-	rml += "<div class=\"detail-divider\"/>";
-	rml += "<div class=\"detail-kv\"><span class=\"k\">ID</span>" + EscapeRml(item.manifest.id) + "</div>";
-
-	if (!item.sourceKind.empty())
+	if (g_selectedKind == AddonSelectionKind::Catalog &&
+		g_selectedIndex >= 0 && g_selectedIndex < static_cast<int>(catalog.size()))
 	{
-		const char* srcKey = TextList::SameNoCase(item.sourceKind, "release") ? "source_release" : "source_github";
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_source")) + "</span>" + EscapeRml(LoaderLocale::Text(srcKey)) + "</div>";
-	}
+		const AddonCatalog::CatalogItem& item = catalog[g_selectedIndex];
+		const bool isOfficial = TextList::SameNoCase(item.source, "release");
+		const bool canInstall = valid && !busy && item.resolved && !item.downloadUrl.empty();
 
-	if (!item.manifest.entry.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_lua")) + "</span>" + EscapeRml(item.manifest.entry) + "</div>";
+		std::string rml;
+		rml += "<div class=\"detail-head\">";
+		if (!item.iconCachePath.empty())
+			rml += "<img class=\"detail-icon\" src=\"abs:" + EscapeRml(item.iconCachePath) + "\"/>";
+		rml += "<div>";
+		rml += "<div class=\"detail-title\">" + EscapeRml(item.name) + "</div>";
+		rml += "<div class=\"detail-meta\">" + EscapeRml(LoaderLocale::Text("detail_by")) + " "
+			+ EscapeRml(item.author.empty() ? LoaderLocale::Text("detail_unknown") : item.author) + "</div>";
+		rml += "</div></div>";
 
-	if (!item.manifest.nativeDll.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_dll")) + "</span>" + EscapeRml(item.manifest.nativeDll) + "</div>";
+		rml += "<div>";
+		rml += isOfficial
+			? ("<span class=\"badge official\">" + EscapeRml(LoaderLocale::Text("badge_official")) + "</span>")
+			: ("<span class=\"badge github\">" + EscapeRml(LoaderLocale::Text("badge_github")) + "</span>");
+		if (!item.version.empty())
+			rml += "<span class=\"badge ver\">v" + EscapeRml(item.version) + "</span>";
+		rml += "</div>";
 
-	if (!item.manifest.modules.empty())
-	{
-		std::string mods;
-		for (size_t i = 0; i < item.manifest.modules.size(); ++i)
+		rml += "<div class=\"detail-divider\"/>";
+		rml += "<div class=\"detail-desc\">" + EscapeRml(item.description.empty()
+			? LoaderLocale::Text("detail_no_desc") : item.description) + "</div>";
+		rml += "<div class=\"detail-divider\"/>";
+
+		rml += "<div class=\"detail-kv\"><span class=\"k\">ID</span>" + EscapeRml(item.id) + "</div>";
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_source")) + "</span>"
+			+ EscapeRml(LoaderLocale::Text(isOfficial ? "source_release" : "source_github")) + "</div>";
+
+		if (!item.version.empty() || !item.tag.empty())
 		{
-			if (i > 0)
-				mods += ", ";
-			mods += item.manifest.modules[i];
+			const std::string verLabel = !item.version.empty() ? ("v" + item.version) : item.tag;
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_latest")) + "</span>"
+				+ EscapeRml(verLabel) + "</div>";
 		}
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_modules")) + "</span>" + EscapeRml(mods) + "</div>";
+
+		if (!item.modules.empty())
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_modules")) + "</span>" + EscapeRml(item.modules) + "</div>";
+
+		if (!item.assets.empty())
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_assets")) + "</span>" + EscapeRml(item.assets) + "</div>";
+
+		if (!item.repo.empty())
+			rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_repo")) + "</span>" + EscapeRml(item.repo) + "</div>";
+
+		if (!item.error.empty())
+		{
+			const bool is404 = item.error.find("404") != std::string::npos;
+			rml += "<div class=\"detail-err\">" + EscapeRml(is404 ? LoaderLocale::Text("store_no_release") : item.error.c_str()) + "</div>";
+		}
+		else if (!item.resolved && item.downloadUrl.empty())
+		{
+			rml += "<div class=\"detail-err\">" + EscapeRml(LoaderLocale::Text("store_no_release")) + "</div>";
+		}
+
+		const std::string btnCls = std::string("btn small accent") + (canInstall ? "" : " disabled");
+		const std::string idx = std::to_string(g_selectedIndex);
+
+		rml += "<div class=\"detail-actions\">";
+		rml += "<div class=\"" + btnCls + "\" data-act=\"store-install\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text("btn_install")) + "</div>";
+		rml += "<div class=\"btn small\" data-act=\"store-open-repo\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text("btn_open_release")) + "</div>";
+		rml += "</div>";
+
+		detail->SetInnerRML(rml);
+		return;
 	}
 
-	if (!item.manifest.assets.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_assets")) + "</span>" + EscapeRml(item.manifest.assets) + "</div>";
-
-	if (!item.githubUrl.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">GITHUB</span>" + EscapeRml(item.githubUrl) + "</div>";
-
-	if (!item.installedSha256.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_sha256")) + "</span>" + EscapeRml(ShortSha(item.installedSha256)) + "</div>";
-
-	rml += "<div class=\"detail-actions\">";
-	rml += "<div class=\"btn small\" data-act=\"addon-open-item\" data-idx=\"" + std::to_string(g_selectedAddon) + "\">" + EscapeRml(LoaderLocale::Text("btn_open_folder")) + "</div>";
-	rml += "<div class=\"btn danger small\" data-act=\"addon-remove\" data-idx=\"" + std::to_string(g_selectedAddon) + "\">" + EscapeRml(LoaderLocale::Text("btn_remove")) + "</div>";
-	rml += "</div>";
-
-	detail->SetInnerRML(rml);
+	detail->SetInnerRML(
+		"<div class=\"empty-state\">"
+		"<div class=\"empty-title\">" + EscapeRml(LoaderLocale::Text("detail_empty_title")) + "</div>"
+		"<div class=\"empty-text\">" + EscapeRml(LoaderLocale::Text("detail_empty_text")) + "</div>"
+		"</div>");
 }
 
 void SyncAddonsList()
@@ -495,32 +615,113 @@ void SyncAddonsList()
 		return;
 
 	const auto& items = AddonStore::Items();
-	SetText("count-addons", std::to_string(items.size()));
+	const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
+	const int updates = AddonStore::CountCatalogUpdates();
+	const bool valid = LoaderConfig::IsValidGameDir(g_gameDir);
+	const bool busy = AddonStore::IsBusy();
+	const bool catalogLoaded = AddonStore::CatalogLoaded();
+
+	std::vector<int> availableIndices;
+	for (int i = 0; i < static_cast<int>(catalog.size()); ++i)
+	{
+		if (AddonStore::FindInstalledById(catalog[i].id) == nullptr)
+			availableIndices.push_back(i);
+	}
+
+	if (g_selectedKind == AddonSelectionKind::Installed &&
+		(g_selectedIndex < 0 || g_selectedIndex >= static_cast<int>(items.size())))
+	{
+		g_selectedKind = AddonSelectionKind::None;
+		g_selectedIndex = -1;
+	}
+	else if (g_selectedKind == AddonSelectionKind::Catalog)
+	{
+		if (g_selectedIndex < 0 || g_selectedIndex >= static_cast<int>(catalog.size()))
+		{
+			g_selectedKind = AddonSelectionKind::None;
+			g_selectedIndex = -1;
+		}
+		else if (AddonStore::FindInstalledById(catalog[g_selectedIndex].id) != nullptr)
+		{
+			const std::string installedId = catalog[g_selectedIndex].id;
+			g_selectedKind = AddonSelectionKind::None;
+			g_selectedIndex = -1;
+			for (int i = 0; i < static_cast<int>(items.size()); ++i)
+			{
+				if (TextList::SameNoCase(items[i].manifest.id, installedId))
+				{
+					g_selectedKind = AddonSelectionKind::Installed;
+					g_selectedIndex = i;
+					break;
+				}
+			}
+		}
+	}
+
+	if (g_selectedKind == AddonSelectionKind::None)
+	{
+		if (!items.empty())
+		{
+			g_selectedKind = AddonSelectionKind::Installed;
+			g_selectedIndex = 0;
+		}
+		else if (!availableIndices.empty())
+		{
+			g_selectedKind = AddonSelectionKind::Catalog;
+			g_selectedIndex = availableIndices[0];
+		}
+	}
+
+	SetText("count-addons", updates > 0
+		? (std::to_string(items.size()) + " (" + std::to_string(updates) + "!)")
+		: std::to_string(items.size()));
+	SetClass("count-addons", "warn", updates > 0);
+
+	SetClass("btn-addon-zip", "disabled", !valid || busy);
+	SetClass("btn-addon-folder", "disabled", !valid || busy);
+	SetClass("btn-addon-update", "disabled", !valid || busy);
+	SetClass("btn-addon-refresh", "disabled", busy);
+	SetClass("btn-install-url", "disabled", !valid || busy);
+	SetClass("btn-download-assets", "disabled", !valid || busy);
 
 	Rml::Element* const list = g_doc->GetElementById("addons-list");
 
 	if (list == nullptr)
 		return;
 
-	if (items.empty())
+	if (items.empty() && availableIndices.empty() && catalogLoaded)
 	{
 		list->SetInnerRML(
 			"<div class=\"empty-state\">"
 			"<div class=\"empty-title\">" + EscapeRml(LoaderLocale::Text("addons_empty_title")) + "</div>"
 			"<div class=\"empty-text\">" + EscapeRml(LoaderLocale::Text("addons_empty_text")) + "</div>"
 			"</div>");
-		SyncAddonDetail();
+		SyncAddonDetail(catalog);
 		return;
 	}
 
 	std::string rml;
+	const bool showInstalledHeader = !items.empty() && (!availableIndices.empty() || !catalogLoaded);
 
-	for (int i = 0; i < static_cast<int>(items.size()); ++i)
+	if (showInstalledHeader)
+	{
+		rml += "<div class=\"list-section-head first\"><span class=\"list-section-title\">"
+			+ EscapeRml(LoaderLocale::Text("addons_section_installed")) + "</span>"
+			+ "<span class=\"list-section-note\">" + std::to_string(items.size()) + "</span></div>";
+	}
+
+	const int itemCount = static_cast<int>(items.size());
+
+	for (int i = 0; i < itemCount; ++i)
 	{
 		const AddonStore::Entry& item = items[i];
+		const int catIdx = FindCatalogIndexById(catalog, item.manifest.id);
+		const AddonCatalog::CatalogItem* const catItem = catIdx >= 0 ? &catalog[catIdx] : nullptr;
 		const std::string updateVer = AddonStore::AvailableUpdateVersionFor(item.manifest.id);
+		const bool canUpdate = valid && !busy && catItem != nullptr && catItem->resolved && !catItem->downloadUrl.empty();
+
 		std::string cls = "item-card";
-		if (i == g_selectedAddon)
+		if (g_selectedKind == AddonSelectionKind::Installed && i == g_selectedIndex)
 			cls += " selected";
 		if (!item.enabled)
 			cls += " off";
@@ -528,205 +729,76 @@ void SyncAddonsList()
 		const std::string idx = std::to_string(i);
 		rml += "<div class=\"" + cls + "\" data-act=\"addon-select\" data-idx=\"" + idx + "\">";
 		rml += "<div class=\"switch" + std::string(item.enabled ? " on" : "") + "\" data-act=\"addon-toggle\" data-idx=\"" + idx + "\"><div class=\"switch-knob\"/></div>";
+		if (catItem != nullptr && !catItem->iconCachePath.empty())
+			rml += "<img class=\"item-icon\" src=\"abs:" + EscapeRml(catItem->iconCachePath) + "\"/>";
 		rml += "<div class=\"item-main\">";
 		rml += "<div class=\"item-top\"><span class=\"item-name\">" + EscapeRml(item.manifest.name) + "</span>" + BadgeHtml(item.manifest);
+		if (!item.manifest.version.empty())
+			rml += "<span class=\"badge ver\">v" + EscapeRml(item.manifest.version) + "</span>";
 		if (!updateVer.empty())
 			rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + " v" + EscapeRml(updateVer) + "</span>";
 		rml += "</div>";
 		rml += "<div class=\"item-sub\">" + EscapeRml(item.manifest.description.empty() ? item.manifest.id : item.manifest.description) + "</div>";
 		rml += "</div>";
+		if (!updateVer.empty() && catIdx >= 0)
+		{
+			const std::string updCls = std::string("btn small warn") + (canUpdate ? "" : " disabled");
+			rml += "<div class=\"item-actions\">";
+			rml += "<div class=\"" + updCls + "\" data-act=\"store-install\" data-idx=\"" + std::to_string(catIdx) + "\">"
+				+ EscapeRml(LoaderLocale::Text("btn_update")) + "</div>";
+			rml += "</div>";
+		}
 		rml += "<div class=\"item-order\">";
-		rml += "<div class=\"btn icon\" data-act=\"addon-up\" data-idx=\"" + idx + "\">UP</div>";
-		rml += "<div class=\"btn icon\" data-act=\"addon-down\" data-idx=\"" + idx + "\">DN</div>";
+		rml += OrderArrowHtml("addon-up", i, "arrow_up.png", i == 0);
+		rml += OrderArrowHtml("addon-down", i, "arrow_down.png", i + 1 >= itemCount);
 		rml += "</div></div>";
 	}
 
-	list->SetInnerRML(rml);
-	SyncAddonDetail();
-}
-
-void SyncStoreDetail(const std::vector<AddonCatalog::CatalogItem>& catalog)
-{
-	if (g_doc == nullptr)
-		return;
-
-	Rml::Element* const detail = g_doc->GetElementById("store-detail");
-
-	if (detail == nullptr)
-		return;
-
-	if (g_selectedStore < 0 || g_selectedStore >= static_cast<int>(catalog.size()))
+	if (!availableIndices.empty() || !catalogLoaded)
 	{
-		detail->SetInnerRML(
-			"<div class=\"empty-state\">"
-			"<div class=\"empty-title\">" + EscapeRml(LoaderLocale::Text("store_detail_empty_title")) + "</div>"
-			"<div class=\"empty-text\">" + EscapeRml(LoaderLocale::Text("store_detail_empty_text")) + "</div>"
-			"</div>");
-		return;
-	}
-
-	const AddonCatalog::CatalogItem& item = catalog[g_selectedStore];
-	const AddonStore::Entry* const installed = AddonStore::FindInstalledById(item.id);
-	const bool hasUpdate = AddonStore::CatalogItemHasUpdate(item);
-	const bool isOfficial = TextList::SameNoCase(item.source, "release");
-	const bool valid = LoaderConfig::IsValidGameDir(g_gameDir);
-	const bool busy = AddonStore::IsBusy();
-	const bool canInstall = valid && !busy && item.resolved && !item.downloadUrl.empty();
-
-	std::string rml;
-	rml += "<div class=\"detail-head\">";
-	if (!item.iconCachePath.empty())
-		rml += "<img class=\"detail-icon\" src=\"abs:" + EscapeRml(item.iconCachePath) + "\"/>";
-	rml += "<div>";
-	rml += "<div class=\"detail-title\">" + EscapeRml(item.name) + "</div>";
-	rml += "<div class=\"detail-meta\">" + EscapeRml(LoaderLocale::Text("detail_by")) + " "
-		+ EscapeRml(item.author.empty() ? LoaderLocale::Text("detail_unknown") : item.author) + "</div>";
-	rml += "</div></div>";
-
-	rml += "<div>";
-	rml += isOfficial
-		? ("<span class=\"badge official\">" + EscapeRml(LoaderLocale::Text("badge_official")) + "</span>")
-		: ("<span class=\"badge github\">" + EscapeRml(LoaderLocale::Text("badge_github")) + "</span>");
-	if (!item.version.empty())
-		rml += "<span class=\"badge ver\">v" + EscapeRml(item.version) + "</span>";
-	if (hasUpdate)
-		rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + "</span>";
-	else if (installed != nullptr)
-		rml += "<span class=\"badge installed\">" + EscapeRml(LoaderLocale::Text("badge_installed")) + "</span>";
-	rml += "</div>";
-
-	rml += "<div class=\"detail-divider\"/>";
-	rml += "<div class=\"detail-desc\">" + EscapeRml(item.description.empty()
-		? LoaderLocale::Text("detail_no_desc") : item.description) + "</div>";
-	rml += "<div class=\"detail-divider\"/>";
-
-	rml += "<div class=\"detail-kv\"><span class=\"k\">ID</span>" + EscapeRml(item.id) + "</div>";
-	rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_source")) + "</span>"
-		+ EscapeRml(LoaderLocale::Text(isOfficial ? "source_release" : "source_github")) + "</div>";
-
-	if (!item.version.empty() || !item.tag.empty())
-	{
-		const std::string verLabel = !item.version.empty() ? ("v" + item.version) : item.tag;
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_latest")) + "</span>"
-			+ EscapeRml(verLabel) + "</div>";
-	}
-
-	if (installed != nullptr)
-	{
-		const std::string instVer = !installed->manifest.version.empty()
-			? installed->manifest.version : installed->installedVersion;
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_installed")) + "</span>v"
-			+ EscapeRml(instVer.empty() ? "?" : instVer) + "</div>";
-	}
-
-	if (!item.modules.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_modules")) + "</span>" + EscapeRml(item.modules) + "</div>";
-
-	if (!item.assets.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_assets")) + "</span>" + EscapeRml(item.assets) + "</div>";
-
-	if (!item.repo.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_repo")) + "</span>" + EscapeRml(item.repo) + "</div>";
-
-	if (!item.sha256.empty())
-		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_sha256")) + "</span>" + EscapeRml(ShortSha(item.sha256)) + "</div>";
-
-	if (!item.error.empty())
-	{
-		const bool is404 = item.error.find("404") != std::string::npos;
-		rml += "<div class=\"detail-err\">" + EscapeRml(is404 ? LoaderLocale::Text("store_no_release") : item.error.c_str()) + "</div>";
-	}
-	else if (!item.resolved && item.downloadUrl.empty())
-		rml += "<div class=\"detail-err\">" + EscapeRml(LoaderLocale::Text("store_no_release")) + "</div>";
-
-	const char* btnKey = hasUpdate ? "btn_update" : (installed != nullptr ? "btn_reinstall" : "btn_install");
-	const std::string btnCls = std::string("btn small ") + (hasUpdate ? "warn" : (installed != nullptr ? "" : "accent")) + (canInstall ? "" : " disabled");
-	const std::string idx = std::to_string(g_selectedStore);
-
-	rml += "<div class=\"detail-actions\">";
-	rml += "<div class=\"" + btnCls + "\" data-act=\"store-install\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text(btnKey)) + "</div>";
-	rml += "<div class=\"btn small\" data-act=\"store-open-repo\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text("btn_open_release")) + "</div>";
-	rml += "</div>";
-
-	detail->SetInnerRML(rml);
-}
-
-void SyncStoreList()
-{
-	if (g_doc == nullptr)
-		return;
-
-	const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
-	const int updates = AddonStore::CountCatalogUpdates();
-	SetText("count-store", updates > 0 ? (std::to_string(catalog.size()) + " (" + std::to_string(updates) + "!)") : std::to_string(catalog.size()));
-	SetText("store-status-text", AddonStore::CatalogStatus());
-
-	const bool valid = LoaderConfig::IsValidGameDir(g_gameDir);
-	const bool busy = AddonStore::IsBusy();
-	SetClass("btn-store-refresh", "disabled", busy);
-	SetClass("btn-store-bundle", "disabled", !valid || busy);
-	SetClass("btn-store-update-all", "disabled", !valid || busy);
-
-	Rml::Element* const list = g_doc->GetElementById("store-list");
-
-	if (list == nullptr)
-		return;
-
-	if (catalog.empty())
-	{
-		const char* titleKey = busy ? "store_loading_title" : "store_empty_title";
-		const char* textKey = busy ? "store_loading_text" : "store_empty_text";
-		list->SetInnerRML(
-			"<div class=\"empty-state\">"
-			"<div class=\"empty-title\">" + EscapeRml(LoaderLocale::Text(titleKey)) + "</div>"
-			"<div class=\"empty-text\">" + EscapeRml(LoaderLocale::Text(textKey)) + "</div>"
-			"</div>");
-		SyncStoreDetail(catalog);
-		return;
-	}
-
-	std::string rml;
-
-	for (int i = 0; i < static_cast<int>(catalog.size()); ++i)
-	{
-		const AddonCatalog::CatalogItem& item = catalog[i];
-		const AddonStore::Entry* const installed = AddonStore::FindInstalledById(item.id);
-		const bool hasUpdate = AddonStore::CatalogItemHasUpdate(item);
-		const bool isOfficial = TextList::SameNoCase(item.source, "release");
-		const bool canInstall = valid && !busy && item.resolved && !item.downloadUrl.empty();
-
-		std::string cls = "item-card";
-		if (i == g_selectedStore)
-			cls += " selected";
-
-		const std::string idx = std::to_string(i);
-		const char* btnKey = hasUpdate ? "btn_update" : (installed != nullptr ? "btn_reinstall" : "btn_install");
-		const std::string btnCls = std::string("btn small ") + (hasUpdate ? "warn" : (installed != nullptr ? "" : "accent")) + (canInstall ? "" : " disabled");
-
-		rml += "<div class=\"" + cls + "\" data-act=\"store-select\" data-idx=\"" + idx + "\">";
-		if (!item.iconCachePath.empty())
-			rml += "<img class=\"store-icon\" src=\"abs:" + EscapeRml(item.iconCachePath) + "\"/>";
-		rml += "<div class=\"item-main\">";
-		rml += "<div class=\"item-top\"><span class=\"item-name\">" + EscapeRml(item.name) + "</span>";
-		rml += isOfficial
-			? ("<span class=\"badge official\">" + EscapeRml(LoaderLocale::Text("badge_official")) + "</span>")
-			: ("<span class=\"badge github\">" + EscapeRml(LoaderLocale::Text("badge_github")) + "</span>");
-		if (!item.version.empty())
-			rml += "<span class=\"badge ver\">v" + EscapeRml(item.version) + "</span>";
-		if (hasUpdate)
-			rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + "</span>";
-		else if (installed != nullptr)
-			rml += "<span class=\"badge installed\">" + EscapeRml(LoaderLocale::Text("badge_installed")) + "</span>";
+		const std::string headCls = items.empty() ? "list-section-head first" : "list-section-head";
+		rml += "<div class=\"" + headCls + "\"><span class=\"list-section-title\">"
+			+ EscapeRml(LoaderLocale::Text("addons_section_available")) + "</span>";
+		if (!catalogLoaded)
+			rml += "<span class=\"list-section-note\">" + EscapeRml(LoaderLocale::Text("addons_catalog_loading")) + "</span>";
+		else
+			rml += "<span class=\"list-section-note\">" + std::to_string(availableIndices.size()) + "</span>";
 		rml += "</div>";
-		rml += "<div class=\"item-sub\">" + EscapeRml(item.description.empty() ? item.repo : item.description) + "</div>";
-		rml += "</div>";
-		rml += "<div class=\"item-actions\">";
-		rml += "<div class=\"" + btnCls + "\" data-act=\"store-install\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text(btnKey)) + "</div>";
-		rml += "</div></div>";
+
+		for (int catIdx : availableIndices)
+		{
+			const AddonCatalog::CatalogItem& item = catalog[catIdx];
+			const bool isOfficial = TextList::SameNoCase(item.source, "release");
+			const bool canInstall = valid && !busy && item.resolved && !item.downloadUrl.empty();
+
+			std::string cls = "item-card";
+			if (g_selectedKind == AddonSelectionKind::Catalog && catIdx == g_selectedIndex)
+				cls += " selected";
+
+			const std::string idx = std::to_string(catIdx);
+			const std::string btnCls = std::string("btn small accent") + (canInstall ? "" : " disabled");
+
+			rml += "<div class=\"" + cls + "\" data-act=\"store-select\" data-idx=\"" + idx + "\">";
+			if (!item.iconCachePath.empty())
+				rml += "<img class=\"item-icon\" src=\"abs:" + EscapeRml(item.iconCachePath) + "\"/>";
+			rml += "<div class=\"item-main\">";
+			rml += "<div class=\"item-top\"><span class=\"item-name\">" + EscapeRml(item.name) + "</span>";
+			rml += isOfficial
+				? ("<span class=\"badge official\">" + EscapeRml(LoaderLocale::Text("badge_official")) + "</span>")
+				: ("<span class=\"badge github\">" + EscapeRml(LoaderLocale::Text("badge_github")) + "</span>");
+			if (!item.version.empty())
+				rml += "<span class=\"badge ver\">v" + EscapeRml(item.version) + "</span>";
+			rml += "</div>";
+			rml += "<div class=\"item-sub\">" + EscapeRml(item.description.empty() ? item.repo : item.description) + "</div>";
+			rml += "</div>";
+			rml += "<div class=\"item-actions\">";
+			rml += "<div class=\"" + btnCls + "\" data-act=\"store-install\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text("btn_install")) + "</div>";
+			rml += "</div></div>";
+		}
 	}
 
 	list->SetInnerRML(rml);
-	SyncStoreDetail(catalog);
+	SyncAddonDetail(catalog);
 }
 
 void SyncPacksList()
@@ -754,7 +826,9 @@ void SyncPacksList()
 
 	std::string rml;
 
-	for (int i = 0; i < static_cast<int>(packs.size()); ++i)
+	const int packCount = static_cast<int>(packs.size());
+
+	for (int i = 0; i < packCount; ++i)
 	{
 		const PackStore::Pack& pack = packs[i];
 		const std::string idx = std::to_string(i);
@@ -767,9 +841,9 @@ void SyncPacksList()
 		rml += "<div class=\"item-sub\">" + EscapeRml(pack.folder) + "</div>";
 		rml += "</div>";
 		rml += "<div class=\"item-order\">";
-		rml += "<div class=\"btn icon\" data-act=\"pack-up\" data-idx=\"" + idx + "\">UP</div>";
-		rml += "<div class=\"btn icon\" data-act=\"pack-down\" data-idx=\"" + idx + "\">DN</div>";
-		rml += "<div class=\"btn danger icon\" data-act=\"pack-remove\" data-idx=\"" + idx + "\">DEL</div>";
+		rml += OrderArrowHtml("pack-up", i, "arrow_up.png", i == 0);
+		rml += OrderArrowHtml("pack-down", i, "arrow_down.png", i + 1 >= packCount);
+		rml += "<div class=\"btn danger icon\" data-act=\"pack-remove\" data-idx=\"" + idx + "\">\xC3\x97</div>";
 		rml += "</div></div>";
 	}
 
@@ -891,7 +965,6 @@ void SyncLanguageViews()
 	ApplyStaticTranslations();
 	SyncHeader();
 	SyncAddonsList();
-	SyncStoreList();
 	SyncPacksList();
 	SyncModulesView();
 	SyncConfirmModal();
@@ -903,26 +976,13 @@ void RefreshAll()
 {
 	AddonStore::Refresh(g_gameDir);
 	PackStore::Refresh(g_gameDir);
-
-	if (g_selectedAddon >= static_cast<int>(AddonStore::Items().size()))
-		g_selectedAddon = -1;
-
-	if (g_selectedAddon < 0 && !AddonStore::Items().empty())
-		g_selectedAddon = 0;
-
-	const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
-	if (g_selectedStore >= static_cast<int>(catalog.size()))
-		g_selectedStore = -1;
-
-	if (g_selectedStore < 0 && !catalog.empty())
-		g_selectedStore = 0;
-
 	SyncLanguageViews();
 }
 
 void SetGameDir(const std::string& dir)
 {
 	g_gameDir = dir;
+	g_catalogAutoRequested = false;
 
 	if (!g_gameDir.empty() && g_gameDir.back() != '\\')
 		g_gameDir.push_back('\\');
@@ -944,14 +1004,14 @@ void SetGameDir(const std::string& dir)
 	RefreshAll();
 
 	if (LoaderConfig::IsValidGameDir(g_gameDir) &&
+		!LoaderConfig::HasImAssets(g_gameDir) &&
 		!LoaderConfig::ReadBundleBootstrapped(g_gameDir) &&
-		AddonStore::Items().empty() &&
 		!AddonStore::IsBusy())
 	{
 		LoaderLog::Add(LoaderLocale::Text("msg_bootstrap_bundle"));
 		AddonStore::BeginBootstrapOfficialBundle(g_gameDir);
 		SyncHeader();
-		SyncStoreList();
+		SyncAddonsList();
 	}
 }
 
@@ -1012,8 +1072,8 @@ private:
 			const auto& items = AddonStore::Items();
 			if (idx >= 0 && idx < static_cast<int>(items.size()))
 			{
-				g_selectedAddon = idx;
-				WriteUrlInput(items[idx].githubUrl);
+				g_selectedKind = AddonSelectionKind::Installed;
+				g_selectedIndex = idx;
 				SyncAddonsList();
 			}
 			return;
@@ -1023,7 +1083,8 @@ private:
 		{
 			if (AddonStore::Move(g_gameDir, idx, -1))
 			{
-				g_selectedAddon = idx - 1;
+				g_selectedKind = AddonSelectionKind::Installed;
+				g_selectedIndex = idx - 1;
 				SyncAddonsList();
 			}
 			return;
@@ -1033,7 +1094,8 @@ private:
 		{
 			if (AddonStore::Move(g_gameDir, idx, 1))
 			{
-				g_selectedAddon = idx + 1;
+				g_selectedKind = AddonSelectionKind::Installed;
+				g_selectedIndex = idx + 1;
 				SyncAddonsList();
 			}
 			return;
@@ -1051,10 +1113,12 @@ private:
 		{
 			std::string msg;
 			if (AddonStore::Remove(g_gameDir, idx, msg))
-				g_selectedAddon = -1;
+			{
+				g_selectedKind = AddonSelectionKind::None;
+				g_selectedIndex = -1;
+			}
 			LoaderLog::Add(msg);
 			SyncAddonsList();
-			SyncStoreList();
 			return;
 		}
 
@@ -1063,8 +1127,9 @@ private:
 			const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
 			if (idx >= 0 && idx < static_cast<int>(catalog.size()))
 			{
-				g_selectedStore = idx;
-				SyncStoreList();
+				g_selectedKind = AddonSelectionKind::Catalog;
+				g_selectedIndex = idx;
+				SyncAddonsList();
 			}
 			return;
 		}
@@ -1075,7 +1140,7 @@ private:
 			if (idx >= 0 && idx < static_cast<int>(catalog.size()) && catalog[idx].resolved && !catalog[idx].downloadUrl.empty())
 			{
 				AddonStore::BeginInstallCatalogItem(g_gameDir, idx);
-				SyncStoreList();
+				SyncAddonsList();
 			}
 			return;
 		}
@@ -1161,27 +1226,9 @@ private:
 		if (id == "lang-es") { LoaderLocale::Set(LoaderLocale::Lang::EsLatam); SyncLanguageViews(); return true; }
 
 		if (id == "nav-addons") { g_activeTab = Tab::Addons; SyncTabs(); return true; }
-		if (id == "nav-store")
-		{
-			g_activeTab = Tab::Store;
-			SyncTabs();
-			if (!AddonStore::CatalogLoaded() && !busy)
-			{
-				AddonStore::BeginRefreshCatalog(g_gameDir);
-				SyncStoreList();
-			}
-			return true;
-		}
 		if (id == "nav-packs") { g_activeTab = Tab::Packs; SyncTabs(); return true; }
 		if (id == "nav-modules") { g_activeTab = Tab::Modules; SyncTabs(); return true; }
 		if (id == "nav-log") { g_activeTab = Tab::Log; SyncTabs(); return true; }
-
-		if (id == "btn-reload-ui")
-		{
-			LoadDocument();
-			LoaderLog::Add("Reloaded RmlUi layout.");
-			return true;
-		}
 
 		if (id == "btn-browse-game")
 		{
@@ -1245,42 +1292,31 @@ private:
 		if (id == "btn-addon-update" && valid && !busy)
 		{
 			AddonStore::BeginUpdateLinked(g_gameDir);
+			SyncAddonsList();
 			return true;
 		}
 
-		if (id == "btn-store-refresh" && !busy)
-		{
-			AddonStore::BeginRefreshCatalog(g_gameDir);
-			SyncStoreList();
-			return true;
-		}
-
-		if (id == "btn-store-bundle" && valid && !busy)
+		if (id == "btn-download-assets" && valid && !busy)
 		{
 			AddonStore::BeginBootstrapOfficialBundle(g_gameDir);
-			SyncStoreList();
+			SyncAddonsList();
 			return true;
 		}
 
-		if (id == "btn-store-update-all" && valid && !busy)
-		{
-			AddonStore::BeginUpdateLinked(g_gameDir);
-			SyncStoreList();
-			return true;
-		}
-
-		if (id == "btn-addon-refresh" || id == "btn-pack-refresh")
+		if (id == "btn-addon-refresh")
 		{
 			RefreshAll();
+			if (!busy)
+			{
+				AddonStore::BeginRefreshCatalog(g_gameDir);
+				SyncAddonsList();
+			}
 			return true;
 		}
 
-		if (id == "btn-save-link" && valid && !busy && g_selectedAddon >= 0)
+		if (id == "btn-pack-refresh")
 		{
-			std::string msg;
-			AddonStore::SetGitHubLink(g_gameDir, g_selectedAddon, ReadUrlInput(), msg);
-			LoaderLog::Add(msg);
-			SyncAddonsList();
+			RefreshAll();
 			return true;
 		}
 
@@ -1288,9 +1324,15 @@ private:
 		{
 			const std::string url = ReadUrlInput();
 			if (!url.empty())
+			{
 				AddonStore::BeginInstallFromUrl(g_gameDir, url);
+				WriteUrlInput(std::string());
+				SyncAddonsList();
+			}
 			else
+			{
 				LoaderLog::Add(LoaderLocale::Text("msg_paste_url"));
+			}
 			return true;
 		}
 
@@ -1336,11 +1378,10 @@ private:
 
 		if (id == "btn-open-basepals" && valid)
 		{
-			const std::string basePals = LoaderConfig::ModRoot(g_gameDir) + "\\Assets\\BasePals";
+			const std::string assetsDir = LoaderConfig::ModRoot(g_gameDir) + "\\Assets";
 			CreateDirectoryA(LoaderConfig::ModRoot(g_gameDir).c_str(), nullptr);
-			CreateDirectoryA((LoaderConfig::ModRoot(g_gameDir) + "\\Assets").c_str(), nullptr);
-			CreateDirectoryA(basePals.c_str(), nullptr);
-			OpenInExplorer(basePals);
+			CreateDirectoryA(assetsDir.c_str(), nullptr);
+			OpenInExplorer(assetsDir);
 			return true;
 		}
 
@@ -1573,6 +1614,14 @@ bool LoaderUi::TickBackground()
 	if (AddonStore::ConsumeRefreshNeeded())
 	{
 		RefreshAll();
+		dirty = true;
+	}
+
+	if (!g_catalogAutoRequested && !AddonStore::CatalogLoaded() && !AddonStore::IsBusy())
+	{
+		g_catalogAutoRequested = true;
+		AddonStore::BeginRefreshCatalog(g_gameDir);
+		SyncAddonsList();
 		dirty = true;
 	}
 
