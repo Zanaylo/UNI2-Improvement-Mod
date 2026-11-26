@@ -1066,6 +1066,13 @@ const LanguageCatalog::Entry kEntries[] = {
 	{ "Search palettes or characters", u8"Buscar palettes o personajes" },
 	{ "This character is not in the match.", u8"Este personaje no está en la partida." },
 	{ "Wear on P%d", u8"Usar en P%d" },
+	{ "Add-ons", u8"Add-ons" },
+	{ "Add-ons installed in UNI2-IM\\Addons. Manage and update them in UNI2 Mod Loader.", u8"Add-ons instalados en UNI2-IM\\Addons. Adminístralos y actualízalos en UNI2 Mod Loader." },
+	{ "No add-ons installed.", u8"No hay add-ons instalados." },
+	{ "%d of %d add-on(s) loaded.", u8"%d de %d add-on(s) cargado(s)." },
+	{ "Open Addons folder", u8"Abrir carpeta Addons" },
+	{ "Reload Lua add-ons", u8"Recargar add-ons Lua" },
+	{ "Installed in UNI2-IM\\Addons. Lua add-ons toggle right away; native DLL add-ons apply after restart.", u8"Instalados en UNI2-IM\\Addons. Los add-ons Lua se activan/desactivan al instante; los DLL nativos se aplican al reiniciar." },
 };
 
 }

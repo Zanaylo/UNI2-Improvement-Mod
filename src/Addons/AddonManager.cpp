@@ -8,6 +8,7 @@
 #include "Core/Config/Settings.h"
 #include "Core/FileSystem.h"
 #include "Core/ShellOpen.h"
+#include "Core/Text/Language.h"
 #include "Core/Text/TextList.h"
 #include "Core/info.h"
 #include "Core/logger.h"
@@ -116,6 +117,7 @@ bool g_hudPainting = false;
 bool g_drawQueueInstalled = false;
 bool g_discovered = false;
 bool g_initialized = false;
+bool g_needsRestart = false;
 
 bool IsBattleHudLayer(uint32_t layer)
 {
@@ -542,6 +544,36 @@ int PlaceOf(const std::vector<std::string>& order, const std::string& id)
 	return static_cast<int>(order.size());
 }
 
+void RebuildEnabledFolders()
+{
+	g_enabledFolders.clear();
+
+	for (const AddonManager::Record& record : g_records)
+	{
+		if (record.enabled)
+			g_enabledFolders.push_back(record.folder);
+	}
+}
+
+void SaveAddonConfig()
+{
+	std::vector<std::string> order;
+	std::vector<std::string> off;
+	order.reserve(g_records.size());
+
+	for (const AddonManager::Record& record : g_records)
+	{
+		order.push_back(record.manifest.id);
+
+		if (!record.enabled)
+			off.push_back(record.manifest.id);
+	}
+
+	Settings::SaveString(kConfigSection, kOrderKey, TextList::Join(order, '|').c_str());
+	Settings::SaveString(kConfigSection, kOffKey, TextList::Join(off, '|').c_str());
+	RebuildEnabledFolders();
+}
+
 void Discover(const std::string& root)
 {
 	g_records.clear();
@@ -782,6 +814,7 @@ void AddonManager::Shutdown()
 	g_enabledFolders.clear();
 	g_discovered = false;
 	g_initialized = false;
+	g_needsRestart = false;
 }
 
 void AddonManager::SetDeviceContext(HWND window, IDirect3DDevice9* device)
@@ -910,6 +943,42 @@ const std::vector<std::string>& AddonManager::EnabledFolders()
 	return g_enabledFolders;
 }
 
+bool AddonManager::SetEnabled(const std::string& id, bool enabled)
+{
+	for (Record& record : g_records)
+	{
+		if (!TextList::SameNoCase(record.manifest.id, id))
+			continue;
+
+		if (record.enabled == enabled)
+			return false;
+
+		record.enabled = enabled;
+		SaveAddonConfig();
+
+		if (record.manifest.IsNative() || !record.manifest.IsLua())
+		{
+			g_needsRestart = true;
+			LOG("Addons: %s %s (restart required)", record.manifest.name.c_str(), enabled ? "enabled" : "disabled");
+			return true;
+		}
+
+		if (!record.manifest.modules.empty())
+			g_needsRestart = true;
+
+		ReloadLua();
+		LOG("Addons: %s %s", record.manifest.name.c_str(), enabled ? "enabled" : "disabled");
+		return true;
+	}
+
+	return false;
+}
+
+bool AddonManager::NeedsRestart()
+{
+	return g_needsRestart;
+}
+
 void AddonManager::DrawMainWindowSection()
 {
 	LuaHost::DrawLauncherCards();
@@ -936,7 +1005,7 @@ void AddonManager::DrawMainWindowSection()
 	if (!summaryCard)
 		return;
 
-	ImGui::TextUnformatted("Add-ons");
+	ImGui::TextUnformatted(Tr("Add-ons"));
 	UiText::Muted("Add-ons installed in UNI2-IM\\Addons. Manage and update them in UNI2 Mod Loader.");
 
 	if (g_records.empty())
@@ -954,11 +1023,11 @@ void AddonManager::DrawMainWindowSection()
 		}
 	}
 
-	if (ImGui::SmallButton("Open Addons folder"))
+	if (ImGui::SmallButton(TrLabel("Open Addons folder")))
 		ShellOpen::Open(Root());
 
 	ImGui::SameLine();
 
-	if (ImGui::SmallButton("Reload Lua add-ons"))
+	if (ImGui::SmallButton(TrLabel("Reload Lua add-ons")))
 		ReloadLua();
 }

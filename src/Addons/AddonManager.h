@@ -40,5 +40,8 @@ namespace AddonManager
 	const std::vector<std::string>& EnabledFolders();
 	std::string Root();
 
+	bool SetEnabled(const std::string& id, bool enabled);
+	bool NeedsRestart();
+
 	void DrawMainWindowSection();
 }

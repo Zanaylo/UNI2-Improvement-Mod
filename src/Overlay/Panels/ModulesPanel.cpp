@@ -1,6 +1,8 @@
 #include "Overlay/Panels/ModulesPanel.h"
 
+#include "Addons/AddonManager.h"
 #include "Core/Config/Features.h"
+#include "Core/Text/Language.h"
 #include "Overlay/Widgets/UiText.h"
 #include "Training/TrainingVisibility.h"
 
@@ -48,6 +50,42 @@ void DrawModule(FeatureCatalog::Id module)
 		DrawTrainingItems();
 }
 
+void DrawAddons()
+{
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+	ImGui::TextUnformatted(Tr("Add-ons"));
+	UiText::Muted("Installed in UNI2-IM\\Addons. Lua add-ons toggle right away; native DLL add-ons apply after restart.");
+
+	const auto& addons = AddonManager::All();
+
+	if (addons.empty())
+	{
+		UiText::Muted("No add-ons installed.");
+		return;
+	}
+
+	for (size_t i = 0; i < addons.size(); ++i)
+	{
+		const AddonManager::Record& record = addons[i];
+		bool on = record.enabled;
+
+		ImGui::PushID(1000 + static_cast<int>(i));
+
+		if (ImGui::Checkbox(record.manifest.name.c_str(), &on))
+			AddonManager::SetEnabled(record.manifest.id, on);
+
+		if (!record.manifest.description.empty())
+			UiText::Help(record.manifest.description.c_str());
+
+		if (!record.error.empty())
+			UiText::Warn("%s", record.error.c_str());
+
+		ImGui::PopID();
+	}
+}
+
 }
 
 void ModulesPanel::Draw()
@@ -63,6 +101,8 @@ void ModulesPanel::Draw()
 			DrawModule(feature);
 	}
 
-	if (Features::NeedsRestart())
+	DrawAddons();
+
+	if (Features::NeedsRestart() || AddonManager::NeedsRestart())
 		UiText::Warn("Restart the game to apply.");
 }
