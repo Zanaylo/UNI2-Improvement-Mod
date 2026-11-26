@@ -52,12 +52,16 @@
 				<span id="nav-addons-label">ADD-ONS</span>
 				<span id="count-addons" class="nav-count">0</span>
 			</div>
+			<div id="nav-store" class="nav-item">
+				<span id="nav-store-label">COLLECTION</span>
+				<span id="count-store" class="nav-count">0</span>
+			</div>
 			<div id="nav-packs" class="nav-item">
 				<span id="nav-packs-label">FILE MODS</span>
 				<span id="count-packs" class="nav-count">0</span>
 			</div>
 			<div id="nav-modules" class="nav-item">
-				<span id="nav-modules-label">CORE BASE</span>
+				<span id="nav-modules-label">IM</span>
 				<span id="count-modules" class="nav-count">0</span>
 			</div>
 			<div id="nav-log" class="nav-item">
@@ -93,9 +97,32 @@
 				</div>
 
 				<div id="url-bar">
-					<input id="url-input" class="url-input" type="text" value=""/>
+					<div class="url-wrap">
+						<input id="url-input" class="url-input" type="text" value=""/>
+						<div id="url-placeholder" class="url-placeholder">Ex: https://github.com/Zanaylo/UNI2-Rank-Wars-Addon</div>
+					</div>
 					<div id="btn-save-link" class="btn small ml-8">SAVE GITHUB</div>
 					<div id="btn-install-url" class="btn accent small ml-8">DOWNLOAD &amp; INSTALL</div>
+				</div>
+			</section>
+
+			<section id="view-store" class="view hidden">
+				<div class="sectitle">
+					<div class="sectitle-bar"/>
+					<div id="store-title" class="sectitle-h">ADD-ON COLLECTION</div>
+					<div id="store-sub" class="sectitle-sub">Official release catalog &amp; community GitHub releases</div>
+				</div>
+
+				<div class="toolbar">
+					<div id="btn-store-refresh" class="btn accent small">REFRESH CATALOG</div>
+					<div id="btn-store-bundle" class="btn small">INSTALL OFFICIAL PACK</div>
+					<div id="btn-store-update-all" class="btn small">UPDATE ALL</div>
+					<div id="store-status-text" class="sectitle-sub"/>
+				</div>
+
+				<div class="split">
+					<div id="store-list" class="list-pane"/>
+					<div id="store-detail" class="detail-pane"/>
 				</div>
 			</section>
 
@@ -119,7 +146,7 @@
 			<section id="view-modules" class="view hidden">
 				<div class="sectitle">
 					<div class="sectitle-bar"/>
-					<div id="modules-title" class="sectitle-h">IMPROVEMENT MOD BASE</div>
+					<div id="modules-title" class="sectitle-h">IM</div>
 					<div id="modules-sub" class="sectitle-sub">Toggle core &amp; optional built-in modules directly</div>
 				</div>
 
@@ -140,9 +167,15 @@
 					<div class="mod-foot">
 						<div id="btn-reset-base" class="btn small">RESET TO CLEAN BASE</div>
 						<div id="btn-open-basepals" class="btn small">OPEN BASEPALS FOLDER</div>
-						<div id="toggle-auto-update" class="check-row">
-							<div id="switch-auto-update" class="switch"><div class="switch-knob"/></div>
-							<span id="auto-update-label">Auto-check linked GitHub add-ons on startup</span>
+						<div class="mod-toggles">
+							<div id="toggle-game-addon-check" class="check-row">
+								<div id="switch-game-addon-check" class="switch on"><div class="switch-knob"/></div>
+								<span id="game-addon-check-label">Check add-on updates in background when UNI2 starts</span>
+							</div>
+							<div id="toggle-auto-update" class="check-row">
+								<div id="switch-auto-update" class="switch"><div class="switch-knob"/></div>
+								<span id="auto-update-label">Auto-check linked GitHub add-ons on startup</span>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -164,6 +197,23 @@
 		<div id="foot-status" class="foot-text">Ready.</div>
 		<div id="foot-ver" class="foot-ver">RmlUi 6.0 / Overlay-Safe GDI</div>
 	</footer>
+
+	<div id="confirm-backdrop" class="modal-backdrop hidden">
+		<div class="modal-card">
+			<div class="modal-head">
+				<div class="modal-bar"/>
+				<div id="modal-title" class="modal-title">SECURITY WARNING</div>
+			</div>
+			<div id="modal-target" class="modal-target"/>
+			<div id="modal-sub" class="modal-sub"/>
+			<div id="modal-warnings" class="modal-warnings"/>
+			<div id="modal-note" class="modal-note"/>
+			<div class="modal-actions">
+				<div id="btn-modal-cancel" class="btn small">CANCEL</div>
+				<div id="btn-modal-proceed" class="btn warn small ml-8">INSTALL ANYWAY</div>
+			</div>
+		</div>
+	</div>
 </div>
 </body>
 </rml>

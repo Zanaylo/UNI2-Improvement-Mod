@@ -128,6 +128,8 @@
   <ItemGroup>
     <ClCompile Include="src\Addons\AddonManifest.cpp" />
     <ClCompile Include="src\Addons\AddonManager.cpp" />
+    <ClCompile Include="src\Addons\AddonUpdateCheck.cpp" />
+    <ClCompile Include="src\ModLoader\AddonCatalog.cpp" />
     <ClCompile Include="src\Addons\LuaHost.cpp" />
     <ClCompile Include="src\Addons\LuaBindingsCore.cpp" />
     <ClCompile Include="src\Addons\LuaBindingsUi.cpp" />

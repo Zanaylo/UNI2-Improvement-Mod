@@ -12,7 +12,9 @@
 #include "D3D9/Post/UpscaleFilter.h"
 
 #include <cstdarg>
+#include <cstdint>
 #include <cstdio>
+#include <cstring>
 
 namespace {
 
@@ -20,14 +22,15 @@ constexpr int kMaxPassesPerFrame = 2;
 constexpr float kVisibilitySensitivity = 10.0f;
 constexpr float kDarkestStage = 0.04f;
 constexpr DWORD kFirstDetailStage = 2;
-constexpr DWORD kDetailStages = 3;
+constexpr DWORD kDetailStages = 2;
+constexpr size_t kNonRtCacheMask = 255;
 
 PixelShaderHandle g_shader;
 PixelShaderHandle g_detailShader;
 ScratchTarget g_target;
 ScratchTarget g_upscaled;
-ScratchTarget g_snapshotUpscaled;
 DeviceState g_state;
+const IDirect3DBaseTexture9* g_nonRtCache[kNonRtCacheMask + 1] = {};
 
 int g_kind = UpscaleFilter::Kind_Off;
 
@@ -83,15 +86,34 @@ bool EnsurePass(IDirect3DDevice9* device, int kind)
 	return false;
 }
 
+size_t CacheSlot(const IDirect3DBaseTexture9* texture)
+{
+	const uintptr_t bits = reinterpret_cast<uintptr_t>(texture);
+	return ((bits >> 4) ^ (bits >> 12)) & kNonRtCacheMask;
+}
+
 IDirect3DTexture9* AsRenderTargetTexture(IDirect3DBaseTexture9* texture, D3DSURFACE_DESC& outDesc)
 {
-	if (texture == nullptr || texture->GetType() != D3DRTYPE_TEXTURE)
+	if (texture == nullptr)
 		return nullptr;
+
+	const size_t slot = CacheSlot(texture);
+	if (g_nonRtCache[slot] == texture)
+		return nullptr;
+
+	if (texture->GetType() != D3DRTYPE_TEXTURE)
+	{
+		g_nonRtCache[slot] = texture;
+		return nullptr;
+	}
 
 	IDirect3DTexture9* flat = static_cast<IDirect3DTexture9*>(texture);
 
 	if (FAILED(flat->GetLevelDesc(0, &outDesc)) || (outDesc.Usage & D3DUSAGE_RENDERTARGET) == 0)
+	{
+		g_nonRtCache[slot] = texture;
 		return nullptr;
+	}
 
 	return flat;
 }
@@ -158,7 +180,7 @@ void BindDetailTexture(IDirect3DDevice9* device, DWORD stage, IDirect3DBaseTextu
 
 void Combine(IDirect3DDevice9* device, IDirect3DBaseTexture9* source)
 {
-	IDirect3DBaseTexture9* const detail[kDetailStages] = { StageDetail::Detailed(), source, StageDetail::Snapshot() };
+	IDirect3DBaseTexture9* const detail[kDetailStages] = { source, StageDetail::Snapshot() };
 
 	for (DWORD i = 0; i < kDetailStages; ++i)
 		BindDetailTexture(device, kFirstDetailStage + i, detail[i]);
@@ -166,14 +188,13 @@ void Combine(IDirect3DDevice9* device, IDirect3DBaseTexture9* source)
 	device->SetRenderTarget(0, g_target.Surface());
 	FullScreenQuad::SetConstant(device, 0, kVisibilitySensitivity, kDarkestStage, 0.0f, 0.0f);
 	FullScreenQuad::Draw(device, g_detailShader.Get(), g_upscaled.Texture(), g_target.Width(), g_target.Height(),
-		true, g_snapshotUpscaled.Texture());
+		true, StageDetail::Detailed());
 }
 
 bool WantsDetail(IDirect3DDevice9* device, const D3DSURFACE_DESC& sourceDesc, const D3DSURFACE_DESC& backBufferDesc)
 {
 	return StageDetail::IsReady() && g_detailShader.Ensure(device, kStageDetailShader) &&
-		g_upscaled.Ensure(device, backBufferDesc.Width, backBufferDesc.Height, sourceDesc.Format) &&
-		g_snapshotUpscaled.Ensure(device, backBufferDesc.Width, backBufferDesc.Height, sourceDesc.Format);
+		g_upscaled.Ensure(device, backBufferDesc.Width, backBufferDesc.Height, sourceDesc.Format);
 }
 
 bool Run(IDirect3DDevice9* device, IDirect3DTexture9* source, const D3DSURFACE_DESC& sourceDesc,
@@ -196,7 +217,6 @@ bool Run(IDirect3DDevice9* device, IDirect3DTexture9* source, const D3DSURFACE_D
 	if (detailed)
 	{
 		Upscale(device, source, sourceDesc, g_upscaled);
-		Upscale(device, StageDetail::Snapshot(), sourceDesc, g_snapshotUpscaled);
 		Combine(device, source);
 	}
 	else
@@ -287,6 +307,7 @@ void SceneUpscale::OnPresent()
 	g_source = nullptr;
 	g_passesThisFrame = 0;
 	g_reportedThisFrame = false;
+	std::memset(g_nonRtCache, 0, sizeof(g_nonRtCache));
 }
 
 void SceneUpscale::OnDeviceLost()
@@ -294,14 +315,14 @@ void SceneUpscale::OnDeviceLost()
 	g_state.Release();
 	g_target.Release();
 	g_upscaled.Release();
-	g_snapshotUpscaled.Release();
 	g_source = nullptr;
 	g_passesThisFrame = 0;
+	std::memset(g_nonRtCache, 0, sizeof(g_nonRtCache));
 }
 
 bool SceneUpscale::HoldsDeviceResources()
 {
-	return g_state.IsHeld() || g_target.IsHeld() || g_upscaled.IsHeld() || g_snapshotUpscaled.IsHeld();
+	return g_state.IsHeld() || g_target.IsHeld() || g_upscaled.IsHeld();
 }
 
 bool SceneUpscale::IsActive()

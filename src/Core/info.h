@@ -1,11 +1,11 @@
 #pragma once
 
 #define UNI2_IM_NAME "UNI2 Improvement Mod"
-#define UNI2_IM_VERSION_MAJOR 0
-#define UNI2_IM_VERSION_MINOR 8
-#define UNI2_IM_VERSION_PATCH 1
+#define UNI2_IM_VERSION_MAJOR 1
+#define UNI2_IM_VERSION_MINOR 0
+#define UNI2_IM_VERSION_PATCH 0
 
-#define UNI2_IM_VERSION "0.8.1"
+#define UNI2_IM_VERSION "1.0.0"
 #define UNI2_IM_MINIMAL_TAG ""
 #ifdef UNI2_IM_FULL_EMBEDS
 #define UNI2_IM_HAS_EMBEDS 1

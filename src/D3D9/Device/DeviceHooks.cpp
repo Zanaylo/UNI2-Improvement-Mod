@@ -539,12 +539,6 @@ void Adopt(IDirect3DDevice9* device)
 	DeviceHooks::Install(device, parameters, window);
 }
 
-bool FrozenFrameCouldBeReplayed()
-{
-	return FrameStepper::IsImplemented() && GameState::AllowsTrainingTools() &&
-		FrameStepper::SuppressesTicks();
-}
-
 HRESULT PresentOnStandby(IDirect3DDevice9* device, const RECT* sourceRect, const RECT* destRect,
 	HWND destWindowOverride, const RGNDATA* dirtyRegion)
 {
@@ -643,15 +637,26 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 		Modules::Run(Modules::Group_Frame, device);
 		Modules::Run(Modules::Group_Replay, device);
 
+		RetryOverlay(device);
+		WindowManager::GetInstance().PollHotkeys();
+
 		const bool stepped = FrameStepper::ConsumeSteppedFlag();
+		const bool frozenBeforeOverlay = FrameStepper::NeedsFrozenFrameReplay();
 
 		{
 			Profiler::Scope scope(Profiler::Section_PresentFrozenFrame);
 
-			if (FrameStepper::NeedsFrozenFrameReplay() && !stepped)
-				FrozenFrame::Draw(device);
-			else if (FrozenFrameCouldBeReplayed())
-				FrozenFrame::Capture(device);
+			if (frozenBeforeOverlay)
+			{
+				if (stepped || !FrozenFrame::IsValid())
+					FrozenFrame::Capture(device);
+				else
+					FrozenFrame::Draw(device);
+			}
+			else if (FrozenFrame::IsValid())
+			{
+				FrozenFrame::Invalidate();
+			}
 		}
 
 		if (Features::IsLoaded(FeatureCatalog::Id_Graphics))
@@ -671,9 +676,11 @@ HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* so
 
 		{
 			Profiler::Scope scope(Profiler::Section_PresentOverlay);
-			RetryOverlay(device);
 			WindowManager::GetInstance().Render();
 		}
+
+		if (!frozenBeforeOverlay && FrameStepper::NeedsFrozenFrameReplay() && !FrozenFrame::IsValid())
+			FrameStepper::RequestStep(1);
 	}
 
 	Modules::Run(Modules::Group_Input, device);

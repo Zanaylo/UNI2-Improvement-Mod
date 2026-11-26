@@ -35,6 +35,7 @@ struct HttpResult
 };
 
 std::vector<std::unique_ptr<LuaHost::Instance>> g_instances;
+std::recursive_mutex g_vmMutex;
 
 std::mutex g_httpMutex;
 std::condition_variable g_httpWake;
@@ -211,6 +212,7 @@ void LuaHost::EnqueueHttp(Instance* owner, HttpRequest::Request request, int cal
 bool LuaHost::LoadAddon(const std::string& id, const std::string& name, const std::string& folder,
 	const std::string& entryScript, std::string& outError)
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
 	lua_State* const L = luaL_newstate();
 
 	if (L == nullptr)
@@ -258,6 +260,7 @@ bool LuaHost::LoadAddon(const std::string& id, const std::string& name, const st
 
 void LuaHost::OnFrame()
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
 	DrainHttpResults();
 
 	for (std::unique_ptr<Instance>& instance : g_instances)
@@ -269,6 +272,8 @@ void LuaHost::OnFrame()
 
 void LuaHost::OnHud()
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
 	for (std::unique_ptr<Instance>& instance : g_instances)
 	{
 		for (int ref : instance->hudCallbacks)
@@ -278,6 +283,7 @@ void LuaHost::OnHud()
 
 void LuaHost::OnOverlay()
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
 	const ImVec2 display = ImGui::GetIO().DisplaySize;
 	const float capW = display.x > 64.0f ? display.x * 0.90f : 1280.0f;
 	const float capH = display.y > 64.0f ? display.y * 0.90f : 720.0f;
@@ -327,6 +333,8 @@ void LuaHost::OnOverlay()
 
 void LuaHost::OnGameStarted()
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
 	for (std::unique_ptr<Instance>& instance : g_instances)
 	{
 		for (int ref : instance->gameStartedCallbacks)
@@ -336,6 +344,8 @@ void LuaHost::OnGameStarted()
 
 void LuaHost::OnGameEnded(const GameResults::Report& report)
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
 	for (std::unique_ptr<Instance>& instance : g_instances)
 	{
 		for (int ref : instance->gameEndedCallbacks)
@@ -380,6 +390,8 @@ void LuaHost::OnGameEnded(const GameResults::Report& report)
 
 void LuaHost::UnloadAll()
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
 	{
 		std::lock_guard<std::mutex> lock(g_httpMutex);
 		g_httpPending.clear();
@@ -416,6 +428,8 @@ void LuaHost::Shutdown()
 
 bool LuaHost::AnyWindowOpen()
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
 	for (const std::unique_ptr<Instance>& instance : g_instances)
 	{
 		for (const AddonWindow& window : instance->windows)
@@ -430,6 +444,8 @@ bool LuaHost::AnyWindowOpen()
 
 bool LuaHost::WantsHud()
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
 	for (const std::unique_ptr<Instance>& instance : g_instances)
 	{
 		if (!instance->hudCallbacks.empty())
@@ -441,6 +457,8 @@ bool LuaHost::WantsHud()
 
 void LuaHost::DrawLauncherCards()
 {
+	std::lock_guard<std::recursive_mutex> vmLock(g_vmMutex);
+
 	for (std::unique_ptr<Instance>& instance : g_instances)
 	{
 		for (AddonWindow& window : instance->windows)

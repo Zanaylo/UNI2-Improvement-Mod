@@ -124,6 +124,9 @@
     <Filter Include="Hooks">
       <UniqueIdentifier>{8dc6a37a-e1a1-a81b-cdb7-6eb24bb92a03}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ModLoader">
+      <UniqueIdentifier>{dd8b9383-d6c2-fb00-fece-e8509bd9aaf6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Network">
       <UniqueIdentifier>{1e8e57b2-909b-2a85-3983-a93f378eb6b5}</UniqueIdentifier>
     </Filter>
@@ -194,6 +197,12 @@
     </ClCompile>
     <ClCompile Include="src\Addons\AddonManager.cpp">
       <Filter>Addons</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Addons\AddonUpdateCheck.cpp">
+      <Filter>Addons</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ModLoader\AddonCatalog.cpp">
+      <Filter>ModLoader</Filter>
     </ClCompile>
     <ClCompile Include="src\Addons\LuaHost.cpp">
       <Filter>Addons</Filter>

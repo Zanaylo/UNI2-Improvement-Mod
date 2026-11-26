@@ -1139,6 +1139,8 @@ namespace GameOffsets
 	constexpr uintptr_t kPlayerMatchCreateAnswer = 0x40;
 	constexpr uintptr_t kPlayerMatchRoomType = 0x708;
 	constexpr uintptr_t kPlayerMatchSettings = 0x728;
+	constexpr uintptr_t kPlayerMatchAltSettings = 0x7d4;
+	constexpr uintptr_t kPlayerMatchUseAltSettings = 0xd6c;
 	constexpr uint32_t kPlayerMatchCreateScreen = 4;
 	constexpr uint32_t kPlayerMatchDialogOpen = 1;
 	constexpr uint32_t kCreateMenuChoosing = 0;
@@ -1157,6 +1159,9 @@ namespace GameOffsets
 	constexpr int kRoomType1RematchRow = 7;
 	constexpr int kRoomType1RoundsRow = 8;
 	constexpr int kRoomType1RoundTimeRow = 9;
+	constexpr int kRoomAltRematchRow = 5;
+	constexpr int kRoomAltRoundsRow = 6;
+	constexpr int kRoomAltRoundTimeRow = 7;
 	constexpr int kRoomRoundsTwo = 1;
 	constexpr int kRoomRoundTimeDefault99 = 2;
 

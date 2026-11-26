@@ -856,9 +856,22 @@ bool WantsSoftwareCursor()
 
 }
 
+void WindowManager::PollHotkeys()
+{
+	if (m_hotkeysPolled)
+		return;
+
+	m_hotkeysPolled = true;
+	PadInput::OnFrame();
+
+	if (m_initialized)
+		HandleHotkeys();
+}
+
 void WindowManager::Render()
 {
-	PadInput::OnFrame();
+	PollHotkeys();
+	m_hotkeysPolled = false;
 
 	if (!m_initialized)
 	{
@@ -866,7 +879,6 @@ void WindowManager::Render()
 		return;
 	}
 
-	HandleHotkeys();
 	RestoreDeviceObjects();
 
 	if (!m_deviceObjectsValid || IsIconic(m_window))

@@ -14,6 +14,7 @@ public:
 	bool Initialize(HWND window, IDirect3DDevice9* device);
 	void Shutdown();
 
+	void PollHotkeys();
 	void Render();
 	void OnDeviceLost();
 	void OnDeviceReset();
@@ -80,6 +81,7 @@ private:
 	bool m_toggleMessaged = false;
 	bool m_softwareCursor = false;
 	bool m_swappedButtons = false;
+	bool m_hotkeysPolled = false;
 	std::atomic<DWORD> m_focusEvidenceAt{ 0 };
 	DWORD m_focusCheckedAt = 0;
 	DWORD m_gateReportedAt = 0;

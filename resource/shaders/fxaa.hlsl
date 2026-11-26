@@ -8,17 +8,22 @@ float Luma(float3 colour)
 	return dot(colour, float3(0.299f, 0.587f, 0.114f));
 }
 
+float3 SampleFrame(float2 uv)
+{
+	return tex2Dlod(Frame, float4(uv, 0.0f, 0.0f)).rgb;
+}
+
 float4 main(float2 uv : TEXCOORD0) : COLOR0
 {
 	float2 texel = TexelSize.xy;
 
-	float3 centre = tex2D(Frame, uv).rgb;
+	float3 centre = SampleFrame(uv);
 	float lumaCentre = Luma(centre);
 
-	float lumaDown = Luma(tex2D(Frame, uv + float2(0.0f, texel.y)).rgb);
-	float lumaUp = Luma(tex2D(Frame, uv + float2(0.0f, -texel.y)).rgb);
-	float lumaLeft = Luma(tex2D(Frame, uv + float2(-texel.x, 0.0f)).rgb);
-	float lumaRight = Luma(tex2D(Frame, uv + float2(texel.x, 0.0f)).rgb);
+	float lumaDown = Luma(SampleFrame(uv + float2(0.0f, texel.y)));
+	float lumaUp = Luma(SampleFrame(uv + float2(0.0f, -texel.y)));
+	float lumaLeft = Luma(SampleFrame(uv + float2(-texel.x, 0.0f)));
+	float lumaRight = Luma(SampleFrame(uv + float2(texel.x, 0.0f)));
 
 	float lumaLow = min(lumaCentre, min(min(lumaDown, lumaUp), min(lumaLeft, lumaRight)));
 	float lumaHigh = max(lumaCentre, max(max(lumaDown, lumaUp), max(lumaLeft, lumaRight)));
@@ -27,10 +32,10 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
 	if (range < max(Quality.y, lumaHigh * Quality.x))
 		return float4(centre, 1.0f);
 
-	float lumaDownLeft = Luma(tex2D(Frame, uv + float2(-texel.x, texel.y)).rgb);
-	float lumaUpRight = Luma(tex2D(Frame, uv + float2(texel.x, -texel.y)).rgb);
-	float lumaUpLeft = Luma(tex2D(Frame, uv + float2(-texel.x, -texel.y)).rgb);
-	float lumaDownRight = Luma(tex2D(Frame, uv + float2(texel.x, texel.y)).rgb);
+	float lumaDownLeft = Luma(SampleFrame(uv + float2(-texel.x, texel.y)));
+	float lumaUpRight = Luma(SampleFrame(uv + float2(texel.x, -texel.y)));
+	float lumaUpLeft = Luma(SampleFrame(uv + float2(-texel.x, -texel.y)));
+	float lumaDownRight = Luma(SampleFrame(uv + float2(texel.x, texel.y)));
 
 	float lumaDownUp = lumaDown + lumaUp;
 	float lumaLeftRight = lumaLeft + lumaRight;
@@ -84,8 +89,8 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
 	float2 uvA = edgeUv - offset;
 	float2 uvB = edgeUv + offset;
 
-	float lumaEndA = Luma(tex2D(Frame, uvA).rgb) - lumaLocal;
-	float lumaEndB = Luma(tex2D(Frame, uvB).rgb) - lumaLocal;
+	float lumaEndA = Luma(SampleFrame(uvA)) - lumaLocal;
+	float lumaEndB = Luma(SampleFrame(uvB)) - lumaLocal;
 
 	bool reachedA = abs(lumaEndA) >= gradientScaled;
 	bool reachedB = abs(lumaEndB) >= gradientScaled;
@@ -96,6 +101,7 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
 	if (!reachedB)
 		uvB += offset;
 
+	[loop]
 	for (int i = 2; i < 12; ++i)
 	{
 		if (reachedA && reachedB)
@@ -106,13 +112,13 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
 
 		if (!reachedA)
 		{
-			lumaEndA = Luma(tex2D(Frame, uvA).rgb) - lumaLocal;
+			lumaEndA = Luma(SampleFrame(uvA)) - lumaLocal;
 			reachedA = abs(lumaEndA) >= gradientScaled;
 		}
 
 		if (!reachedB)
 		{
-			lumaEndB = Luma(tex2D(Frame, uvB).rgb) - lumaLocal;
+			lumaEndB = Luma(SampleFrame(uvB)) - lumaLocal;
 			reachedB = abs(lumaEndB) >= gradientScaled;
 		}
 
@@ -154,5 +160,5 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
 	else
 		finalUv.x += finalOffset * stepLength;
 
-	return float4(tex2D(Frame, finalUv).rgb, 1.0f);
+	return float4(SampleFrame(finalUv), 1.0f);
 }

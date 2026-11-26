@@ -29,6 +29,7 @@ struct JoinRequest
 constexpr int kSceneRequested = 1;
 constexpr unsigned kMainMenuFrames = 30;
 constexpr unsigned kMenuSettleFrames = 30;
+constexpr unsigned kPickRetryFrames = 60;
 constexpr unsigned kCardDismissTimeoutFrames = 90;
 constexpr uint32_t kNetworkMenuRunning = 1;
 constexpr uint32_t kNetworkListIdle = 1;
@@ -78,6 +79,13 @@ uint32_t ReadField(const uint8_t* root, uintptr_t offset)
 	return value;
 }
 
+uint8_t ReadByte(const uint8_t* root, uintptr_t offset)
+{
+	uint8_t value = 0;
+	TryReadMemory(&value, root + offset, sizeof(value));
+	return value;
+}
+
 void NoteStage(CreateStage stage)
 {
 	g_stage.store(stage);
@@ -102,9 +110,9 @@ struct SettingRows
 	int count = 0;
 };
 
-SettingRows ReadSettingRows(uint8_t* root)
+SettingRows ReadSettingRows(uint8_t* root, uintptr_t menuOffset)
 {
-	const uint8_t* const menu = root + GameOffsets::kPlayerMatchSettings;
+	const uint8_t* const menu = root + menuOffset;
 	const uint32_t pagesBegin = ReadField(menu, GameOffsets::kMenuPages);
 	const uint32_t pagesEnd = ReadField(menu, GameOffsets::kMenuPages + sizeof(uint32_t));
 
@@ -137,8 +145,9 @@ bool SetSetting(const SettingRows& rows, int row, int value)
 
 void ChooseCreateRoom(uint8_t* root)
 {
-	const SettingRows rows = ReadSettingRows(root);
+	const SettingRows rows = ReadSettingRows(root, GameOffsets::kPlayerMatchSettings);
 	const uint32_t roomType = ReadField(root, GameOffsets::kPlayerMatchRoomType);
+	const bool useAlt = ReadByte(root, GameOffsets::kPlayerMatchUseAltSettings) != 0;
 	const int firstTo = g_firstTo.load();
 	const int rematches = RematchLimitFor(firstTo);
 
@@ -156,8 +165,16 @@ void ChooseCreateRoom(uint8_t* root)
 		SetSetting(rows, GameOffsets::kRoomRoundTimeRow, GameOffsets::kRoomRoundTimeDefault99);
 	}
 
-	LOG("RoomAutomation: create room type=%u rows=%d firstTo=%d rematchOpt=%d rounds=2 time=99",
-		roomType, rows.count, firstTo, rematches);
+	if (useAlt)
+	{
+		const SettingRows altRows = ReadSettingRows(root, GameOffsets::kPlayerMatchAltSettings);
+		SetSetting(altRows, GameOffsets::kRoomAltRematchRow, rematches);
+		SetSetting(altRows, GameOffsets::kRoomAltRoundsRow, GameOffsets::kRoomRoundsTwo);
+		SetSetting(altRows, GameOffsets::kRoomAltRoundTimeRow, GameOffsets::kRoomRoundTimeDefault99);
+	}
+
+	LOG("RoomAutomation: create room type=%u alt=%u rows=%d firstTo=%d rematchOpt=%d rounds=2 time=99",
+		roomType, useAlt ? 1u : 0u, rows.count, firstTo, rematches);
 
 	TryWriteDword(root + GameOffsets::kPlayerMatchCreateAnswer,
 		static_cast<uint32_t>(GameOffsets::kCreateMenuCreateRoom));
@@ -190,6 +207,49 @@ bool DismissProfileCardIfVisible()
 	return g_cardDismissFrames >= kCardDismissTimeoutFrames;
 }
 
+bool IsCreateScreenReady(uint8_t* root)
+{
+	if (root == nullptr)
+		return false;
+
+	const uint32_t state = ReadField(root, GameOffsets::kPlayerMatchState);
+	const uint32_t dialogStep = ReadField(root, GameOffsets::kPlayerMatchDialogStep);
+	const uint32_t menuState = ReadField(root, GameOffsets::kPlayerMatchCreateMenu);
+	const int answer = static_cast<int>(ReadField(root, GameOffsets::kPlayerMatchCreateAnswer));
+
+	if (state != GameOffsets::kPlayerMatchCreateScreen ||
+		dialogStep != GameOffsets::kPlayerMatchDialogOpen ||
+		menuState != GameOffsets::kCreateMenuChoosing ||
+		answer != GameOffsets::kCreateMenuUnanswered)
+	{
+		return false;
+	}
+
+	return ReadSettingRows(root, GameOffsets::kPlayerMatchSettings).count > 0;
+}
+
+bool TryCreateFromCurrentScreen()
+{
+	const uintptr_t address = RvaToAddress(GameOffsets::kPlayerMatchRoot);
+
+	if (address == 0)
+		return false;
+
+	uint8_t* const root = reinterpret_cast<uint8_t*>(address);
+
+	if (!IsCreateScreenReady(root))
+		return false;
+
+	NoteStage(CreateStage::CreatingRoom);
+	ChooseCreateRoom(root);
+	return true;
+}
+
+bool IsNetworkMenuRunning()
+{
+	return static_cast<uint32_t>(ReadRvaInt(GameOffsets::kNetworkMenu + GameOffsets::kNetworkMenuState)) == kNetworkMenuRunning;
+}
+
 void StepNetworkMenu()
 {
 	++g_menuFrames;
@@ -209,6 +269,9 @@ void StepNetworkMenu()
 		return;
 
 	if (!DismissProfileCardIfVisible())
+		return;
+
+	if (g_picks > 0 && (g_menuFrames % kPickRetryFrames) != 0)
 		return;
 
 	WriteRvaInt(GameOffsets::kNetworkMenu + GameOffsets::kNetworkMenuPick, GameOffsets::kNetworkPickCreateRoom);
@@ -231,19 +294,11 @@ void __fastcall HookedPlayerMatchResult(uint8_t* root, void* unused, int result)
 
 	const CreateStage stage = g_stage.load();
 
-	if (stage != CreateStage::PickingCreateRoom && stage != CreateStage::OpeningPlayerMatch)
+	if (stage != CreateStage::Armed && stage != CreateStage::PickingCreateRoom && stage != CreateStage::OpeningPlayerMatch)
 		return;
 
-	const uint32_t state = ReadField(root, GameOffsets::kPlayerMatchState);
-	const uint32_t dialogStep = ReadField(root, GameOffsets::kPlayerMatchDialogStep);
-	const uint32_t menuState = ReadField(root, GameOffsets::kPlayerMatchCreateMenu);
-	const int answer = static_cast<int>(ReadField(root, GameOffsets::kPlayerMatchCreateAnswer));
-
-	if (state != GameOffsets::kPlayerMatchCreateScreen || dialogStep != GameOffsets::kPlayerMatchDialogOpen ||
-		menuState != GameOffsets::kCreateMenuChoosing || answer != GameOffsets::kCreateMenuUnanswered)
-	{
+	if (!IsCreateScreenReady(root))
 		return;
-	}
 
 	NoteStage(CreateStage::CreatingRoom);
 	ChooseCreateRoom(root);
@@ -347,13 +402,33 @@ RoomAutomation::CreateStage RoomAutomation::StepCreate()
 {
 	const CreateStage stage = g_stage.load();
 
+	if (stage == CreateStage::Idle)
+		return stage;
+
+	const uint32_t scene = SceneWatch::Current();
+
+	if (scene == GameOffsets::kSceneNetwork)
+	{
+		if ((stage == CreateStage::Armed || stage == CreateStage::PickingCreateRoom ||
+			stage == CreateStage::OpeningPlayerMatch) && TryCreateFromCurrentScreen())
+		{
+			return g_stage.load();
+		}
+
+		if (stage == CreateStage::Armed && IsNetworkMenuRunning())
+		{
+			NoteStage(CreateStage::PickingCreateRoom);
+			return g_stage.load();
+		}
+	}
+
 	if (stage == CreateStage::PickingCreateRoom)
 	{
 		StepNetworkMenu();
 		return g_stage.load();
 	}
 
-	if (stage == CreateStage::Armed && SceneWatch::Current() == GameOffsets::kSceneMainMenu &&
+	if (stage == CreateStage::Armed && scene == GameOffsets::kSceneMainMenu &&
 		SceneWatch::HeldFrames() >= kMainMenuFrames)
 	{
 		if (EnterNetwork())

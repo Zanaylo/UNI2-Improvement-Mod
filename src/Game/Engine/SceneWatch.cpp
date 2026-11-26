@@ -43,7 +43,7 @@ void SceneWatch::OnFrame()
 		return;
 	}
 
-	if (g_held < kSettleFrames)
+	if (g_held < ~0u)
 		++g_held;
 
 	if (g_held < kSettleFrames || scene == g_settled)

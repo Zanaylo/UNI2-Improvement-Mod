@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "externalAddons": [
+    {
+      "id": "rank-wars",
+      "folder": "RankWars",
+      "name": "Rank Wars",
+      "author": "Zanaylo",
+      "description": "Automated Rank Wars matches, room creation and joining, live score pips HUD, and replay uploads.",
+      "repo": "https://github.com/Zanaylo/UNI2-Rank-Wars-Addon",
+      "iconUrl": ""
+    }
+  ]
+}

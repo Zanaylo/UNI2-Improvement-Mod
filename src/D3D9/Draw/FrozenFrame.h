@@ -12,6 +12,7 @@ namespace FrozenFrame
 
 	void Capture(IDirect3DDevice9* device);
 	bool Draw(IDirect3DDevice9* device);
+	void Invalidate();
 
 	bool IsValid();
 }

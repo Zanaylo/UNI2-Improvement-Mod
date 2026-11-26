@@ -1,6 +1,7 @@
 #include "Addons/AddonManager.h"
 
 #include "Addons/AddonApi.h"
+#include "Addons/AddonUpdateCheck.h"
 #include "Addons/LuaHost.h"
 #include "Core/Config/FeatureCatalog.h"
 #include "Core/Config/Features.h"
@@ -752,6 +753,7 @@ void AddonManager::Initialize()
 	}
 
 	LOG("Addons: %d of %d addon(s) loaded from %s", LoadedCount(), Count(), root.c_str());
+	AddonUpdateCheck::Start();
 }
 
 void AddonManager::ReloadLua()
@@ -789,6 +791,7 @@ void AddonManager::Shutdown()
 	if (!g_initialized)
 		return;
 
+	AddonUpdateCheck::Shutdown();
 	LuaHost::Shutdown();
 
 	for (NativePlugin& plugin : g_nativePlugins)
@@ -831,9 +834,10 @@ void AddonManager::OnFrame()
 	g_hudFrame.fetch_add(1);
 
 	if (g_drawQueueInstalled)
-		DrawQueue::Want(DrawQueue::User_Addons, LuaHost::WantsHud() || !g_nativeHuds.empty());
+		DrawQueue::Want(DrawQueue::User_Addons, GameState::IsInMatch() && (LuaHost::WantsHud() || !g_nativeHuds.empty()));
 
 	LuaHost::OnFrame();
+	AddonUpdateCheck::OnFrame();
 
 	for (const NativeCallback& cb : g_nativeFrames)
 	{
@@ -848,6 +852,7 @@ void AddonManager::OnOverlay()
 		return;
 
 	LuaHost::OnOverlay();
+	AddonUpdateCheck::DrawOverlay();
 
 	for (const NativeCallback& cb : g_nativeOverlays)
 	{
@@ -905,6 +910,9 @@ void AddonManager::OnDeviceReset()
 bool AddonManager::AnyOverlayOpen()
 {
 	if (g_nativeBlocksInput.load(std::memory_order_acquire))
+		return true;
+
+	if (AddonUpdateCheck::IsPopupOpen())
 		return true;
 
 	if (LuaHost::AnyWindowOpen())
@@ -1030,4 +1038,17 @@ void AddonManager::DrawMainWindowSection()
 
 	if (ImGui::SmallButton(TrLabel("Reload Lua add-ons")))
 		ReloadLua();
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(AddonUpdateCheck::IsChecking());
+	if (ImGui::SmallButton(TrLabel("Check add-ons now")))
+		AddonUpdateCheck::CheckNow();
+	ImGui::EndDisabled();
+
+	if (AddonUpdateCheck::HasUpdates())
+	{
+		ImGui::SameLine();
+		if (ImGui::SmallButton(TrLabel("Show add-on updates")))
+			AddonUpdateCheck::OpenPopup();
+	}
 }

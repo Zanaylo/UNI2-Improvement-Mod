@@ -24,6 +24,7 @@
 #include "Overlay/Panels/ProfilesPanel.h"
 #include "Overlay/Widgets/LanguageCombo.h"
 #include "Overlay/Widgets/UiText.h"
+#include "Addons/AddonUpdateCheck.h"
 #include "Web/UpdateCheck.h"
 #include "Core/Text/Language.h"
 
@@ -275,6 +276,31 @@ void DrawConfigGeneralTab()
 	}
 
 	UiText::Muted("%s", UpdateCheck::GetStatusText());
+
+	if (ImGui::Checkbox(TrLabel("Check for add-on updates on start"), &g_modVals.checkAddonUpdates))
+		Settings::SaveInt("Mod", "CheckAddonUpdates", g_modVals.checkAddonUpdates ? 1 : 0);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip(Tr("Runs a lightweight background check when UNI2 starts and notifies you if any installed add-ons have updates available."));
+	}
+
+	ImGui::BeginDisabled(AddonUpdateCheck::IsChecking());
+
+	if (ImGui::Button(TrLabel("Check add-ons now")))
+		AddonUpdateCheck::CheckNow();
+
+	ImGui::EndDisabled();
+
+	if (AddonUpdateCheck::HasUpdates())
+	{
+		ImGui::SameLine();
+
+		if (ImGui::Button(TrLabel("Show add-on updates")))
+			AddonUpdateCheck::OpenPopup();
+	}
+
+	UiText::Muted("%s", AddonUpdateCheck::GetStatusText().c_str());
 
 	if (ImGui::Checkbox(TrLabel("Show hitboxes and frame meter in the pause menu"),
 		&g_modVals.drawWhilePaused))

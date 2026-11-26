@@ -99,6 +99,7 @@
     <ClCompile Include="src\ModLoader\LoaderConfig.cpp" />
     <ClCompile Include="src\ModLoader\LoaderLocale.cpp" />
     <ClCompile Include="src\ModLoader\LoaderLog.cpp" />
+    <ClCompile Include="src\ModLoader\AddonCatalog.cpp" />
     <ClCompile Include="src\ModLoader\AddonStore.cpp" />
     <ClCompile Include="src\ModLoader\PackStore.cpp" />
     <ClCompile Include="src\ModLoader\RmlFileInterface.cpp" />

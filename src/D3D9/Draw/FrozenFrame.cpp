@@ -20,7 +20,9 @@ IDirect3DTexture9* g_texture = nullptr;
 IDirect3DStateBlock9* g_stateBlock = nullptr;
 UINT g_width = 0;
 UINT g_height = 0;
+D3DFORMAT g_format = D3DFMT_UNKNOWN;
 bool g_hasContent = false;
+bool g_failed = false;
 
 void Release()
 {
@@ -39,6 +41,28 @@ void Release()
 	g_hasContent = false;
 }
 
+bool EnsureTexture(IDirect3DDevice9* device)
+{
+	if (g_texture != nullptr)
+		return true;
+
+	if (g_failed || device == nullptr || g_width == 0 || g_height == 0 || g_format == D3DFMT_UNKNOWN)
+		return false;
+
+	const HRESULT result = device->CreateTexture(g_width, g_height, 1, D3DUSAGE_RENDERTARGET,
+		g_format, D3DPOOL_DEFAULT, &g_texture, nullptr);
+
+	if (FAILED(result))
+	{
+		LOG("FrozenFrame: CreateTexture failed 0x%08lx (%ux%u fmt %d)", result, g_width, g_height, (int)g_format);
+		g_texture = nullptr;
+		g_failed = true;
+		return false;
+	}
+
+	return true;
+}
+
 bool CaptureState(IDirect3DDevice9* device)
 {
 	if (g_stateBlock != nullptr)
@@ -53,20 +77,10 @@ void FrozenFrame::OnDeviceReset(IDirect3DDevice9* device, UINT width, UINT heigh
 {
 	Release();
 
-	if (device == nullptr || width == 0 || height == 0)
-		return;
-
-	g_width = width;
-	g_height = height;
-
-	const HRESULT result = device->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET,
-		format, D3DPOOL_DEFAULT, &g_texture, nullptr);
-
-	if (FAILED(result))
-	{
-		LOG("FrozenFrame: CreateTexture failed 0x%08lx (%ux%u fmt %d)", result, width, height, (int)format);
-		g_texture = nullptr;
-	}
+	g_width = device != nullptr ? width : 0;
+	g_height = device != nullptr ? height : 0;
+	g_format = device != nullptr ? format : D3DFMT_UNKNOWN;
+	g_failed = false;
 }
 
 void FrozenFrame::OnDeviceLost()
@@ -77,11 +91,15 @@ void FrozenFrame::OnDeviceLost()
 void FrozenFrame::Shutdown()
 {
 	Release();
+	g_width = 0;
+	g_height = 0;
+	g_format = D3DFMT_UNKNOWN;
+	g_failed = false;
 }
 
 bool FrozenFrame::HoldsDeviceResources()
 {
-	return g_texture != nullptr;
+	return g_texture != nullptr || g_stateBlock != nullptr;
 }
 
 bool FrozenFrame::IsValid()
@@ -89,9 +107,14 @@ bool FrozenFrame::IsValid()
 	return g_texture != nullptr && g_hasContent;
 }
 
+void FrozenFrame::Invalidate()
+{
+	g_hasContent = false;
+}
+
 void FrozenFrame::Capture(IDirect3DDevice9* device)
 {
-	if (device == nullptr || g_texture == nullptr)
+	if (!EnsureTexture(device))
 		return;
 
 	IDirect3DSurface9* backBuffer = nullptr;

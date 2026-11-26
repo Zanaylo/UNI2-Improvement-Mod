@@ -327,6 +327,7 @@ void FrameStepper::SetPaused(bool paused)
 
 	if (paused)
 	{
+		g_steppedSinceLastPresent = true;
 		g_pendingResumeDelay = g_manualResumeDelay;
 
 		if (g_pendingResumeDelay > 0 && IsModeSupported(FreezeMode::StopTime) &&
@@ -445,6 +446,9 @@ void FrameStepper::FreezeFor(int frames, FreezeMode mode)
 
 	if (IsModeSupported(mode))
 		g_mode = mode;
+
+	if (!g_paused)
+		g_steppedSinceLastPresent = true;
 
 	g_paused = true;
 	g_pendingSteps = 0;

@@ -152,7 +152,7 @@ uni2.log("Meu Add-on carregado!")
 | **Desenho Nativo** | `uni2.draw.fill`, `frame`, `text` |
 | **UI (ImGui)** | `uni2.ui.register_window`, `set_open`, `is_open`, `text`, `text_wrapped`, `text_muted`, `text_warn`, `text_good`, `button`, `small_button`, `checkbox`, `input_text`, `slider_int`, `collapsing_header`, `begin_child_card`, `end_child_card`, `set_tooltip`, `set_clipboard`, `draw_*` |
 
-> **Referência real completa**: veja o projeto standalone do Rank Wars ([addons/RankWars](addons/RankWars/)).
+> **Referência real completa**: veja o projeto standalone do Rank Wars em [https://github.com/Zanaylo/UNI2-Rank-Wars-Addon](https://github.com/Zanaylo/UNI2-Rank-Wars-Addon).
 
 ---
 
@@ -212,7 +212,7 @@ O `Uni2AddonHost` v2 entrega tudo sem duplicar hooks:
 - `getScene`, `isInMatch`, `isOnline`, `isSpectating`, `getLocalSide`, `getLoadedCharacter`, `getCharacterName`, `registerGameEvents`
 - `getLocalSteamId`, `setRichPresenceNote`, `getReplayFolder`, `saveReplayRecord`, `configGet*` / `configSet*`
 
-> **Exemplo pronto e compilável**: veja o SDK do Great Lobby em [addons/GreatLobby/sdk/](addons/GreatLobby/sdk/) e o guia [addons/GreatLobby/YUKO_SETUP.md](addons/GreatLobby/YUKO_SETUP.md).
+> **Distribuição e atualização automática via Release + Manifest**: cada add-on externo pode anexar um `addon-manifest.json` na sua GitHub Release (`/releases/latest`) junto do `.zip` e ser listado em `addons/catalog.json` para aparecer na loja do **UNI2 Mod Loader**.
 
 ---
 

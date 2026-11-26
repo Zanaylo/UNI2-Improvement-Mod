@@ -97,15 +97,69 @@ bool ReadWhole(const std::string& path, std::vector<uint8_t>& out)
 	return read == out.size();
 }
 
+bool IsReservedDeviceName(const std::string& segment)
+{
+	const size_t dot = segment.find('.');
+	const std::string stem = dot == std::string::npos ? segment : segment.substr(0, dot);
+
+	static const char* const kReserved[] = {
+		"CON", "PRN", "AUX", "NUL",
+		"COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+		"LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+	};
+
+	for (const char* reserved : kReserved)
+	{
+		if (_stricmp(stem.c_str(), reserved) == 0)
+			return true;
+	}
+
+	return false;
+}
+
 bool SafeName(const std::string& name)
 {
 	if (name.empty() || name[0] == '/' || name[0] == '\\')
 		return false;
 
-	if (name.find("..") != std::string::npos)
+	if (name.find(':') != std::string::npos)
 		return false;
 
-	return name.find(':') == std::string::npos;
+	for (char c : name)
+	{
+		if (static_cast<unsigned char>(c) < 0x20)
+			return false;
+	}
+
+	size_t cursor = 0;
+
+	while (cursor < name.size())
+	{
+		size_t end = name.find_first_of("/\\", cursor);
+		if (end == std::string::npos)
+			end = name.size();
+
+		const std::string seg = name.substr(cursor, end - cursor);
+		cursor = end + 1;
+
+		if (seg.empty())
+		{
+			if (end < name.size())
+				continue;
+			break;
+		}
+
+		if (seg == "." || seg == "..")
+			return false;
+
+		if (seg.back() == '.' || seg.back() == ' ')
+			return false;
+
+		if (IsReservedDeviceName(seg))
+			return false;
+	}
+
+	return true;
 }
 
 }
@@ -443,6 +497,9 @@ bool ZipArchive::Source::Read(int index, std::vector<uint8_t>& out)
 		return false;
 
 	const Record& record = m_entries[index];
+
+	if (static_cast<uint64_t>(record.stored) > static_cast<uint64_t>(m_size))
+		return false;
 
 	uint8_t header[30] = {};
 

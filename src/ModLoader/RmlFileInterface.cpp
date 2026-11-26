@@ -84,8 +84,26 @@ RmlFileInterface::~RmlFileInterface() = default;
 
 Rml::FileHandle RmlFileInterface::Open(const Rml::String& path)
 {
-	const std::string normalized = NormalizePath(path);
 	std::vector<uint8_t> data;
+
+	if (path.size() > 4 && path.compare(0, 4, "abs:") == 0)
+	{
+		std::string absPath = path.substr(4);
+		for (char& c : absPath)
+		{
+			if (c == '/')
+				c = '\\';
+		}
+
+		if (!ReadWholeFile(absPath, data) || data.empty())
+			return 0;
+
+		const uintptr_t handle = m_nextHandle++;
+		m_open.emplace(handle, Entry{ std::move(data), 0 });
+		return static_cast<Rml::FileHandle>(handle);
+	}
+
+	const std::string normalized = NormalizePath(path);
 
 	if (!m_diskRoot.empty())
 	{

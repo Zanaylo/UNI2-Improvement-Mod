@@ -24,6 +24,7 @@ constexpr int kCreateDepthStencilSurfaceIndex = 29;
 constexpr int kSetRenderTargetIndex = 37;
 
 constexpr int kMaxTargets = 32;
+constexpr unsigned kNoMsaaWidth = 2560;
 constexpr D3DFORMAT kSceneLayerFormat = D3DFMT_X8R8G8B8;
 
 using CreateTexture_t = HRESULT(STDMETHODCALLTYPE*)(IDirect3DDevice9*, UINT, UINT, UINT, DWORD,
@@ -281,8 +282,16 @@ HRESULT CreateScaledSurface(const CreateSurface_t original, const char* what, ID
 		return result;
 	}
 
-	const HRESULT scaled = original(device, g_width, g_height, format, multisample, quality, flag, surface,
-		shared);
+	D3DMULTISAMPLE_TYPE actualMultisample = multisample;
+	DWORD actualQuality = quality;
+	if (g_width >= kNoMsaaWidth && actualMultisample != D3DMULTISAMPLE_NONE)
+	{
+		actualMultisample = D3DMULTISAMPLE_NONE;
+		actualQuality = 0;
+	}
+
+	const HRESULT scaled = original(device, g_width, g_height, format, actualMultisample, actualQuality,
+		flag, surface, shared);
 
 	if (SUCCEEDED(scaled) && surface != nullptr && *surface != nullptr)
 	{
@@ -290,7 +299,7 @@ HRESULT CreateScaledSurface(const CreateSurface_t original, const char* what, ID
 		Remember(*surface, nullptr);
 		ForgetOnRelease(*surface);
 		LOG("[InternalResolution] %s format %d multisample %d created at %ux%u (0x%p)", what,
-			static_cast<int>(format), static_cast<int>(multisample), g_width, g_height,
+			static_cast<int>(format), static_cast<int>(actualMultisample), g_width, g_height,
 			static_cast<void*>(*surface));
 		return scaled;
 	}

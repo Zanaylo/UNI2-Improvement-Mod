@@ -33,9 +33,10 @@ constexpr uint32_t kClearColorBgra = 0xFF0B0E0Du;
 enum class Tab
 {
 	Addons = 0,
-	Packs = 1,
-	Modules = 2,
-	Log = 3
+	Store = 1,
+	Packs = 2,
+	Modules = 3,
+	Log = 4
 };
 
 class LoaderSystemInterface final : public SystemInterface_Win32
@@ -68,10 +69,13 @@ Rml::ElementDocument* g_doc = nullptr;
 std::string g_gameDir;
 Tab g_activeTab = Tab::Addons;
 int g_selectedAddon = -1;
+int g_selectedStore = -1;
 bool g_updateOnStart = false;
+bool g_gameAddonCheckOnStart = true;
 size_t g_lastLogCount = 0;
 std::string g_lastBusyStatus;
 bool g_lastBusy = false;
+bool g_lastUrlEmpty = true;
 
 std::string ExeDir()
 {
@@ -234,6 +238,13 @@ std::string ReadUrlInput()
 	return std::string();
 }
 
+void SyncUrlPlaceholder()
+{
+	const bool empty = ReadUrlInput().empty();
+	g_lastUrlEmpty = empty;
+	SetClass("url-placeholder", "hidden", !empty);
+}
+
 void WriteUrlInput(const std::string& value)
 {
 	if (g_doc == nullptr)
@@ -241,6 +252,8 @@ void WriteUrlInput(const std::string& value)
 
 	if (auto* const input = rmlui_dynamic_cast<Rml::ElementFormControlInput*>(g_doc->GetElementById("url-input")))
 		input->SetValue(value);
+
+	SyncUrlPlaceholder();
 }
 
 std::string BadgeHtml(const AddonManifest& manifest)
@@ -278,6 +291,7 @@ void ApplyStaticTranslations()
 	SetText("btn-reload-ui", LoaderLocale::Text("btn_reload_ui"));
 	SetText("nav-section-label", LoaderLocale::Text("nav_section"));
 	SetText("nav-addons-label", LoaderLocale::Text("nav_addons"));
+	SetText("nav-store-label", LoaderLocale::Text("nav_store"));
 	SetText("nav-packs-label", LoaderLocale::Text("nav_packs"));
 	SetText("nav-modules-label", LoaderLocale::Text("nav_modules"));
 	SetText("nav-log-label", LoaderLocale::Text("nav_log"));
@@ -292,6 +306,13 @@ void ApplyStaticTranslations()
 	SetText("btn-addon-refresh", LoaderLocale::Text("btn_refresh"));
 	SetText("btn-save-link", LoaderLocale::Text("btn_save_github"));
 	SetText("btn-install-url", LoaderLocale::Text("btn_download_install"));
+	SetText("url-placeholder", LoaderLocale::Text("url_placeholder"));
+	SyncUrlPlaceholder();
+	SetText("store-title", LoaderLocale::Text("store_title"));
+	SetText("store-sub", LoaderLocale::Text("store_sub"));
+	SetText("btn-store-refresh", LoaderLocale::Text("btn_store_refresh"));
+	SetText("btn-store-bundle", LoaderLocale::Text("btn_store_bundle"));
+	SetText("btn-store-update-all", LoaderLocale::Text("btn_store_update_all"));
 	SetText("packs-title", LoaderLocale::Text("packs_title"));
 	SetText("packs-sub", LoaderLocale::Text("packs_sub"));
 	SetText("btn-pack-zip", LoaderLocale::Text("btn_pack_zip"));
@@ -305,6 +326,7 @@ void ApplyStaticTranslations()
 	SetText("modules-opt-sub", LoaderLocale::Text("modules_opt_sub"));
 	SetText("btn-reset-base", LoaderLocale::Text("btn_reset_base"));
 	SetText("btn-open-basepals", LoaderLocale::Text("btn_open_basepals"));
+	SetText("game-addon-check-label", LoaderLocale::Text("game_addon_check_label"));
 	SetText("auto-update-label", LoaderLocale::Text("auto_update_label"));
 	SetText("log-title", LoaderLocale::Text("log_title"));
 	SetText("log-sub", LoaderLocale::Text("log_sub"));
@@ -355,14 +377,36 @@ void SyncHeader()
 void SyncTabs()
 {
 	SetClass("nav-addons", "active", g_activeTab == Tab::Addons);
+	SetClass("nav-store", "active", g_activeTab == Tab::Store);
 	SetClass("nav-packs", "active", g_activeTab == Tab::Packs);
 	SetClass("nav-modules", "active", g_activeTab == Tab::Modules);
 	SetClass("nav-log", "active", g_activeTab == Tab::Log);
 
 	SetClass("view-addons", "hidden", g_activeTab != Tab::Addons);
+	SetClass("view-store", "hidden", g_activeTab != Tab::Store);
 	SetClass("view-packs", "hidden", g_activeTab != Tab::Packs);
 	SetClass("view-modules", "hidden", g_activeTab != Tab::Modules);
 	SetClass("view-log", "hidden", g_activeTab != Tab::Log);
+}
+
+std::string ShortSha(const std::string& sha)
+{
+	return sha.size() > 16 ? (sha.substr(0, 16) + "...") : sha;
+}
+
+std::string ReleasePageForCatalogItem(const AddonCatalog::CatalogItem& item)
+{
+	std::string base = item.repo;
+	if (base.empty())
+		base = "https://github.com/Zanaylo/UNI2-Improvement-Mod";
+
+	while (!base.empty() && base.back() == '/')
+		base.pop_back();
+
+	if (!item.tag.empty())
+		return base + "/releases/tag/" + item.tag;
+
+	return base + "/releases/latest";
 }
 
 void SyncAddonDetail()
@@ -388,17 +432,27 @@ void SyncAddonDetail()
 	}
 
 	const AddonStore::Entry& item = items[g_selectedAddon];
+	const std::string updateVer = AddonStore::AvailableUpdateVersionFor(item.manifest.id);
 	std::string rml;
 	rml += "<div class=\"detail-title\">" + EscapeRml(item.manifest.name) + "</div>";
 	rml += "<div class=\"detail-meta\">v" + EscapeRml(item.manifest.version.empty() ? "?" : item.manifest.version)
 		+ "  \xC2\xB7  " + EscapeRml(LoaderLocale::Text("detail_by")) + " "
 		+ EscapeRml(item.manifest.author.empty() ? LoaderLocale::Text("detail_unknown") : item.manifest.author) + "</div>";
-	rml += "<div>" + BadgeHtml(item.manifest) + "</div>";
+	rml += "<div>" + BadgeHtml(item.manifest);
+	if (!updateVer.empty())
+		rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + " v" + EscapeRml(updateVer) + "</span>";
+	rml += "</div>";
 	rml += "<div class=\"detail-divider\"/>";
 	rml += "<div class=\"detail-desc\">" + EscapeRml(item.manifest.description.empty()
 		? LoaderLocale::Text("detail_no_desc") : item.manifest.description) + "</div>";
 	rml += "<div class=\"detail-divider\"/>";
 	rml += "<div class=\"detail-kv\"><span class=\"k\">ID</span>" + EscapeRml(item.manifest.id) + "</div>";
+
+	if (!item.sourceKind.empty())
+	{
+		const char* srcKey = TextList::SameNoCase(item.sourceKind, "release") ? "source_release" : "source_github";
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_source")) + "</span>" + EscapeRml(LoaderLocale::Text(srcKey)) + "</div>";
+	}
 
 	if (!item.manifest.entry.empty())
 		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_lua")) + "</span>" + EscapeRml(item.manifest.entry) + "</div>";
@@ -423,6 +477,9 @@ void SyncAddonDetail()
 
 	if (!item.githubUrl.empty())
 		rml += "<div class=\"detail-kv\"><span class=\"k\">GITHUB</span>" + EscapeRml(item.githubUrl) + "</div>";
+
+	if (!item.installedSha256.empty())
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_sha256")) + "</span>" + EscapeRml(ShortSha(item.installedSha256)) + "</div>";
 
 	rml += "<div class=\"detail-actions\">";
 	rml += "<div class=\"btn small\" data-act=\"addon-open-item\" data-idx=\"" + std::to_string(g_selectedAddon) + "\">" + EscapeRml(LoaderLocale::Text("btn_open_folder")) + "</div>";
@@ -461,6 +518,7 @@ void SyncAddonsList()
 	for (int i = 0; i < static_cast<int>(items.size()); ++i)
 	{
 		const AddonStore::Entry& item = items[i];
+		const std::string updateVer = AddonStore::AvailableUpdateVersionFor(item.manifest.id);
 		std::string cls = "item-card";
 		if (i == g_selectedAddon)
 			cls += " selected";
@@ -471,7 +529,10 @@ void SyncAddonsList()
 		rml += "<div class=\"" + cls + "\" data-act=\"addon-select\" data-idx=\"" + idx + "\">";
 		rml += "<div class=\"switch" + std::string(item.enabled ? " on" : "") + "\" data-act=\"addon-toggle\" data-idx=\"" + idx + "\"><div class=\"switch-knob\"/></div>";
 		rml += "<div class=\"item-main\">";
-		rml += "<div class=\"item-top\"><span class=\"item-name\">" + EscapeRml(item.manifest.name) + "</span>" + BadgeHtml(item.manifest) + "</div>";
+		rml += "<div class=\"item-top\"><span class=\"item-name\">" + EscapeRml(item.manifest.name) + "</span>" + BadgeHtml(item.manifest);
+		if (!updateVer.empty())
+			rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + " v" + EscapeRml(updateVer) + "</span>";
+		rml += "</div>";
 		rml += "<div class=\"item-sub\">" + EscapeRml(item.manifest.description.empty() ? item.manifest.id : item.manifest.description) + "</div>";
 		rml += "</div>";
 		rml += "<div class=\"item-order\">";
@@ -482,6 +543,190 @@ void SyncAddonsList()
 
 	list->SetInnerRML(rml);
 	SyncAddonDetail();
+}
+
+void SyncStoreDetail(const std::vector<AddonCatalog::CatalogItem>& catalog)
+{
+	if (g_doc == nullptr)
+		return;
+
+	Rml::Element* const detail = g_doc->GetElementById("store-detail");
+
+	if (detail == nullptr)
+		return;
+
+	if (g_selectedStore < 0 || g_selectedStore >= static_cast<int>(catalog.size()))
+	{
+		detail->SetInnerRML(
+			"<div class=\"empty-state\">"
+			"<div class=\"empty-title\">" + EscapeRml(LoaderLocale::Text("store_detail_empty_title")) + "</div>"
+			"<div class=\"empty-text\">" + EscapeRml(LoaderLocale::Text("store_detail_empty_text")) + "</div>"
+			"</div>");
+		return;
+	}
+
+	const AddonCatalog::CatalogItem& item = catalog[g_selectedStore];
+	const AddonStore::Entry* const installed = AddonStore::FindInstalledById(item.id);
+	const bool hasUpdate = AddonStore::CatalogItemHasUpdate(item);
+	const bool isOfficial = TextList::SameNoCase(item.source, "release");
+	const bool valid = LoaderConfig::IsValidGameDir(g_gameDir);
+	const bool busy = AddonStore::IsBusy();
+	const bool canInstall = valid && !busy && item.resolved && !item.downloadUrl.empty();
+
+	std::string rml;
+	rml += "<div class=\"detail-head\">";
+	if (!item.iconCachePath.empty())
+		rml += "<img class=\"detail-icon\" src=\"abs:" + EscapeRml(item.iconCachePath) + "\"/>";
+	rml += "<div>";
+	rml += "<div class=\"detail-title\">" + EscapeRml(item.name) + "</div>";
+	rml += "<div class=\"detail-meta\">" + EscapeRml(LoaderLocale::Text("detail_by")) + " "
+		+ EscapeRml(item.author.empty() ? LoaderLocale::Text("detail_unknown") : item.author) + "</div>";
+	rml += "</div></div>";
+
+	rml += "<div>";
+	rml += isOfficial
+		? ("<span class=\"badge official\">" + EscapeRml(LoaderLocale::Text("badge_official")) + "</span>")
+		: ("<span class=\"badge github\">" + EscapeRml(LoaderLocale::Text("badge_github")) + "</span>");
+	if (!item.version.empty())
+		rml += "<span class=\"badge ver\">v" + EscapeRml(item.version) + "</span>";
+	if (hasUpdate)
+		rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + "</span>";
+	else if (installed != nullptr)
+		rml += "<span class=\"badge installed\">" + EscapeRml(LoaderLocale::Text("badge_installed")) + "</span>";
+	rml += "</div>";
+
+	rml += "<div class=\"detail-divider\"/>";
+	rml += "<div class=\"detail-desc\">" + EscapeRml(item.description.empty()
+		? LoaderLocale::Text("detail_no_desc") : item.description) + "</div>";
+	rml += "<div class=\"detail-divider\"/>";
+
+	rml += "<div class=\"detail-kv\"><span class=\"k\">ID</span>" + EscapeRml(item.id) + "</div>";
+	rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_source")) + "</span>"
+		+ EscapeRml(LoaderLocale::Text(isOfficial ? "source_release" : "source_github")) + "</div>";
+
+	if (!item.version.empty() || !item.tag.empty())
+	{
+		const std::string verLabel = !item.version.empty() ? ("v" + item.version) : item.tag;
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_latest")) + "</span>"
+			+ EscapeRml(verLabel) + "</div>";
+	}
+
+	if (installed != nullptr)
+	{
+		const std::string instVer = !installed->manifest.version.empty()
+			? installed->manifest.version : installed->installedVersion;
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_installed")) + "</span>v"
+			+ EscapeRml(instVer.empty() ? "?" : instVer) + "</div>";
+	}
+
+	if (!item.modules.empty())
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_modules")) + "</span>" + EscapeRml(item.modules) + "</div>";
+
+	if (!item.assets.empty())
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_assets")) + "</span>" + EscapeRml(item.assets) + "</div>";
+
+	if (!item.repo.empty())
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_repo")) + "</span>" + EscapeRml(item.repo) + "</div>";
+
+	if (!item.sha256.empty())
+		rml += "<div class=\"detail-kv\"><span class=\"k\">" + EscapeRml(LoaderLocale::Text("detail_sha256")) + "</span>" + EscapeRml(ShortSha(item.sha256)) + "</div>";
+
+	if (!item.error.empty())
+	{
+		const bool is404 = item.error.find("404") != std::string::npos;
+		rml += "<div class=\"detail-err\">" + EscapeRml(is404 ? LoaderLocale::Text("store_no_release") : item.error.c_str()) + "</div>";
+	}
+	else if (!item.resolved && item.downloadUrl.empty())
+		rml += "<div class=\"detail-err\">" + EscapeRml(LoaderLocale::Text("store_no_release")) + "</div>";
+
+	const char* btnKey = hasUpdate ? "btn_update" : (installed != nullptr ? "btn_reinstall" : "btn_install");
+	const std::string btnCls = std::string("btn small ") + (hasUpdate ? "warn" : (installed != nullptr ? "" : "accent")) + (canInstall ? "" : " disabled");
+	const std::string idx = std::to_string(g_selectedStore);
+
+	rml += "<div class=\"detail-actions\">";
+	rml += "<div class=\"" + btnCls + "\" data-act=\"store-install\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text(btnKey)) + "</div>";
+	rml += "<div class=\"btn small\" data-act=\"store-open-repo\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text("btn_open_release")) + "</div>";
+	rml += "</div>";
+
+	detail->SetInnerRML(rml);
+}
+
+void SyncStoreList()
+{
+	if (g_doc == nullptr)
+		return;
+
+	const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
+	const int updates = AddonStore::CountCatalogUpdates();
+	SetText("count-store", updates > 0 ? (std::to_string(catalog.size()) + " (" + std::to_string(updates) + "!)") : std::to_string(catalog.size()));
+	SetText("store-status-text", AddonStore::CatalogStatus());
+
+	const bool valid = LoaderConfig::IsValidGameDir(g_gameDir);
+	const bool busy = AddonStore::IsBusy();
+	SetClass("btn-store-refresh", "disabled", busy);
+	SetClass("btn-store-bundle", "disabled", !valid || busy);
+	SetClass("btn-store-update-all", "disabled", !valid || busy);
+
+	Rml::Element* const list = g_doc->GetElementById("store-list");
+
+	if (list == nullptr)
+		return;
+
+	if (catalog.empty())
+	{
+		const char* titleKey = busy ? "store_loading_title" : "store_empty_title";
+		const char* textKey = busy ? "store_loading_text" : "store_empty_text";
+		list->SetInnerRML(
+			"<div class=\"empty-state\">"
+			"<div class=\"empty-title\">" + EscapeRml(LoaderLocale::Text(titleKey)) + "</div>"
+			"<div class=\"empty-text\">" + EscapeRml(LoaderLocale::Text(textKey)) + "</div>"
+			"</div>");
+		SyncStoreDetail(catalog);
+		return;
+	}
+
+	std::string rml;
+
+	for (int i = 0; i < static_cast<int>(catalog.size()); ++i)
+	{
+		const AddonCatalog::CatalogItem& item = catalog[i];
+		const AddonStore::Entry* const installed = AddonStore::FindInstalledById(item.id);
+		const bool hasUpdate = AddonStore::CatalogItemHasUpdate(item);
+		const bool isOfficial = TextList::SameNoCase(item.source, "release");
+		const bool canInstall = valid && !busy && item.resolved && !item.downloadUrl.empty();
+
+		std::string cls = "item-card";
+		if (i == g_selectedStore)
+			cls += " selected";
+
+		const std::string idx = std::to_string(i);
+		const char* btnKey = hasUpdate ? "btn_update" : (installed != nullptr ? "btn_reinstall" : "btn_install");
+		const std::string btnCls = std::string("btn small ") + (hasUpdate ? "warn" : (installed != nullptr ? "" : "accent")) + (canInstall ? "" : " disabled");
+
+		rml += "<div class=\"" + cls + "\" data-act=\"store-select\" data-idx=\"" + idx + "\">";
+		if (!item.iconCachePath.empty())
+			rml += "<img class=\"store-icon\" src=\"abs:" + EscapeRml(item.iconCachePath) + "\"/>";
+		rml += "<div class=\"item-main\">";
+		rml += "<div class=\"item-top\"><span class=\"item-name\">" + EscapeRml(item.name) + "</span>";
+		rml += isOfficial
+			? ("<span class=\"badge official\">" + EscapeRml(LoaderLocale::Text("badge_official")) + "</span>")
+			: ("<span class=\"badge github\">" + EscapeRml(LoaderLocale::Text("badge_github")) + "</span>");
+		if (!item.version.empty())
+			rml += "<span class=\"badge ver\">v" + EscapeRml(item.version) + "</span>";
+		if (hasUpdate)
+			rml += "<span class=\"badge update\">" + EscapeRml(LoaderLocale::Text("badge_update")) + "</span>";
+		else if (installed != nullptr)
+			rml += "<span class=\"badge installed\">" + EscapeRml(LoaderLocale::Text("badge_installed")) + "</span>";
+		rml += "</div>";
+		rml += "<div class=\"item-sub\">" + EscapeRml(item.description.empty() ? item.repo : item.description) + "</div>";
+		rml += "</div>";
+		rml += "<div class=\"item-actions\">";
+		rml += "<div class=\"" + btnCls + "\" data-act=\"store-install\" data-idx=\"" + idx + "\">" + EscapeRml(LoaderLocale::Text(btnKey)) + "</div>";
+		rml += "</div></div>";
+	}
+
+	list->SetInnerRML(rml);
+	SyncStoreDetail(catalog);
 }
 
 void SyncPacksList()
@@ -572,6 +817,7 @@ void SyncModulesView()
 	if (Rml::Element* const opt = g_doc->GetElementById("opt-modules-grid"))
 		opt->SetInnerRML(optRml);
 
+	SetClass("switch-game-addon-check", "on", g_gameAddonCheckOnStart);
 	SetClass("switch-auto-update", "on", g_updateOnStart);
 }
 
@@ -612,13 +858,43 @@ bool SyncLogView()
 	return true;
 }
 
+void SyncConfirmModal()
+{
+	if (g_doc == nullptr)
+		return;
+
+	const bool has = AddonStore::HasPendingConfirmation();
+	SetClass("confirm-backdrop", "hidden", !has);
+
+	if (!has)
+		return;
+
+	const AddonStore::PendingConfirmation pending = AddonStore::GetPendingConfirmation();
+	SetText("modal-title", LoaderLocale::Text("modal_warn_title"));
+	SetText("modal-target", pending.label);
+	SetText("modal-sub", pending.sourceInfo);
+	SetText("modal-note", LoaderLocale::Text("modal_warn_note"));
+	SetText("btn-modal-cancel", LoaderLocale::Text("btn_cancel"));
+	SetText("btn-modal-proceed", LoaderLocale::Text("btn_install_anyway"));
+
+	if (Rml::Element* const list = g_doc->GetElementById("modal-warnings"))
+	{
+		std::string rml;
+		for (const std::string& warning : pending.warnings)
+			rml += "<div class=\"modal-warn-item\">\xE2\x80\xA2  " + EscapeRml(warning) + "</div>";
+		list->SetInnerRML(rml);
+	}
+}
+
 void SyncLanguageViews()
 {
 	ApplyStaticTranslations();
 	SyncHeader();
 	SyncAddonsList();
+	SyncStoreList();
 	SyncPacksList();
 	SyncModulesView();
+	SyncConfirmModal();
 	g_lastLogCount = static_cast<size_t>(-1);
 	SyncLogView();
 }
@@ -633,6 +909,13 @@ void RefreshAll()
 
 	if (g_selectedAddon < 0 && !AddonStore::Items().empty())
 		g_selectedAddon = 0;
+
+	const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
+	if (g_selectedStore >= static_cast<int>(catalog.size()))
+		g_selectedStore = -1;
+
+	if (g_selectedStore < 0 && !catalog.empty())
+		g_selectedStore = 0;
 
 	SyncLanguageViews();
 }
@@ -650,6 +933,7 @@ void SetGameDir(const std::string& dir)
 	{
 		LoaderConfig::SaveGameDir(g_gameDir);
 		g_updateOnStart = LoaderConfig::ReadUpdateOnStart(g_gameDir);
+		g_gameAddonCheckOnStart = LoaderConfig::ReadCheckAddonUpdatesInGame(g_gameDir);
 		LoaderLog::Add(std::string(LoaderLocale::Text("label_game_folder")) + ": " + g_gameDir);
 	}
 	else
@@ -658,6 +942,17 @@ void SetGameDir(const std::string& dir)
 	}
 
 	RefreshAll();
+
+	if (LoaderConfig::IsValidGameDir(g_gameDir) &&
+		!LoaderConfig::ReadBundleBootstrapped(g_gameDir) &&
+		AddonStore::Items().empty() &&
+		!AddonStore::IsBusy())
+	{
+		LoaderLog::Add(LoaderLocale::Text("msg_bootstrap_bundle"));
+		AddonStore::BeginBootstrapOfficialBundle(g_gameDir);
+		SyncHeader();
+		SyncStoreList();
+	}
 }
 
 bool LoadDocument();
@@ -759,6 +1054,37 @@ private:
 				g_selectedAddon = -1;
 			LoaderLog::Add(msg);
 			SyncAddonsList();
+			SyncStoreList();
+			return;
+		}
+
+		if (act == "store-select")
+		{
+			const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
+			if (idx >= 0 && idx < static_cast<int>(catalog.size()))
+			{
+				g_selectedStore = idx;
+				SyncStoreList();
+			}
+			return;
+		}
+
+		if (act == "store-install" && valid)
+		{
+			const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
+			if (idx >= 0 && idx < static_cast<int>(catalog.size()) && catalog[idx].resolved && !catalog[idx].downloadUrl.empty())
+			{
+				AddonStore::BeginInstallCatalogItem(g_gameDir, idx);
+				SyncStoreList();
+			}
+			return;
+		}
+
+		if (act == "store-open-repo")
+		{
+			const std::vector<AddonCatalog::CatalogItem> catalog = AddonStore::CatalogItems();
+			if (idx >= 0 && idx < static_cast<int>(catalog.size()))
+				OpenInExplorer(ReleasePageForCatalogItem(catalog[idx]));
 			return;
 		}
 
@@ -816,11 +1142,36 @@ private:
 		const bool valid = LoaderConfig::IsValidGameDir(g_gameDir);
 		const bool busy = AddonStore::IsBusy();
 
+		if (id == "btn-modal-cancel")
+		{
+			AddonStore::ConfirmPendingInstall(false);
+			SyncConfirmModal();
+			return true;
+		}
+
+		if (id == "btn-modal-proceed")
+		{
+			AddonStore::ConfirmPendingInstall(true);
+			SyncConfirmModal();
+			return true;
+		}
+
 		if (id == "lang-en") { LoaderLocale::Set(LoaderLocale::Lang::En); SyncLanguageViews(); return true; }
 		if (id == "lang-pt") { LoaderLocale::Set(LoaderLocale::Lang::PtBr); SyncLanguageViews(); return true; }
 		if (id == "lang-es") { LoaderLocale::Set(LoaderLocale::Lang::EsLatam); SyncLanguageViews(); return true; }
 
 		if (id == "nav-addons") { g_activeTab = Tab::Addons; SyncTabs(); return true; }
+		if (id == "nav-store")
+		{
+			g_activeTab = Tab::Store;
+			SyncTabs();
+			if (!AddonStore::CatalogLoaded() && !busy)
+			{
+				AddonStore::BeginRefreshCatalog(g_gameDir);
+				SyncStoreList();
+			}
+			return true;
+		}
 		if (id == "nav-packs") { g_activeTab = Tab::Packs; SyncTabs(); return true; }
 		if (id == "nav-modules") { g_activeTab = Tab::Modules; SyncTabs(); return true; }
 		if (id == "nav-log") { g_activeTab = Tab::Log; SyncTabs(); return true; }
@@ -897,6 +1248,27 @@ private:
 			return true;
 		}
 
+		if (id == "btn-store-refresh" && !busy)
+		{
+			AddonStore::BeginRefreshCatalog(g_gameDir);
+			SyncStoreList();
+			return true;
+		}
+
+		if (id == "btn-store-bundle" && valid && !busy)
+		{
+			AddonStore::BeginBootstrapOfficialBundle(g_gameDir);
+			SyncStoreList();
+			return true;
+		}
+
+		if (id == "btn-store-update-all" && valid && !busy)
+		{
+			AddonStore::BeginUpdateLinked(g_gameDir);
+			SyncStoreList();
+			return true;
+		}
+
 		if (id == "btn-addon-refresh" || id == "btn-pack-refresh")
 		{
 			RefreshAll();
@@ -969,6 +1341,14 @@ private:
 			CreateDirectoryA((LoaderConfig::ModRoot(g_gameDir) + "\\Assets").c_str(), nullptr);
 			CreateDirectoryA(basePals.c_str(), nullptr);
 			OpenInExplorer(basePals);
+			return true;
+		}
+
+		if (id == "toggle-game-addon-check" && valid)
+		{
+			g_gameAddonCheckOnStart = !g_gameAddonCheckOnStart;
+			LoaderConfig::SaveCheckAddonUpdatesInGame(g_gameDir, g_gameAddonCheckOnStart);
+			SyncModulesView();
 			return true;
 		}
 
@@ -1198,6 +1578,13 @@ bool LoaderUi::TickBackground()
 
 	if (SyncLogView())
 		dirty = true;
+
+	const bool urlEmpty = ReadUrlInput().empty();
+	if (urlEmpty != g_lastUrlEmpty)
+	{
+		SyncUrlPlaceholder();
+		dirty = true;
+	}
 
 	if (g_context != nullptr)
 	{

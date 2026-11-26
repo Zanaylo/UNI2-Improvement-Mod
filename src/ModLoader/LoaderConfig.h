@@ -31,4 +31,8 @@ namespace LoaderConfig
 	void SaveLanguage(const std::string& code);
 	bool ReadUpdateOnStart(const std::string& gameDir);
 	void SaveUpdateOnStart(const std::string& gameDir, bool on);
+	bool ReadCheckAddonUpdatesInGame(const std::string& gameDir);
+	void SaveCheckAddonUpdatesInGame(const std::string& gameDir, bool on);
+	bool ReadBundleBootstrapped(const std::string& gameDir);
+	void SaveBundleBootstrapped(const std::string& gameDir, bool done);
 }

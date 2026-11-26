@@ -4,6 +4,7 @@
 #include "Core/Config/interfaces.h"
 #include "Core/logger.h"
 #include "D3D9/Device/SyncedVsync.h"
+#include "D3D9/Post/PostChain.h"
 
 #include <cstdarg>
 #include <cstdio>
@@ -154,7 +155,11 @@ UINT ChooseBackBufferCount(const D3DPRESENT_PARAMETERS& parameters)
 
 void RewriteMultiSample(D3DPRESENT_PARAMETERS& parameters)
 {
-	if (!g_modVals.disableBackBufferAa || parameters.MultiSampleType == D3DMULTISAMPLE_NONE)
+	if (parameters.MultiSampleType == D3DMULTISAMPLE_NONE)
+		return;
+
+	const bool supersampled = g_modVals.presentWidth > 0 && g_modVals.presentHeight > 0;
+	if (!g_modVals.disableBackBufferAa && !supersampled && !PostChain::IsAnyStageOn())
 		return;
 
 	LOG("[PresentTuning] back buffer multisampling %u -> none",

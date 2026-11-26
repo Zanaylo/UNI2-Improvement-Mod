@@ -43,7 +43,6 @@ const Route kRoutes[] = {
 	{ "Stages", "Config\\Stages.ini" },
 	{ "StagePicker", "Config\\Stages.ini" },
 	{ "Debug","Config\\Debug.ini" },
-	{ "RankWars", "Config\\RankWars.ini" },
 	{ "StageLibrary", "Data\\Stages.ini" },
 	{ "StageIcons", "Data\\Stages.ini" },
 	{ "Extras", "Data\\Stages.ini" },
