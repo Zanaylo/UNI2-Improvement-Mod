@@ -403,9 +403,9 @@ void DrawKeybindsTab()
 		return;
 	}
 
-	ImGui::TableSetupColumn("What");
-	ImGui::TableSetupColumn("Key");
-	ImGui::TableSetupColumn("Pad");
+	ImGui::TableSetupColumn(Tr("What"));
+	ImGui::TableSetupColumn(Tr("Key"));
+	ImGui::TableSetupColumn(Tr("Pad"));
 	ImGui::TableSetupColumn("");
 	ImGui::TableHeadersRow();
 

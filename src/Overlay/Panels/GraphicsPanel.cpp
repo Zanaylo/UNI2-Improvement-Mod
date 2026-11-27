@@ -432,7 +432,7 @@ void GraphicsPanel::DrawMousePointer()
 {
 	ImGui::SeparatorText(Tr("Mouse pointer"));
 
-	const char* const modes[] = { "Automatic", "Always the mod's", "Always the Windows pointer" };
+	const char* const modes[] = { Tr("Automatic"), Tr("Always the mod's"), Tr("Always the Windows pointer") };
 
 	Ui::SetItemWidth(kSliderWidth);
 

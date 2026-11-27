@@ -97,9 +97,9 @@ void DrawLagHistoryTable()
 	}
 
 	ImGui::TableSetupColumn("#");
-	ImGui::TableSetupColumn("ms");
-	ImGui::TableSetupColumn("from");
-	ImGui::TableSetupColumn("quality");
+	ImGui::TableSetupColumn(Tr("ms"));
+	ImGui::TableSetupColumn(Tr("from"));
+	ImGui::TableSetupColumn(Tr("quality"));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
 

@@ -190,7 +190,7 @@ void SoundWindow::DrawPicker()
 	{
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(Ui::Scaled(150.0f));
-		ImGui::InputTextWithHint("##filter", "search", m_filter, sizeof(m_filter));
+		ImGui::InputTextWithHint("##filter", Tr("Search"), m_filter, sizeof(m_filter));
 	}
 
 	if (CharaSounds::StatusText()[0] != '\0')
@@ -324,10 +324,10 @@ void SoundWindow::DrawList()
 		return;
 
 	ImGui::TableSetupScrollFreeze(0, 1);
-	ImGui::TableSetupColumn("Where", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
-	ImGui::TableSetupColumn("Sound", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
-	ImGui::TableSetupColumn("Line", ImGuiTableColumnFlags_WidthStretch);
-	ImGui::TableSetupColumn("Playing", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
+	ImGui::TableSetupColumn(Tr("Where"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
+	ImGui::TableSetupColumn(Tr("Sound"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
+	ImGui::TableSetupColumn(Tr("Line"), ImGuiTableColumnFlags_WidthStretch);
+	ImGui::TableSetupColumn(Tr("Playing"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(290.0f));
 	ImGui::TableHeadersRow();
 
@@ -576,9 +576,9 @@ void SoundWindow::DrawPacks()
 	if (!ImGui::BeginTable("packs", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 		return;
 
-	ImGui::TableSetupColumn("Pack");
-	ImGui::TableSetupColumn("From");
-	ImGui::TableSetupColumn("Contains");
+	ImGui::TableSetupColumn(Tr("Pack"));
+	ImGui::TableSetupColumn(Tr("From"));
+	ImGui::TableSetupColumn(Tr("Contains"));
 	ImGui::TableSetupColumn("");
 	ImGui::TableHeadersRow();
 

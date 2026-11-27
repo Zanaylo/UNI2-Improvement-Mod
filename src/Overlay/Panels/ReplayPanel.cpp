@@ -178,7 +178,7 @@ void DrawReplaySection()
 			}
 
 			ImGui::SetNextItemWidth(-1.0f);
-			ImGui::InputTextWithHint("##replaysearch", "Search", search, sizeof(search));
+			ImGui::InputTextWithHint("##replaysearch", Tr("Search"), search, sizeof(search));
 
 			ImGui::Separator();
 

@@ -818,6 +818,7 @@
 
   <ItemGroup>
     <ClInclude Include="src\Core\Text\Language.h" />
+    <ClInclude Include="src\Core\Text\TrKey.h" />
     <ClInclude Include="src\Core\Text\LanguageId.h" />
     <ClInclude Include="src\Core\Text\LanguagePick.h" />
     <ClInclude Include="src\Core\Text\LanguageCatalog.h" />

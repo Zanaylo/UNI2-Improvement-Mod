@@ -142,7 +142,7 @@ void SubtitlesPanel::DrawFile()
 void SubtitlesPanel::DrawNewFile()
 {
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
-	ImGui::InputTextWithHint("##newsubtitles", "New file name", m_newName, sizeof(m_newName));
+	ImGui::InputTextWithHint("##newsubtitles", Tr("New file name"), m_newName, sizeof(m_newName));
 
 	ImGui::SameLine();
 
@@ -292,7 +292,7 @@ void SubtitlesPanel::DrawPicker()
 		SubtitleTable::Written(m_chara));
 
 	ImGui::SetNextItemWidth(Ui::Scaled(200.0f));
-	ImGui::InputTextWithHint("##subtitlefilter", "Search", m_filter, sizeof(m_filter));
+	ImGui::InputTextWithHint("##subtitlefilter", Tr("Search"), m_filter, sizeof(m_filter));
 
 	ImGui::SameLine();
 	ImGui::Checkbox(TrLabel("Only lines with a spoken note"), &m_onlySpoken);
@@ -344,9 +344,9 @@ void SubtitlesPanel::DrawRows()
 	}
 
 	ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(44.0f));
-	ImGui::TableSetupColumn("Voice", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
-	ImGui::TableSetupColumn("Spoken", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kNoteWidth));
-	ImGui::TableSetupColumn("Subtitle", ImGuiTableColumnFlags_WidthStretch);
+	ImGui::TableSetupColumn(Tr("Voice"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
+	ImGui::TableSetupColumn(Tr("Spoken"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kNoteWidth));
+	ImGui::TableSetupColumn(Tr("Subtitle"), ImGuiTableColumnFlags_WidthStretch);
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
 

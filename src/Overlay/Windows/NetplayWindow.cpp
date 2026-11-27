@@ -679,9 +679,9 @@ void NetplayWindow::DrawRoomTab()
 		return;
 	}
 
-	ImGui::TableSetupColumn("Member");
-	ImGui::TableSetupColumn("Change");
-	ImGui::TableSetupColumn("Handled");
+	ImGui::TableSetupColumn(Tr("Member"));
+	ImGui::TableSetupColumn(Tr("Change"));
+	ImGui::TableSetupColumn(Tr("Handled"));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
 
@@ -750,12 +750,12 @@ void NetplayWindow::DrawOpponentsTab()
 		return;
 	}
 
-	ImGui::TableSetupColumn("Name");
-	ImGui::TableSetupColumn("Sets");
-	ImGui::TableSetupColumn("Win rate");
-	ImGui::TableSetupColumn("Last match");
-	ImGui::TableSetupColumn("Ping");
-	ImGui::TableSetupColumn("Last seen");
+	ImGui::TableSetupColumn(Tr("Name"));
+	ImGui::TableSetupColumn(Tr("Sets"));
+	ImGui::TableSetupColumn(Tr("Win rate"));
+	ImGui::TableSetupColumn(Tr("Last match"));
+	ImGui::TableSetupColumn(Tr("Ping"));
+	ImGui::TableSetupColumn(Tr("Last seen"));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
 
@@ -1017,8 +1017,8 @@ void NetplayWindow::DrawSpectateHost()
 	if (viewers.empty() || !ImGui::BeginTable("##viewers", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 		return;
 
-	ImGui::TableSetupColumn("Viewer");
-	ImGui::TableSetupColumn("State");
+	ImGui::TableSetupColumn(Tr("Viewer"));
+	ImGui::TableSetupColumn(Tr("State"));
 	ImGui::TableSetupColumn("");
 	ImGui::TableHeadersRow();
 

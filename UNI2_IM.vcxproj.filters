@@ -2363,6 +2363,9 @@
     <ClInclude Include="src\Core\Text\Language.h">
       <Filter>Core\Text</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\Text\TrKey.h">
+      <Filter>Core\Text</Filter>
+    </ClInclude>
     <ClInclude Include="src\Core\Text\LanguageId.h">
       <Filter>Core\Text</Filter>
     </ClInclude>

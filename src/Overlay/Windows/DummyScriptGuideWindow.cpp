@@ -10,7 +10,7 @@ void Step(const char* notation, const char* meaning)
 	ImGui::TableNextColumn();
 	ImGui::TextUnformatted(notation);
 	ImGui::TableNextColumn();
-	ImGui::TextUnformatted(meaning);
+	ImGui::TextUnformatted(Tr(meaning));
 }
 
 }
@@ -51,8 +51,8 @@ void DummyScriptGuideWindow::Draw()
 
 	if (ImGui::BeginTable("##steps", 2, ImGuiTableFlags_SizingFixedFit))
 	{
-		ImGui::TableSetupColumn("step", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
-		ImGui::TableSetupColumn("meaning", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn(Tr("step"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
+		ImGui::TableSetupColumn(Tr("meaning"), ImGuiTableColumnFlags_WidthStretch);
 
 		Step("W12", "Wait twelve frames, holding whatever is held.");
 		Step("[4]", "Hold back. Stays held until released.");

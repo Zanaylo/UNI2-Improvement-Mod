@@ -316,11 +316,11 @@ void PatchWindow::DrawTable()
 		return;
 	}
 
-	ImGui::TableSetupColumn("Patch", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(84.0f));
-	ImGui::TableSetupColumn("Notes");
-	ImGui::TableSetupColumn("Released", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(100.0f));
-	ImGui::TableSetupColumn("Cast", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
-	ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
+	ImGui::TableSetupColumn(Tr("Patch"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(84.0f));
+	ImGui::TableSetupColumn(Tr("Notes"));
+	ImGui::TableSetupColumn(Tr("Released"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(100.0f));
+	ImGui::TableSetupColumn(Tr("Cast"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
+	ImGui::TableSetupColumn(Tr("State"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(46.0f));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();

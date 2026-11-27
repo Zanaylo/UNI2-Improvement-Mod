@@ -353,8 +353,8 @@ int MusicPanel::DrawSoundpackTable(int count, int active)
 		return -1;
 	}
 
-	ImGui::TableSetupColumn("Soundpack");
-	ImGui::TableSetupColumn("Scenes", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
+	ImGui::TableSetupColumn(Tr("Soundpack"));
+	ImGui::TableSetupColumn(Tr("Scenes"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
 	ImGui::TableHeadersRow();
 
@@ -425,13 +425,13 @@ void MusicPanel::DrawPackBuilder()
 void MusicPanel::DrawPackDraft()
 {
 	Ui::SetItemWidth(kComboWidth);
-	ImGui::InputTextWithHint("Name", "Soundpack name", SoundpackBuilder::NameBuffer(),
+	ImGui::InputTextWithHint(TrLabel("Name"), Tr("Soundpack name"), SoundpackBuilder::NameBuffer(),
 		SoundpackBuilder::NameCapacity());
 
 	ImGui::SameLine();
 
 	Ui::SetItemWidth(kComboWidth);
-	ImGui::InputTextWithHint("Author", "You", SoundpackBuilder::AuthorBuffer(),
+	ImGui::InputTextWithHint(TrLabel("Author"), Tr("You"), SoundpackBuilder::AuthorBuffer(),
 		SoundpackBuilder::AuthorCapacity());
 
 	const int count = SoundpackBuilder::Count();
@@ -469,8 +469,8 @@ void MusicPanel::DrawPackDraftTable(int count)
 		return;
 	}
 
-	ImGui::TableSetupColumn("Track");
-	ImGui::TableSetupColumn("Plays on");
+	ImGui::TableSetupColumn(Tr("Track"));
+	ImGui::TableSetupColumn(Tr("Plays on"));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(60.0f));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
@@ -519,7 +519,7 @@ void MusicPanel::DrawMyMusic()
 		UiText::Warn("Stage & BGM Select: %s", BgmPicker::StatusText());
 
 	Ui::SetItemWidth(kComboWidth);
-	ImGui::InputTextWithHint("Folder", "Folder name", m_musicPack, IM_ARRAYSIZE(m_musicPack));
+	ImGui::InputTextWithHint(TrLabel("Folder"), Tr("Folder name"), m_musicPack, IM_ARRAYSIZE(m_musicPack));
 
 	if (ImGui::Button(TrLabel("Import music")))
 		m_musicDialog.BeginOpen("Pick the music to add", UserMusic::SupportedFilter());
@@ -621,11 +621,11 @@ void MusicPanel::DrawMyMusicTable()
 		return;
 	}
 
-	ImGui::TableSetupColumn("Folder", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
-	ImGui::TableSetupColumn("File");
-	ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
-	ImGui::TableSetupColumn("Loop from", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(80.0f));
-	ImGui::TableSetupColumn("Notes");
+	ImGui::TableSetupColumn(Tr("Folder"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
+	ImGui::TableSetupColumn(Tr("File"));
+	ImGui::TableSetupColumn(Tr("State"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
+	ImGui::TableSetupColumn(Tr("Loop from"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(80.0f));
+	ImGui::TableSetupColumn(Tr("Notes"));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
 
@@ -817,7 +817,7 @@ void MusicPanel::DrawBrowse()
 	DrawShuffle();
 
 	Ui::SetItemWidth(kComboWidth);
-	ImGui::InputTextWithHint("##search", "Search by name", m_search, IM_ARRAYSIZE(m_search));
+	ImGui::InputTextWithHint("##search", Tr("Search by name"), m_search, IM_ARRAYSIZE(m_search));
 
 	ImGui::SameLine();
 	DrawSourceFilter();
@@ -890,14 +890,14 @@ void MusicPanel::DrawTrackCount(const std::vector<int>& filteredIds, int total)
 void MusicPanel::SetUpTrackColumns(bool building)
 {
 	if (building)
-		ImGui::TableSetupColumn("Pack", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(38.0f));
+		ImGui::TableSetupColumn(Tr("Pack"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(38.0f));
 
-	ImGui::TableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(30.0f));
-	ImGui::TableSetupColumn("Source", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
-	ImGui::TableSetupColumn("Track");
-	ImGui::TableSetupColumn("Where it plays", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
-	ImGui::TableSetupColumn("Loop", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
-	ImGui::TableSetupColumn("Volume", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
+	ImGui::TableSetupColumn(Tr("On"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(30.0f));
+	ImGui::TableSetupColumn(Tr("Source"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
+	ImGui::TableSetupColumn(Tr("Track"));
+	ImGui::TableSetupColumn(Tr("Where it plays"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(150.0f));
+	ImGui::TableSetupColumn(Tr("Loop"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
+	ImGui::TableSetupColumn(Tr("Volume"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(56.0f));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
@@ -1103,9 +1103,9 @@ int MusicPanel::DrawRuleTable(int count)
 		return -1;
 	}
 
-	ImGui::TableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(34.0f));
-	ImGui::TableSetupColumn("Kind", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
-	ImGui::TableSetupColumn("Rule");
+	ImGui::TableSetupColumn(Tr("On"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(34.0f));
+	ImGui::TableSetupColumn(Tr("Kind"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
+	ImGui::TableSetupColumn(Tr("Rule"));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
 	ImGui::TableHeadersRow();
 
@@ -1134,7 +1134,7 @@ void MusicPanel::DrawRuleEditor()
 {
 	ImGui::TextUnformatted(Tr("Add a rule"));
 
-	const char* const kinds[] = { "Matchup", "Character", "Any scene or track" };
+	const char* const kinds[] = { Tr("Matchup"), Tr("Character"), Tr("Any scene or track") };
 
 	Ui::SetItemWidth(kComboWidth);
 	ImGui::Combo(TrLabel("When"), &m_draft.kind, kinds, IM_ARRAYSIZE(kinds));
@@ -1189,7 +1189,7 @@ bool MusicPanel::DrawCharacterCombo(const char* label, int& chara)
 
 	bool changed = false;
 
-	if (ImGui::BeginCombo(label, CharacterName(chara)))
+	if (ImGui::BeginCombo(TrLabel(label), CharacterName(chara)))
 	{
 		for (int i = 0; i < count; ++i)
 		{
@@ -1267,7 +1267,7 @@ bool MusicPanel::DrawTrackComboList(bool sceneOnly, int& bgm)
 	}
 
 	ImGui::SetNextItemWidth(-1.0f);
-	ImGui::InputTextWithHint("##pick", "Search", m_pick, IM_ARRAYSIZE(m_pick));
+	ImGui::InputTextWithHint("##pick", Tr("Search"), m_pick, IM_ARRAYSIZE(m_pick));
 
 	ImGui::Separator();
 
@@ -1318,7 +1318,7 @@ bool MusicPanel::DrawTrackCombo(const char* label, int& bgm, bool sceneOnly)
 
 	bool changed = false;
 
-	if (ImGui::BeginCombo(label, current))
+	if (ImGui::BeginCombo(TrLabel(label), current))
 	{
 		changed = DrawTrackComboList(sceneOnly, bgm);
 		ImGui::EndCombo();

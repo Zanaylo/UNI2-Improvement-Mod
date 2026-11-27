@@ -29,7 +29,7 @@ void Refresh()
 void DrawSave()
 {
 	Ui::SetItemWidth(kNameWidth);
-	ImGui::InputTextWithHint("##profile", "Profile name", g_name, sizeof(g_name));
+	ImGui::InputTextWithHint("##profile", Tr("Profile name"), g_name, sizeof(g_name));
 
 	const bool valid = ConfigProfiles::IsValidName(g_name);
 

@@ -30,6 +30,7 @@
 #include "Training/Meter/InputLagMeter.h"
 #include "Training/StageColor.h"
 #include "Core/Text/Language.h"
+#include "Core/Text/TrKey.h"
 
 #include <cstdarg>
 #include <cstdio>
@@ -50,14 +51,14 @@ const ImVec4 kGoodColour = ImVec4(0.45f, 0.80f, 0.50f, 1.0f);
 void DrawLookChoice(const char* label, int level, const char* (*name)(int), void (*apply)(int))
 {
 	ImGui::PushID(label);
-	ImGui::TextUnformatted(label);
+	ImGui::TextUnformatted(Tr(label));
 
 	for (int candidate = 0; candidate < SceneLookLevels::kCount; ++candidate)
 	{
 		ImGui::SameLine();
 		ImGui::PushID(candidate);
 
-		if (ImGui::RadioButton(name(candidate), level == candidate) && candidate != level)
+		if (ImGui::RadioButton(TrLabel(name(candidate)), level == candidate) && candidate != level)
 			apply(candidate);
 
 		ImGui::PopID();
@@ -91,63 +92,63 @@ const Option kOptions[] = {
 	{
 		&g_modVals.timerResolution,
 		"TimerResolution",
-		"Keep the Windows timer at 1 ms",
-		"Fixes the slowdown after an alt-tab. No downside.",
-		"Windows takes the 1 ms timer away from the game while it is in the background, so after "
+		TrKey("Keep the Windows timer at 1 ms"),
+		TrKey("Fixes the slowdown after an alt-tab. No downside."),
+		TrKey("Windows takes the 1 ms timer away from the game while it is in the background, so after "
 		"an alt-tab the engine can sleep 15.6 ms instead of 1. This keeps the 1 ms timer and asks "
-		"for it again when you come back.",
+		"for it again when you come back."),
 	},
 	{
 		&g_modVals.powerThrottlingOptOut,
 		"PowerThrottlingOptOut",
-		"Stop Windows throttling the game in the background",
-		"The other half of the same fix. Uses a bit more power while the game is in the background.",
-		"Windows moves background apps to the slow cores and limits their timer. This keeps the "
-		"game on the fast cores and keeps the 1 ms timer above.",
+		TrKey("Stop Windows throttling the game in the background"),
+		TrKey("The other half of the same fix. Uses a bit more power while the game is in the background."),
+		TrKey("Windows moves background apps to the slow cores and limits their timer. This keeps the "
+		"game on the fast cores and keeps the 1 ms timer above."),
 	},
 	{
 		&g_modVals.backgroundFullSpeed,
 		"BackgroundFullSpeed",
-		"Keep online matches at full speed in the background",
-		"Watching or playing online, the game keeps 60 fps while you are in another window.",
-		"While you are in a room or a match and the game is not the active window, it gets a higher "
+		TrKey("Keep online matches at full speed in the background"),
+		TrKey("Watching or playing online, the game keeps 60 fps while you are in another window."),
+		TrKey("While you are in a room or a match and the game is not the active window, it gets a higher "
 		"CPU and GPU priority, and when you watch a match and fall behind it skips showing the frames it "
-		"runs to catch up. Everything goes back to normal when you return. Game default: off.",
+		"runs to catch up. Everything goes back to normal when you return. Game default: off."),
 	},
 	{
 		&g_modVals.pumpWait,
 		"PumpWait",
-		"Wake the input thread right away",
-		"Removes a wait from every frame and fixes the slowdown after an alt-tab. No CPU cost.",
-		"Every frame, the game waits for its input thread, which sleeps 1 ms at a time. After an "
+		TrKey("Wake the input thread right away"),
+		TrKey("Removes a wait from every frame and fixes the slowdown after an alt-tab. No CPU cost."),
+		TrKey("Every frame, the game waits for its input thread, which sleeps 1 ms at a time. After an "
 		"alt-tab that sleep can grow to 15 ms.\n\n"
 		"This wakes the input thread as soon as the game needs it. It costs no CPU and does not "
-		"patch game code.",
+		"patch game code."),
 	},
 	{
 		&g_modVals.displaySync,
 		"DisplaySync",
-		"Line frames up with the screen",
-		"Smoother motion with vsync off, without adding input lag.",
-		"Times every frame to reach the screen just before it refreshes, so no frame is shown twice "
-		"or skipped. Needs a 60 Hz or 120 Hz screen. Game default: off.",
+		TrKey("Line frames up with the screen"),
+		TrKey("Smoother motion with vsync off, without adding input lag."),
+		TrKey("Times every frame to reach the screen just before it refreshes, so no frame is shown twice "
+		"or skipped. Needs a 60 Hz or 120 Hz screen. Game default: off."),
 	},
 	{
 		&g_modVals.soundVolumeBackground,
 		"SoundVolumeBackground",
-		"Set sound volumes in the background",
-		"Removes the half-second freeze on the title screen.",
-		"The game changes the volume of every loaded sound one by one, and each change takes about 3 ms, "
+		TrKey("Set sound volumes in the background"),
+		TrKey("Removes the half-second freeze on the title screen."),
+		TrKey("The game changes the volume of every loaded sound one by one, and each change takes about 3 ms, "
 		"which freezes the picture. This hands those changes to a background thread. A sound that starts "
-		"right then can play at its old volume for a moment. Game default: off.",
+		"right then can play at its old volume for a moment. Game default: off."),
 	},
 	{
 		&g_modVals.restoreFullscreenOptimizations,
 		"RestoreFullscreenOptimizations",
-		"Undo \"Disable fullscreen optimizations\"",
-		"Keeps exclusive fullscreen at 60 fps. Applies from the next start.",
-		"With that Windows compatibility option ticked for the game, exclusive fullscreen can drop to "
-		"30 fps. This unticks it for you when the game starts. Default: on.",
+		TrKey("Undo \"Disable fullscreen optimizations\""),
+		TrKey("Keeps exclusive fullscreen at 60 fps. Applies from the next start."),
+		TrKey("With that Windows compatibility option ticked for the game, exclusive fullscreen can drop to "
+		"30 fps. This unticks it for you when the game starts. Default: on."),
 	},
 };
 
@@ -232,10 +233,10 @@ void DrawIntervalTable(const char* title, const Profiler::Stats& now, const Prof
 		return;
 	}
 
-	ImGui::TableSetupColumn("What");
-	ImGui::TableSetupColumn("Baseline");
-	ImGui::TableSetupColumn("Now");
-	ImGui::TableSetupColumn("Change");
+	ImGui::TableSetupColumn(Tr("What"));
+	ImGui::TableSetupColumn(Tr("Baseline"));
+	ImGui::TableSetupColumn(Tr("Now"));
+	ImGui::TableSetupColumn(Tr("Change"));
 	ImGui::TableHeadersRow();
 
 	StatRow("Median", now.medianMs, before.medianMs, hasBaseline);
@@ -360,10 +361,10 @@ void DrawSections(bool hasBaseline)
 		return;
 	}
 
-	ImGui::TableSetupColumn("Section");
-	ImGui::TableSetupColumn("Baseline");
-	ImGui::TableSetupColumn("Now");
-	ImGui::TableSetupColumn("Change");
+	ImGui::TableSetupColumn(Tr("Section"));
+	ImGui::TableSetupColumn(Tr("Baseline"));
+	ImGui::TableSetupColumn(Tr("Now"));
+	ImGui::TableSetupColumn(Tr("Change"));
 	ImGui::TableHeadersRow();
 
 	for (int i = 0; i < Profiler::Section_COUNT; ++i)
@@ -653,7 +654,7 @@ bool PerformanceWindow::DrawOptions()
 	{
 		ImGui::PushID(option.key);
 
-		if (ImGui::Checkbox(option.label, option.value))
+		if (ImGui::Checkbox(TrLabel(option.label), option.value))
 		{
 			SaveVideo(option.key, *option.value ? 1 : 0);
 			changed = true;

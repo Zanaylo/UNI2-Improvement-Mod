@@ -1,9 +1,11 @@
 #include "Game/Display/SceneLookLevels.h"
 
+#include "Core/Text/TrKey.h"
+
 namespace {
 
-const char* const kCharacterNames[SceneLookLevels::kCount] = { "Smooth", "Pixels" };
-const char* const kTextNames[SceneLookLevels::kCount] = { "Smooth", "Sharp" };
+const char* const kCharacterNames[SceneLookLevels::kCount] = { TrKey("Smooth"), TrKey("Pixels") };
+const char* const kTextNames[SceneLookLevels::kCount] = { TrKey("Smooth"), TrKey("Sharp") };
 
 }
 

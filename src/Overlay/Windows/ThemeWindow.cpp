@@ -70,9 +70,9 @@ void ThemeWindow::DrawCursorSearch()
 		return;
 	}
 
-	ImGui::TableSetupColumn("Address", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
-	ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
-	ImGui::TableSetupColumn("Changes");
+	ImGui::TableSetupColumn(Tr("Address"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
+	ImGui::TableSetupColumn(Tr("Value"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
+	ImGui::TableSetupColumn(Tr("Changes"));
 	ImGui::TableHeadersRow();
 
 	for (int i = 0; i < found; ++i)
@@ -104,8 +104,8 @@ void ThemeWindow::DrawThemeList(int count, int active)
 		return;
 	}
 
-	ImGui::TableSetupColumn("Theme");
-	ImGui::TableSetupColumn("Screens", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
+	ImGui::TableSetupColumn(Tr("Theme"));
+	ImGui::TableSetupColumn(Tr("Screens"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(70.0f));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(90.0f));
 	ImGui::TableHeadersRow();
 
@@ -194,10 +194,10 @@ void ThemeWindow::DrawScreens(int active)
 		return;
 	}
 
-	ImGui::TableSetupColumn("Screen", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
-	ImGui::TableSetupColumn("Scene", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(60.0f));
-	ImGui::TableSetupColumn("Layers", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(60.0f));
-	ImGui::TableSetupColumn("File");
+	ImGui::TableSetupColumn(Tr("Screen"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(110.0f));
+	ImGui::TableSetupColumn(Tr("Scene"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(60.0f));
+	ImGui::TableSetupColumn(Tr("Layers"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(60.0f));
+	ImGui::TableSetupColumn(Tr("File"));
 	ImGui::TableHeadersRow();
 
 	const uint32_t scene = SceneWatch::Current();

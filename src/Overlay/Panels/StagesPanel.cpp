@@ -587,9 +587,9 @@ void StagesPanel::DrawOffers()
 		return;
 	}
 
-	ImGui::TableSetupColumn("Folder", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kNumberColumn));
-	ImGui::TableSetupColumn("Stage");
-	ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kSizeColumn));
+	ImGui::TableSetupColumn(Tr("Folder"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kNumberColumn));
+	ImGui::TableSetupColumn(Tr("Stage"));
+	ImGui::TableSetupColumn(Tr("Size"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kSizeColumn));
 	ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kActionColumn));
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableHeadersRow();
@@ -847,19 +847,19 @@ void StagesPanel::DrawPorted()
 		return;
 	}
 
-	ImGui::TableSetupColumn("Stage", ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kNumberColumn));
-	ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.0f);
-	ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed,
+	ImGui::TableSetupColumn(Tr("Stage"), ImGuiTableColumnFlags_WidthFixed, Ui::Scaled(kNumberColumn));
+	ImGui::TableSetupColumn(Tr("Name"), ImGuiTableColumnFlags_WidthStretch, 0.0f);
+	ImGui::TableSetupColumn(Tr("Enabled"), ImGuiTableColumnFlags_WidthFixed,
 		Ui::Scaled(kInGameColumn));
 	if (advanced)
 	{
-		ImGui::TableSetupColumn("Colour", ImGuiTableColumnFlags_WidthFixed,
+		ImGui::TableSetupColumn(Tr("Colour"), ImGuiTableColumnFlags_WidthFixed,
 			Ui::Scaled(kInGameColumn));
-		ImGui::TableSetupColumn("Brightness", ImGuiTableColumnFlags_WidthFixed,
+		ImGui::TableSetupColumn(Tr("Brightness"), ImGuiTableColumnFlags_WidthFixed,
 			Ui::Scaled(kStepperColumn));
-		ImGui::TableSetupColumn("Glow", ImGuiTableColumnFlags_WidthFixed,
+		ImGui::TableSetupColumn(Tr("Glow"), ImGuiTableColumnFlags_WidthFixed,
 			Ui::Scaled(kStepperColumn));
-		ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,
+		ImGui::TableSetupColumn(Tr("Size"), ImGuiTableColumnFlags_WidthFixed,
 			Ui::Scaled(kStepperColumn));
 	}
 

@@ -333,10 +333,10 @@ void DrawHitboxTypeControls()
 	if (ImGui::BeginTable("boxtypes", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
 		ImGuiTableFlags_SizingStretchProp))
 	{
-		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, typeWidth);
-		ImGui::TableSetupColumn("On", ImGuiTableColumnFlags_WidthFixed, toggleWidth);
-		ImGui::TableSetupColumn("Fill", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Outline", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn(Tr("Type"), ImGuiTableColumnFlags_WidthFixed, typeWidth);
+		ImGui::TableSetupColumn(Tr("On"), ImGuiTableColumnFlags_WidthFixed, toggleWidth);
+		ImGui::TableSetupColumn(Tr("Fill"), ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn(Tr("Outline"), ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableHeadersRow();
 
 		for (int i = 0; i < HitboxOverlay::BoxCategory_COUNT; ++i)
@@ -623,10 +623,10 @@ void DrawTimingControls()
 	ImGui::BeginDisabled(!config.onDummyRecord);
 	Ui::SetItemWidth(260.0f);
 
-	static const char* kLeadInModes[] =
+	const char* const kLeadInModes[] =
 	{
-		"Warm up",
-		"Still"
+		Tr("Warm up"),
+		Tr("Still")
 	};
 
 	ImGui::Combo("##leadinmode", &config.leadInMode, kLeadInModes, 2);
@@ -728,7 +728,7 @@ void DrawAutoPauseControls()
 
 	int blockedMode = config.blockedAllowsGaps ? 1 : 0;
 	Ui::SetItemWidth(220.0f);
-	static const char* kBlockedModes[] = { "True blockstring only", "Any blocked hits" };
+	const char* const kBlockedModes[] = { Tr("True blockstring only"), Tr("Any blocked hits") };
 	if (ImGui::Combo("##blockcounting", &blockedMode, kBlockedModes, 2))
 		config.blockedAllowsGaps = blockedMode == 1;
 
