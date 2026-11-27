@@ -1980,9 +1980,6 @@
     <ClCompile Include="src\D3D9\Device\SyncedVsync.cpp">
       <Filter>D3D9\Device</Filter>
     </ClCompile>
-    <ClCompile Include="src\D3D9\Device\BackgroundWindowCheck.cpp">
-      <Filter>D3D9\Device</Filter>
-    </ClCompile>
     <ClCompile Include="src\D3D9\Device\ResetTimeline.cpp">
       <Filter>D3D9\Device</Filter>
     </ClCompile>
@@ -4050,9 +4047,6 @@
       <Filter>D3D9\Device</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Device\SyncedVsync.h">
-      <Filter>D3D9\Device</Filter>
-    </ClInclude>
-    <ClInclude Include="src\D3D9\Device\BackgroundWindowCheck.h">
       <Filter>D3D9\Device</Filter>
     </ClInclude>
     <ClInclude Include="src\D3D9\Device\ResetTimeline.h">

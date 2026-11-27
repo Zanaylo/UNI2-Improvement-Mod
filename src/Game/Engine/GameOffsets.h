@@ -296,6 +296,8 @@ namespace GameOffsets
 	constexpr int kPaletteWrapperTexture = 0xc;
 	constexpr int kPaletteSlots = 45;
 
+	constexpr uintptr_t kDxTexVTable = 0x54e27c;
+
 	constexpr uintptr_t kPlayerDataPaletteSlot = 0x7b0;
 
 	constexpr uintptr_t kCharaObjectCount = 0x400;
@@ -814,6 +816,7 @@ namespace GameOffsets
 	constexpr uintptr_t kDisplayCharacterQualityUp = 0x443909c;
 
 	constexpr uintptr_t kD3dObject = 0x601c18;
+	constexpr uintptr_t kD3dDevice = 0x04;
 	constexpr uintptr_t kD3dPresentParameters = 0x5c4;
 	constexpr uintptr_t kD3dDeviceLost = 0x724;
 
@@ -1128,6 +1131,13 @@ namespace GameOffsets
 	constexpr int kNoPad = -1;
 	constexpr int kNetworkStartupPad = 0;
 
+	constexpr uintptr_t kSaveDataPadConfig = 0x5a8630;
+	constexpr uintptr_t kPadConfigSysBase = 0x4438960;
+	constexpr uintptr_t kPadConfigSysStride = 0x84;
+	constexpr uintptr_t kPadConfigSysButtons = 0x04;
+	constexpr int kPadConfigButtonCount = 12;
+	constexpr int kPadConfigSlotCount = 4;
+
 	constexpr uintptr_t kFnOpenNetworkMenu = 0x2dae70;
 	constexpr uintptr_t kNetworkMenu = 0x1eb85c0;
 	constexpr uintptr_t kNetworkMenuState = 0x00;
@@ -1141,8 +1151,10 @@ namespace GameOffsets
 	constexpr int kNetworkPickCreateRoom = 5;
 
 	constexpr uintptr_t kFnPlayerMatchResult = 0x3bf900;
+	constexpr uintptr_t kFnPlayerMatchExitToMenu = 0x3bdce0;
 	constexpr uintptr_t kPlayerMatchRoot = 0x2f6f54c;
 	constexpr uintptr_t kPlayerMatchState = 0x00;
+	constexpr uintptr_t kPlayerMatchMode = 0x0c;
 	constexpr uintptr_t kPlayerMatchDialogStep = 0x2c;
 	constexpr uintptr_t kPlayerMatchCreateMenu = 0x3c;
 	constexpr uintptr_t kPlayerMatchCreateAnswer = 0x40;
@@ -1150,7 +1162,9 @@ namespace GameOffsets
 	constexpr uintptr_t kPlayerMatchSettings = 0x728;
 	constexpr uintptr_t kPlayerMatchAltSettings = 0x7d4;
 	constexpr uintptr_t kPlayerMatchUseAltSettings = 0xd6c;
+	constexpr uint32_t kPlayerMatchEntryState = 2;
 	constexpr uint32_t kPlayerMatchCreateScreen = 4;
+	constexpr uint32_t kPlayerMatchModeInvite = 2;
 	constexpr uint32_t kPlayerMatchDialogOpen = 1;
 	constexpr uint32_t kCreateMenuChoosing = 0;
 	constexpr int kCreateMenuUnanswered = -1;

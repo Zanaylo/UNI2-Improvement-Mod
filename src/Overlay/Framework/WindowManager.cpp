@@ -20,7 +20,6 @@
 #include "Core/utils.h"
 #include "D3D9/Device/DeviceHooks.h"
 #include "Core/Boot/Standby.h"
-#include "D3D9/Device/BackgroundWindowCheck.h"
 #include "D3D9/Device/ResetClock.h"
 #include "Game/Patches/GamePatches.h"
 #include "Game/Battle/GameRestart.h"
@@ -421,9 +420,6 @@ void WindowManager::ObserveFocus(UINT message, WPARAM wParam)
 		m_hasFocus = wParam != 0;
 		SetHotkeyFocus(m_hasFocus);
 		ResetClock::OnFocus(m_hasFocus);
-
-		if (!m_hasFocus)
-			BackgroundWindowCheck::OnFocusLost(m_window);
 
 		if (!m_hasFocus)
 			m_focusEvidenceAt.store(0, std::memory_order_relaxed);

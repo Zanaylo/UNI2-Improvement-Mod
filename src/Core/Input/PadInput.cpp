@@ -59,6 +59,8 @@ DWORD g_heldSince[PadInput::kButtons] = {};
 DWORD g_repeatedAt[PadInput::kButtons] = {};
 
 bool g_connected = false;
+int g_lastActiveSlot = PadInput::kNone;
+int g_firstConnectedSlot = PadInput::kNone;
 
 void Resolve()
 {
@@ -107,6 +109,7 @@ void PadInput::OnFrame()
 	memset(g_down, 0, sizeof(g_down));
 
 	g_connected = false;
+	g_firstConnectedSlot = PadInput::kNone;
 
 	if (g_getState == nullptr)
 		return;
@@ -122,12 +125,24 @@ void PadInput::OnFrame()
 
 		g_connected = true;
 
+		if (g_firstConnectedSlot == PadInput::kNone)
+			g_firstConnectedSlot = slot;
+
+		const bool active = pad.buttons != 0 || pad.leftTrigger >= kTriggerThreshold ||
+			pad.rightTrigger >= kTriggerThreshold;
+
+		if (active)
+			g_lastActiveSlot = slot;
+
 		for (int button = 0; button < kMaskedButtons; ++button)
 			g_down[button] |= (pad.buttons & kMasks[button]) != 0;
 
 		g_down[kLeftTrigger] |= pad.leftTrigger >= kTriggerThreshold;
 		g_down[kRightTrigger] |= pad.rightTrigger >= kTriggerThreshold;
 	}
+
+	if (g_lastActiveSlot != PadInput::kNone && !g_slotLive[g_lastActiveSlot])
+		g_lastActiveSlot = PadInput::kNone;
 
 	for (int button = 0; button < kButtons; ++button)
 	{
@@ -142,6 +157,16 @@ void PadInput::OnFrame()
 bool PadInput::IsConnected()
 {
 	return g_connected;
+}
+
+int PadInput::LastActiveSlot()
+{
+	return g_lastActiveSlot;
+}
+
+int PadInput::FirstConnectedSlot()
+{
+	return g_firstConnectedSlot;
 }
 
 bool PadInput::IsDown(int button)

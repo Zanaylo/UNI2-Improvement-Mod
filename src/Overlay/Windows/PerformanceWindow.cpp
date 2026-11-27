@@ -578,13 +578,13 @@ void PerformanceWindow::Draw()
 		ImGui::EndTabItem();
 	}
 
-	if (graphics && ImGui::BeginTabItem(TrLabel("dgVoodoo")))
+	if (ImGui::BeginTabItem(TrLabel("dgVoodoo")))
 	{
 		GraphicsPanel::DrawDgVoodoo();
 		ImGui::EndTabItem();
 	}
 
-	if (graphics && ImGui::BeginTabItem(TrLabel("DXVK")))
+	if (ImGui::BeginTabItem(TrLabel("DXVK")))
 	{
 		GraphicsPanel::DrawDxvk();
 		ImGui::EndTabItem();

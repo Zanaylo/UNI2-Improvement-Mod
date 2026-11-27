@@ -1059,6 +1059,9 @@ void RegisterOffsets(lua_State* L, int parentIndex)
 	lua_pushinteger(L, GameOffsets::kRoomAltRoundTimeRow); lua_setfield(L, -2, "ROOM_ALT_ROUND_TIME_ROW");
 	lua_pushinteger(L, GameOffsets::kRoomRoundsTwo); lua_setfield(L, -2, "ROOM_ROUNDS_TWO");
 	lua_pushinteger(L, GameOffsets::kRoomRoundTimeDefault99); lua_setfield(L, -2, "ROOM_ROUND_TIME_DEFAULT_99");
+	lua_pushinteger(L, GameOffsets::kMatchKind); lua_setfield(L, -2, "MATCH_KIND");
+	lua_pushinteger(L, GameOffsets::kMatchKindRank); lua_setfield(L, -2, "MATCH_KIND_RANK");
+	lua_pushinteger(L, GameOffsets::kMatchKindPlayer); lua_setfield(L, -2, "MATCH_KIND_PLAYER");
 	lua_setfield(L, parentIndex, "offsets");
 }
 

@@ -722,7 +722,6 @@
     <ClCompile Include="src\D3D9\Device\ExclusivePlan.cpp" />
     <ClCompile Include="src\D3D9\Device\ResetClock.cpp" />
     <ClCompile Include="src\D3D9\Device\SyncedVsync.cpp" />
-    <ClCompile Include="src\D3D9\Device\BackgroundWindowCheck.cpp" />
     <ClCompile Include="src\D3D9\Device\ResetTimeline.cpp" />
     <ClCompile Include="src\D3D9\Device\ExclusiveSupersample.cpp" />
     <ClCompile Include="src\D3D9\Device\SceneScale.cpp" />
@@ -1381,7 +1380,6 @@
     <ClInclude Include="src\D3D9\Device\ExclusivePlan.h" />
     <ClInclude Include="src\D3D9\Device\ResetClock.h" />
     <ClInclude Include="src\D3D9\Device\SyncedVsync.h" />
-    <ClInclude Include="src\D3D9\Device\BackgroundWindowCheck.h" />
     <ClInclude Include="src\D3D9\Device\ResetTimeline.h" />
     <ClInclude Include="src\D3D9\Device\ExclusiveSupersample.h" />
     <ClInclude Include="src\D3D9\Device\SceneScale.h" />

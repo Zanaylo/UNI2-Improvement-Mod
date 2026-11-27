@@ -15,6 +15,8 @@ namespace PaletteTexture
 	constexpr int kMaxSeen = 32;
 
 	bool OnSetTexture(IDirect3DDevice9* device, unsigned stage, IDirect3DBaseTexture9* texture);
+	void LearnVTables(IDirect3DDevice9* device);
+	bool IsKnownTextureVTable(uintptr_t vtable);
 	int Adopt(uintptr_t pointer);
 
 	void Forget();

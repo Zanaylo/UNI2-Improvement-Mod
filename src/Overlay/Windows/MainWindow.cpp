@@ -472,9 +472,6 @@ void MainWindow::DrawSubtitlesSection()
 
 void MainWindow::DrawPerformanceSection()
 {
-	if (!Features::Shows(FeatureCatalog::Id_Graphics))
-		return;
-
 	const Cards::Scope card("##performance");
 
 	if (!card)

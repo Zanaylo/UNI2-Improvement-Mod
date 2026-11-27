@@ -166,3 +166,4 @@
 { GameOffsets::kFnOpenNetworkMenu, "kFnOpenNetworkMenu", "55 8B EC 83 E4 F8 83 EC 64 A1 ?? ?? ?? ?? 33 C4 89 44 24 60 56" },
 { GameOffsets::kFnStopSoundHolder, "kFnStopSoundHolder", "56 57 8B F9 8B 37 85 F6 74 ?? 8B 4E 08 85 C9 74 ?? 33 C0 89 46 28" },
 { GameOffsets::kFnPlayerMatchResult, "kFnPlayerMatchResult", "55 8B EC ?? ?? ?? ?? 00 00 A1 ?? ?? ?? ?? 33 C5 89 45 F8 8B 45 08 53 56" },
+{ GameOffsets::kFnPlayerMatchExitToMenu, "kFnPlayerMatchExitToMenu", "56 6A 00 6A 00 8B F1 32 C9 6A 00 E8 ?? ?? ?? ?? C7 06 1A 00 00 00 C7 46 04 01 00 00 00 5E C3" },

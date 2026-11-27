@@ -9,6 +9,7 @@
 #include "D3D9/Device/DgVoodoo.h"
 #include "D3D9/Device/Dxvk.h"
 #include "D3D9/Device/ExclusiveSupersample.h"
+#include "D3D9/Device/GameCaller.h"
 #include "D3D9/Device/PresentTuning.h"
 #include "Hooks/GameHook.h"
 #include "Hooks/HookManager.h"
@@ -56,10 +57,33 @@ void LogAttempt(const char* what, HRESULT result, UINT adapter, D3DDEVTYPE devic
 		parameters.PresentationInterval);
 }
 
+bool IsTinyProbeRequest(const D3DPRESENT_PARAMETERS* parameters)
+{
+	return parameters != nullptr &&
+		parameters->BackBufferWidth > 0 && parameters->BackBufferWidth < 320 &&
+		parameters->BackBufferHeight > 0 && parameters->BackBufferHeight < 240;
+}
+
 HRESULT STDMETHODCALLTYPE HookedCreateDevice(IDirect3D9* self, UINT adapter, D3DDEVTYPE deviceType,
 	HWND hFocusWindow, DWORD behaviorFlags, D3DPRESENT_PARAMETERS* presentParameters,
 	IDirect3DDevice9** ppReturnedDeviceInterface)
 {
+	if (DeviceHooks::IsInstalled() || (!IS_GAME_CALLER() && IsTinyProbeRequest(presentParameters)))
+	{
+		const HRESULT secondary = g_createDeviceHook.Original()(self, adapter, deviceType, hFocusWindow,
+			behaviorFlags, presentParameters, ppReturnedDeviceInterface);
+
+		LOG("CreateDevice: secondary device left untouched (0x%08lx, device=0x%p, window=0x%p, %ux%u, tracking=0x%p)",
+			static_cast<unsigned long>(secondary),
+			(ppReturnedDeviceInterface != nullptr) ? static_cast<void*>(*ppReturnedDeviceInterface) : nullptr,
+			static_cast<void*>(hFocusWindow),
+			presentParameters != nullptr ? presentParameters->BackBufferWidth : 0,
+			presentParameters != nullptr ? presentParameters->BackBufferHeight : 0,
+			static_cast<void*>(DeviceHooks::GetDevice()));
+
+		return secondary;
+	}
+
 	ReclaimCrashHandler();
 
 	D3DPRESENT_PARAMETERS asked = {};

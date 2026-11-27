@@ -99,8 +99,23 @@ int ResolveAt(uintptr_t named, int offset)
 
 int ResolveNamed(uintptr_t named)
 {
-	if (named == 0)
+	if (named < 0x10000 || (named & 3) != 0)
 		return -1;
+
+	const int known = PaletteTexture::FindByPointer(named);
+
+	if (known >= 0)
+		return known;
+
+	uintptr_t vtable = 0;
+	const uintptr_t dxTexVTable = RvaToAddress(GameOffsets::kDxTexVTable);
+
+	if (dxTexVTable != 0 &&
+		TryReadMemory(&vtable, reinterpret_cast<const void*>(named), sizeof(vtable)) &&
+		vtable == dxTexVTable)
+	{
+		return ResolveAt(named, GameOffsets::kPaletteWrapperTexture);
+	}
 
 	const int direct = PaletteTexture::Adopt(named);
 
@@ -131,11 +146,6 @@ int ResolveNativeOverride(int player)
 	{
 		return -1;
 	}
-
-	const int direct = ResolveNamed(holder);
-
-	if (direct >= 0)
-		return direct;
 
 	uint32_t wrapper = 0;
 

@@ -2,19 +2,16 @@
 
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "Game/Engine/CodeSignatures.h"
 #include "Game/Engine/GameOffsets.h"
 #include "Game/Engine/MemoryMap.h"
 #include "Hooks/GameHook.h"
 #include "Palette/PalettePaint.h"
 #include "Palette/PaletteSeat.h"
-#include "Game/Engine/CodeSignatures.h"
-
-#include <d3d9.h>
 
 #include <cstring>
 
 namespace {
-
 
 constexpr uintptr_t kDrawOverride = 0x24;
 constexpr uintptr_t kDrawOwner = 0x48;
@@ -33,8 +30,6 @@ PaletteOwnerProbe::Row g_rows[kMaxRows] = {};
 int g_count = 0;
 
 volatile long g_enabled = 0;
-uintptr_t g_lastBadOverride = 0;
-uintptr_t g_lastBadHolder = 0;
 
 bool ReadInt(uintptr_t address, int& out)
 {
@@ -106,87 +101,10 @@ bool LooksLikePointer(uintptr_t value)
 	return value >= 0x10000 && (value & 3) == 0;
 }
 
-bool IsValidPaletteHolder(uintptr_t holder)
-{
-	if (!LooksLikePointer(holder))
-		return false;
-
-	bool valid = false;
-
-	__try
-	{
-		const uintptr_t wrapper = *reinterpret_cast<const uintptr_t*>(holder);
-
-		if (LooksLikePointer(wrapper))
-		{
-			const uintptr_t texture = *reinterpret_cast<const uintptr_t*>(
-				wrapper + GameOffsets::kPaletteWrapperTexture);
-
-			if (LooksLikePointer(texture))
-			{
-				const uintptr_t vtable = *reinterpret_cast<const uintptr_t*>(texture);
-
-				if (LooksLikePointer(vtable))
-				{
-					IDirect3DBaseTexture9* const base = reinterpret_cast<IDirect3DBaseTexture9*>(texture);
-					valid = base->GetType() == D3DRTYPE_TEXTURE;
-				}
-			}
-		}
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		valid = false;
-	}
-
-	return valid;
-}
-
-bool HasDanglingWrapper(uintptr_t holder)
-{
-	if (!LooksLikePointer(holder))
-		return true;
-
-	bool dangling = true;
-
-	__try
-	{
-		const uintptr_t wrapper = *reinterpret_cast<const uintptr_t*>(holder);
-
-		if (wrapper == 0)
-		{
-			dangling = false;
-		}
-		else if (LooksLikePointer(wrapper))
-		{
-			const uintptr_t texture = *reinterpret_cast<const uintptr_t*>(
-				wrapper + GameOffsets::kPaletteWrapperTexture);
-
-			if (LooksLikePointer(texture))
-			{
-				const uintptr_t vtable = *reinterpret_cast<const uintptr_t*>(texture);
-
-				if (LooksLikePointer(vtable))
-				{
-					IDirect3DBaseTexture9* const base = reinterpret_cast<IDirect3DBaseTexture9*>(texture);
-					dangling = base->GetType() != D3DRTYPE_TEXTURE;
-				}
-			}
-		}
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		dangling = true;
-	}
-
-	return dangling;
-}
-
 struct DrawFields
 {
 	uintptr_t override;
 	uintptr_t owner;
-	uintptr_t ownerHolder;
 	uintptr_t texture;
 	int row;
 };
@@ -201,6 +119,7 @@ bool ReadDrawFields(void* self, DrawFields& out)
 	if (!LooksLikePointer(draw))
 		return false;
 
+	const uintptr_t dxTexVTable = RvaToAddress(GameOffsets::kDxTexVTable);
 	bool ok = false;
 
 	__try
@@ -210,20 +129,26 @@ bool ReadDrawFields(void* self, DrawFields& out)
 		const int pair = *reinterpret_cast<const int*>(draw + kDrawPair);
 		const int odd = *reinterpret_cast<const int*>(draw + kDrawOdd);
 
-		uintptr_t ownerHolder = 0;
+		uintptr_t holder = override;
 
-		if (LooksLikePointer(owner))
-			ownerHolder = *reinterpret_cast<const uintptr_t*>(owner + kOwnerPalette);
+		if (holder == 0 && LooksLikePointer(owner))
+			holder = *reinterpret_cast<const uintptr_t*>(owner + kOwnerPalette);
 
-		const uintptr_t holder = override != 0 ? override : ownerHolder;
 		uintptr_t texture = 0;
 
 		if (LooksLikePointer(holder))
-			texture = *reinterpret_cast<const uintptr_t*>(holder);
+		{
+			const uintptr_t wrapper = *reinterpret_cast<const uintptr_t*>(holder);
+
+			if (LooksLikePointer(wrapper))
+			{
+				if (dxTexVTable == 0 || *reinterpret_cast<const uintptr_t*>(wrapper) == dxTexVTable)
+					texture = wrapper;
+			}
+		}
 
 		out.override = override;
 		out.owner = owner;
-		out.ownerHolder = ownerHolder;
 		out.texture = texture;
 		out.row = pair * 2 + (odd != 0 ? 1 : 0);
 		ok = true;
@@ -236,65 +161,12 @@ bool ReadDrawFields(void* self, DrawFields& out)
 	return ok;
 }
 
-bool SanitizeDrawPalette(void* self, DrawFields& fields)
-{
-	if (fields.override != 0)
-	{
-		if (IsValidPaletteHolder(fields.override))
-			return true;
-
-		if (IsValidPaletteHolder(fields.ownerHolder))
-		{
-			const uintptr_t bad = fields.override;
-			*reinterpret_cast<uintptr_t*>(reinterpret_cast<uintptr_t>(self) + kDrawOverride) = 0;
-			fields.override = 0;
-			TryReadMemory(&fields.texture, reinterpret_cast<const void*>(fields.ownerHolder),
-				sizeof(fields.texture));
-
-			if (bad != g_lastBadOverride)
-			{
-				g_lastBadOverride = bad;
-				LOG_WARN("palette owner: cleared dangling override 0x%08x for owner 0x%08x (side %d)",
-					static_cast<unsigned>(bad), static_cast<unsigned>(fields.owner), fields.row);
-			}
-
-			return true;
-		}
-
-		if (fields.override != g_lastBadOverride)
-		{
-			g_lastBadOverride = fields.override;
-			LOG_WARN("palette owner: skipped draw with dangling override 0x%08x and no valid owner palette",
-				static_cast<unsigned>(fields.override));
-		}
-
-		return false;
-	}
-
-	if (fields.ownerHolder != 0 && HasDanglingWrapper(fields.ownerHolder))
-	{
-		if (fields.ownerHolder != g_lastBadHolder)
-		{
-			g_lastBadHolder = fields.ownerHolder;
-			LOG_WARN("palette owner: skipped draw with dangling owner holder 0x%08x (side %d)",
-				static_cast<unsigned>(fields.ownerHolder), fields.row);
-		}
-
-		return false;
-	}
-
-	return true;
-}
-
 void __fastcall Detour(void* self, void* unused)
 {
 	DrawFields fields = {};
 
 	if (ReadDrawFields(self, fields))
 	{
-		if (!SanitizeDrawPalette(self, fields))
-			return;
-
 		PaletteSeat::OnDraw(fields.owner, fields.texture, fields.row);
 
 		PalettePaint::OnDraw();

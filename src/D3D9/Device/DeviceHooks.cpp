@@ -293,6 +293,9 @@ void NoteClear(const ClearSignature& seen)
 HRESULT STDMETHODCALLTYPE HookedClear(IDirect3DDevice9* device, DWORD count, const D3DRECT* rects,
 	DWORD flags, D3DCOLOR color, float z, DWORD stencil)
 {
+	if (g_installed && device != g_device)
+		return g_clearHook.Original()(device, count, rects, flags, color, z, stencil);
+
 	const bool recolouring = StageColor::IsEnabled();
 	const bool stillLearning = IsLoggerOpen() && g_clearSeenCount < kMaxClearSignatures &&
 		g_clearLearnFrames < kClearLearnFrames;
@@ -326,6 +329,9 @@ HRESULT STDMETHODCALLTYPE HookedClear(IDirect3DDevice9* device, DWORD count, con
 HRESULT STDMETHODCALLTYPE HookedSetTexture(IDirect3DDevice9* device, DWORD stage,
 	IDirect3DBaseTexture9* texture)
 {
+	if (g_installed && device != g_device)
+		return g_setTextureHook.Original()(device, stage, texture);
+
 	IDirect3DBaseTexture9* bound = texture;
 
 	{
@@ -343,6 +349,9 @@ HRESULT STDMETHODCALLTYPE HookedSetTexture(IDirect3DDevice9* device, DWORD stage
 HRESULT STDMETHODCALLTYPE HookedDrawPrimitive(IDirect3DDevice9* device, D3DPRIMITIVETYPE type,
 	UINT startVertex, UINT primitiveCount)
 {
+	if (g_installed && device != g_device)
+		return g_drawPrimitiveHook.Original()(device, type, startVertex, primitiveCount);
+
 	PaletteDrawProbe::OnDraw();
 	DrawTrace::OnDraw(device, "dp", type, primitiveCount);
 	if (CleanFrame::SkipsDraw(device))
@@ -370,6 +379,12 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
 	D3DPRIMITIVETYPE type, INT baseVertexIndex, UINT minVertexIndex, UINT numVertices,
 	UINT startIndex, UINT primitiveCount)
 {
+	if (g_installed && device != g_device)
+	{
+		return g_drawIndexedPrimitiveHook.Original()(device, type, baseVertexIndex, minVertexIndex,
+			numVertices, startIndex, primitiveCount);
+	}
+
 	{
 		Profiler::Scope scope(Profiler::Section_DrawModHooks);
 		PaletteDrawProbe::OnDraw();
@@ -407,6 +422,9 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitive(IDirect3DDevice9* device,
 HRESULT STDMETHODCALLTYPE HookedDrawPrimitiveUP(IDirect3DDevice9* device, D3DPRIMITIVETYPE type,
 	UINT primitiveCount, const void* vertexData, UINT stride)
 {
+	if (g_installed && device != g_device)
+		return g_drawPrimitiveUPHook.Original()(device, type, primitiveCount, vertexData, stride);
+
 	PaletteDrawProbe::OnDraw();
 	DrawTrace::OnDraw(device, "dpup", type, primitiveCount, vertexData, stride);
 	if (CleanFrame::SkipsDraw(device))
@@ -426,6 +444,12 @@ HRESULT STDMETHODCALLTYPE HookedDrawIndexedPrimitiveUP(IDirect3DDevice9* device,
 	D3DPRIMITIVETYPE type, UINT minVertexIndex, UINT numVertices, UINT primitiveCount,
 	const void* indexData, D3DFORMAT indexFormat, const void* vertexData, UINT stride)
 {
+	if (g_installed && device != g_device)
+	{
+		return g_drawIndexedPrimitiveUPHook.Original()(device, type, minVertexIndex, numVertices,
+			primitiveCount, indexData, indexFormat, vertexData, stride);
+	}
+
 	PaletteDrawProbe::OnDraw();
 	DrawTrace::OnDraw(device, "dipup", type, primitiveCount, vertexData, stride, numVertices);
 	if (CleanFrame::SkipsDraw(device))
@@ -512,9 +536,41 @@ void ReportModWork(const LARGE_INTEGER& start)
 	NetLink::OnPresent((now.QuadPart - start.QuadPart) * 1000000 / frequency.QuadPart);
 }
 
+IDirect3DDevice9* ReadGameD3dDevice()
+{
+	if (Standby::IsOn())
+		return nullptr;
+
+	const uintptr_t objectSlot = RvaToAddress(GameOffsets::kD3dObject);
+	uint32_t objectAddress = 0;
+
+	if (objectSlot == 0 || !TryReadDword(reinterpret_cast<const void*>(objectSlot), objectAddress) ||
+		objectAddress == 0)
+	{
+		return nullptr;
+	}
+
+	uint32_t deviceAddress = 0;
+
+	if (!TryReadDword(reinterpret_cast<const void*>(static_cast<uintptr_t>(objectAddress) +
+		GameOffsets::kD3dDevice), deviceAddress) || deviceAddress == 0)
+	{
+		return nullptr;
+	}
+
+	return reinterpret_cast<IDirect3DDevice9*>(static_cast<uintptr_t>(deviceAddress));
+}
+
 void Adopt(IDirect3DDevice9* device)
 {
-	if (InterlockedExchange(&g_watching, 0) == 0 || device == nullptr)
+	if (device == nullptr)
+		return;
+
+	IDirect3DDevice9* const gameDevice = ReadGameD3dDevice();
+	if (gameDevice != nullptr && device != gameDevice)
+		return;
+
+	if (InterlockedExchange(&g_watching, 0) == 0)
 		return;
 
 	D3DPRESENT_PARAMETERS parameters = {};
@@ -596,6 +652,9 @@ void SyncDrawHooks()
 HRESULT STDMETHODCALLTYPE HookedPresent(IDirect3DDevice9* device, const RECT* sourceRect,
 	const RECT* destRect, HWND destWindowOverride, const RGNDATA* dirtyRegion)
 {
+	if (g_installed && device != g_device)
+		return g_presentHook.Original()(device, sourceRect, destRect, destWindowOverride, dirtyRegion);
+
 	InterlockedIncrement(&g_presentCount);
 	ThreadRole::Mark(ThreadRole::Role_Render);
 
@@ -796,7 +855,13 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 
 	if (g_installed)
 	{
-		g_device = device;
+		if (device != g_device)
+		{
+			LOG("Device hooks: ignoring secondary device 0x%p while tracking game device 0x%p",
+				static_cast<void*>(device), static_cast<void*>(g_device));
+			return false;
+		}
+
 		g_presentParameters = presentParameters;
 		return true;
 	}
@@ -851,6 +916,7 @@ bool DeviceHooks::Install(IDirect3DDevice9* device, const D3DPRESENT_PARAMETERS&
 	g_installed = true;
 	LOG("Device hooks installed on device 0x%p, window 0x%p", (void*)device, (void*)g_gameProc.hWndGame);
 
+	PaletteTexture::LearnVTables(device);
 	WindowManager::GetInstance().Initialize(g_gameProc.hWndGame, device);
 	FrozenFrame::OnDeviceReset(device, g_presentParameters.BackBufferWidth,
 		g_presentParameters.BackBufferHeight, g_presentParameters.BackBufferFormat);

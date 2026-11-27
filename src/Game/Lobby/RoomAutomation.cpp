@@ -1,10 +1,12 @@
 #include "Game/Lobby/RoomAutomation.h"
 
 #include "Addons/LuaHost.h"
+#include "Core/Input/PadInput.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
 #include "Game/Engine/CodeSignatures.h"
 #include "Game/Engine/GameOffsets.h"
+#include "Game/Engine/SaveData.h"
 #include "Game/Engine/SceneWatch.h"
 #include "Hooks/GameHook.h"
 
@@ -19,6 +21,7 @@ using RoomAutomation::CreateStage;
 
 typedef void(__stdcall* OpenNetworkMenuFn)(int mode);
 typedef void(__thiscall* PlayerMatchResultFn)(void* root, int result);
+typedef void(__thiscall* PlayerMatchExitFn)(void* root);
 typedef void(__fastcall* JoinRequestedFn)(void* sessionManager, void* unused, const void* request);
 
 struct JoinRequest
@@ -320,8 +323,34 @@ void __stdcall HookedOpenNetworkMenu(int mode)
 		NoteStage(CreateStage::PickingCreateRoom);
 }
 
+bool ExitInvitePlayerMatchWithoutOverlay(uint8_t* root, int result)
+{
+	if (root == nullptr || result != 0)
+		return false;
+
+	const uint32_t state = ReadField(root, GameOffsets::kPlayerMatchState);
+	const uint32_t mode = ReadField(root, GameOffsets::kPlayerMatchMode);
+
+	if (mode != GameOffsets::kPlayerMatchModeInvite || state == GameOffsets::kPlayerMatchEntryState)
+		return false;
+
+	const uintptr_t exitFn = CodeSignatures::Address(GameOffsets::kFnPlayerMatchExitToMenu);
+	if (exitFn == 0)
+		return false;
+
+	reinterpret_cast<PlayerMatchExitFn>(exitFn)(root);
+	LOG("RoomAutomation: exited invite Player Match to network menu without Steam overlay (state=%u)", state);
+	return true;
+}
+
 void __fastcall HookedPlayerMatchResult(uint8_t* root, void* unused, int result)
 {
+	if (ExitInvitePlayerMatchWithoutOverlay(root, result))
+	{
+		LuaHost::OnPlayerMatchResult(reinterpret_cast<uintptr_t>(root), result);
+		return;
+	}
+
 	g_resultHook.Original()(root, result);
 	LuaHost::OnPlayerMatchResult(reinterpret_cast<uintptr_t>(root), result);
 
@@ -350,6 +379,80 @@ bool CallJoinGuarded(JoinRequestedFn handler, void* sessionManager, const JoinRe
 	}
 }
 
+bool IsValidPadSlot(int pad)
+{
+	return pad >= 0 && pad < GameOffsets::kPadConfigSlotCount;
+}
+
+int ChooseFallbackPad(const char*& outSource)
+{
+	const int active = PadInput::LastActiveSlot();
+	if (IsValidPadSlot(active))
+	{
+		outSource = "last active pad";
+		return active;
+	}
+
+	const int connected = PadInput::FirstConnectedSlot();
+	if (IsValidPadSlot(connected))
+	{
+		outSource = "first connected pad";
+		return connected;
+	}
+
+	outSource = "startup default";
+	return GameOffsets::kNetworkStartupPad;
+}
+
+void SyncPadConfigFromSave(int pad)
+{
+	if (!IsValidPadSlot(pad))
+		return;
+
+	SaveData::State save = {};
+	if (!SaveData::Read(save) || !save.headerValid)
+		return;
+
+	const uintptr_t saveBase = RvaToAddress(GameOffsets::kSaveDataPadConfig);
+	const uintptr_t liveBase = RvaToAddress(GameOffsets::kPadConfigSysBase);
+
+	if (saveBase == 0 || liveBase == 0)
+		return;
+
+	int8_t saved[GameOffsets::kPadConfigButtonCount] = {};
+	const uintptr_t saveSlot = saveBase + static_cast<uintptr_t>(pad) * GameOffsets::kPadConfigButtonCount;
+
+	if (!TryReadMemory(saved, reinterpret_cast<const void*>(saveSlot), sizeof(saved)))
+		return;
+
+	const uintptr_t liveSlot = liveBase + static_cast<uintptr_t>(pad) * GameOffsets::kPadConfigSysStride +
+		GameOffsets::kPadConfigSysButtons;
+
+	int32_t live[GameOffsets::kPadConfigButtonCount] = {};
+	if (!TryReadMemory(live, reinterpret_cast<const void*>(liveSlot), sizeof(live)))
+		return;
+
+	int repaired = 0;
+
+	for (int i = 0; i < GameOffsets::kPadConfigButtonCount; ++i)
+	{
+		const int32_t expected = static_cast<int32_t>(saved[i]);
+		if (live[i] == expected)
+			continue;
+
+		if (TryWriteDword(reinterpret_cast<void*>(liveSlot + static_cast<uintptr_t>(i) * sizeof(int32_t)),
+			static_cast<uint32_t>(expected)))
+		{
+			++repaired;
+		}
+	}
+
+	if (repaired > 0)
+	{
+		LOG_WARN("RoomAutomation: synced %d pad %d button binding(s) from SYS-DATA", repaired, pad);
+	}
+}
+
 }
 
 bool RoomAutomation::Install()
@@ -367,16 +470,29 @@ bool RoomAutomation::Install()
 int RoomAutomation::ClaimNetworkPad()
 {
 	int pad = ReadRvaInt(GameOffsets::kMenuPad);
+	const char* source = "menu";
 
-	if (pad == GameOffsets::kNoPad)
+	if (!IsValidPadSlot(pad))
 	{
-		pad = GameOffsets::kNetworkStartupPad;
+		pad = ChooseFallbackPad(source);
 
 		if (!WriteRvaInt(GameOffsets::kMenuPad, pad))
 			return GameOffsets::kNoPad;
 	}
 
-	return WriteRvaInt(GameOffsets::kNetworkPad, pad) ? pad : GameOffsets::kNoPad;
+	if (!WriteRvaInt(GameOffsets::kNetworkPad, pad))
+		return GameOffsets::kNoPad;
+
+	SyncPadConfigFromSave(pad);
+
+	static int lastLoggedPad = GameOffsets::kNoPad;
+	if (pad != lastLoggedPad)
+	{
+		lastLoggedPad = pad;
+		LOG("RoomAutomation: claimed network pad %d (%s)", pad, source);
+	}
+
+	return pad;
 }
 
 bool RoomAutomation::RequestScene(uint32_t scene)
@@ -408,6 +524,9 @@ bool RoomAutomation::Join(uint64_t lobby, uint64_t owner)
 
 	if (handler == 0 || sessionManager == 0)
 		return false;
+
+	if (!IsValidPadSlot(ReadRvaInt(GameOffsets::kNetworkPad)))
+		ClaimNetworkPad();
 
 	const JoinRequest request = { lobby, owner };
 	return CallJoinGuarded(reinterpret_cast<JoinRequestedFn>(handler),

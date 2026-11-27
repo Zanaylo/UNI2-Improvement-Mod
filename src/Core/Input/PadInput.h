@@ -8,6 +8,8 @@ namespace PadInput
 	void OnFrame();
 
 	bool IsConnected();
+	int LastActiveSlot();
+	int FirstConnectedSlot();
 
 	bool IsDown(int button);
 	bool WasPressed(int button);

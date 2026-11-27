@@ -229,7 +229,7 @@ bool BgMipmaps::FromFile(const void* data, UINT bytes, UINT& levels)
 
 void BgMipmaps::Assert(IDirect3DDevice9* device)
 {
-	if (device == nullptr || !Enabled())
+	if (device == nullptr || !Enabled() || InterlockedCompareExchange(&g_baked, 0, 0) == 0)
 		return;
 
 	device->SetSamplerState(kSampler, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);

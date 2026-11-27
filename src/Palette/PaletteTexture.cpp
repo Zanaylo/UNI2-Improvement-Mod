@@ -144,6 +144,25 @@ void RememberShape(const D3DSURFACE_DESC& desc)
 constexpr int kRejectedSlots = 1024;
 IDirect3DTexture9* g_rejected[kRejectedSlots] = {};
 
+constexpr int kMaxTextureVTables = 16;
+uintptr_t g_textureVTables[kMaxTextureVTables] = {};
+int g_textureVTableCount = 0;
+
+void RememberTextureVTable(uintptr_t vtable)
+{
+	if (vtable < 0x10000 || (vtable & 3) != 0)
+		return;
+
+	for (int i = 0; i < g_textureVTableCount; ++i)
+	{
+		if (g_textureVTables[i] == vtable)
+			return;
+	}
+
+	if (g_textureVTableCount < kMaxTextureVTables)
+		g_textureVTables[g_textureVTableCount++] = vtable;
+}
+
 IDirect3DTexture9*& RejectedSlot(IDirect3DTexture9* texture)
 {
 	const uint32_t value = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(texture));
@@ -193,13 +212,25 @@ bool ProbeAdopted(uintptr_t pointer, bool& outVolatile)
 	if (RejectedSlot(flat) == flat)
 		return false;
 
+	if (g_textureVTableCount == 0)
+		PaletteTexture::LearnVTables(DeviceHooks::GetDevice());
+
+	if (g_textureVTableCount == 0)
+		return false;
+
+	uintptr_t vtable = 0;
+	if (!TryReadMemory(&vtable, reinterpret_cast<const void*>(pointer), sizeof(vtable)) ||
+		vtable == RvaToAddress(GameOffsets::kDxTexVTable) ||
+		!PaletteTexture::IsKnownTextureVTable(vtable))
+	{
+		return false;
+	}
+
 	bool matched = false;
 
 	__try
 	{
-		const uintptr_t vtable = *reinterpret_cast<const uintptr_t*>(pointer);
-
-		if (vtable >= 0x10000 && (vtable & 3) == 0 && flat->GetType() == D3DRTYPE_TEXTURE)
+		if (flat->GetType() == D3DRTYPE_TEXTURE)
 		{
 			D3DSURFACE_DESC desc = {};
 
@@ -216,6 +247,10 @@ bool ProbeAdopted(uintptr_t pointer, bool& outVolatile)
 					RejectedSlot(flat) = flat;
 				}
 			}
+		}
+		else
+		{
+			RejectedSlot(flat) = flat;
 		}
 	}
 	__except (EXCEPTION_EXECUTE_HANDLER)
@@ -349,6 +384,53 @@ void Remember(IDirect3DTexture9* texture, bool volatilePool)
 
 }
 
+void PaletteTexture::LearnVTables(IDirect3DDevice9* device)
+{
+	if (device == nullptr)
+		return;
+
+	struct ProbeSpec
+	{
+		DWORD usage;
+		D3DPOOL pool;
+	};
+
+	static constexpr ProbeSpec kSpecs[] = {
+		{ 0, D3DPOOL_MANAGED },
+		{ 0, D3DPOOL_DEFAULT },
+		{ D3DUSAGE_DYNAMIC, D3DPOOL_DEFAULT },
+		{ 0, D3DPOOL_SYSTEMMEM },
+	};
+
+	for (const ProbeSpec& spec : kSpecs)
+	{
+		IDirect3DTexture9* probe = nullptr;
+		if (SUCCEEDED(device->CreateTexture(1, 1, 1, spec.usage, D3DFMT_A8R8G8B8, spec.pool, &probe, nullptr)) &&
+			probe != nullptr)
+		{
+			uintptr_t vtable = 0;
+			if (TryReadMemory(&vtable, probe, sizeof(vtable)))
+				RememberTextureVTable(vtable);
+
+			probe->Release();
+		}
+	}
+}
+
+bool PaletteTexture::IsKnownTextureVTable(uintptr_t vtable)
+{
+	if (vtable < 0x10000 || (vtable & 3) != 0)
+		return false;
+
+	for (int i = 0; i < g_textureVTableCount; ++i)
+	{
+		if (g_textureVTables[i] == vtable)
+			return true;
+	}
+
+	return false;
+}
+
 bool PaletteTexture::OnSetTexture(IDirect3DDevice9*, unsigned, IDirect3DBaseTexture9* texture)
 {
 	if (texture == nullptr)
@@ -364,6 +446,10 @@ bool PaletteTexture::OnSetTexture(IDirect3DDevice9*, unsigned, IDirect3DBaseText
 		RejectedSlot(flat) = flat;
 		return false;
 	}
+
+	uintptr_t vtable = 0;
+	if (TryReadMemory(&vtable, flat, sizeof(vtable)))
+		RememberTextureVTable(vtable);
 
 	bool volatilePool = false;
 	if (!IsPaletteShaped(flat, volatilePool))
@@ -543,6 +629,9 @@ bool PaletteTexture::GetMatchTextures(int& outFirst, int& outSecond)
 
 void PaletteTexture::OnFrame()
 {
+	if (g_textureVTableCount == 0)
+		LearnVTables(DeviceHooks::GetDevice());
+
 	if (FrameStepper::NeedsFrozenFrameReplay())
 		return;
 

@@ -1,11 +1,14 @@
 #include "D3D9/Device/Dxvk.h"
 
+#include "Core/Config/ConfigBoot.h"
 #include "Core/Config/IniStore.h"
 #include "Core/Config/Settings.h"
 #include "Core/logger.h"
 #include "Core/utils.h"
+#include "D3D9/Device/DgVoodoo.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <mutex>
 
@@ -75,7 +78,27 @@ void Read()
 	if (g_read)
 		return;
 
-	g_enabled = Ini::GetInt(kSection, "Enabled", 0, Settings::GetIniPath().c_str()) != 0;
+	ConfigBoot::Prepare();
+
+	char raw[32] = {};
+	Ini::GetString(kSection, "Enabled", "", raw, sizeof(raw), Settings::GetIniPath().c_str());
+
+	if (raw[0] != '\0')
+	{
+		g_enabled = atoi(raw) != 0;
+	}
+	else if (Dxvk::IsInstalled() && !DgVoodoo::IsEnabled())
+	{
+		g_enabled = true;
+		Settings::SaveInt(kSection, "Enabled", 1);
+		LOG("DXVK: found %s with no [DXVK] Enabled entry; enabling it automatically",
+			(Dxvk::Folder() + kRuntime).c_str());
+	}
+	else
+	{
+		g_enabled = false;
+	}
+
 	g_read = true;
 }
 
@@ -111,7 +134,15 @@ HMODULE Dxvk::Load()
 	Read();
 
 	if (!g_enabled)
+	{
+		if (IsInstalled())
+		{
+			LOG("DXVK: %s is present, but [DXVK] Enabled = 0 in Config\\Graphics.ini; using system Direct3D 9",
+				(Folder() + kRuntime).c_str());
+		}
+
 		return nullptr;
+	}
 
 	const std::string runtime = Folder() + kRuntime;
 
