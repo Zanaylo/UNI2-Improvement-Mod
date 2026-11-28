@@ -38,6 +38,7 @@ bool g_createDeviceHooked = false;
 std::mutex g_createDeviceLock;
 
 IDirect3D9* g_seenD3D9 = nullptr;
+volatile LONG g_direct3D9Seen = 0;
 
 constexpr DWORD kInitWaitMs = 15000;
 
@@ -223,7 +224,7 @@ bool RuntimeIsTheSystems(char* path, DWORD size)
 	return IsUnderSystemDirectory(path);
 }
 
-void HookCreateDeviceThroughProbe()
+void HoldWrapperUntilInitIfNeeded()
 {
 	if (g_createDeviceHooked || !g_direct3DCreate9Hook.IsLive())
 		return;
@@ -253,21 +254,10 @@ void HookCreateDeviceThroughProbe()
 		return;
 	}
 
-	IDirect3D9* const probe = g_direct3DCreate9Hook.Original()(D3D_SDK_VERSION);
-
-	if (probe == nullptr)
-	{
-		LOG("No probe Direct3D9 object, so a missed Direct3DCreate9 stays unrecoverable");
-		return;
-	}
-
-	if (HookCreateDeviceFrom(probe))
-	{
-		LOG("CreateDevice hooked through a probe object: a missed Direct3DCreate9 no longer "
-			"costs the overlay");
-	}
-
-	probe->Release();
+	// Do not call Direct3DCreate9 from InitThread during startup: loading the GPU driver
+	// acquires bcrypt's critical section and then calls LoadLibrary (LdrpLoaderLock), which
+	// deadlocks with SteamAPI_Init loading steamclient.dll on the main thread.
+	LOG("Direct3DCreate9 hooked; CreateDevice will be hooked when the game creates Direct3D9");
 }
 
 bool ProbeAllowed()
@@ -319,6 +309,7 @@ void* ProbePresent(IDirect3D9* d3d9, HWND window)
 
 IDirect3D9* WINAPI HookedDirect3DCreate9(UINT sdkVersion)
 {
+	InterlockedExchange(&g_direct3D9Seen, 1);
 	ReclaimCrashHandler();
 	LOG("Direct3DCreate9 asked for, sdk %u", sdkVersion);
 
@@ -344,14 +335,22 @@ IDirect3D9* WINAPI HookedDirect3DCreate9(UINT sdkVersion)
 void D3D9Wrapper::OnDirect3D9Created(IDirect3D9* d3d9)
 {
 	if (d3d9 != nullptr)
+	{
+		InterlockedExchange(&g_direct3D9Seen, 1);
 		g_seenD3D9 = d3d9;
+	}
 
 	HookCreateDeviceFrom(d3d9);
 }
 
+bool D3D9Wrapper::WasDirect3D9Created()
+{
+	return InterlockedCompareExchange(&g_direct3D9Seen, 0, 0) != 0;
+}
+
 bool D3D9Wrapper::RecoverMissedDevice()
 {
-	if (D3D9Proxy::IsActive() || DeviceHooks::IsInstalled() || !ProbeAllowed())
+	if (D3D9Proxy::IsActive() || DeviceHooks::IsInstalled() || g_createDeviceHooked || !ProbeAllowed())
 		return false;
 
 	IDirect3D9* const d3d9 = g_direct3DCreate9Hook.Original()(D3D_SDK_VERSION);
@@ -424,6 +423,6 @@ bool D3D9Wrapper::InstallHooks()
 	if (!HookManager::EnableAllHooks())
 		return false;
 
-	HookCreateDeviceThroughProbe();
+	HoldWrapperUntilInitIfNeeded();
 	return true;
 }

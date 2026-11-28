@@ -1,4 +1,4 @@
-﻿#include "Addons/AddonManager.h"
+#include "Addons/AddonManager.h"
 #include "Core/Boot/Compat.h"
 #include "Core/Boot/Modules.h"
 #include "Core/Config/IniStore.h"
@@ -31,6 +31,7 @@
 #include "Game/Patches/GamePatches.h"
 #include "Game/Audio/BgmCeiling.h"
 #include "Game/Audio/BgmPicker.h"
+#include "Game/Engine/GameOffsets.h"
 #include "Game/Stages/BgCeiling.h"
 #include "Game/Files/InstallCheck.h"
 #include "Game/Files/ModFiles.h"
@@ -57,11 +58,13 @@ namespace {
 
 constexpr DWORD kSlowStageMs = 50;
 constexpr int kDeviceWaitTicks = 50;
+constexpr int kBootWindowWaitTicks = 600;
 constexpr DWORD kDeviceWaitStepMs = 100;
 
 using DirectInput8Create_t = HRESULT(WINAPI*)(HINSTANCE, DWORD, REFIID, LPVOID*, LPUNKNOWN);
 
 HANDLE g_instanceMutex = nullptr;
+HANDLE g_shutdownEvent = nullptr;
 bool g_secondInstance = false;
 
 HMODULE g_originalDinput = nullptr;
@@ -235,15 +238,69 @@ void Stage_FileOverrides()
 	ScreenTheme::Reload();
 }
 
+BOOL CALLBACK FindProcessWindow(HWND window, LPARAM param)
+{
+	DWORD pid = 0;
+	GetWindowThreadProcessId(window, &pid);
+
+	if (pid != GetCurrentProcessId())
+		return TRUE;
+
+	if (!IsWindowVisible(window) && GetWindowTextLengthA(window) == 0)
+		return TRUE;
+
+	*reinterpret_cast<bool*>(param) = true;
+	return FALSE;
+}
+
+bool GameWindowExists()
+{
+	if (!IsMeasuredGameBuild())
+	{
+		bool found = false;
+		EnumWindows(&FindProcessWindow, reinterpret_cast<LPARAM>(&found));
+		return found;
+	}
+
+	uint32_t handle = 0;
+	const uintptr_t slot = RvaToAddress(GameOffsets::kWindowHandle);
+
+	if (!TryReadDword(reinterpret_cast<const void*>(slot), handle) || handle == 0)
+		return false;
+
+	return IsWindow(reinterpret_cast<HWND>(static_cast<uintptr_t>(handle))) != FALSE;
+}
+
+bool WaitStep(DWORD ms)
+{
+	if (g_shutdownEvent != nullptr)
+		return WaitForSingleObject(g_shutdownEvent, ms) == WAIT_TIMEOUT;
+
+	Sleep(ms);
+	return true;
+}
+
 void RecoverIfTheDeviceWasMissed()
 {
 	if (D3D9Proxy::IsActive())
 		return;
 
-	for (int i = 0; i < kDeviceWaitTicks && !DeviceHooks::IsInstalled(); ++i)
-		Sleep(kDeviceWaitStepMs);
+	// Wait until the game has either hooked Direct3D or created its window (past SteamAPI_Init)
+	// before ever touching Direct3DCreate9 from InitThread.
+	for (int i = 0; i < kBootWindowWaitTicks && !DeviceHooks::IsInstalled() &&
+		!D3D9Wrapper::WasDirect3D9Created() && !GameWindowExists(); ++i)
+	{
+		if (!WaitStep(kDeviceWaitStepMs))
+			return;
+	}
 
-	if (DeviceHooks::IsInstalled())
+	for (int i = 0; i < kDeviceWaitTicks && !DeviceHooks::IsInstalled(); ++i)
+	{
+		if (!WaitStep(kDeviceWaitStepMs))
+			return;
+	}
+
+	if (DeviceHooks::IsInstalled() || D3D9Wrapper::WasDirect3D9Created() || !GameWindowExists())
 		return;
 
 	D3D9Wrapper::RecoverMissedDevice();
@@ -339,7 +396,6 @@ DWORD WINAPI InitThread(LPVOID)
 		LOG("stage 'hook manager init' took %lu ms", GetTickCount() - hookManagerStarted);
 
 	Modules::RunGuarded("d3d9 hooks", Stage_D3D9);
-	Modules::RunGuarded("update check", Stage_UpdateCheck);
 	Modules::RunGuarded("install check", [] { InstallCheck::Run(); });
 	Modules::RunGuarded("ui assets", Stage_UiAssets);
 	Modules::RunGuarded("process tuning", Stage_ProcessTuning);
@@ -356,6 +412,8 @@ DWORD WINAPI InitThread(LPVOID)
 	Modules::RunGuarded("test harness", [] { Harness::Start(); });
 
 	FinishInitialization("Initialization finished");
+	if (WaitStep(0))
+		Modules::RunGuarded("update check", Stage_UpdateCheck);
 	return 0;
 }
 
@@ -406,6 +464,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 
 		Harness::InstallEarly();
 
+		g_shutdownEvent = CreateEventA(nullptr, TRUE, FALSE, nullptr);
+
 		HANDLE thread = CreateThread(nullptr, 0, InitThread, nullptr, 0, nullptr);
 		if (thread == nullptr)
 		{
@@ -420,6 +480,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reasonForCall, LPVOID reserved)
 	case DLL_PROCESS_DETACH:
 	{
 		Ini::FlushOnExit();
+
+		if (g_shutdownEvent != nullptr)
+			SetEvent(g_shutdownEvent);
 
 		if (reserved != nullptr)
 		{
